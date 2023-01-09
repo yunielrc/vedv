@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+set -euE
+
+cd "$(dirname "${BASH_SOURCE[0]}")/.."
+
+# Install tools
+sudo pacman -Syu --noconfirm --needed yay
+
+yay -Syu --noconfirm --needed \
+  shfmt \
+  shellcheck \
+  python-pre-commit \
+  bash-bats \
+  bash-bats-assert \
+  bash-bats-file \
+  bash-bats-support \
+  nodejs \
+  npm
+
+sudo npm install -g \
+  @commitlint/cli \
+  @commitlint/config-conventional \
+  commitizen \
+  cz-conventional-changelog
+
+# Configure
+git config core.hooksPath .githooks

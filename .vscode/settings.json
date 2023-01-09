@@ -1,0 +1,12 @@
+{
+  "files.associations": {
+    "*.zunit": "bats"
+  },
+  "search.exclude": {
+    "**/3rd/": true,
+    "**/bash-libs/": true
+  },
+  "files.exclude": {
+    "3rd/": true
+  }
+}

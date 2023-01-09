@@ -1,0 +1,84 @@
+#!/bin/bash
+# shellcheck disable=SC2034
+set -eE
+
+# ----------------------------------
+# Colors
+# ----------------------------------
+
+readonly NOCOLOR='\033[0m'
+readonly RED='\033[0;31m'
+readonly GREEN='\033[0;32m'
+readonly ORANGE='\033[0;33m'
+readonly BLUE='\033[0;34m'
+readonly PURPLE='\033[0;35m'
+readonly CYAN='\033[0;36m'
+readonly LIGHTGRAY='\033[0;37m'
+readonly DARKGRAY='\033[1;30m'
+readonly LIGHTRED='\033[1;31m'
+readonly LIGHTGREEN='\033[1;32m'
+readonly YELLOW='\033[1;33m'
+readonly LIGHTBLUE='\033[1;34m'
+readonly LIGHTPURPLE='\033[1;35m'
+readonly LIGHTCYAN='\033[1;36m'
+readonly WHITE='\033[1;37m'
+
+set -o allexport
+. ./.env
+set +o allexport
+
+# shellcheck disable=SC2155
+
+__test_suite() {
+  local -r suite="$1"
+  echo -e "\n💚/💔 >> ${LIGHTBLUE}${suite##*/}${NOCOLOR} in ${suite%/*}\n"
+  if [[ "${BATS_PRETTY:-}" != false ]]; then
+    bats --pretty "./$suite"
+  else
+    bats --tap "./$suite"
+  fi
+}
+
+__test_dir() {
+  local -r test_dir="$1"
+  local has_tests=false
+
+  while read -r suite; do
+    has_tests=true
+    __test_suite "$suite"
+  done < <(find "$test_dir" -ignore_readdir_race -name '*.bats' -type f 2>/dev/null)
+
+  if [[ $has_tests == false ]]; then
+    echo -e "${LIGHTRED}>> NO TESTS${NOCOLOR}"
+  fi
+}
+
+if [[ $# -gt 0 ]]; then
+  for suite in "$@"; do
+    __test_suite "$suite"
+  done
+  exit $?
+fi
+
+echo -e "\n${LIGHTPURPLE}Testing Units${NOCOLOR}\n"
+
+__test_dir './dist/test'
+
+if [[ -d './dist/packages' ]]; then
+
+  cd './dist/packages'
+  echo -e "\n${LIGHTPURPLE}Testing Packages Units${NOCOLOR}\n"
+
+  for pkg in *; do
+    echo -e "\n> package: ${YELLOW}${pkg}${NOCOLOR}\n"
+
+    if [[ -n "${TEST_IGNORED_PKG:-}" ]] && echo "$TEST_IGNORED_PKG" | grep --quiet --word-regexp "$pkg"; then
+      echo -e "${LIGHTRED}>>TESTS IGNORED${NOCOLOR}"
+      continue
+    fi
+    __test_dir "${pkg}/test"
+  done
+  cd - >/dev/null
+fi
+
+exit $?
