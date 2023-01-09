@@ -12,6 +12,10 @@ repos:
   - repo: https://github.com/jumanjihouse/pre-commit-hooks
     rev: 3.0.0
     hooks:
+<<<<<<< HEAD
       # - id: shfmt
+=======
+      - id: shfmt
+>>>>>>> 265dd7a (chore: first commit)
       - id: shellcheck
         types: [bash]
