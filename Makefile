@@ -1,10 +1,10 @@
-.PHONY: commit test
+.PHONY: commit test configure-dev-manjaro
 
 commit:
 	git cz
 
-configure-dev-manjaro:
-	./cac/configure.dev.manjaro
-
 test:
 	./tools/test-bats
+
+configure-dev-manjaro:
+	./cac/configure.dev.manjaro
