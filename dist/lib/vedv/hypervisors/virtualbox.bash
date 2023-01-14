@@ -6,8 +6,9 @@
 
 # IMAGE
 
-# IMPL: Pull an image or a repository from a registry
+# IMPL: Pull an image or a repository from a registry or a file
 vedv::virtualbox::image::pull() {
+
   echo 'vedv::virtualbox::image::pull'
 }
 # IMPL: Build an image

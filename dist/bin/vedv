@@ -8,11 +8,11 @@ set -euEo pipefail
 # CONSTANTS
 readonly __VEDV_SCRIPT_NAME="$(basename "${0}")"
 readonly __VEDV_DIST_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-readonly __VEDV_COMMANDS_PATH="${__VEDV_DIST_PATH}/lib/vedv/commands"
+readonly __VEDV_COMPONENTS_PATH="${__VEDV_DIST_PATH}/lib/vedv/components"
 readonly __VEDV_HYPERVISORS_PATH="${__VEDV_DIST_PATH}/lib/vedv/hypervisors"
 
 # INCLUDE
-for f in "${__VEDV_COMMANDS_PATH}/"*.bash; do . "$f"; done
+for f in "${__VEDV_COMPONENTS_PATH}/"*/*.bash; do . "$f"; done
 
 # COMMANDS
 
@@ -37,7 +37,6 @@ HELPMSG
 vedv::__on_exit() {
   # shellcheck disable=SC2181
   if [[ $? != 0 ]]; then
-    echo
     vedv::__help
   fi
 }
@@ -71,18 +70,26 @@ vedv::__run_cmd() {
   # include hypervisor
   . "${__VEDV_HYPERVISORS_PATH}/${hypervisor}.bash"
 
+  # initialize components
+  vedv::image_service::constructor "$hypervisor"
+  vedv::image_command::constructor "$__VEDV_SCRIPT_NAME"
+
+  vedv::container_service::constructor "$hypervisor"
+  vedv::container_command::constructor "$__VEDV_SCRIPT_NAME"
+
+  # parse arguments
   while [[ $# -gt 0 ]]; do
     case "$1" in
     # OPTIONS
     # COMMANDS
     image)
       shift
-      vedv::image::run_cmd "$hypervisor" "$@"
+      vedv::image_command::run_cmd "$@"
       return $?
       ;;
     container)
       shift
-      vedv::container::run_cmd "$hypervisor" "$@"
+      vedv::container_command::run_cmd "$@"
       return $?
       ;;
     # ERROR

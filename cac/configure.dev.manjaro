@@ -15,7 +15,8 @@ yay -Syu --noconfirm --needed \
   bash-bats-file \
   bash-bats-support \
   nodejs \
-  npm
+  npm \
+  virtualbox
 
 sudo npm install -g \
   @commitlint/cli \
