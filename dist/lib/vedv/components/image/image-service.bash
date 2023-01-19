@@ -69,10 +69,16 @@ vedv::image_service::__pull_from_file() {
   local -r vm_name="$(vedv::image_service::__gen_vm_name "$image_file")"
 
   # Import an OVF from a file
-  vedv::"$__VEDV_IMAGE_SERVICE_HYPERVISOR"::import "$image_file" "$vm_name"
+  local output
+  output="$(vedv::"$__VEDV_IMAGE_SERVICE_HYPERVISOR"::import "$image_file" "$vm_name" 2>&1)"
   local -ri ecode=$?
 
-  echo "$vm_name"
+  if [[ $ecode -eq 0 ]]; then
+    echo "$vm_name"
+  else
+    "$output"
+  fi
+
   return $ecode
 }
 

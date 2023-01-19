@@ -48,7 +48,7 @@ teardown() {
   run vedv::image_service::__pull_from_file "$image_file"
 
   assert_success
-  assert_output --partial "Successfully imported the appliance"
+  assert_output "image:alpine-x86_64|sha1:38ddd2a7ecc6cde46fcaca611f054c518150383f"
 }
 
 @test "vedv::image_service::__pull_from_file, if already imported should throw error" {
