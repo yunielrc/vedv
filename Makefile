@@ -4,7 +4,7 @@ commit:
 	git cz
 
 test:
-	./tools/test-bats
+	./tools/test-bats $(unit)
 
 configure-dev-manjaro:
 	./cac/configure.dev.manjaro
