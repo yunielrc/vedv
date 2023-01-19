@@ -8,10 +8,13 @@ set -euEo pipefail
 # CONSTANTS
 readonly __VEDV_SCRIPT_NAME="$(basename "${0}")"
 readonly __VEDV_DIST_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+readonly __VEDV_LIB_PATH="${__VEDV_DIST_PATH}/lib/vedv"
 readonly __VEDV_COMPONENTS_PATH="${__VEDV_DIST_PATH}/lib/vedv/components"
 readonly __VEDV_HYPERVISORS_PATH="${__VEDV_DIST_PATH}/lib/vedv/hypervisors"
 
 # INCLUDE
+. "${__VEDV_LIB_PATH}/utils.bash"
+. "${__VEDV_LIB_PATH}/vedv.bash"
 for f in "${__VEDV_COMPONENTS_PATH}/"*/*.bash; do . "$f"; done
 
 # COMMANDS
@@ -20,15 +23,17 @@ for f in "${__VEDV_COMPONENTS_PATH}/"*/*.bash; do . "$f"; done
 vedv::__help() {
   cat <<-HELPMSG
 Usage:
-${__VEDV_SCRIPT_NAME} [OPTIONS] COMMAND
+${__VEDV_SCRIPT_NAME} [HYPERVISOR] COMMAND
 
 A tool for developing with reproducible virtual machines environments
 
 Options:
-  -h, --help                Show this help
+  -h, --help       Show this help
 
 Commands:
-  cmd1                    it do one thing
+  container        Manage containers
+  image            Manage images
+  build            Build an image from a Dockerfile
 
 Run '${__VEDV_SCRIPT_NAME} COMMAND --help' for more information on a command.
 HELPMSG
