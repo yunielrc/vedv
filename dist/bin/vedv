@@ -48,6 +48,7 @@ vedv::__on_exit() {
 # trap vedv::__on_exit INT TERM EXIT
 
 vedv::__run_cmd() {
+  # IMPL: test this function
 
   local hypervisor=''
 
@@ -89,7 +90,7 @@ vedv::__run_cmd() {
     # COMMANDS
     image)
       shift
-      vedv::image_command::run_cmd "$@"
+      vedv::image_command::run_cmd "$@" # implemented
       return $?
       ;;
     container)
