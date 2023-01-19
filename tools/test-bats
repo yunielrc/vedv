@@ -23,6 +23,10 @@ readonly LIGHTPURPLE='\033[1;35m'
 readonly LIGHTCYAN='\033[1;36m'
 readonly WHITE='\033[1;37m'
 
+# project path: /home/user/<some_dir>/ved
+readonly ROOT_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$ROOT_PATH"
+
 set -o allexport
 . ./.env
 set +o allexport
@@ -30,8 +34,6 @@ set +o allexport
 # shellcheck disable=SC2155
 
 __test_suite() {
-  local -r suite="$1"
-  echo -e "\n💚/💔 >> ${LIGHTBLUE}${suite##*/}${NOCOLOR} in ${suite%/*}\n"
   if [[ "${BATS_PRETTY:-}" != false ]]; then
     bats --pretty "./$suite"
   else
@@ -45,7 +47,7 @@ __test_dir() {
 
   while read -r suite; do
     has_tests=true
-    __test_suite "$suite"
+    __test_suite "./$suite"
   done < <(find "$test_dir" -ignore_readdir_race -name '*.bats' -type f 2>/dev/null)
 
   if [[ $has_tests == false ]]; then
