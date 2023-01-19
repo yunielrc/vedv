@@ -2,6 +2,9 @@
 # API to manage virtualbox virtual machines
 #
 
+# REQUIRE
+# . '../../utils.bash'
+
 # FUNCTIONS
 
 # IMAGE
@@ -16,11 +19,64 @@ vedv::virtualbox::image::build() {
   echo 'vedv::virtualbox::image::build'
 }
 
-# CONTAINER
+#
+# Create a clone of an existing virtual machine
+#
+# Arguments:
+#   vm_name             name of the exported VM
+#   vm_clone_name       name of the exported VM
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::virtualbox::clonevm_link() {
+  local -r vm_name="$1"
+  local -r vm_clone_name="$2"
 
-# IMPL: Create a new container
-vedv::virtualbox::container::create() {
-  echo 'vedv::virtualbox::container::create'
+  vedv::virtualbox::take_snapshot "$vm_name" "$vm_clone_name"
+
+  VBoxManage clonevm "$vm_name" --name "$vm_clone_name" --register \
+    --options 'link' --snapshot "$vm_clone_name"
+}
+
+#
+# Import a virtual appliance in OVA format
+# and create virtual machines
+#
+# Arguments:
+#   ova_file        ova file path
+#   vm_name         name of the exported VM
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::virtualbox::import() {
+  local -r ova_file="$1"
+  local -r vm_name="$2"
+
+  if [[ ! -f "$ova_file" ]]; then
+    err "OVA file doesn't exist"
+    return "$ERR_NOFILE"
+  fi
+
+  VBoxManage import "$ova_file" --vsys 0 --vmname "$vm_name"
+}
+
+#
+# Takes a snapshot of the current state of the VM
+#
+# Arguments:
+#   vm_name           name of the VM
+#   snapshot_name     name of the snapshot
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::virtualbox::take_snapshot() {
+  local -r vm_name="$1"
+  local -r snapshot_name="$2"
+
+  VBoxManage snapshot "$vm_name" take "$snapshot_name"
 }
 
 # IMPL: Start one or more stopped containers
