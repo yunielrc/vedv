@@ -1,8 +1,9 @@
 # shellcheck disable=SC2034
 
 readonly ERR_NOFILE=64    # file doesn't exist
-readonly ERR_NOTIMPL=70   # function not implemented
 readonly ERR_INVAL_ARG=69 # invalid argument
+readonly ERR_NOTIMPL=70   # function not implemented
+readonly ERR_VM_EXIST=80  # vm exist
 
 err() {
   echo "$*" >&2
