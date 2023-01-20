@@ -63,6 +63,21 @@ vedv::virtualbox::import() {
 }
 
 #
+# List virtual machines with name that contains the partial name
+#
+# Arguments:
+#   vm_partial_name         name of the exported VM
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::virtualbox::list_wms_by_partial_name() {
+  local -r vm_partial_name="$1"
+
+  VBoxManage list vms | grep "$vm_partial_name" | cut -d' ' -f1 | sed 's/"//g' || :
+}
+
+#
 # Takes a snapshot of the current state of the VM
 #
 # Arguments:

@@ -1,7 +1,7 @@
 # shellcheck disable=SC2016
 load test_helper
 
-teardown_file() {
+teardown() {
   # remove created vm in this test unit
   # cloned vm must be removed first
   delete_all_test_unit_vms
@@ -105,4 +105,23 @@ teardown_file() {
 
   assert_success
   assert_output --partial "Machine has been successfully cloned"
+}
+
+@test "vedv::virtualbox::list_wms_by_partial_name, with 'vm_partial_name' that doesn't exist should print an empty list" {
+  local -r vm_partial_name='container:happy'
+
+  run vedv::virtualbox::list_wms_by_partial_name "$vm_partial_name"
+
+  assert_success
+  assert_output ''
+}
+
+@test "vedv::virtualbox::list_wms_by_partial_name, should print a list of vm" {
+  local -r vm_partial_name='testunit:virtualbox'
+  create_vm
+
+  run vedv::virtualbox::list_wms_by_partial_name "$vm_partial_name"
+
+  assert_success
+  assert_output --partial 'testunit:virtualbox-1020623423-alpine-x86_64'
 }

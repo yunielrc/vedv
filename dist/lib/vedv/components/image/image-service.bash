@@ -68,6 +68,11 @@ vedv::image_service::__pull_from_file() {
 
   local -r vm_name="$(vedv::image_service::__gen_vm_name "$image_file")"
 
+  if [[ -n "$(vedv::"$__VEDV_IMAGE_SERVICE_HYPERVISOR"::list_wms_by_partial_name "$vm_name")" ]]; then
+    echo "$vm_name"
+    return 0
+  fi
+
   # Import an OVF from a file
   local output
   output="$(vedv::"$__VEDV_IMAGE_SERVICE_HYPERVISOR"::import "$image_file" "$vm_name" 2>&1)"
