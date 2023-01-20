@@ -3,9 +3,9 @@ set -euE
 
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
-# Install tools
-sudo pacman -Syu --noconfirm --needed yay
+./cac/configure.prod.manjaro
 
+# Install dev dependencies
 yay -Syu --noconfirm --needed \
   shfmt \
   shellcheck \
@@ -15,9 +15,9 @@ yay -Syu --noconfirm --needed \
   bash-bats-file \
   bash-bats-support \
   nodejs \
-  npm \
-  virtualbox
+  npm
 
+exit
 sudo npm install -g \
   @commitlint/cli \
   @commitlint/config-conventional \

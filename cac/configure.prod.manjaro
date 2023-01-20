@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+set -euE
+
+# Install prod dependencies
+sudo pacman -Syu --noconfirm --needed yay
+
+yay -Syu --noconfirm --needed \
+  virtualbox \
+  python-petname
