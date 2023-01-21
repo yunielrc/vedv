@@ -38,10 +38,15 @@ vedv::image_service::constructor() {
 vedv::image_service::__gen_vm_name() {
   local -r image_file="$1"
 
+  if [[ -z "$image_file" ]]; then
+    err "Invalid argument 'image_file': ${image_file}"
+    return "$ERR_INVAL_ARG"
+  fi
+
   local vm_name="${image_file,,}"
   vm_name="${vm_name%.ova}"
-  local -r sha1_sum="$(sha1sum "$image_file" | cut -d' ' -f1)"
-  vm_name="image:${vm_name##*/}|sha1:${sha1_sum}"
+  local -r crc_sum="$(cksum "$image_file" | cut -d' ' -f1)"
+  vm_name="image:${vm_name##*/}|crc:${crc_sum}"
 
   echo "$vm_name"
 }
@@ -59,6 +64,7 @@ vedv::image_service::__gen_vm_name() {
 #   0 on success, non-zero on error.
 #
 vedv::image_service::__pull_from_file() {
+  # set -x
   local -r image_file="$1"
 
   if [[ ! -f "$image_file" ]]; then
@@ -75,13 +81,13 @@ vedv::image_service::__pull_from_file() {
 
   # Import an OVF from a file
   local output
-  output="$(vedv::"$__VEDV_IMAGE_SERVICE_HYPERVISOR"::import "$image_file" "$vm_name" 2>&1)"
-  local -ri ecode=$?
+  local -i ecode=0
+  output="$(vedv::"$__VEDV_IMAGE_SERVICE_HYPERVISOR"::import "$image_file" "$vm_name" 2>&1)" || ecode=$?
 
   if [[ $ecode -eq 0 ]]; then
     echo "$vm_name"
   else
-    "$output"
+    err "$output"
   fi
 
   return $ecode

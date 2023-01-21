@@ -23,7 +23,7 @@ teardown() {
   run vedv::image_service::__gen_vm_name "$image_file"
 
   assert_success
-  assert_output 'image:alpine-x86_64|sha1:38ddd2a7ecc6cde46fcaca611f054c518150383f'
+  assert_output 'image:alpine-x86_64|crc:87493131'
 }
 
 @test "vedv::image_service::__pull_from_file, with 'image_file' undefined should throw an error" {
@@ -48,7 +48,7 @@ teardown() {
   run vedv::image_service::__pull_from_file "$image_file"
 
   assert_success
-  assert_output "image:alpine-x86_64|sha1:38ddd2a7ecc6cde46fcaca611f054c518150383f"
+  assert_output "image:alpine-x86_64|crc:87493131"
 }
 
 @test "vedv::image_service::__pull_from_file, if already imported shouldn't import it" {
@@ -58,5 +58,5 @@ teardown() {
   run vedv::image_service::__pull_from_file "$image_file"
 
   assert_success
-  assert_output "image:alpine-x86_64|sha1:38ddd2a7ecc6cde46fcaca611f054c518150383f"
+  assert_output "image:alpine-x86_64|crc:87493131"
 }
