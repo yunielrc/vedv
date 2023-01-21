@@ -45,8 +45,8 @@ vedv::image_service::__gen_vm_name() {
 
   local vm_name="${image_file,,}"
   vm_name="${vm_name%.ova}"
-  local -r sha1_sum="$(sha1sum "$image_file" | cut -d' ' -f1)"
-  vm_name="image:${vm_name##*/}|sha1:${sha1_sum}"
+  local -r crc_sum="$(cksum "$image_file" | cut -d' ' -f1)"
+  vm_name="image:${vm_name##*/}|crc:${crc_sum}"
 
   echo "$vm_name"
 }
