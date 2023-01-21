@@ -24,7 +24,7 @@ vedv::image_service::constructor() {
 }
 
 #
-# Generate a vm name from OVA image from file
+# Generate a vm name from OVA image file
 #
 # Arguments:
 #   image_file      OVA file image
