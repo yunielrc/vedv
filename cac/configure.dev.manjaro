@@ -7,6 +7,7 @@ cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
 # Install dev dependencies
 yay -Syu --noconfirm --needed \
+  make \
   shfmt \
   shellcheck \
   python-pre-commit \
