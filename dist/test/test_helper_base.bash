@@ -33,7 +33,7 @@ fi
 
 # HELPER FUNCTIONS
 
-delete_vms_by_id_tag() {
+delete_vms_by_partial_vm_name() {
   local -r vm_id_tag="$1"
 
   local -r vm_name_list="$(VBoxManage list vms | grep "$vm_id_tag" | cut -d' ' -f1 | sed 's/"//g')"
@@ -44,6 +44,10 @@ delete_vms_by_id_tag() {
     done
   fi
 }
+
+# alias delete_vms_by_partial_vm_name='delete_vms_by_id_tag'
+
+delete_vms_by_id_tag() { delete_vms_by_partial_vm_name "$@"; }
 
 # shellcheck disable=SC2120
 gen_vm_name() {

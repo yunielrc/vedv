@@ -64,7 +64,6 @@ vedv::image_service::__gen_vm_name() {
 #   0 on success, non-zero on error.
 #
 vedv::image_service::__pull_from_file() {
-  # set -x
   local -r image_file="$1"
 
   if [[ ! -f "$image_file" ]]; then

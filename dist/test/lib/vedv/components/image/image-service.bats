@@ -2,12 +2,12 @@
 load test_helper
 
 setup_file() {
-  readonly __VEDV_IMAGE_SERVICE_HYPERVISOR='virtualbox'
+  vedv::image_service::constructor 'virtualbox'
   export __VEDV_IMAGE_SERVICE_HYPERVISOR
 }
 
 teardown() {
-  delete_vms_by_id_tag 'image:alpine-x86_64|sha1:38ddd2a7ecc6cde46fcaca611f054c518150383f'
+  delete_vms_by_partial_vm_name 'image:alpine-x86_64|crc:87493131'
 }
 
 @test "vedv::image_service::__gen_vm_name, with 'image_file' unset should throw an error" {
