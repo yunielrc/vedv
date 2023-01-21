@@ -184,7 +184,7 @@ vedv::container_command::run_cmd() {
     *)
       echo -e "Invalid parameter: ${1}\n" >&2
       vedv::container_command::__help
-      return 10
+      return "$ERR_INVAL_ARG"
       ;;
     esac
   done
