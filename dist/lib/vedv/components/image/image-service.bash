@@ -24,6 +24,43 @@ vedv::image_service::constructor() {
 }
 
 #
+# Get image name from image vm name
+#
+# Arguments:
+#   image_vm_name       image vm name
+#
+# Output:
+#  Writes image name to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::image_service::_get_image_name() {
+  local -r image_vm_name="$1"
+
+  local image_name="${image_vm_name#'image:'}"
+  image_name="${image_name%'|crc:'*}"
+  echo "$image_name"
+}
+
+# Get image id from image vm name
+#
+# Arguments:
+#   image_vm_name       image vm name
+#
+# Output:
+#  Writes image id to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::image_service::_get_image_id() {
+  local -r image_vm_name="$1"
+
+  echo "${image_vm_name#*'|crc:'}"
+}
+
+#
 # Generate a vm name from OVA image file
 #
 # Arguments:
@@ -84,7 +121,8 @@ vedv::image_service::__pull_from_file() {
   output="$(vedv::"$__VEDV_IMAGE_SERVICE_HYPERVISOR"::import "$image_file" "$vm_name" 2>&1)" || ecode=$?
 
   if [[ $ecode -eq 0 ]]; then
-    echo "$vm_name"
+    local -r image_name="$(vedv::image_service::_get_image_name "$vm_name")"
+    echo "$image_name"
   else
     err "$output"
   fi

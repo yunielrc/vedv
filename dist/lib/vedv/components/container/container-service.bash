@@ -129,9 +129,11 @@ vedv::container_service::create() {
   local -r container_name="${2:-}"
 
   # Import an OVF from a file or url
-  local image_vm_name
-  image_vm_name=$(vedv::image_service::pull "$image")
-  readonly image_vm_name
+  local image_name
+  image_name=$(vedv::image_service::pull "$image")
+  readonly image_name
+  local -r image_vm_name="$(vedv::"${__VEDV_CONTAINER_SERVICE_HYPERVISOR}"::list_wms_by_partial_name "image:${image_name}|" | head -n 1)"
+
   local container_vm_name
   container_vm_name="$(vedv::container_service::__gen_container_vm_name "$container_name")"
   readonly container_vm_name

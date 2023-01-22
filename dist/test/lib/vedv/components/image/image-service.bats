@@ -10,6 +10,22 @@ teardown() {
   delete_vms_by_partial_vm_name 'image:alpine-x86_64|crc:87493131'
 }
 
+@test 'vedv::image_service::_get_image_name(), should print image name' {
+  local -r image_vm_name='image:lala-lolo|crc:1234567'
+
+  run vedv::image_service::_get_image_name "$image_vm_name"
+
+  assert_output 'lala-lolo'
+}
+
+@test 'vedv::image_service::_get_container_id(), should print image id' {
+  local -r image_vm_name='image:lala-lolo|crc:1234567'
+
+  run vedv::image_service::_get_image_id "$image_vm_name"
+
+  assert_output '1234567'
+}
+
 @test "vedv::image_service::__gen_vm_name, with 'image_file' unset should throw an error" {
   run vedv::image_service::__gen_vm_name
 
@@ -48,7 +64,7 @@ teardown() {
   run vedv::image_service::__pull_from_file "$image_file"
 
   assert_success
-  assert_output "image:alpine-x86_64|crc:87493131"
+  assert_output "alpine-x86_64"
 }
 
 @test "vedv::image_service::__pull_from_file, if already imported shouldn't import it" {
