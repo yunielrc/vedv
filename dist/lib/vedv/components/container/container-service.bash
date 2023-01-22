@@ -243,44 +243,7 @@ vedv::container_service::__execute_operation_upon_containers() {
 #   0 on success, non-zero on error.
 #
 vedv::container_service::start() {
-  local -ra container_name_or_ids=("$@")
-
-  if [[ "${#container_name_or_ids[@]}" -eq 0 ]]; then
-    err 'At least one container is required'
-    return "$ERR_INVAL_ARG"
-  fi
-
-  local -A containers_failed=()
-
-  for container in "${container_name_or_ids[@]}"; do
-    local vm_name="$(vedv::"${__VEDV_CONTAINER_SERVICE_HYPERVISOR}"::list_wms_by_partial_name "container:${container}|" | head -n 1)"
-
-    if [[ -z "$vm_name" ]]; then
-      vm_name="$(vedv::"${__VEDV_CONTAINER_SERVICE_HYPERVISOR}"::list_wms_by_partial_name "|crc:${container}" | head -n 1)"
-
-      if [[ -z "$vm_name" ]]; then
-        containers_failed['No such containers']+="$container "
-        continue
-      fi
-    fi
-
-    if ! vedv::"$__VEDV_CONTAINER_SERVICE_HYPERVISOR"::start "$vm_name" &>/dev/null; then
-      containers_failed['Failed to start containers']+="$container "
-      continue
-    fi
-    echo -n "$container "
-  done
-
-  echo
-  for err_msg in "${!containers_failed[@]}"; do
-    err "${err_msg}: ${containers_failed["$err_msg"]}"
-  done
-
-  if [[ "${#containers_failed[@]}" -ne 0 ]]; then
-    return "$ERR_NO_START_CONTAINER"
-  fi
-
-  return 0
+  vedv::container_service::__execute_operation_upon_containers start "$@"
 }
 
 #
