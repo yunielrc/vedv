@@ -74,5 +74,5 @@ teardown() {
   run vedv::image_service::__pull_from_file "$image_file"
 
   assert_success
-  assert_output "image:alpine-x86_64|crc:87493131"
+  assert_output "alpine-x86_64"
 }
