@@ -182,6 +182,7 @@ Manage containers
 
 Commands:
   create           Create a new container
+  start            Start one or more stopped containers
 
 Run '${__VED_CONTAINER_COMMAND_SCRIPT_NAME} container COMMAND --help' for more information on a command.
 HELPMSG
