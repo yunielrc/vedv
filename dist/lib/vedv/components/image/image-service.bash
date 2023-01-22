@@ -146,7 +146,7 @@ vedv::image_service::pull() {
   # IMPL: test this function
   local -r image="$1"
 
-  if [[ -f "$image" ]]; then
+  if [[ -f "${image:-}" ]]; then
     vedv::image_service::__pull_from_file "$image"
   else
     # IMPL: Pull an OVF image from a registry

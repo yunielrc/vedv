@@ -73,7 +73,7 @@ vedv::container_command::__create() {
     esac
   done
 
-  vedv::container_service::create "$image" "${name:-}"
+  vedv::container_service::create "${image:-}" "${name:-}"
 }
 
 #
