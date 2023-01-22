@@ -18,7 +18,6 @@ yay -Syu --noconfirm --needed \
   nodejs \
   npm
 
-exit
 sudo npm install -g \
   @commitlint/cli \
   @commitlint/config-conventional \
