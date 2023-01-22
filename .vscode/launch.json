@@ -23,12 +23,26 @@
     {
       "type": "bashdb",
       "request": "launch",
-      "name": "Bash-Debug (simplest configuration)",
+      "name": "Bash-Debug (vedv image pull)",
       "cwd": "${workspaceFolder}",
       "program": "${workspaceFolder}/dist/bin/vedv",
       "args": [
         "image",
         "pull",
+        "/tmp/vedv/test/files/alpine-x86_64.ova"
+      ]
+    },
+    {
+      "type": "bashdb",
+      "request": "launch",
+      "name": "Bash-Debug (vedv container create)",
+      "cwd": "${workspaceFolder}",
+      "program": "${workspaceFolder}/dist/bin/vedv",
+      "args": [
+        "container",
+        "create",
+        "--name",
+        "nalyd-testunit-container-service",
         "/tmp/vedv/test/files/alpine-x86_64.ova"
       ]
     }

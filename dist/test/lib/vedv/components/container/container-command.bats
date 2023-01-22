@@ -7,6 +7,7 @@ setup_file() {
 }
 
 vedv::container_service::create() { echo "container created, arguments: $*"; }
+vedv::container_service::start() { echo "$@"; }
 
 @test "vedv::container_command::__create(), with arg '-h|--help|help' should show help" {
   local -r help_output='vedv container create [OPTIONS] IMAGE'
@@ -55,7 +56,36 @@ vedv::container_service::create() { echo "container created, arguments: $*"; }
   assert_output --partial 'Invalid parameter: invalid_arg'
 }
 
-@test "vedv::container_command::run_cmd, with arg '-h|--help|help' should show help" {
+@test "vedv::container_command::__start(), with arg '-h|--help|help' should show help" {
+  local -r help_output='vedv container start CONTAINER [CONTAINER...]'
+
+  run vedv::container_command::__start -h
+
+  assert_success
+  assert_output --partial "$help_output"
+
+  run vedv::container_command::__start --help
+
+  assert_success
+  assert_output --partial "$help_output"
+
+  run vedv::container_command::__start help
+
+  assert_success
+  assert_output --partial "$help_output"
+
+}
+
+@test 'vedv::container_command::__start(), should start a container' {
+  local -r container_name_or_id='container_name1 container_name2'
+
+  run vedv::container_command::__start "$container_name_or_id"
+
+  assert_success
+  assert_output "${container_name_or_id}"
+}
+
+@test "vedv::container_command::run_cmd(), with arg '-h|--help|help' should show help" {
   local -r help_output='vedv container COMMAND'
 
   run vedv::container_command::run_cmd -h
@@ -74,7 +104,7 @@ vedv::container_service::create() { echo "container created, arguments: $*"; }
   assert_output --partial "$help_output"
 }
 
-@test "vedv::container_command::run_cmd, with arg 'create' should create a container" {
+@test "vedv::container_command::run_cmd(), with arg 'create' should create a container" {
   vedv::container_command::__create() { echo "container created, arguments: $*"; }
 
   run vedv::container_command::run_cmd create container_name
@@ -83,7 +113,7 @@ vedv::container_service::create() { echo "container created, arguments: $*"; }
   assert_output 'container created, arguments: container_name'
 }
 
-@test "vedv::container_command::run_cmd, with arg 'start' should start a container" {
+@test "vedv::container_command::run_cmd(), with arg 'start' should start a container" {
   vedv::container_command::__start() { echo "container started, arguments: $*"; }
 
   run vedv::container_command::run_cmd start container_name
@@ -92,7 +122,7 @@ vedv::container_service::create() { echo "container created, arguments: $*"; }
   assert_output 'container started, arguments: container_name'
 }
 
-@test "vedv::container_command::run_cmd, with arg 'stop' should stop a container" {
+@test "vedv::container_command::run_cmd(), with arg 'stop' should stop a container" {
   vedv::container_command::__stop() { echo "container stopped, arguments: $*"; }
 
   run vedv::container_command::run_cmd stop container_name
@@ -101,7 +131,7 @@ vedv::container_service::create() { echo "container created, arguments: $*"; }
   assert_output 'container stopped, arguments: container_name'
 }
 
-@test "vedv::container_command::run_cmd, with arg 'rm' should remove a container" {
+@test "vedv::container_command::run_cmd(), with arg 'rm' should remove a container" {
   vedv::container_command::__rm() { echo "container removed, arguments: $*"; }
 
   run vedv::container_command::run_cmd rm container_name
@@ -110,7 +140,7 @@ vedv::container_service::create() { echo "container created, arguments: $*"; }
   assert_output 'container removed, arguments: container_name'
 }
 
-@test "vedv::container_command::run_cmd, with arg 'run' should run a container" {
+@test "vedv::container_command::run_cmd(), with arg 'run' should run a container" {
   vedv::container_command::__run() { echo "container running, arguments: $*"; }
 
   run vedv::container_command::run_cmd run container_name
@@ -119,7 +149,7 @@ vedv::container_service::create() { echo "container created, arguments: $*"; }
   assert_output 'container running, arguments: container_name'
 }
 
-@test "vedv::container_command::run_cmd, with invalid parameter should throw an error" {
+@test "vedv::container_command::run_cmd(), with invalid parameter should throw an error" {
   run vedv::container_command::run_cmd invalid_cmd
 
   assert_failure 69

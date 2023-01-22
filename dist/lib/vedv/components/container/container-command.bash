@@ -94,10 +94,52 @@ Options:
 HELPMSG
 }
 
-# IMPL: Start one or more stopped containers
+#
+# Start one or more stopped containers
+#
+# Flags:
+#   [-h | --help | help]          show help
+#
+# Arguments:
+#   CONTAINER  [CONTAINER...]     one or more container name or id
+#
+# Output:
+#   writes container name to stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
 vedv::container_command::__start() {
-  echo 'vedv::container_command::__start'
-  vedv::container_service::start
+
+  [[ $# == 0 ]] && set -- '-h'
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+    -h | --help | help)
+      vedv::container_command::__start_help
+      return 0
+      ;;
+    *)
+      vedv::container_service::start "${@}"
+      return $?
+      ;;
+    esac
+  done
+}
+
+#
+# Show help for __start command
+#
+# Output:
+#  Writes the help to the stdout
+#
+vedv::container_command::__start_help() {
+  cat <<-HELPMSG
+Usage:
+${__VED_CONTAINER_COMMAND_SCRIPT_NAME} container start CONTAINER [CONTAINER...]
+
+Start one or more stopped containers
+HELPMSG
 }
 
 #  IMPL: Stop one or more running containers

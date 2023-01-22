@@ -7,6 +7,33 @@ teardown() {
   delete_all_test_unit_vms
 }
 
+@test "vedv::virtualbox::validate_vm_name(), should be short name" {
+  local -r vm_name='1234'
+
+  run vedv::virtualbox::validate_vm_name "$vm_name"
+
+  assert_failure 69
+  assert_output 'The vm name cannot be shorter than 5 characters'
+}
+
+@test "vedv::virtualbox::validate_vm_name(), should be large name" {
+  local -r vm_name="$(printf 'n%.0s' {1..61})"
+
+  run vedv::virtualbox::validate_vm_name "$vm_name"
+
+  assert_failure 69
+  assert_output 'The vm name cannot be longer than 60 characters'
+}
+
+@test "vedv::virtualbox::validate_vm_name(), should be ok" {
+  local -r vm_name="$(printf 'n%.0s' {1..60})"
+
+  run vedv::virtualbox::validate_vm_name "$vm_name"
+
+  assert_success
+  assert_output ''
+}
+
 @test "vedv::virtualbox::import, with 'ova_file' undefined should return error" {
   run vedv::virtualbox::import
 

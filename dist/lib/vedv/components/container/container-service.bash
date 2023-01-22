@@ -75,6 +75,43 @@ vedv::container_service::__gen_container_vm_name() {
 }
 
 #
+# Get container name from container vm name
+#
+# Arguments:
+#   container_vm_name       container vm name
+#
+# Output:
+#  Writes container name to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::container_service::_get_container_name() {
+  local -r container_vm_name="$1"
+
+  local container_name="${container_vm_name#'container:'}"
+  container_name="${container_name%'|crc:'*}"
+  echo "$container_name"
+}
+
+# Get container id from container vm name
+#
+# Arguments:
+#   container_vm_name       container vm name
+#
+# Output:
+#  Writes container id to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::container_service::_get_container_id() {
+  local -r container_vm_name="$1"
+
+  echo "${container_vm_name#*'|crc:'}"
+}
+
+#
 # Create a new container
 #
 # Arguments:
@@ -92,8 +129,12 @@ vedv::container_service::create() {
   local -r container_name="${2:-}"
 
   # Import an OVF from a file or url
-  local -r image_vm_name=$(vedv::image_service::pull "$image")
-  local -r container_vm_name="$(vedv::container_service::__gen_container_vm_name "$container_name")"
+  local image_vm_name
+  image_vm_name=$(vedv::image_service::pull "$image")
+  readonly image_vm_name
+  local container_vm_name
+  container_vm_name="$(vedv::container_service::__gen_container_vm_name "$container_name")"
+  readonly container_vm_name
 
   if [[ -n "$(vedv::"$__VEDV_IMAGE_SERVICE_HYPERVISOR"::list_wms_by_partial_name "$container_vm_name")" ]]; then
     err "container with name: '${container_name}' already exist"
@@ -106,6 +147,7 @@ vedv::container_service::create() {
   output="$(vedv::"$__VEDV_CONTAINER_SERVICE_HYPERVISOR"::clonevm_link "$image_vm_name" "$container_vm_name" 2>&1)" || ecode=$?
 
   if [[ $ecode -eq 0 ]]; then
+    # FIXME: replace with: echo "$container_name"
     echo "$container_vm_name"
   else
     err "$output"
@@ -114,10 +156,56 @@ vedv::container_service::create() {
   return $ecode
 }
 
-# IMPL: Start one or more stopped containers
+#
+# Start one or more stopped containers
+#
+# Arguments:
+#   container_name_or_ids     container name or id
+#
+# Output:
+#  writes container name or id to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
 vedv::container_service::start() {
-  echo 'vedv::container_service::start'
-  vedv::"$__VEDV_CONTAINER_SERVICE_HYPERVISOR"::container::start
+  local -ra container_name_or_ids=("$@")
+
+  if [[ "${#container_name_or_ids[@]}" -eq 0 ]]; then
+    err 'At least one container is required'
+    return "$ERR_INVAL_ARG"
+  fi
+
+  local -A containers_failed=()
+
+  for container in "${container_name_or_ids[@]}"; do
+    local vm_name="$(vedv::"${__VEDV_CONTAINER_SERVICE_HYPERVISOR}"::list_wms_by_partial_name "container:${container}|" | head -n 1)"
+
+    if [[ -z "$vm_name" ]]; then
+      vm_name="$(vedv::"${__VEDV_CONTAINER_SERVICE_HYPERVISOR}"::list_wms_by_partial_name "|crc:${container}" | head -n 1)"
+
+      if [[ -z "$vm_name" ]]; then
+        containers_failed['No such containers']+="$container "
+        continue
+      fi
+    fi
+
+    if ! vedv::"$__VEDV_CONTAINER_SERVICE_HYPERVISOR"::start "$vm_name" &>/dev/null; then
+      containers_failed['Failed to start containers']+="$container "
+      continue
+    fi
+    echo -n "$container "
+  done
+
+  for err_msg in "${!containers_failed[@]}"; do
+    err "${err_msg}: ${containers_failed["$err_msg"]}"
+  done
+
+  if [[ "${#containers_failed[@]}" -ne 0 ]]; then
+    return "$ERR_NO_START_CONTAINER"
+  fi
+
+  return 0
 }
 
 #  IMPL: Stop one or more running containers

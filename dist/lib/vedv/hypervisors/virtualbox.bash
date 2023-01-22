@@ -7,6 +7,38 @@
 
 # FUNCTIONS
 
+#
+# Validate vm name
+#
+# Arguments:
+#   vm_name             name of the exported VM
+#   [type]              eg: vm, clone, snapshot
+#
+# Writes:
+#   if name isn't valid print an info message
+# Returns:
+#   0 if name is valid or non-zero otherwise.
+#
+vedv::virtualbox::validate_vm_name() {
+  local -r vm_name="$1"
+  local -r type="${2:-vm}"
+
+  local -ri min_length=5
+  local -ri max_length=60
+
+  if [[ "${#vm_name}" -lt $min_length ]]; then
+    echo "The ${type} name cannot be shorter than ${min_length} characters" >&2
+    return "$ERR_INVAL_ARG"
+  fi
+
+  if [[ "${#vm_name}" -gt $max_length ]]; then
+    echo "The ${type} name cannot be longer than ${max_length} characters" >&2
+    return "$ERR_INVAL_ARG"
+  fi
+
+  return 0
+}
+
 # IMAGE
 
 # IMPL: Pull an image or a repository from a registry or a file
@@ -33,6 +65,9 @@ vedv::virtualbox::clonevm_link() {
   local -r vm_name="$1"
   local -r vm_clone_name="$2"
 
+  if ! vedv::virtualbox::validate_vm_name "$vm_clone_name" 'clone_vm_name'; then
+    return "$ERR_INVAL_ARG"
+  fi
   vedv::virtualbox::take_snapshot "$vm_name" "$vm_clone_name"
 
   VBoxManage clonevm "$vm_name" --name "$vm_clone_name" --register \
@@ -59,6 +94,9 @@ vedv::virtualbox::import() {
     return "$ERR_NOFILE"
   fi
 
+  if ! vedv::virtualbox::validate_vm_name "$vm_name" 'import_vm_name'; then
+    return "$ERR_INVAL_ARG"
+  fi
   VBoxManage import "$ova_file" --vsys 0 --vmname "$vm_name"
 }
 
@@ -67,6 +105,9 @@ vedv::virtualbox::import() {
 #
 # Arguments:
 #   vm_partial_name         name of the exported VM
+#
+# Output:
+#   writes vms names to stdout
 #
 # Returns:
 #   0 on success, non-zero on error.
@@ -91,12 +132,28 @@ vedv::virtualbox::take_snapshot() {
   local -r vm_name="$1"
   local -r snapshot_name="$2"
 
+  if ! vedv::virtualbox::validate_vm_name "$snapshot_name" 'snapshot_vm_name'; then
+    return "$ERR_INVAL_ARG"
+  fi
   VBoxManage snapshot "$vm_name" take "$snapshot_name"
 }
 
-# IMPL: Start one or more stopped containers
-vedv::virtualbox::container::start() {
-  echo 'vedv::virtualbox::container::start'
+#
+# Start a virtual machine
+#
+# Arguments:
+#   vm_name        virtual machine name
+#
+# Output:
+#   writes vm name to stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::virtualbox::start() {
+  local -r vm_name="$1"
+
+  VBoxManage startvm "$vm_name"
 }
 
 #  IMPL: Stop one or more running containers

@@ -40,7 +40,8 @@ delete_vms_by_partial_vm_name() {
 
   if [[ -n "$vm_name_list" ]]; then
     for vm_name in $vm_name_list; do
-      VBoxManage unregistervm "$vm_name" --delete
+      VBoxManage controlvm "$vm_name" poweroff &>/dev/null || :
+      VBoxManage unregistervm "$vm_name" --delete &>/dev/null || :
     done
   fi
 }
