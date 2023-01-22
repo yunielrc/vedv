@@ -109,9 +109,11 @@ vedv::image_service::__pull_from_file() {
   fi
 
   local -r vm_name="$(vedv::image_service::__gen_vm_name "$image_file")"
+  local -r image_id="$(vedv::image_service::_get_image_id "$vm_name")"
+  local -r image_name="$(vedv::image_service::_get_image_name "$vm_name")"
 
-  if [[ -n "$(vedv::"$__VEDV_IMAGE_SERVICE_HYPERVISOR"::list_wms_by_partial_name "$vm_name")" ]]; then
-    echo "$vm_name"
+  if [[ -n "$(vedv::"$__VEDV_IMAGE_SERVICE_HYPERVISOR"::list_wms_by_partial_name "|crc:${image_id}")" ]]; then
+    echo "$image_name"
     return 0
   fi
 
@@ -121,7 +123,6 @@ vedv::image_service::__pull_from_file() {
   output="$(vedv::"$__VEDV_IMAGE_SERVICE_HYPERVISOR"::import "$image_file" "$vm_name" 2>&1)" || ecode=$?
 
   if [[ $ecode -eq 0 ]]; then
-    local -r image_name="$(vedv::image_service::_get_image_name "$vm_name")"
     echo "$image_name"
   else
     err "$output"

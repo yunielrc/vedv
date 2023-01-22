@@ -42,7 +42,7 @@
         "container",
         "create",
         "--name",
-        "nalyd-testunit-container-service",
+        "dyli-amoroso1",
         "/tmp/vedv/test/files/alpine-x86_64.ova"
       ]
     }
