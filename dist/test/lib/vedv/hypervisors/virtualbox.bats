@@ -152,3 +152,21 @@ teardown() {
   assert_success
   assert_output --partial 'testunit:virtualbox-1020623423-alpine-x86_64'
 }
+
+@test "vedv::virtualbox::poweroff, with 'vm_name' undefined should throw an error" {
+  run vedv::virtualbox::poweroff
+
+  assert_failure 1
+  assert_output --partial '$1: unbound variable'
+}
+
+@test "vedv::virtualbox::poweroff, should poweroff a vm" {
+  skip # this test is problematic
+  local -r vm_name="$(create_vm)"
+  VBoxManage startvm "$vm_name"
+
+  run vedv::virtualbox::poweroff "$vm_name"
+
+  assert_success
+  assert_output --partial '<put the output here>'
+}

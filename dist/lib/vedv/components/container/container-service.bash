@@ -162,6 +162,75 @@ vedv::container_service::create() {
 }
 
 #
+# Execute an operation (function) upon one or more stopped containers
+#
+# Arguments:
+#   container_name_or_ids     container name or id
+#
+# Output:
+#  writes container name or id to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::container_service::__execute_operation_upon_containers() {
+  local -r operation="${1:-}"
+
+  if [[ -z "$operation" ]]; then
+    err "Invalid argument 'operation': it's empty"
+    return "$ERR_INVAL_ARG"
+  fi
+  shift
+
+  local -ra container_name_or_ids=("$@")
+
+  local -r valid_operations='start|stop'
+
+  if [[ "$operation" != @($valid_operations) ]]; then
+    err "Invalid operation: ${operation}, valid operations are: ${valid_operations}"
+    return "$ERR_INVAL_ARG"
+  fi
+
+  if [[ "${#container_name_or_ids[@]}" -eq 0 ]]; then
+    err 'At least one container is required'
+    return "$ERR_INVAL_ARG"
+  fi
+
+  local -A containers_failed=()
+
+  for container in "${container_name_or_ids[@]}"; do
+    local vm_name="$(vedv::"${__VEDV_CONTAINER_SERVICE_HYPERVISOR}"::list_wms_by_partial_name "container:${container}|" | head -n 1)"
+
+    if [[ -z "$vm_name" ]]; then
+      vm_name="$(vedv::"${__VEDV_CONTAINER_SERVICE_HYPERVISOR}"::list_wms_by_partial_name "|crc:${container}" | head -n 1)"
+
+      if [[ -z "$vm_name" ]]; then
+        containers_failed['No such containers']+="$container "
+        continue
+      fi
+    fi
+
+    if ! vedv::"$__VEDV_CONTAINER_SERVICE_HYPERVISOR"::"$operation" "$vm_name" &>/dev/null; then
+      containers_failed["Failed to ${operation} containers"]+="$container "
+      continue
+    fi
+    echo -n "$container "
+  done
+
+  echo
+  for err_msg in "${!containers_failed[@]}"; do
+    err "${err_msg}: ${containers_failed["$err_msg"]}"
+  done
+
+  if [[ "${#containers_failed[@]}" -ne 0 ]]; then
+    return "$ERR_NO_START_CONTAINER"
+  fi
+
+  return 0
+
+}
+
+#
 # Start one or more stopped containers
 #
 # Arguments:
@@ -202,6 +271,7 @@ vedv::container_service::start() {
     echo -n "$container "
   done
 
+  echo
   for err_msg in "${!containers_failed[@]}"; do
     err "${err_msg}: ${containers_failed["$err_msg"]}"
   done
@@ -213,10 +283,20 @@ vedv::container_service::start() {
   return 0
 }
 
-#  IMPL: Stop one or more running containers
+#
+#  Stop one or more running containers
+#
+# Arguments:
+#   container_name_or_ids     container name or id
+#
+# Output:
+#  writes container name or id to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
 vedv::container_service::stop() {
-  echo 'vedv::container_service::stop'
-  vedv::"$__VEDV_CONTAINER_SERVICE_HYPERVISOR"::container::stop
+  vedv::container_service::__execute_operation_upon_containers stop "$@"
 }
 
 # IMPL: Remove one or more containers

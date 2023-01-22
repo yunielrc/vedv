@@ -45,6 +45,20 @@
         "dyli-amoroso1",
         "/tmp/vedv/test/files/alpine-x86_64.ova"
       ]
+    },
+    {
+      "type": "bashdb",
+      "request": "launch",
+      "name": "Bash-Debug (vedv container stop)",
+      "cwd": "${workspaceFolder}",
+      "program": "${workspaceFolder}/dist/bin/vedv",
+      "args": [
+        "container",
+        "stop",
+        "dyli-amoroso1",
+        "dyli-amoroso",
+        "/tmp/vedv/test/files/alpine-x86_64.ova"
+      ]
     }
   ]
 }

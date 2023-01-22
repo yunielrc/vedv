@@ -88,6 +88,48 @@ teardown() {
   assert_output "container with name: 'dyli-testunit-container-service' already exist"
 }
 
+@test 'vedv::container_service::__execute_operation_upon_containers(), without params should throw an error' {
+  run vedv::container_service::__execute_operation_upon_containers
+
+  assert_failure 69
+  assert_output "Invalid argument 'operation': it's empty"
+}
+
+@test 'vedv::container_service::__execute_operation_upon_containers(), With invalid operation Should throw an error ' {
+  run vedv::container_service::__execute_operation_upon_containers 'invalid_operation'
+
+  assert_failure 69
+  assert_output 'Invalid operation: invalid_operation, valid operations are: start|stop'
+}
+
+@test 'vedv::container_service::__execute_operation_upon_containers(), With 2 non-existent containers Should throw an error' {
+  run vedv::container_service::__execute_operation_upon_containers start '3582343034' '3582343035'
+
+  assert_failure 81
+  assert_output 'No such containers: 3582343034 3582343035 '
+}
+
+@test 'vedv::container_service::__execute_operation_upon_containers(), if hypervisor fail should throw an error' {
+  vedv::virtualbox::list_wms_by_partial_name() { echo 'container:dyli|crc:1234567'; }
+  vedv::virtualbox::stop() { return 1; }
+
+  run vedv::container_service::__execute_operation_upon_containers stop '3582343034' '3582343035'
+
+  assert_failure 81
+  assert_output 'Failed to stop containers: 3582343034 3582343035 '
+}
+
+@test 'vedv::container_service::__execute_operation_upon_containers(), should execute operations on containers' {
+  local -r container_name='dyli'
+  vedv::virtualbox::list_wms_by_partial_name() { echo 'container:dyli|crc:1234567'; }
+  vedv::virtualbox::start() { return 0; }
+
+  run vedv::container_service::__execute_operation_upon_containers start "$container_name"
+
+  assert_success
+  assert_output 'dyli '
+}
+
 @test 'vedv::container_service::start(), without params should throw an error' {
   run vedv::container_service::start
 
@@ -128,4 +170,14 @@ teardown() {
 
   assert_success
   assert_output 'dyli '
+}
+
+@test 'vedv::container_service::stop(), should stop containers' {
+  vedv::container_service::__execute_operation_upon_containers() {
+    echo "$*"
+  }
+  run vedv::container_service::stop 'container1' 'container2'
+
+  assert_success
+  assert_output 'stop container1 container2'
 }
