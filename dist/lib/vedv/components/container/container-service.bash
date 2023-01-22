@@ -149,8 +149,11 @@ vedv::container_service::create() {
   output="$(vedv::"$__VEDV_CONTAINER_SERVICE_HYPERVISOR"::clonevm_link "$image_vm_name" "$container_vm_name" 2>&1)" || ecode=$?
 
   if [[ $ecode -eq 0 ]]; then
-    # FIXME: replace with: echo "$container_name"
-    echo "$container_vm_name"
+
+    [[ -z "$container_name" ]] &&
+      container_name="$(vedv::container_service::_get_container_name "$container_vm_name")"
+
+    echo "$container_name"
   else
     err "$output"
   fi

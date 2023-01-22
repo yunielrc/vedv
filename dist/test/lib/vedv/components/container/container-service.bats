@@ -74,7 +74,7 @@ teardown() {
   run vedv::container_service::create "$image" "$container_name"
 
   assert_success
-  assert_output 'container:na-testunit-container-service|crc:2991571371'
+  assert_output 'na-testunit-container-service'
 }
 
 @test "vedv::container_service::create(), should throw error if there is another container with the same name" {
