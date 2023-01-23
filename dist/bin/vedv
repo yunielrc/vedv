@@ -50,6 +50,13 @@ vedv::__on_exit() {
 vedv::__run_cmd() {
   # IMPL: test this function
 
+  [[ $# == 0 ]] && set -- '-h'
+
+  if [[ "${1:-}" == @(-h|--help) ]]; then
+    vedv::__help
+    return 0
+  fi
+
   local hypervisor=''
 
   case "${1:-}" in
@@ -65,13 +72,6 @@ vedv::__run_cmd() {
     readonly hypervisor='virtualbox'
     ;;
   esac
-
-  [[ $# == 0 ]] && set -- '-h'
-
-  if [[ "${1:-}" == @(-h|--help) ]]; then
-    vedv::__help
-    return 0
-  fi
 
   # include hypervisor
   . "${__VEDV_HYPERVISORS_PATH}/${hypervisor}.bash"
