@@ -34,14 +34,14 @@ teardown() {
   assert_output ''
 }
 
-@test "vedv::virtualbox::import, with 'ova_file' undefined should return error" {
+@test "vedv::virtualbox::import(), with 'ova_file' undefined should return error" {
   run vedv::virtualbox::import
 
   assert_failure 1
   assert_output --partial '$1: unbound variable'
 }
 
-@test "vedv::virtualbox::import, with 'vm_name' undefined should return error" {
+@test "vedv::virtualbox::import(), with 'vm_name' undefined should return error" {
   local -r ova_file="/tmp/${RANDOM}${RANDOM}.ova"
 
   run vedv::virtualbox::import "$ova_file"
@@ -50,7 +50,7 @@ teardown() {
   assert_output --partial '$2: unbound variable'
 }
 
-@test "vedv::virtualbox::import, with 'ova_file' that doesnt't exist should return error" {
+@test "vedv::virtualbox::import(), with 'ova_file' that doesnt't exist should return error" {
   local -r ova_file="/tmp/feacd213baf31d50798a.ova"
   local -r vm_name="alpine-feacd213baf31d50798a"
 
@@ -60,7 +60,7 @@ teardown() {
   assert_output "OVA file doesn't exist"
 }
 
-@test "vedv::virtualbox::import, should import a vm from ova" {
+@test "vedv::virtualbox::import(), should import a vm from ova" {
   local -r ova_file="$TEST_OVA_FILE"
   local -r vm_name="$(gen_vm_name)"
 
@@ -73,14 +73,14 @@ teardown() {
   assert_output --partial "$vm_name"
 }
 
-@test "vedv::virtualbox::take_snapshot, with 'vm_name' undefined should return error" {
+@test "vedv::virtualbox::take_snapshot(), with 'vm_name' undefined should return error" {
   run vedv::virtualbox::take_snapshot
 
   assert_failure 1
   assert_output --partial '$1: unbound variable'
 }
 
-@test "vedv::virtualbox::take_snapshot, with 'snapshot_name' undefined should return error" {
+@test "vedv::virtualbox::take_snapshot(), with 'snapshot_name' undefined should return error" {
   local -r vm_name="vm1"
 
   run vedv::virtualbox::take_snapshot "$vm_name"
@@ -89,7 +89,7 @@ teardown() {
   assert_output --partial '$2: unbound variable'
 }
 
-@test "vedv::virtualbox::take_snapshot, should create a snapshot" {
+@test "vedv::virtualbox::take_snapshot(), should create a snapshot" {
   local -r vm_name="$(create_vm)"
   local -r snapshot_name="snapshot1"
 
@@ -99,14 +99,14 @@ teardown() {
   assert_output --partial "Snapshot taken"
 }
 
-@test "vedv::virtualbox::clonevm_link, with 'vm_name' undefined should return error" {
+@test "vedv::virtualbox::clonevm_link(), with 'vm_name' undefined should return error" {
   run vedv::virtualbox::clonevm_link
 
   assert_failure 1
   assert_output --partial '$1: unbound variable'
 }
 
-@test "vedv::virtualbox::clonevm_link, with 'vm_clone_name' undefined should return error" {
+@test "vedv::virtualbox::clonevm_link(), with 'vm_clone_name' undefined should return error" {
   local -r vm_name='vm'
   run vedv::virtualbox::clonevm_link "$vm_name"
 
@@ -114,7 +114,7 @@ teardown() {
   assert_output --partial '$2: unbound variable'
 }
 
-@test "vedv::virtualbox::clonevm_link, with a 'vm_name' that doesn't exist should return error" {
+@test "vedv::virtualbox::clonevm_link(), with a 'vm_name' that doesn't exist should return error" {
   local -r vm_name='vm'
   local -r vm_clone_name='vm_clone'
 
@@ -124,7 +124,7 @@ teardown() {
   assert_output --partial "Could not find a registered machine named 'vm'"
 }
 
-@test "vedv::virtualbox::clonevm_link, should clone the vm" {
+@test "vedv::virtualbox::clonevm_link(), should clone the vm" {
   local -r vm_name="$(create_vm)"
   local -r vm_clone_name="$(gen_vm_clone_name)"
 
@@ -134,7 +134,7 @@ teardown() {
   assert_output --partial "Machine has been successfully cloned"
 }
 
-@test "vedv::virtualbox::list_wms_by_partial_name, with 'vm_partial_name' that doesn't exist should print an empty list" {
+@test "vedv::virtualbox::list_wms_by_partial_name, with 'vm_partial_name()' that doesn't exist should print an empty list" {
   local -r vm_partial_name='container:happy'
 
   run vedv::virtualbox::list_wms_by_partial_name "$vm_partial_name"
@@ -143,7 +143,7 @@ teardown() {
   assert_output ''
 }
 
-@test "vedv::virtualbox::list_wms_by_partial_name, should print a list of vm" {
+@test "vedv::virtualbox::list_wms_by_partial_name(), should print a list of vm" {
   local -r vm_partial_name='testunit:virtualbox'
   create_vm
 
@@ -153,14 +153,14 @@ teardown() {
   assert_output --partial 'testunit:virtualbox-1020623423-alpine-x86_64'
 }
 
-@test "vedv::virtualbox::poweroff, with 'vm_name' undefined should throw an error" {
+@test "vedv::virtualbox::poweroff(), with 'vm_name' undefined should throw an error" {
   run vedv::virtualbox::poweroff
 
   assert_failure 1
   assert_output --partial '$1: unbound variable'
 }
 
-@test "vedv::virtualbox::poweroff, should poweroff a vm" {
+@test "vedv::virtualbox::poweroff(), should poweroff a vm" {
   skip # this test is problematic
   local -r vm_name="$(create_vm)"
   VBoxManage startvm "$vm_name"
@@ -169,4 +169,19 @@ teardown() {
 
   assert_success
   assert_output --partial '<put the output here>'
+}
+
+@test "vedv::virtualbox::rm(), with 'vm_name' undefined should throw an error" {
+  run vedv::virtualbox::rm
+
+  assert_failure 1
+  assert_output --partial '$1: unbound variable'
+}
+
+@test "vedv::virtualbox::rm(), Should remove the vm" {
+  local -r vm_name="$(create_vm)"
+
+  run vedv::virtualbox::rm "$vm_name"
+
+  assert_success
 }

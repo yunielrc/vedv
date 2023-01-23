@@ -29,7 +29,7 @@ teardown() {
   assert_output 'container:base-image|crc:261268494'
 }
 
-@test "vedv::container_service::__gen_container_vm_name, should generate the name" {
+@test "vedv::container_service::__gen_container_vm_name(), should generate the name" {
   petname() { echo 'tintin-pet'; }
   run vedv::container_service::__gen_container_vm_name
 
@@ -37,7 +37,7 @@ teardown() {
   assert_output 'container:tintin-pet|crc:1823374605'
 }
 
-@test "vedv::container_service::__gen_container_vm_name, with name, should generate the name" {
+@test "vedv::container_service::__gen_container_vm_name(), with name, should generate the name" {
   local -r container_name='rinti-love'
   run vedv::container_service::__gen_container_vm_name "$container_name"
 
@@ -99,7 +99,7 @@ teardown() {
   run vedv::container_service::__execute_operation_upon_containers 'invalid_operation'
 
   assert_failure 69
-  assert_output 'Invalid operation: invalid_operation, valid operations are: start|stop'
+  assert_output 'Invalid operation: invalid_operation, valid operations are: start|stop|rm'
 }
 
 @test 'vedv::container_service::__execute_operation_upon_containers(), With 2 non-existent containers Should throw an error' {
@@ -148,4 +148,14 @@ teardown() {
 
   assert_success
   assert_output 'stop container1 container2'
+}
+
+@test 'vedv::container_service::rm(), should remove containers' {
+  vedv::container_service::__execute_operation_upon_containers() {
+    echo "$*"
+  }
+  run vedv::container_service::rm 'container1' 'container2'
+
+  assert_success
+  assert_output 'rm container1 container2'
 }

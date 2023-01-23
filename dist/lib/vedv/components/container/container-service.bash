@@ -184,7 +184,7 @@ vedv::container_service::__execute_operation_upon_containers() {
 
   local -ra container_name_or_ids=("$@")
 
-  local -r valid_operations='start|stop'
+  local -r valid_operations='start|stop|rm'
 
   if [[ "$operation" != @($valid_operations) ]]; then
     err "Invalid operation: ${operation}, valid operations are: ${valid_operations}"
@@ -262,10 +262,20 @@ vedv::container_service::stop() {
   vedv::container_service::__execute_operation_upon_containers stop "$@"
 }
 
-# IMPL: Remove one or more containers
+#
+#  Remove one or more running containers
+#
+# Arguments:
+#   container_name_or_ids     container name or id
+#
+# Output:
+#  writes container name or id to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
 vedv::container_service::rm() {
-  echo 'vedv::container_service::rm'
-  vedv::"$__VEDV_CONTAINER_SERVICE_HYPERVISOR"::container::rm
+  vedv::container_service::__execute_operation_upon_containers rm "$@"
 }
 
 # IMPL: Create and run a container from an image

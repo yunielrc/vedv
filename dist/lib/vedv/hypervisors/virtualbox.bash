@@ -175,9 +175,24 @@ vedv::virtualbox::poweroff() {
 }
 vedv::virtualbox::stop() { vedv::virtualbox::poweroff "$@"; }
 
-# IMPL: Remove one or more containers
-vedv::virtualbox::container::rm() {
-  echo 'vedv::virtualbox::container::rm'
+#
+# Remove a virtual machine
+#
+# Arguments:
+#   vm_name        virtual machine name
+#
+# Output:
+#   writes vm name to stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::virtualbox::rm() {
+  local -r vm_name="$1"
+
+  VBoxManage controlvm "$vm_name" poweroff &>/dev/null || :
+  sleep 2
+  VBoxManage unregistervm "$vm_name" --delete
 }
 
 # IMPL: Create and run a container from an image

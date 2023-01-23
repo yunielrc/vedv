@@ -143,6 +143,54 @@ HELPMSG
 }
 
 #
+# Remove one or more running containers
+#
+# Flags:
+#   [-h | --help | help]          show help
+#
+# Arguments:
+#   CONTAINER  [CONTAINER...]     one or more container name or id
+#
+# Output:
+#   writes container name or id to stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::container_command::__rm() {
+
+  [[ $# == 0 ]] && set -- '-h'
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+    -h | --help | help)
+      vedv::container_command::__rm_help
+      return 0
+      ;;
+    *)
+      vedv::container_service::rm "${@}"
+      return $?
+      ;;
+    esac
+  done
+}
+
+#
+# Show help for __rm command
+#
+# Output:
+#  Writes the help to the stdout
+#
+vedv::container_command::__rm_help() {
+  cat <<-HELPMSG
+Usage:
+${__VED_CONTAINER_COMMAND_SCRIPT_NAME} container rm CONTAINER [CONTAINER...]
+
+Remove one or more running containers
+HELPMSG
+}
+
+#
 # Stop one or more running containers
 #
 # Flags:
@@ -188,12 +236,6 @@ ${__VED_CONTAINER_COMMAND_SCRIPT_NAME} container stop CONTAINER [CONTAINER...]
 
 Stop one or more running containers
 HELPMSG
-}
-
-# IMPL: Remove one or more containers
-vedv::container_command::__rm() {
-  echo 'vedv::container_command::__rm'
-  vedv::container_service::rm
 }
 
 # IMPL: Create and run a container from an image

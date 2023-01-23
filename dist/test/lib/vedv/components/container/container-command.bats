@@ -9,6 +9,7 @@ setup_file() {
 vedv::container_service::create() { echo "container created, arguments: $*"; }
 vedv::container_service::start() { echo "$@"; }
 vedv::container_service::stop() { echo "$@"; }
+vedv::container_service::rm() { echo "$@"; }
 
 @test "vedv::container_command::__create(), with arg '-h|--help|help' should show help" {
   local -r help_output='vedv container create [OPTIONS] IMAGE'
@@ -110,6 +111,35 @@ vedv::container_service::stop() { echo "$@"; }
   local -r container_name_or_id='container_name1 container_name2'
 
   run vedv::container_command::__stop "$container_name_or_id"
+
+  assert_success
+  assert_output "${container_name_or_id}"
+}
+
+@test "vedv::container_command::__rm(), with arg '-h|--help|help' should show help" {
+  local -r help_output='vedv container rm CONTAINER [CONTAINER...]'
+
+  run vedv::container_command::__rm -h
+
+  assert_success
+  assert_output --partial "$help_output"
+
+  run vedv::container_command::__rm --help
+
+  assert_success
+  assert_output --partial "$help_output"
+
+  run vedv::container_command::__rm help
+
+  assert_success
+  assert_output --partial "$help_output"
+
+}
+
+@test 'vedv::container_command::__rm(), should remove a container' {
+  local -r container_name_or_id='container_name1 container_name2'
+
+  run vedv::container_command::__rm "$container_name_or_id"
 
   assert_success
   assert_output "${container_name_or_id}"
