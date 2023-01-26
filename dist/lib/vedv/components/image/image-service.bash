@@ -155,6 +155,27 @@ vedv::image_service::pull() {
   fi
 }
 
+#
+#  List images
+#
+# Output:
+#  writes  id, name to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::image_service::list() {
+
+  local vm_names
+  vm_names="$(vedv::"$__VEDV_IMAGE_SERVICE_HYPERVISOR"::list)"
+  vm_names="$(echo "$vm_names" | grep "image:.*|" || :)"
+  readonly vm_names
+
+  for vm_name in $vm_names; do
+    echo "$(vedv::image_service::_get_image_id "$vm_name") $(vedv::image_service::_get_image_name "$vm_name")"
+  done
+}
+
 # IMPL: Pull an image or a repository from a registry
 vedv::image_service::import() {
   echo 'vedv:image:pull'

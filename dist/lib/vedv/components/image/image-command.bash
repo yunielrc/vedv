@@ -82,6 +82,55 @@ Pull an image or a repository from a registry
 HELPMSG
 }
 
+#
+# List images
+#
+# Flags:
+#   [-h | --help | help]        show help
+#
+# Output:
+#   writes container id and name to stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::image_command::__list() {
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+    -h | --help)
+      vedv::image_command::__list_help
+      return 0
+      ;;
+    *)
+      err "Invalid parameter: ${1}\n"
+      vedv::image_command::__list_help
+      return "$ERR_INVAL_ARG"
+      ;;
+    esac
+  done
+
+  vedv::image_service::list
+}
+
+#
+# Show help for list command
+#
+# Output:
+#  Writes the help to the stdout
+#
+vedv::image_command::__list_help() {
+  cat <<-HELPMSG
+Usage:
+${__VED_IMAGE_COMMAND_SCRIPT_NAME} docker image ls
+
+List images
+
+Aliases:
+  ls, list
+HELPMSG
+}
+
 # IMPL: Build an image from a Vedvfile
 vedv::image_command::__build() {
   echo 'vedv:image:build_run_cmd'
@@ -99,7 +148,7 @@ vedv::image_command::__build() {
 #
 vedv::image_command::__help() {
   # if [[ "${1:-}" == @(-s|--short) ]]; then
-  #   echo "${__VED_CONTAINER_COMMAND_SCRIPT_NAME} image        Manage images"
+  #   echo "${__VED_IMAGE_COMMAND_SCRIPT_NAME} image        Manage images"
   #   return 0
   # fi
   cat <<-HELPMSG
@@ -109,7 +158,8 @@ ${__VED_IMAGE_COMMAND_SCRIPT_NAME} image COMMAND
 Manage images
 
 Commands:
-  pull           Pull an image from a registry or file
+  pull             Pull an image from a registry or file
+  list             List images
 
 Run '${__VED_IMAGE_COMMAND_SCRIPT_NAME} image COMMAND --help' for more information on a command.
 HELPMSG
@@ -128,6 +178,11 @@ vedv::image_command::run_cmd() {
     pull)
       shift
       vedv::image_command::__pull "$@"
+      return $?
+      ;;
+    ls | list)
+      shift
+      vedv::image_command::__list "$@"
       return $?
       ;;
     build)

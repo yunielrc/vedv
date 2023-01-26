@@ -1,13 +1,31 @@
 # shellcheck disable=SC2016
 load test_helper
 
+readonly IMAGE_TAG='unit-image-service'
+
 setup_file() {
   vedv::image_service::constructor 'virtualbox'
   export __VEDV_IMAGE_SERVICE_HYPERVISOR
 }
 
 teardown() {
+  delete_vms_by_partial_vm_name "$IMAGE_TAG"
   delete_vms_by_partial_vm_name 'image:alpine-x86_64|crc:87493131'
+}
+
+create_image_vm() {
+  create_vm "$(gen_image_vm_name "$1")"
+}
+
+gen_image_vm_name() {
+  local image_name="${1:-}"
+
+  if [[ -z "$image_name" ]]; then
+    image_name="$(petname)"
+  fi
+
+  local -r crc_sum="$(echo "${image_name}-${IMAGE_TAG}" | cksum | cut -d' ' -f1)"
+  echo "image:${image_name}-${IMAGE_TAG}|crc:${crc_sum}"
 }
 
 @test 'vedv::image_service::_get_image_name(), should print image name' {
@@ -18,7 +36,7 @@ teardown() {
   assert_output 'lala-lolo'
 }
 
-@test 'vedv::image_service::_get_container_id(), should print image id' {
+@test 'vedv::image_service::_get_image_id(), should print image id' {
   local -r image_vm_name='image:lala-lolo|crc:1234567'
 
   run vedv::image_service::_get_image_id "$image_vm_name"
@@ -75,4 +93,26 @@ teardown() {
 
   assert_success
   assert_output "alpine-x86_64"
+}
+
+@test "vedv::image_service::list(), Should show anything" {
+
+  run vedv::image_service::list
+
+  assert_success
+  assert_output ''
+}
+
+@test "vedv::image_service::list(), With 'list_all=false' Should show all images vms" {
+  local -r image_name1='im1'
+  local -r image_name2="im2"
+
+  create_image_vm "$image_name1"
+  create_image_vm "$image_name2"
+
+  run vedv::image_service::list
+
+  assert_success
+  assert_output --regexp "^[0-9]+\s+${image_name1}-${IMAGE_TAG}\$
+^[0-9]+\s+${image_name2}-${IMAGE_TAG}\$"
 }

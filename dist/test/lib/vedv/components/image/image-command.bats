@@ -10,6 +10,10 @@ setup_file() {
 #   delete_vms_by_id_tag 'image:alpine-x86_64|sha1:38ddd2a7ecc6cde46fcaca611f054c518150383f'
 # }
 
+vedv::image_service::list() {
+  echo "vedv::image_service::list $*"
+}
+
 @test "vedv::image_command::__pull, with invalid arg throw an error" {
   run vedv::image_command::__pull 'image_file' 'invalid_arg'
 
@@ -44,6 +48,35 @@ setup_file() {
 
   assert_success
   assert_output 'image pulled image_file'
+}
+
+@test "vedv::image_command::__list(), with arg '-h|--help|help' should show help" {
+  local -r help_output='docker image ls [OPTIONS] [IMAGE PARTIAL NAME]'
+
+  run vedv::image_command::__list -h
+
+  assert_success
+  assert_output --partial "$help_output"
+
+  run vedv::image_command::__list --help
+
+  assert_success
+  assert_output --partial "$help_output"
+}
+
+@test "vedv::image_command::__list(), with invalid arg throw an error" {
+
+  run vedv::image_command::__list 'invalid_arg'
+
+  assert_failure 69
+  assert_output --partial 'Invalid parameter: invalid_arg'
+}
+
+@test 'vedv::image_command::__list(), should show the images' {
+  run vedv::image_command::__list
+
+  assert_success
+  assert_output --partial "vedv::image_service::list"
 }
 
 @test "vedv::image_command::run_cmd, with invalid arg throw an error" {
