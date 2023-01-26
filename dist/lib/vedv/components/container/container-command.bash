@@ -242,11 +242,11 @@ HELPMSG
 # List containers
 #
 # Flags:
-#   [-h | --help | help]          show help
-#   [-a, --all]      Show all containers (default shows just running)
+#   [-h | --help | help]     show help
+#   [-a, --all]              show all containers (default shows just running)
 #
 # Output:
-#   writes container name or id to stdout
+#   writes container id, name to stdout
 #
 # Returns:
 #   0 on success, non-zero on error.
@@ -282,7 +282,7 @@ vedv::container_command::__list() {
 }
 
 #
-# Show help for ls command
+# Show help for __list command
 #
 # Output:
 #  Writes the help to the stdout
