@@ -284,7 +284,7 @@ vedv::container_service::rm() {
 #   [partial_name]           name of the exported VM
 #
 # Output:
-#  writes container name or id to the stdout
+#  writes image id, name to the stdout
 #
 # Returns:
 #   0 on success, non-zero on error.
@@ -303,10 +303,13 @@ vedv::container_service::list() {
   local vm_names
 
   if [[ -n "$partial_name" ]]; then
-    vm_names="$(vedv::"$__VEDV_IMAGE_SERVICE_HYPERVISOR"::"$hypervisor_cmd" | grep "container:${partial_name}.*|" || :)"
+    vm_names="$(vedv::"$__VEDV_IMAGE_SERVICE_HYPERVISOR"::"$hypervisor_cmd")"
+    vm_names="$(echo "$vm_names" | grep "container:${partial_name}.*|" || :)"
   else
-    vm_names="$(vedv::"$__VEDV_IMAGE_SERVICE_HYPERVISOR"::"$hypervisor_cmd" | grep "container:.*|" || :)"
+    vm_names="$(vedv::"$__VEDV_IMAGE_SERVICE_HYPERVISOR"::"$hypervisor_cmd")"
+    vm_names="$(echo "$vm_names" | grep "container:.*|" || :)"
   fi
+  readonly vm_names
 
   for vm_name in $vm_names; do
     echo "$(vedv::container_service::_get_container_id "$vm_name") $(vedv::container_service::_get_container_name "$vm_name")"
