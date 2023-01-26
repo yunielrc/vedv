@@ -27,7 +27,7 @@ gen_container_vm_name() {
     container_name="$(petname)"
   fi
 
-  local -r crc_sum="$(echo "${container_name}-unit-container-service" | cksum | cut -d' ' -f1)"
+  local -r crc_sum="$(echo "${container_name}-${CONTAINER_TAG}" | cksum | cut -d' ' -f1)"
   echo "container:${container_name}-${CONTAINER_TAG}|crc:${crc_sum}"
 }
 
@@ -87,22 +87,22 @@ gen_container_vm_name() {
 
 @test "vedv::container_service::create(), should create a container vm" {
   local -r image="$TEST_OVA_FILE"
-  local -r container_name='na-unit-container-service'
+  local -r container_name="na-${CONTAINER_TAG}"
   run vedv::container_service::create "$image" "$container_name"
 
   assert_success
-  assert_output 'na-unit-container-service'
+  assert_output "na-${CONTAINER_TAG}"
 }
 
 @test "vedv::container_service::create(), should throw error if there is another container with the same name" {
   local -r image="$TEST_OVA_FILE"
-  local -r container_name='dyli-unit-container-service'
+  local -r container_name="dyli-${CONTAINER_TAG}"
 
   vedv::container_service::create "$image" "$container_name"
   run vedv::container_service::create "$image" "$container_name"
 
   assert_failure 80
-  assert_output "container with name: 'dyli-unit-container-service' already exist"
+  assert_output "container with name: dyli-${CONTAINER_TAG}' already exist"
 }
 
 @test 'vedv::container_service::__execute_operation_upon_containers(), without params should throw an error' {

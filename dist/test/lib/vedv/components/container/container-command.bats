@@ -165,6 +165,14 @@ vedv::container_service::list() { echo "include stopped containers: ${1:-false}"
   assert_output --partial "$help_output"
 }
 
+@test "vedv::container_command::__list(), with invalid arg throw an error" {
+
+  run vedv::container_command::__list 'partial_name' 'invalid_arg'
+
+  assert_failure 69
+  assert_output --partial 'Invalid parameter: invalid_arg'
+}
+
 @test 'vedv::container_command::__list(), should show the running containers' {
   run vedv::container_command::__list
 
