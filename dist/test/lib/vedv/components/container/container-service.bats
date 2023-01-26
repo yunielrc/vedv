@@ -1,6 +1,8 @@
 # shellcheck disable=SC2016
 load test_helper
 
+readonly CONTAINER_TAG='unit-container-service'
+
 setup_file() {
   vedv::container_service::constructor 'virtualbox'
   vedv::image_service::constructor 'virtualbox'
@@ -10,8 +12,23 @@ setup_file() {
 }
 
 teardown() {
-  delete_vms_by_partial_vm_name 'testunit-container-service'
+  delete_vms_by_partial_vm_name "$CONTAINER_TAG"
   delete_vms_by_partial_vm_name 'image:alpine-x86_64|crc:87493131'
+}
+
+create_container_vm() {
+  create_vm "$(gen_container_vm_name "$1")"
+}
+
+gen_container_vm_name() {
+  local container_name="${1:-}"
+
+  if [[ -z "$container_name" ]]; then
+    container_name="$(petname)"
+  fi
+
+  local -r crc_sum="$(echo "${container_name}-unit-container-service" | cksum | cut -d' ' -f1)"
+  echo "container:${container_name}-${CONTAINER_TAG}|crc:${crc_sum}"
 }
 
 @test "vedv::container_service::__gen_container_vm_name_from_image_vm_name(), with 'image_vm_name' unset should throw an error" {
@@ -70,22 +87,22 @@ teardown() {
 
 @test "vedv::container_service::create(), should create a container vm" {
   local -r image="$TEST_OVA_FILE"
-  local -r container_name='na-testunit-container-service'
+  local -r container_name='na-unit-container-service'
   run vedv::container_service::create "$image" "$container_name"
 
   assert_success
-  assert_output 'na-testunit-container-service'
+  assert_output 'na-unit-container-service'
 }
 
 @test "vedv::container_service::create(), should throw error if there is another container with the same name" {
   local -r image="$TEST_OVA_FILE"
-  local -r container_name='dyli-testunit-container-service'
+  local -r container_name='dyli-unit-container-service'
 
   vedv::container_service::create "$image" "$container_name"
   run vedv::container_service::create "$image" "$container_name"
 
   assert_failure 80
-  assert_output "container with name: 'dyli-testunit-container-service' already exist"
+  assert_output "container with name: 'dyli-unit-container-service' already exist"
 }
 
 @test 'vedv::container_service::__execute_operation_upon_containers(), without params should throw an error' {
@@ -110,6 +127,7 @@ teardown() {
 }
 
 @test 'vedv::container_service::__execute_operation_upon_containers(), if hypervisor fail should throw an error' {
+  # shellcheck disable=SC2317
   vedv::virtualbox::list_wms_by_partial_name() { echo 'container:dyli|crc:1234567'; }
   vedv::virtualbox::stop() { return 1; }
 
@@ -131,6 +149,7 @@ teardown() {
 }
 
 @test 'vedv::container_service::sart(), should start containers' {
+  # shellcheck disable=SC2317
   vedv::container_service::__execute_operation_upon_containers() {
     echo "$*"
   }
@@ -141,6 +160,7 @@ teardown() {
 }
 
 @test 'vedv::container_service::stop(), should stop containers' {
+  # shellcheck disable=SC2317
   vedv::container_service::__execute_operation_upon_containers() {
     echo "$*"
   }
@@ -151,6 +171,7 @@ teardown() {
 }
 
 @test 'vedv::container_service::rm(), should remove containers' {
+  # shellcheck disable=SC2317
   vedv::container_service::__execute_operation_upon_containers() {
     echo "$*"
   }
@@ -158,4 +179,51 @@ teardown() {
 
   assert_success
   assert_output 'rm container1 container2'
+}
+
+@test "vedv::container_service::list(), Should show anything" {
+
+  run vedv::container_service::list
+
+  assert_success
+  assert_output ''
+}
+
+@test "vedv::container_service::list(), With 'list_all=false' Should show only running vms" {
+  local -r container_name1='ct1'
+  local -r container_name2="ct2"
+  local -r vm_name1="$(create_container_vm "$container_name1")"
+  create_container_vm "$container_name2"
+
+  VBoxManage startvm "$vm_name1" --type headless
+  run vedv::container_service::list
+
+  assert_success
+  assert_output --regexp "^[0-9]+\s+${container_name1}-${CONTAINER_TAG}\$"
+}
+
+@test "vedv::container_service::list(), With $(list_all=true) Should show all containers" {
+  local -r container_name1='ct1'
+  local -r container_name2='ct2'
+
+  create_container_vm "$container_name1"
+  create_container_vm "$container_name2"
+
+  run vedv::container_service::list true
+
+  assert_success
+  assert_output --regexp "^[0-9]+\s+${container_name1}-${CONTAINER_TAG}\$
+^[0-9]+\s+${container_name2}-${CONTAINER_TAG}\$"
+}
+
+@test "vedv::container_service::list(), With $(list_all=true) and $(partial_name=value) Should show only containers With that name" {
+  local -r container_name1='ct1'
+  local -r container_name2="ct2"
+  local -r vm_name1="$(create_container_vm "$container_name1")"
+  create_container_vm "$container_name2"
+
+  run vedv::container_service::list true "$container_name1"
+
+  assert_success
+  assert_output --regexp "^[0-9]+\s+${container_name1}-${CONTAINER_TAG}\$"
 }

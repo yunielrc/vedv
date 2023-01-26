@@ -185,3 +185,26 @@ teardown() {
 
   assert_success
 }
+
+@test "vedv::virtualbox::list(), Should print all vms" {
+  local -r vm_name1="$(create_vm)"
+  local -r vm_name2="$(create_vm)"
+
+  run vedv::virtualbox::list
+
+  assert_success
+  assert_output "${vm_name1}
+${vm_name2}"
+}
+
+@test "vedv::virtualbox::list(), Should print only running vms" {
+  local -r vm_name1="$(create_vm)"
+  local -r vm_name2="$(create_vm)"
+
+  VBoxManage startvm "$vm_name1" --type headless
+
+  run vedv::virtualbox::list_running
+
+  assert_success
+  assert_output "${vm_name1}"
+}

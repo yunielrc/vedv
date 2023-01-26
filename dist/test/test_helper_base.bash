@@ -34,9 +34,9 @@ fi
 # HELPER FUNCTIONS
 
 delete_vms_by_partial_vm_name() {
-  local -r vm_id_tag="$1"
+  local -r vm_partial_name="$1"
 
-  local -r vm_name_list="$(VBoxManage list vms | grep "$vm_id_tag" | cut -d' ' -f1 | sed 's/"//g')"
+  local -r vm_name_list="$(VBoxManage list vms | grep "$vm_partial_name" | cut -d' ' -f1 | sed 's/"//g')"
 
   if [[ -n "$vm_name_list" ]]; then
     for vm_name in $vm_name_list; do

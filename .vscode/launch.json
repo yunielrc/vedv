@@ -71,6 +71,17 @@
         "rm",
         "dyli-amoroso"
       ]
+    },
+    {
+      "type": "bashdb",
+      "request": "launch",
+      "name": "Bash-Debug (vedv container ls)",
+      "cwd": "${workspaceFolder}",
+      "program": "${workspaceFolder}/dist/bin/vedv",
+      "args": [
+        "container",
+        "ls"
+      ]
     }
   ]
 }

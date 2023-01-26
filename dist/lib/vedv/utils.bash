@@ -7,7 +7,7 @@ readonly ERR_VM_EXIST=80           # vm exist
 readonly ERR_NO_START_CONTAINER=81 # error starting container vm
 
 err() {
-  echo "$*" >&2
+  echo -e "$*" >&2
 }
 
 dierr() {

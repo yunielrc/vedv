@@ -238,6 +238,70 @@ Stop one or more running containers
 HELPMSG
 }
 
+#
+# List containers
+#
+# Flags:
+#   [-h | --help | help]          show help
+#   [-a, --all]      Show all containers (default shows just running)
+#
+# Output:
+#   writes container name or id to stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::container_command::__list() {
+  local list_all=false
+  local partial_name
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+    -h | --help | help)
+      vedv::container_command::__list_help
+      return 0
+      ;;
+    -a | --all)
+      shift
+      list_all=true
+      ;;
+    *)
+      if [[ -z "${partial_name:-}" ]]; then
+        partial_name="$1"
+        shift
+      else
+        err "Invalid parameter: ${1}\n"
+        vedv::container_command::__list_help
+        return "$ERR_INVAL_ARG"
+      fi
+      ;;
+    esac
+  done
+
+  vedv::container_service::list $list_all "${partial_name:-}"
+}
+
+#
+# Show help for ls command
+#
+# Output:
+#  Writes the help to the stdout
+#
+vedv::container_command::__list_help() {
+  cat <<-HELPMSG
+Usage:
+${__VED_CONTAINER_COMMAND_SCRIPT_NAME} docker container ls [OPTIONS] [CONTAINER PARTIAL NAME]
+
+List containers
+
+Aliases:
+  ls, ps, list
+
+Options:
+  -a, --all        Show all containers (default shows just running)
+HELPMSG
+}
+
 # IMPL: Create and run a container from an image
 vedv::container_command::__run() {
   echo 'vedv::container_command::__run'
@@ -267,6 +331,9 @@ Manage containers
 Commands:
   create           Create a new container
   start            Start one or more stopped containers
+  rm               Remove one or more running containers
+  stop             Stop one or more running containers
+  list             List containers
 
 Run '${__VED_CONTAINER_COMMAND_SCRIPT_NAME} container COMMAND --help' for more information on a command.
 HELPMSG
@@ -302,6 +369,12 @@ vedv::container_command::run_cmd() {
       vedv::container_command::__rm "$@"
       return $?
       ;;
+    ls | ps | list)
+      shift
+      vedv::container_command::__list "$@"
+      return $?
+      ;;
+
     run)
       shift
       vedv::container_command::__run "$@"
@@ -309,7 +382,7 @@ vedv::container_command::run_cmd() {
       ;;
 
     *)
-      echo -e "Invalid parameter: ${1}\n" >&2
+      err "Invalid parameter: ${1}\n"
       vedv::container_command::__help
       return "$ERR_INVAL_ARG"
       ;;

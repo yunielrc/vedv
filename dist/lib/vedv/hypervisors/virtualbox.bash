@@ -195,6 +195,32 @@ vedv::virtualbox::rm() {
   VBoxManage unregistervm "$vm_name" --delete
 }
 
+#
+# List all virtual machines
+#
+# Output:
+#   writes vms names to stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::virtualbox::list() {
+  VBoxManage list vms | cut -d' ' -f1 | sed 's/"//g' || :
+}
+
+#
+# List running virtual machines
+#
+# Output:
+#   writes vms names to stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::virtualbox::list_running() {
+  VBoxManage list runningvms | cut -d' ' -f1 | sed 's/"//g' || :
+}
+
 # IMPL: Create and run a container from an image
 vedv::virtualbox::container::run() {
   echo 'vedv::virtualbox::container::run'

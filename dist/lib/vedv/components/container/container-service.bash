@@ -43,7 +43,6 @@ vedv::container_service::__gen_container_vm_name_from_image_vm_name() {
   container_name="${container_name%'|crc'*}"
 
   local -r crc_sum="$(echo "$container_name" | cksum | cut -d' ' -f1)"
-
   local -r container_vm_name="container:${container_name}|crc:${crc_sum}"
 
   echo "$container_vm_name"
@@ -227,7 +226,6 @@ vedv::container_service::__execute_operation_upon_containers() {
   fi
 
   return 0
-
 }
 
 #
@@ -276,6 +274,43 @@ vedv::container_service::stop() {
 #
 vedv::container_service::rm() {
   vedv::container_service::__execute_operation_upon_containers rm "$@"
+}
+
+#
+#  List containers
+#
+# Arguments:
+#   [list_all]               default: false, list running containers
+#   [partial_name]           name of the exported VM
+#
+# Output:
+#  writes container name or id to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::container_service::list() {
+  local -r list_all="${1:-false}"
+  local -r partial_name="${2:-}"
+
+  local hypervisor_cmd='list_running'
+
+  if [[ "$list_all" == true ]]; then
+    hypervisor_cmd='list'
+  fi
+  readonly hypervisor_cmd
+
+  local vm_names
+
+  if [[ -n "$partial_name" ]]; then
+    vm_names="$(vedv::"$__VEDV_IMAGE_SERVICE_HYPERVISOR"::"$hypervisor_cmd" | grep "container:${partial_name}.*|" || :)"
+  else
+    vm_names="$(vedv::"$__VEDV_IMAGE_SERVICE_HYPERVISOR"::"$hypervisor_cmd" | grep "container:.*|" || :)"
+  fi
+
+  for vm_name in $vm_names; do
+    echo "$(vedv::container_service::_get_container_id "$vm_name") $(vedv::container_service::_get_container_name "$vm_name")"
+  done
 }
 
 # IMPL: Create and run a container from an image

@@ -10,6 +10,7 @@ vedv::container_service::create() { echo "container created, arguments: $*"; }
 vedv::container_service::start() { echo "$@"; }
 vedv::container_service::stop() { echo "$@"; }
 vedv::container_service::rm() { echo "$@"; }
+vedv::container_service::list() { echo "include stopped containers: ${1:-false}"; }
 
 @test "vedv::container_command::__create(), with arg '-h|--help|help' should show help" {
   local -r help_output='vedv container create [OPTIONS] IMAGE'
@@ -143,6 +144,39 @@ vedv::container_service::rm() { echo "$@"; }
 
   assert_success
   assert_output "${container_name_or_id}"
+}
+
+@test "vedv::container_command::__list(), with arg '-h|--help|help' should show help" {
+  local -r help_output='vedv docker container ls [OPTIONS]'
+
+  run vedv::container_command::__list -h
+
+  assert_success
+  assert_output --partial "$help_output"
+
+  run vedv::container_command::__list --help
+
+  assert_success
+  assert_output --partial "$help_output"
+
+  run vedv::container_command::__list help
+
+  assert_success
+  assert_output --partial "$help_output"
+}
+
+@test 'vedv::container_command::__list(), should show the running containers' {
+  run vedv::container_command::__list
+
+  assert_success
+  assert_output "include stopped containers: false"
+}
+
+@test 'vedv::container_command::__list(), should show all containers' {
+  run vedv::container_command::__list --all
+
+  assert_success
+  assert_output "include stopped containers: true"
 }
 
 @test "vedv::container_command::run_cmd(), with arg '-h|--help|help' should show help" {
