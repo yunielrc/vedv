@@ -1,8 +1,6 @@
 # shellcheck disable=SC2016
 load test_helper
 
-readonly CONTAINER_TAG='unit-container-service'
-
 setup_file() {
   vedv::container_service::constructor 'virtualbox'
   vedv::image_service::constructor 'virtualbox'
@@ -12,7 +10,7 @@ setup_file() {
 }
 
 teardown() {
-  delete_vms_by_partial_vm_name "$CONTAINER_TAG"
+  delete_vms_by_partial_vm_name "$VM_TAG"
   delete_vms_by_partial_vm_name 'image:alpine-x86_64|crc:87493131'
 }
 
@@ -27,8 +25,8 @@ gen_container_vm_name() {
     container_name="$(petname)"
   fi
 
-  local -r crc_sum="$(echo "${container_name}-${CONTAINER_TAG}" | cksum | cut -d' ' -f1)"
-  echo "container:${container_name}-${CONTAINER_TAG}|crc:${crc_sum}"
+  local -r crc_sum="$(echo "${container_name}-${VM_TAG}" | cksum | cut -d' ' -f1)"
+  echo "container:${container_name}-${VM_TAG}|crc:${crc_sum}"
 }
 
 @test "vedv::container_service::__gen_container_vm_name_from_image_vm_name(), with 'image_vm_name' unset should throw an error" {
@@ -87,22 +85,22 @@ gen_container_vm_name() {
 
 @test "vedv::container_service::create(), should create a container vm" {
   local -r image="$TEST_OVA_FILE"
-  local -r container_name="na-${CONTAINER_TAG}"
+  local -r container_name="na-${VM_TAG}"
   run vedv::container_service::create "$image" "$container_name"
 
   assert_success
-  assert_output "na-${CONTAINER_TAG}"
+  assert_output "na-${VM_TAG}"
 }
 
 @test "vedv::container_service::create(), should throw error if there is another container with the same name" {
   local -r image="$TEST_OVA_FILE"
-  local -r container_name="dyli-${CONTAINER_TAG}"
+  local -r container_name="dyli-${VM_TAG}"
 
   vedv::container_service::create "$image" "$container_name"
   run vedv::container_service::create "$image" "$container_name"
 
   assert_failure 80
-  assert_output "container with name: dyli-${CONTAINER_TAG}' already exist"
+  assert_output "container with name: 'dyli-${VM_TAG}' already exist"
 }
 
 @test 'vedv::container_service::__execute_operation_upon_containers(), without params should throw an error' {
@@ -148,7 +146,7 @@ gen_container_vm_name() {
   assert_output 'dyli '
 }
 
-@test 'vedv::container_service::sart(), should start containers' {
+@test 'vedv::container_service::start(), should start containers' {
   # shellcheck disable=SC2317
   vedv::container_service::__execute_operation_upon_containers() {
     echo "$*"
@@ -199,7 +197,7 @@ gen_container_vm_name() {
   run vedv::container_service::list
 
   assert_success
-  assert_output --regexp "^[0-9]+\s+${container_name1}-${CONTAINER_TAG}\$"
+  assert_output --regexp "^[0-9]+\s+${container_name1}-${VM_TAG}\$"
 }
 
 @test "vedv::container_service::list(), With $(list_all=true) Should show all containers" {
@@ -212,8 +210,8 @@ gen_container_vm_name() {
   run vedv::container_service::list true
 
   assert_success
-  assert_output --regexp "^[0-9]+\s+${container_name1}-${CONTAINER_TAG}\$
-^[0-9]+\s+${container_name2}-${CONTAINER_TAG}\$"
+  assert_output --regexp "^[0-9]+\s+${container_name1}-${VM_TAG}\$
+^[0-9]+\s+${container_name2}-${VM_TAG}\$"
 }
 
 @test "vedv::container_service::list(), With $(list_all=true) and $(partial_name=value) Should show only containers With that name" {
@@ -225,5 +223,5 @@ gen_container_vm_name() {
   run vedv::container_service::list true "$container_name1"
 
   assert_success
-  assert_output --regexp "^[0-9]+\s+${container_name1}-${CONTAINER_TAG}\$"
+  assert_output --regexp "^[0-9]+\s+${container_name1}-${VM_TAG}\$"
 }

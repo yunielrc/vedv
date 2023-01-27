@@ -125,7 +125,7 @@ vedv::container_service::_get_container_id() {
 #
 vedv::container_service::create() {
   local -r image="$1"
-  local -r container_name="${2:-}"
+  local container_name="${2:-}"
 
   # Import an OVF from a file or url
   local image_name
@@ -222,7 +222,7 @@ vedv::container_service::__execute_operation_upon_containers() {
   done
 
   if [[ "${#containers_failed[@]}" -ne 0 ]]; then
-    return "$ERR_NO_START_CONTAINER"
+    return "$ERR_CONTAINER_OPERATION"
   fi
 
   return 0
@@ -273,6 +273,8 @@ vedv::container_service::stop() {
 #   0 on success, non-zero on error.
 #
 vedv::container_service::rm() {
+  # FIXME: to remove running containers must require a `force` flag
+  # FIXME: remove deleted container parent image snapshot
   vedv::container_service::__execute_operation_upon_containers rm "$@"
 }
 
