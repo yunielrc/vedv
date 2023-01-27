@@ -16,6 +16,7 @@
 #
 # Writes:
 #   if name isn't valid print an info message
+#
 # Returns:
 #   0 if name is valid or non-zero otherwise.
 #
@@ -136,6 +137,27 @@ vedv::virtualbox::take_snapshot() {
     return "$ERR_INVAL_ARG"
   fi
   VBoxManage snapshot "$vm_name" take "$snapshot_name"
+}
+
+#
+# Show snapshoots for a given vm
+#
+# Arguments:
+#   vm_name           name of the VM
+#
+# Output:
+#   writes snapshot vms names to stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::virtualbox::show_snapshots() {
+  local -r vm_name="$1"
+
+  local output
+  output="$(VBoxManage showvminfo "$vm_name" --machinereadable)"
+
+  echo "$output" | grep -o '^SnapshotName.*' | grep -o '".*"' | tr -d '"' || :
 }
 
 #

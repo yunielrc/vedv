@@ -2,9 +2,12 @@
 load test_helper
 
 teardown() {
-  # remove created vm in this test unit
-  # cloned vm must be removed first
-  delete_all_test_unit_vms
+  delete_vms_by_id_tag "${VM_TAG}-clone"
+  delete_vms_by_id_tag "$VM_TAG"
+}
+# shellcheck disable=SC2120
+gen_vm_clone_name() {
+  echo "$(gen_vm_name "${1:-}")-clone"
 }
 
 @test "vedv::virtualbox::validate_vm_name(), should be short name" {
@@ -126,6 +129,7 @@ teardown() {
 
 @test "vedv::virtualbox::clonevm_link(), should clone the vm" {
   local -r vm_name="$(create_vm)"
+  # shellcheck disable=SC2119
   local -r vm_clone_name="$(gen_vm_clone_name)"
 
   run vedv::virtualbox::clonevm_link "$vm_name" "$vm_clone_name"
@@ -144,13 +148,13 @@ teardown() {
 }
 
 @test "vedv::virtualbox::list_wms_by_partial_name(), should print a list of vm" {
-  local -r vm_partial_name='testunit:virtualbox'
+  local -r vm_partial_name='virtualbox'
   create_vm
 
   run vedv::virtualbox::list_wms_by_partial_name "$vm_partial_name"
 
   assert_success
-  assert_output --partial 'testunit:virtualbox-1020623423-alpine-x86_64'
+  assert_output --partial 'virtualbox'
 }
 
 @test "vedv::virtualbox::poweroff(), with 'vm_name' undefined should throw an error" {
@@ -207,4 +211,27 @@ ${vm_name2}"
 
   assert_success
   assert_output "${vm_name1}"
+}
+
+@test "vedv::virtualbox::show_snapshots(), Should print no snapshots" {
+  local -r vm_name1="$(create_vm)"
+
+  run vedv::virtualbox::show_snapshots "$vm_name1"
+
+  assert_success
+  assert_output ''
+}
+
+@test "vedv::virtualbox::show_snapshots(), Should print snapshots" {
+  local -r vm_name1="$(create_vm)"
+  local -r snapshot_name1="snapshot1"
+  local -r snapshot_name2="snapshot2"
+
+  VBoxManage snapshot "$vm_name1" take "$snapshot_name1"
+  VBoxManage snapshot "$vm_name1" take "$snapshot_name2"
+  run vedv::virtualbox::show_snapshots "$vm_name1"
+
+  assert_success
+  assert_output "${snapshot_name1}
+${snapshot_name2}"
 }

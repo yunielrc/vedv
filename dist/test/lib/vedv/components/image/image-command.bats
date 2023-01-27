@@ -13,6 +13,9 @@ setup_file() {
 vedv::image_service::list() {
   echo "vedv::image_service::list $*"
 }
+vedv::image_service::rm() {
+  echo "vedv::image_service::__rm $*"
+}
 
 @test "vedv::image_command::__pull, with invalid arg throw an error" {
   run vedv::image_command::__pull 'image_file' 'invalid_arg'
@@ -51,7 +54,7 @@ vedv::image_service::list() {
 }
 
 @test "vedv::image_command::__list(), with arg '-h|--help|help' should show help" {
-  local -r help_output='docker image ls [OPTIONS] [IMAGE PARTIAL NAME]'
+  local -r help_output='vedv docker image ls'
 
   run vedv::image_command::__list -h
 
@@ -77,6 +80,29 @@ vedv::image_service::list() {
 
   assert_success
   assert_output --partial "vedv::image_service::list"
+}
+
+@test "vedv::image_command::__rm(), with arg '-h|--help|help' should show help" {
+  local -r help_output='vedv image rm IMAGE [IMAGE...]'
+
+  run vedv::image_command::__rm -h
+
+  assert_success
+  assert_output --partial "$help_output"
+
+  run vedv::image_command::__rm --help
+
+  assert_success
+  assert_output --partial "$help_output"
+}
+
+@test 'vedv::image_command::__rm(), should remove the images' {
+  local -r image_name_or_id='container_name1 container_name2'
+
+  run vedv::image_command::__rm "$image_name_or_id"
+
+  assert_success
+  assert_output "vedv::image_service::__rm ${image_name_or_id}"
 }
 
 @test "vedv::image_command::run_cmd, with invalid arg throw an error" {

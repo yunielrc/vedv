@@ -131,6 +131,54 @@ Aliases:
 HELPMSG
 }
 
+#
+# Remove one or more images
+#
+# Flags:
+#   [-h | --help | help]     show help
+#
+# Arguments:
+#   IMAGE  [IMAGE...]        one or more image name or id
+#
+# Output:
+#   writes container name or id to stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::image_command::__rm() {
+
+  [[ $# == 0 ]] && set -- '-h'
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+    -h | --help)
+      vedv::image_command::__rm_help
+      return 0
+      ;;
+    *)
+      vedv::image_service::rm "$@"
+      return $?
+      ;;
+    esac
+  done
+}
+
+#
+# Show help for __rm command
+#
+# Output:
+#  Writes the help to the stdout
+#
+vedv::image_command::__rm_help() {
+  cat <<-HELPMSG
+Usage:
+${__VED_IMAGE_COMMAND_SCRIPT_NAME} image rm IMAGE [IMAGE...]
+
+Remove one or more images
+HELPMSG
+}
+
 # IMPL: Build an image from a Vedvfile
 vedv::image_command::__build() {
   echo 'vedv:image:build_run_cmd'
@@ -160,6 +208,7 @@ Manage images
 Commands:
   pull             Pull an image from a registry or file
   list             List images
+  remove           Remove one or more images
 
 Run '${__VED_IMAGE_COMMAND_SCRIPT_NAME} image COMMAND --help' for more information on a command.
 HELPMSG
@@ -183,6 +232,11 @@ vedv::image_command::run_cmd() {
     ls | list)
       shift
       vedv::image_command::__list "$@"
+      return $?
+      ;;
+    rm | remove)
+      shift
+      vedv::image_command::__rm "$@"
       return $?
       ;;
     build)

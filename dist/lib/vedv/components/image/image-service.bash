@@ -176,6 +176,69 @@ vedv::image_service::list() {
   done
 }
 
+#
+# Remove one or more images
+#
+# Arguments:
+#   image_name_or_ids     image name or id
+#
+# Output:
+#  writes image name or id to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::image_service::rm() {
+  local -ra image_name_or_ids=("$@")
+
+  if [[ "${#image_name_or_ids[@]}" -eq 0 ]]; then
+    err 'At least one image is required'
+    return "$ERR_INVAL_ARG"
+  fi
+
+  local -A image_failed=()
+
+  for image in "${image_name_or_ids[@]}"; do
+    local vm_name="$(vedv::"${__VEDV_IMAGE_SERVICE_HYPERVISOR}"::list_wms_by_partial_name "image:${image}|" | head -n 1)"
+
+    if [[ -z "$vm_name" ]]; then
+      vm_name="$(vedv::"${__VEDV_IMAGE_SERVICE_HYPERVISOR}"::list_wms_by_partial_name "|crc:${image}" | head -n 1)"
+
+      if [[ -z "$vm_name" ]]; then
+        image_failed['No such images']+="$image "
+        continue
+      fi
+    fi
+
+    local snapshots
+    snapshots="$(vedv::"$__VEDV_IMAGE_SERVICE_HYPERVISOR"::show_snapshots "$vm_name")"
+    snapshots="$(echo "$snapshots" | grep -o 'container:.*|' | grep -o ':.*|' | tr -d ':|' | tr '\n' ' ' || :)"
+
+    if [[ -n "$snapshots" ]]; then
+      image_failed["Failed to remove image ${image} because it has containers, remove them first"]="$snapshots"
+      image_failed["Failed to remove images"]+="$image "
+      continue
+    fi
+
+    if ! vedv::"$__VEDV_IMAGE_SERVICE_HYPERVISOR"::rm "$vm_name" &>/dev/null; then
+      image_failed["Failed to remove images"]+="$image "
+      continue
+    fi
+    echo -n "$image "
+  done
+
+  echo
+  for err_msg in "${!image_failed[@]}"; do
+    err "${err_msg}: ${image_failed["$err_msg"]}"
+  done
+
+  if [[ "${#image_failed[@]}" -ne 0 ]]; then
+    return "$ERR_IMAGE_OPERATION"
+  fi
+
+  return 0
+}
+
 # IMPL: Pull an image or a repository from a registry
 vedv::image_service::import() {
   echo 'vedv:image:pull'

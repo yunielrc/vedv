@@ -1,15 +1,13 @@
 # shellcheck disable=SC2016
 load test_helper
 
-readonly IMAGE_TAG='unit-image-service'
-
 setup_file() {
-  vedv::image_service::constructor 'virtualbox'
+  vedv::image_service::constructor "$TEST_HYPERVISOR"
   export __VEDV_IMAGE_SERVICE_HYPERVISOR
 }
 
 teardown() {
-  delete_vms_by_partial_vm_name "$IMAGE_TAG"
+  delete_vms_by_partial_vm_name "$VM_TAG"
   delete_vms_by_partial_vm_name 'image:alpine-x86_64|crc:87493131'
 }
 
@@ -24,8 +22,8 @@ gen_image_vm_name() {
     image_name="$(petname)"
   fi
 
-  local -r crc_sum="$(echo "${image_name}-${IMAGE_TAG}" | cksum | cut -d' ' -f1)"
-  echo "image:${image_name}-${IMAGE_TAG}|crc:${crc_sum}"
+  local -r crc_sum="$(echo "${image_name}-${VM_TAG}" | cksum | cut -d' ' -f1)"
+  echo "image:${image_name}-${VM_TAG}|crc:${crc_sum}"
 }
 
 @test 'vedv::image_service::_get_image_name(), should print image name' {
@@ -113,6 +111,60 @@ gen_image_vm_name() {
   run vedv::image_service::list
 
   assert_success
-  assert_output --regexp "^[0-9]+\s+${image_name1}-${IMAGE_TAG}\$
-^[0-9]+\s+${image_name2}-${IMAGE_TAG}\$"
+  assert_output --regexp "^[0-9]+\s+${image_name1}-${VM_TAG}\$
+^[0-9]+\s+${image_name2}-${VM_TAG}\$"
+}
+
+@test 'vedv::image_service::rm(), Without params Should throw an error' {
+  run vedv::image_service::rm
+
+  assert_failure 69
+  assert_output 'At least one image is required'
+}
+
+@test 'vedv::image_service::rm(), With 2 non-existent images Should throw an error' {
+  run vedv::image_service::rm '3582343034' '3582343035'
+
+  assert_failure 82
+  assert_output --partial 'No such images: 3582343034 3582343035 '
+}
+
+@test 'vedv::image_service::rm(), if image has containers Should throw an error' {
+  local -r vm_name='3582343034'
+
+  eval "vedv::${TEST_HYPERVISOR}::list_wms_by_partial_name() { echo 'container:dyli|crc:1234567'; }"
+
+  eval "vedv::${TEST_HYPERVISOR}::show_snapshots() {
+    cat <<EOF
+container:awake-bison|crc:933558977
+container:dyli-amoroso|crc:833558977
+EOF
+}"
+  run vedv::image_service::rm "$vm_name"
+
+  assert_failure 82
+  assert_output --partial "Failed to remove image 3582343034 because it has containers, remove them first: awake-bison dyli-amoroso"
+}
+
+@test 'vedv::image_service::rm(), if hypervisor fail Should throw an error' {
+  eval "vedv::${TEST_HYPERVISOR}::list_wms_by_partial_name() { echo 'container:dyli|crc:1234567'; }"
+  eval "vedv::${TEST_HYPERVISOR}::show_snapshots() { return 0; }"
+  eval "vedv::${TEST_HYPERVISOR}::rm() { return 1; }"
+
+  run vedv::image_service::rm '3582343034' '3582343035'
+
+  assert_failure 82
+  assert_output --partial 'Failed to remove images: 3582343034 3582343035 '
+}
+
+# bats test_tags=only
+@test 'vedv::image_service::rm(), Should remove images' {
+  eval "vedv::${TEST_HYPERVISOR}::list_wms_by_partial_name() { echo 'container:dyli|crc:1234567'; }"
+  eval "vedv::${TEST_HYPERVISOR}::show_snapshots() { return 0; }"
+  eval "vedv::${TEST_HYPERVISOR}::rm() { return 0; }"
+
+  run vedv::image_service::rm '3582343034' '3582343035'
+
+  assert_success
+  assert_output '3582343034 3582343035 '
 }
