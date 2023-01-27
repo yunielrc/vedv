@@ -1,10 +1,16 @@
-.PHONY: commit test configure-dev-manjaro
+.PHONY: commit test-all test-unit test-tag configure-dev-manjaro
 
 commit:
 	git cz
 
-test:
-	./tools/test-bats $(unit)
+test-all:
+	./tools/bats --recursive dist/test
+
+test-unit:
+	./tools/bats $(u)
+
+test-tag:
+	./tools/bats --filter-tags $(t) $(u)
 
 configure-dev-manjaro:
 	./cac/configure.dev.manjaro

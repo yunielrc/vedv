@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+set -eEu
+
+cd "$(dirname "${BASH_SOURCE[0]}")/.."
+
+set -o allexport
+. ./.env
+set +o allexport
+
+bats "$@"
