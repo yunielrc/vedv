@@ -7,10 +7,10 @@
 set -euEo pipefail
 
 # VARIABLES
-__test_unit="testunit:${BATS_TEST_FILENAME##*/}"
-__test_unit="${__test_unit%'.bats'}"
-readonly VM_ID_TAG="${__test_unit,,}-$(echo "${__test_unit,,}" | cksum | cut -d' ' -f1)"
-export VM_ID_TAG
+VM_TAG="${BATS_TEST_FILENAME##*/}"
+VM_TAG="${VM_TAG%'.bats'}"
+readonly VM_TAG
+export VM_TAG
 
 # LOAD COMMON PROJECT LIBS
 . "${DIST_PATH}/lib/vedv/utils.bash"
@@ -48,29 +48,23 @@ delete_vms_by_partial_vm_name() {
 }
 
 # alias delete_vms_by_partial_vm_name='delete_vms_by_id_tag'
-
 delete_vms_by_id_tag() { delete_vms_by_partial_vm_name "$@"; }
 
 # shellcheck disable=SC2120
 gen_vm_name() {
-  echo "${VM_ID_TAG:-"$1"}-alpine-x86_64-${RANDOM}"
-}
+  local prefix="${1:-}"
 
-gen_vm_clone_name() {
-  echo "${VM_ID_TAG:-"$1"}-clone-alpine-x86_64-${RANDOM}"
+  if [[ -z "$prefix" ]]; then
+    prefix="$(petname)"
+  fi
+  echo "${prefix}-${VM_TAG}"
 }
 
 create_vm() {
   local -r vm_name="${1:-"$(gen_vm_name)"}"
 
   VBoxManage import "$TEST_OVA_FILE" --vsys 0 --vmname "$vm_name" &>/dev/null
-
   echo "$vm_name"
-}
-
-delete_all_test_unit_vms() {
-  delete_vms_by_id_tag "${VM_ID_TAG:-"$1"}-clone"
-  delete_vms_by_id_tag "${VM_ID_TAG:-"$1"}"
 }
 
 # cd "$BATS_TEST_DIRNAME" || exit
