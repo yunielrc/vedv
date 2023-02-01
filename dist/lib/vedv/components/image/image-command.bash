@@ -179,6 +179,47 @@ Remove one or more images
 HELPMSG
 }
 
+#
+# Remove unused cache images
+#
+# Flags:
+#   [-h | --help]     show help
+#
+# Output:
+#   writes removed image caches id to stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::image_command::__remove_unused_cache() {
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+    -h | --help)
+      vedv::image_command::__remove_unused_cache_help
+      return 0
+      ;;
+    esac
+  done
+
+  vedv::image_service::remove_unused_cache
+}
+
+#
+# Show help for __remove_unused_cache command
+#
+# Output:
+#  Writes the help to the stdout
+#
+vedv::image_command::__remove_unused_cache_help() {
+  cat <<-HELPMSG
+Usage:
+${__VED_IMAGE_COMMAND_SCRIPT_NAME} image remove-cache
+
+Remove unused cache images
+HELPMSG
+}
+
 # IMPL: Build an image from a Vedvfile
 vedv::image_command::__build() {
   echo 'vedv:image:build_run_cmd'
@@ -209,6 +250,7 @@ Commands:
   pull             Pull an image from a registry or file
   list             List images
   remove           Remove one or more images
+  remove-cache     Remove unused cache images
 
 Run '${__VED_IMAGE_COMMAND_SCRIPT_NAME} image COMMAND --help' for more information on a command.
 HELPMSG
@@ -237,6 +279,11 @@ vedv::image_command::run_cmd() {
     rm | remove)
       shift
       vedv::image_command::__rm "$@"
+      return $?
+      ;;
+    rm-cache | remove-cache)
+      shift
+      vedv::image_command::__remove_unused_cache "$@"
       return $?
       ;;
     build)

@@ -199,7 +199,7 @@ vedv::container_service::__execute_operation_upon_containers() {
 
   for container in "${container_name_or_ids[@]}"; do
     local vm_name="$(vedv::"${__VEDV_CONTAINER_SERVICE_HYPERVISOR}"::list_wms_by_partial_name "container:${container}|" | head -n 1)"
-
+    # FIXME: use |crc:<number>|
     if [[ -z "$vm_name" ]]; then
       vm_name="$(vedv::"${__VEDV_CONTAINER_SERVICE_HYPERVISOR}"::list_wms_by_partial_name "|crc:${container}" | head -n 1)"
 
@@ -213,6 +213,7 @@ vedv::container_service::__execute_operation_upon_containers() {
       containers_failed["Failed to ${operation} containers"]+="$container "
       continue
     fi
+    # FIX: delete the snapshot in the image when the operation is rm
     echo -n "$container "
   done
 

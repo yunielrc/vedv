@@ -1,4 +1,4 @@
-# shellcheck disable=SC2016
+# shellcheck disable=SC2016,SC2140
 load test_helper
 
 setup_file() {
@@ -9,6 +9,7 @@ setup_file() {
 teardown() {
   delete_vms_by_partial_vm_name "$VM_TAG"
   delete_vms_by_partial_vm_name 'image:alpine-x86_64|crc:87493131'
+  delete_vms_by_partial_vm_name "image-cache"
 }
 
 create_image_vm() {
@@ -33,29 +34,28 @@ gen_image_vm_name() {
 
   assert_output 'lala-lolo'
 }
-
 @test 'vedv::image_service::_get_image_id(), should print image id' {
-  local -r image_vm_name='image:lala-lolo|crc:1234567'
+  local -r image_vm_name='image:lala-lolo|crc:1234567|'
 
   run vedv::image_service::_get_image_id "$image_vm_name"
 
   assert_output '1234567'
 }
 
-@test "vedv::image_service::__gen_vm_name, with 'image_file' unset should throw an error" {
-  run vedv::image_service::__gen_vm_name
+@test "vedv::image_service::__gen_vm_name_from_file, with 'image_file' unset should throw an error" {
+  run vedv::image_service::__gen_vm_name_from_file
 
   assert_failure 1
   assert_output --partial '$1: unbound variable'
 }
 
-@test "vedv::image_service::__gen_vm_name, should write the generated vm name" {
+@test "vedv::image_service::__gen_vm_name_from_file, should write the generated vm name" {
   local -r image_file="$TEST_OVA_FILE"
 
-  run vedv::image_service::__gen_vm_name "$image_file"
+  run vedv::image_service::__gen_vm_name_from_file "$image_file"
 
   assert_success
-  assert_output 'image:alpine-x86_64|crc:87493131'
+  assert_output 'image:alpine-x86_64|crc:87493131|'
 }
 
 @test "vedv::image_service::__pull_from_file, with 'image_file' undefined should throw an error" {
@@ -72,6 +72,16 @@ gen_image_vm_name() {
 
   assert_failure 64
   assert_output --partial "OVA file image doesn't exist"
+}
+
+@test "vedv::image_service::__pull_from_file, With custom name Should pull" {
+  local -r image_file="$TEST_OVA_FILE"
+  local -r custom_image_name="$VM_TAG"
+
+  run vedv::image_service::__pull_from_file "$image_file" "$custom_image_name"
+
+  assert_success
+  assert_output "$custom_image_name"
 }
 
 @test "vedv::image_service::__pull_from_file, should pull" {
@@ -156,15 +166,74 @@ EOF
   assert_failure 82
   assert_output --partial 'Failed to remove images: 3582343034 3582343035 '
 }
-
 # bats test_tags=only
 @test 'vedv::image_service::rm(), Should remove images' {
   eval "vedv::${TEST_HYPERVISOR}::list_wms_by_partial_name() { echo 'container:dyli|crc:1234567'; }"
   eval "vedv::${TEST_HYPERVISOR}::show_snapshots() { return 0; }"
   eval "vedv::${TEST_HYPERVISOR}::rm() { return 0; }"
+  eval "vedv::${TEST_HYPERVISOR}::get_description(){ :; }"
+  eval "vedv::${TEST_HYPERVISOR}::delete_snapshot(){ :; }"
 
   run vedv::image_service::rm '3582343034' '3582343035'
 
   assert_success
   assert_output '3582343034 3582343035 '
+}
+
+@test 'vedv::image_service::remove_unused_cache(), Should remove cache images' {
+
+  eval "vedv::${TEST_HYPERVISOR}::list_wms_by_partial_name() {
+    cat <<EOF
+\${1}crc:1234566
+\${1}crc:1234567
+\${1}crc:1234568
+\${1}crc:1234569
+EOF
+  }"
+  eval "vedv::${TEST_HYPERVISOR}::show_snapshots() {
+    case "\$1" in
+      'image-cache|crc:1234566')
+        return 0
+      ;;
+      'image-cache|crc:1234567')
+        return 0
+      ;;
+      'image-cache|crc:1234568')
+        cat <<EOF
+image:dyli1|crc:1234567
+image:dyli2|crc:1234568
+EOF
+        return 0
+      ;;
+      'image-cache|crc:1234569')
+        return 0
+      ;;
+    esac
+    return 100
+  }"
+  eval "vedv::${TEST_HYPERVISOR}::rm() {
+    case "\$1" in
+      'image-cache|crc:1234566')
+        return 0
+      ;;
+      'image-cache|crc:1234567')
+        return 1
+      ;;
+      'image-cache|crc:1234568')
+        return 2
+      ;;
+      'image-cache|crc:1234569')
+        return 0
+      ;;
+    esac
+    return 100
+  }"
+  eval "vedv::${TEST_HYPERVISOR}::get_description(){ :; }"
+  eval "vedv::${TEST_HYPERVISOR}::delete_snapshot(){ :; }"
+
+  run vedv::image_service::remove_unused_cache
+
+  assert_failure 82
+  assert_output --regexp '1234566 1234569\s
+Failed to remove caches: 1234567'
 }

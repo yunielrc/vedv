@@ -82,6 +82,29 @@
         "container",
         "ls"
       ]
+    },
+    {
+      "type": "bashdb",
+      "request": "launch",
+      "name": "Bash-Debug (vedv image remove-cache)",
+      "cwd": "${workspaceFolder}",
+      "program": "${workspaceFolder}/dist/bin/vedv",
+      "args": [
+        "image",
+        "remove-cache"
+      ]
+    },
+    {
+      "type": "bashdb",
+      "request": "launch",
+      "name": "Bash-Debug (vedv image rm)",
+      "cwd": "${workspaceFolder}",
+      "program": "${workspaceFolder}/dist/bin/vedv",
+      "args": [
+        "image",
+        "rm",
+        "alpine-x86_64"
+      ]
     }
   ]
 }

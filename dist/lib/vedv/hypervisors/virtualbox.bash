@@ -161,6 +161,23 @@ vedv::virtualbox::show_snapshots() {
 }
 
 #
+# Delete a snapshot
+#
+# Arguments:
+#   vm_name           name of the VM
+#   snapshot_name     name of the snapshot
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::virtualbox::delete_snapshot() {
+  local -r vm_name="$1"
+  local -r snapshot_name="$2"
+
+  VBoxManage snapshot "$vm_name" delete "$snapshot_name"
+}
+
+#
 # Start a virtual machine
 #
 # Arguments:
@@ -241,6 +258,43 @@ vedv::virtualbox::list() {
 #
 vedv::virtualbox::list_running() {
   VBoxManage list runningvms | cut -d' ' -f1 | sed 's/"//g' || :
+}
+
+#
+# Get description
+#
+# Arguments:
+#   vm_name        virtual machine name
+#
+# Output:
+#   writes vms names to stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::virtualbox::get_description() {
+  local -r vm_name="$1"
+
+  VBoxManage showvminfo "$vm_name" --machinereadable | grep '^description=' | grep -o '".*"' | tr -d '"' || :
+}
+
+#
+# Set description
+#
+# Arguments:
+#   vm_name        virtual machine name
+#
+# Output:
+#   writes vms names to stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::virtualbox::set_description() {
+  local -r vm_name="$1"
+  local -r description="$2"
+
+  VBoxManage modifyvm "$vm_name" --description "$description"
 }
 
 # IMPL: Create and run a container from an image

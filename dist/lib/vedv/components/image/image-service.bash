@@ -57,7 +57,8 @@ vedv::image_service::_get_image_name() {
 vedv::image_service::_get_image_id() {
   local -r image_vm_name="$1"
 
-  echo "${image_vm_name#*'|crc:'}"
+  local result="${image_vm_name#*'|crc:'}"
+  echo "${result%'|'}"
 }
 
 #
@@ -72,7 +73,7 @@ vedv::image_service::_get_image_id() {
 # Returns:
 #   0 on success, non-zero on error.
 #
-vedv::image_service::__gen_vm_name() {
+vedv::image_service::__gen_vm_name_from_file() {
   local -r image_file="$1"
 
   if [[ -z "$image_file" ]]; then
@@ -83,9 +84,33 @@ vedv::image_service::__gen_vm_name() {
   local vm_name="${image_file,,}"
   vm_name="${vm_name%.ova}"
   local -r crc_sum="$(cksum "$image_file" | cut -d' ' -f1)"
-  vm_name="image:${vm_name##*/}|crc:${crc_sum}"
+  vm_name="image:${vm_name##*/}|crc:${crc_sum}|"
 
   echo "$vm_name"
+}
+
+#
+# Generate image vm name
+#
+# Arguments:
+#   [image_name]       image name
+#
+# Output:
+#  Writes generated name to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::image_service::__gen_vm_name() {
+  local image_name="${1:-}"
+
+  if [[ -z "$image_name" ]]; then
+    image_name="$(petname)"
+  fi
+
+  local -r crc_sum="$(echo "$image_name" | cksum | cut -d' ' -f1)"
+
+  echo "image:${image_name}|crc:${crc_sum}|"
 }
 
 #
@@ -93,7 +118,7 @@ vedv::image_service::__gen_vm_name() {
 #
 # Arguments:
 #   image_file      OVF file image
-#
+#   [image_name]    image name (default: OVF file name)
 # Output:
 #  Writes image name to the stdout
 #
@@ -102,17 +127,25 @@ vedv::image_service::__gen_vm_name() {
 #
 vedv::image_service::__pull_from_file() {
   local -r image_file="$1"
+  local -r custom_image_name="${2:-}"
 
   if [[ ! -f "$image_file" ]]; then
     err "OVA file image doesn't exist"
     return "$ERR_NOFILE"
   fi
 
-  local -r vm_name="$(vedv::image_service::__gen_vm_name "$image_file")"
-  local -r image_id="$(vedv::image_service::_get_image_id "$vm_name")"
-  local -r image_name="$(vedv::image_service::_get_image_name "$vm_name")"
+  local vm_name="$(vedv::image_service::__gen_vm_name_from_file "$image_file")"
+  local image_id="$(vedv::image_service::_get_image_id "$vm_name")"
+  local image_name="$(vedv::image_service::_get_image_name "$vm_name")"
+  local -r image_cache_vm_name="image-cache|crc:${image_id}0|"
 
-  if [[ -n "$(vedv::"$__VEDV_IMAGE_SERVICE_HYPERVISOR"::list_wms_by_partial_name "|crc:${image_id}")" ]]; then
+  if [[ -n "$custom_image_name" ]]; then
+    vm_name="$(vedv::image_service::__gen_vm_name "$custom_image_name")"
+    image_id="$(vedv::image_service::_get_image_id "$vm_name")"
+    image_name="$custom_image_name"
+  fi
+
+  if [[ -n "$(vedv::"$__VEDV_IMAGE_SERVICE_HYPERVISOR"::list_wms_by_partial_name "$vm_name")" ]]; then
     echo "$image_name"
     return 0
   fi
@@ -120,9 +153,20 @@ vedv::image_service::__pull_from_file() {
   # Import an OVF from a file
   local output
   local -i ecode=0
-  output="$(vedv::"$__VEDV_IMAGE_SERVICE_HYPERVISOR"::import "$image_file" "$vm_name" 2>&1)" || ecode=$?
+
+  if [[ -z "$(vedv::"$__VEDV_IMAGE_SERVICE_HYPERVISOR"::list_wms_by_partial_name "$image_cache_vm_name")" ]]; then
+    output="$(vedv::"$__VEDV_IMAGE_SERVICE_HYPERVISOR"::import "$image_file" "$image_cache_vm_name" 2>&1)" || ecode=$?
+  fi
+
+  if [[ $ecode -ne 0 ]]; then
+    err "$output"
+    return $ecode
+  fi
+
+  output="$(vedv::"$__VEDV_IMAGE_SERVICE_HYPERVISOR"::clonevm_link "$image_cache_vm_name" "$vm_name" 2>&1)" || ecode=$?
 
   if [[ $ecode -eq 0 ]]; then
+    vedv::"$__VEDV_IMAGE_SERVICE_HYPERVISOR"::set_description "$vm_name" "$image_cache_vm_name" 2>&1
     echo "$image_name"
   else
     err "$output"
@@ -202,7 +246,7 @@ vedv::image_service::rm() {
     local vm_name="$(vedv::"${__VEDV_IMAGE_SERVICE_HYPERVISOR}"::list_wms_by_partial_name "image:${image}|" | head -n 1)"
 
     if [[ -z "$vm_name" ]]; then
-      vm_name="$(vedv::"${__VEDV_IMAGE_SERVICE_HYPERVISOR}"::list_wms_by_partial_name "|crc:${image}" | head -n 1)"
+      vm_name="$(vedv::"${__VEDV_IMAGE_SERVICE_HYPERVISOR}"::list_wms_by_partial_name "|crc:${image}|" | head -n 1)"
 
       if [[ -z "$vm_name" ]]; then
         image_failed['No such images']+="$image "
@@ -220,10 +264,14 @@ vedv::image_service::rm() {
       continue
     fi
 
+    local image_cache_vm_name="$(vedv::"$__VEDV_IMAGE_SERVICE_HYPERVISOR"::get_description "$vm_name")"
+
     if ! vedv::"$__VEDV_IMAGE_SERVICE_HYPERVISOR"::rm "$vm_name" &>/dev/null; then
       image_failed["Failed to remove images"]+="$image "
       continue
     fi
+    vedv::"$__VEDV_IMAGE_SERVICE_HYPERVISOR"::delete_snapshot "$image_cache_vm_name" "$vm_name" &>/dev/null
+
     echo -n "$image "
   done
 
@@ -236,6 +284,44 @@ vedv::image_service::rm() {
     return "$ERR_IMAGE_OPERATION"
   fi
 
+  return 0
+}
+
+#
+# Remove unused images cache
+#
+# Output:
+#  Writes deleted cache id to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::image_service::remove_unused_cache() {
+  local -r image_cache_vm_names="$(vedv::"$__VEDV_IMAGE_SERVICE_HYPERVISOR"::list_wms_by_partial_name 'image-cache|')"
+
+  local failed_remove=''
+
+  for vm_name in $image_cache_vm_names; do
+    local snapshots
+    snapshots="$(vedv::"$__VEDV_IMAGE_SERVICE_HYPERVISOR"::show_snapshots "$vm_name")"
+
+    if [[ -z "$snapshots" ]]; then
+      local image_id="$(vedv::image_service::_get_image_id "$vm_name")"
+
+      if ! vedv::"$__VEDV_IMAGE_SERVICE_HYPERVISOR"::rm "$vm_name" &>/dev/null; then
+        failed_remove+="$image_id "
+        continue
+      fi
+
+      echo -n "$image_id "
+    fi
+  done
+  echo
+
+  if [[ -n "$failed_remove" ]]; then
+    err "Failed to remove caches: ${failed_remove}"
+    return "$ERR_IMAGE_OPERATION"
+  fi
   return 0
 }
 

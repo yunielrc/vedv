@@ -146,7 +146,7 @@ gen_vm_clone_name() {
   assert_success
   assert_output ''
 }
-
+# bats test_tags=only
 @test "vedv::virtualbox::list_wms_by_partial_name(), should print a list of vm" {
   local -r vm_partial_name='virtualbox'
   create_vm
@@ -201,7 +201,7 @@ gen_vm_clone_name() {
 ${vm_name2}"
 }
 
-@test "vedv::virtualbox::list(), Should print only running vms" {
+@test "vedv::virtualbox::list(), Should print running vms" {
   local -r vm_name1="$(create_vm)"
   local -r vm_name2="$(create_vm)"
 
