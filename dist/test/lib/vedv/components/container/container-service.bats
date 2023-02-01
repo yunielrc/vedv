@@ -9,6 +9,10 @@ setup_file() {
   export __VEDV_IMAGE_SERVICE_HYPERVISOR
 }
 
+teardown_file() {
+  delete_vms_by_partial_vm_name "image-cache"
+}
+
 teardown() {
   delete_vms_by_partial_vm_name "$VM_TAG"
   delete_vms_by_partial_vm_name 'image:alpine-x86_64|crc:87493131'
@@ -86,6 +90,10 @@ gen_container_vm_name() {
 @test "vedv::container_service::create(), should create a container vm" {
   local -r image="$TEST_OVA_FILE"
   local -r container_name="na-${VM_TAG}"
+
+  eval "vedv::${TEST_HYPERVISOR}::get_description(){ :; }"
+  eval "vedv::${TEST_HYPERVISOR}::delete_snapshot(){ :; }"
+
   run vedv::container_service::create "$image" "$container_name"
 
   assert_success
@@ -95,6 +103,9 @@ gen_container_vm_name() {
 @test "vedv::container_service::create(), should throw error if there is another container with the same name" {
   local -r image="$TEST_OVA_FILE"
   local -r container_name="dyli-${VM_TAG}"
+
+  eval "vedv::${TEST_HYPERVISOR}::get_description(){ :; }"
+  eval "vedv::${TEST_HYPERVISOR}::delete_snapshot(){ :; }"
 
   vedv::container_service::create "$image" "$container_name"
   run vedv::container_service::create "$image" "$container_name"

@@ -119,6 +119,7 @@ vedv::image_service::__gen_vm_name() {
 # Arguments:
 #   image_file      OVF file image
 #   [image_name]    image name (default: OVF file name)
+#
 # Output:
 #  Writes image name to the stdout
 #

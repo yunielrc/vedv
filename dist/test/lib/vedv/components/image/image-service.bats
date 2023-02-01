@@ -6,10 +6,13 @@ setup_file() {
   export __VEDV_IMAGE_SERVICE_HYPERVISOR
 }
 
+teardown_file() {
+  delete_vms_by_partial_vm_name "image-cache"
+}
+
 teardown() {
   delete_vms_by_partial_vm_name "$VM_TAG"
   delete_vms_by_partial_vm_name 'image:alpine-x86_64|crc:87493131'
-  delete_vms_by_partial_vm_name "image-cache"
 }
 
 create_image_vm() {

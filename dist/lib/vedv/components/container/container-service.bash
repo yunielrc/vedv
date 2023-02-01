@@ -152,6 +152,7 @@ vedv::container_service::create() {
     [[ -z "$container_name" ]] &&
       container_name="$(vedv::container_service::_get_container_name "$container_vm_name")"
 
+    vedv::"$__VEDV_IMAGE_SERVICE_HYPERVISOR"::set_description "$container_vm_name" "$image_vm_name" 2>&1
     echo "$container_name"
   else
     err "$output"
@@ -209,10 +210,21 @@ vedv::container_service::__execute_operation_upon_containers() {
       fi
     fi
 
+    local container_image_vm_name
+
+    if [[ "$operation" == 'rm' ]]; then
+      container_image_vm_name="$(vedv::"$__VEDV_IMAGE_SERVICE_HYPERVISOR"::get_description "$vm_name")"
+    fi
+
     if ! vedv::"$__VEDV_CONTAINER_SERVICE_HYPERVISOR"::"$operation" "$vm_name" &>/dev/null; then
       containers_failed["Failed to ${operation} containers"]+="$container "
       continue
     fi
+
+    if [[ "$operation" == 'rm' ]]; then
+      vedv::"$__VEDV_IMAGE_SERVICE_HYPERVISOR"::delete_snapshot "$container_image_vm_name" "$vm_name" &>/dev/null
+    fi
+
     # FIX: delete the snapshot in the image when the operation is rm
     echo -n "$container "
   done

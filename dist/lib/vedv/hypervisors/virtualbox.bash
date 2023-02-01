@@ -113,6 +113,7 @@ vedv::virtualbox::import() {
 # Returns:
 #   0 on success, non-zero on error.
 #
+# FIXME: fix typo wms with vms
 vedv::virtualbox::list_wms_by_partial_name() {
   local -r vm_partial_name="$1"
 
