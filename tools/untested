@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+
+set -eu
+
+# cd to the script's directory
+cd "$(dirname "${BASH_SOURCE[0]}")/.." || exit $?
+
+readonly BASH_FILE_NAME="${1:-}"
+if [[ -z "$BASH_FILE_NAME" ]]; then
+  echo "Usage: $0 <file.bash>" >&2
+  exit 1
+fi
+
+BASH_FILE_PATH="$BASH_FILE_NAME"
+
+if [[ ! -f "$BASH_FILE_PATH" ]]; then
+  BASH_FILE_PATH="$(find . -name "$BASH_FILE_NAME" -print | head -n 1)"
+  if [[ -z "$BASH_FILE_PATH" ]]; then
+    echo "File '$BASH_FILE_NAME' not found in the current directory" >&2
+    exit 1
+  fi
+fi
+readonly BASH_FILE_PATH
+
+BASH_FILE_BASENAME="${BASH_FILE_NAME##*/}"
+readonly BASH_FILE_BASENAME="${BASH_FILE_BASENAME%.bash}.bats"
+
+readonly BATS_FILE_PATH="$(find . -name "${BASH_FILE_BASENAME}" -print | head -n 1)"
+if [[ -z "$BATS_FILE_PATH" ]]; then
+  echo "File '${1%.bash}.bats' not found in the current directory" >&2
+  exit 1
+fi
+readonly FUNCTION_NAMES=$(grep -Po "^\s*\w+(\w|\d|_|:)+\(\s*\)" "$BASH_FILE_PATH" | sed -e 's/^\s*//' -e 's/(\s*)\s*//')
+if [[ -z "$FUNCTION_NAMES" ]]; then
+  echo "No function declarations found in '$BASH_FILE_PATH'"
+  exit 0
+fi
+
+declare -p PWD BASH_FILE_PATH BATS_FILE_PATH
+echo
+# Loop through all the function declarations in file.bash
+while read -r function_name; do
+  # Check if the function name exists in file.bats
+  if ! grep -qP "^\s*@test\s+(\"|')\s*${function_name}\(\s*\).*(\"|')" "$BATS_FILE_PATH"; then
+    # If not, output the function name
+    echo "${function_name}()"
+  fi
+done <<<"$FUNCTION_NAMES"
+echo
