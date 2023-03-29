@@ -46,7 +46,7 @@ vedv::container_command::constructor() {
 vedv::container_command::__create() {
   local image
   local name=''
-
+  # TODO: change if [[ $# == 0 ]]; then; set -- '-h'; fi
   [[ $# == 0 ]] && set -- '-h'
 
   while [[ $# -gt 0 ]]; do
@@ -110,7 +110,7 @@ HELPMSG
 #   0 on success, non-zero on error.
 #
 vedv::container_command::__start() {
-
+  # TODO: change if [[ $# == 0 ]]; then; set -- '-h'; fi
   [[ $# == 0 ]] && set -- '-h'
 
   while [[ $# -gt 0 ]]; do
@@ -158,7 +158,7 @@ HELPMSG
 #   0 on success, non-zero on error.
 #
 vedv::container_command::__rm() {
-
+  # TODO: change if [[ $# == 0 ]]; then; set -- '-h'; fi
   [[ $# == 0 ]] && set -- '-h'
 
   while [[ $# -gt 0 ]]; do
@@ -206,7 +206,7 @@ HELPMSG
 #   0 on success, non-zero on error.
 #
 vedv::container_command::__stop() {
-
+  # TODO: change if [[ $# == 0 ]]; then; set -- '-h'; fi
   [[ $# == 0 ]] && set -- '-h'
 
   while [[ $# -gt 0 ]]; do
@@ -340,7 +340,7 @@ HELPMSG
 }
 
 vedv::container_command::run_cmd() {
-
+  # TODO: change if [[ $# == 0 ]]; then; set -- '-h'; fi
   [[ $# == 0 ]] && set -- '-h'
 
   while [[ $# -gt 0 ]]; do

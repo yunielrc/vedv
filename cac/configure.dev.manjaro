@@ -12,9 +12,9 @@ yay -Syu --noconfirm --needed \
   shellcheck \
   python-pre-commit \
   bash-bats \
-  bash-bats-assert \
+  bash-bats-assert-git \
   bash-bats-file \
-  bash-bats-support \
+  bash-bats-support-git \
   nodejs \
   npm
 

@@ -3,7 +3,7 @@
 # A tool for developing with reproducible virtual machines environments
 #
 
-set -euEo pipefail
+set -eu
 
 # CONSTANTS
 readonly __VEDV_SCRIPT_NAME="$(basename "${0}")"
@@ -11,9 +11,21 @@ readonly __VEDV_DIST_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 readonly __VEDV_LIB_PATH="${__VEDV_DIST_PATH}/lib/vedv"
 readonly __VEDV_COMPONENTS_PATH="${__VEDV_DIST_PATH}/lib/vedv/components"
 readonly __VEDV_HYPERVISORS_PATH="${__VEDV_DIST_PATH}/lib/vedv/hypervisors"
+readonly VEDV_CONFIG_DIR="${__VEDV_DIST_PATH}/etc/vedv"
+readonly VEDV_CONFIG="${VEDV_CONFIG_DIR}/vedv.env"
+
+if [[ -f "$VEDV_CONFIG" ]]; then source "$VEDV_CONFIG"; fi
+
+# ENVIRONMENT
+: "${VEDV_HADOLINT_ENABLED:="${HADOLINT_ENABLED:-true}"}"
+: "${VEDV_HADOLINT_CONFIG:="${HADOLINT_CONFIG:-"${VEDV_CONFIG_DIR}/hadolint.yaml"}"}"
+: "${VEDV_SSH_USER:="${SSH_USER:-vedv}"}"
+: "${VEDV_SSH_PASSWORD:="${SSH_PASSWORD:-"$VEDV_SSH_USER"}"}"
+: "${VEDV_SSH_IP:="${SSH_IP:-127.0.0.1}"}"
 
 # INCLUDE
 . "${__VEDV_LIB_PATH}/utils.bash"
+. "${__VEDV_LIB_PATH}/ssh-client.bash"
 . "${__VEDV_LIB_PATH}/vedv.bash"
 for f in "${__VEDV_COMPONENTS_PATH}/"*/*.bash; do . "$f"; done
 
@@ -49,7 +61,7 @@ vedv::__on_exit() {
 
 vedv::__run_cmd() {
   # IMPL: test this function
-
+  # TODO: change if [[ $# == 0 ]]; then; set -- '-h'; fi
   [[ $# == 0 ]] && set -- '-h'
 
   if [[ "${1:-}" == @(-h|--help) ]]; then
@@ -77,7 +89,12 @@ vedv::__run_cmd() {
   . "${__VEDV_HYPERVISORS_PATH}/${hypervisor}.bash"
 
   # initialize components
-  vedv::image_service::constructor "$hypervisor"
+
+  vedv::image_entity::constructor "$hypervisor"
+  vedv::image_cache_entity::constructor "$hypervisor"
+  vedv::image_vedvfile_service::constructor "$hypervisor" "$VEDV_HADOLINT_ENABLED"
+  vedv::image_builder::constructor "$hypervisor" "$VEDV_SSH_USER" "$VEDV_SSH_PASSWORD" "$VEDV_SSH_IP"
+  vedv::image_service::constructor "$hypervisor" "$VEDV_SSH_IP"
   vedv::image_command::constructor "$__VEDV_SCRIPT_NAME"
 
   vedv::container_service::constructor "$hypervisor"
@@ -98,9 +115,9 @@ vedv::__run_cmd() {
       vedv::container_command::run_cmd "$@"
       return $?
       ;;
-    # ERROR
     *)
-      echo -e "Invalid parameter: ${1}\n" >&2
+      # TODO: use err
+      err "Invalid parameter: ${1}\n"
       vedv::__help
       return 10
       ;;

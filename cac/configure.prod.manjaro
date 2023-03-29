@@ -6,4 +6,6 @@ sudo pacman -Syu --noconfirm --needed yay
 
 yay -Syu --noconfirm --needed \
   virtualbox \
-  python-petname
+  python-petname \
+  hadolint-bin \
+  gnu-netcat

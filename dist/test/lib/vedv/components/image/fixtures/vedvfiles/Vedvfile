@@ -1,0 +1,3 @@
+FROM /tmp/vedv/test/files/alpine-x86_64.ova
+COPY TODO /home/vedv/
+RUN uname -r > uname-r.txt

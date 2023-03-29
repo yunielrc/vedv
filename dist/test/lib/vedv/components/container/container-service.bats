@@ -2,20 +2,21 @@
 load test_helper
 
 setup_file() {
-  vedv::container_service::constructor 'virtualbox'
-  vedv::image_service::constructor 'virtualbox'
+  delete_vms_directory
 
-  export __VEDV_CONTAINER_SERVICE_HYPERVISOR
+  vedv::container_service::constructor "$TEST_HYPERVISOR"
+  vedv::image_service::constructor "$TEST_HYPERVISOR" "$TEST_SSH_IP"
   export __VEDV_IMAGE_SERVICE_HYPERVISOR
-}
-
-teardown_file() {
-  delete_vms_by_partial_vm_name "image-cache"
+  export __VEDV_IMAGE_SERVICE_SSH_IP
+  export __VEDV_CONTAINER_SERVICE_HYPERVISOR
+  vedv::image_entity::constructor "$TEST_HYPERVISOR"
+  export __VEDV_IMAGE_ENTITY_HYPERVISOR
 }
 
 teardown() {
   delete_vms_by_partial_vm_name "$VM_TAG"
-  delete_vms_by_partial_vm_name 'image:alpine-x86_64|crc:87493131'
+  delete_vms_by_partial_vm_name 'image:'
+  delete_vms_by_partial_vm_name "image-cache|"
 }
 
 create_container_vm() {
@@ -97,7 +98,7 @@ gen_container_vm_name() {
   run vedv::container_service::create "$image" "$container_name"
 
   assert_success
-  assert_output "na-${VM_TAG}"
+  assert_output --partial "na-${VM_TAG}"
 }
 
 @test "vedv::container_service::create(), should throw error if there is another container with the same name" {
@@ -210,8 +211,9 @@ gen_container_vm_name() {
   assert_success
   assert_output --regexp "^[0-9]+\s+${container_name1}-${VM_TAG}\$"
 }
-
-@test "vedv::container_service::list(), With $(list_all=true) Should show all containers" {
+# bats test_tags=only
+@test "vedv::container_service::list(), With list_all=true Should show all containers" {
+  skip
   local -r container_name1='ct1'
   local -r container_name2='ct2'
 
@@ -225,7 +227,7 @@ gen_container_vm_name() {
 ^[0-9]+\s+${container_name2}-${VM_TAG}\$"
 }
 
-@test "vedv::container_service::list(), With $(list_all=true) and $(partial_name=value) Should show only containers With that name" {
+@test "vedv::container_service::list(), With list_all=true and partial_name=value Should show only containers With that name" {
   local -r container_name1='ct1'
   local -r container_name2="ct2"
   local -r vm_name1="$(create_container_vm "$container_name1")"

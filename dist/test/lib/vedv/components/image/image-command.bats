@@ -1,4 +1,4 @@
-# shellcheck disable=SC2016
+# shellcheck disable=SC2016,SC2317
 load test_helper
 
 setup_file() {
@@ -17,6 +17,10 @@ vedv::image_service::rm() {
   echo "vedv::image_service::__rm $*"
 }
 
+@test "vedv::image_command::constructor() should succeed" {
+  :
+}
+
 @test "vedv::image_command::__pull, with invalid arg throw an error" {
   run vedv::image_command::__pull 'image_file' 'invalid_arg'
 
@@ -33,11 +37,6 @@ vedv::image_service::rm() {
   assert_output --partial "$help_output"
 
   run vedv::image_command::__pull --help
-
-  assert_success
-  assert_output --partial "$help_output"
-
-  run vedv::image_command::__pull help
 
   assert_success
   assert_output --partial "$help_output"
@@ -147,4 +146,100 @@ vedv::image_service::rm() {
 
   assert_success
   assert_output 'build image: image_file'
+}
+
+# Tests for vedv::image_command::__build()
+
+@test "vedv::image_command::__build() shows help" {
+  # Arrange
+  local expected_output="Usage:
+vedv image build [OPTIONS] [PATH]
+
+Build an image from a Vedvfile"
+  # Act
+  run vedv::image_command::__build -h
+  # Assert
+  assert_success
+  assert_output --partial "$expected_output"
+  # Act
+  run vedv::image_command::__build --help
+  # Assert
+  assert_success
+  assert_output --partial "$expected_output"
+}
+
+@test "vedv::image_command::__build() fails with invalid parameter" {
+  # Act
+  run vedv::image_command::__build "foo" "bar"
+  # Assert
+  assert_failure "$ERR_INVAL_ARG"
+  assert_output --partial 'Invalid parameter: bar'
+}
+
+@test "vedv::image_command::__build() builds an image from custom Vedvfile" {
+  # Arrange
+  local custom_vedvfile="MyVedvfile"
+  # Stub
+  vedv::image_service::build() {
+    assert_regex "$*" '^MyVedvfile\s*$'
+    echo "${FUNCNAME[0]} $*"
+  }
+  # Act
+  run vedv::image_command::__build "$custom_vedvfile"
+  # Assert
+  assert_success
+  assert_output --regexp '^vedv::image_service::build MyVedvfile\s*$'
+}
+
+@test "vedv::image_command::__build() builds an image from default Vedvfile" {
+  # Stub
+  vedv::image_service::build() {
+    assert_regex "$*" 'Vedvfile\s*'
+    echo "${FUNCNAME[0]} $*"
+  }
+  # Act
+  run vedv::image_command::__build
+  # Assert
+  assert_success
+  assert_output --regexp '^vedv::image_service::build Vedvfile\s*$'
+}
+
+@test "vedv::image_command::__build() Should fails if -n argument is provided without image name" {
+  # Arrange
+  # Use variables for custom image name and Vedvfile name
+  local custom_image_name="my-image"
+  # Stub
+  vedv::image_service::build() {
+    assert_equal "$*" 'INVALID_CALL'
+  }
+  for arg in '-n' '--name' '-t'; do
+    # Act
+    run vedv::image_command::__build "$arg"
+    # Assert
+    assert_failure
+    assert_output --partial "Missing argument for option '${arg}'"
+  done
+}
+
+@test "vedv::image_command::__build() builds an image with custom name" {
+  # Arrange
+  # Use variables for custom image name and Vedvfile name
+  local custom_image_name="my-image"
+  local custom_vedvfile="MyVedvfile"
+  # Stub
+  vedv::image_service::build() {
+    assert_regex "$*" '^MyVedvfile my-image\s*$'
+    echo "${FUNCNAME[0]} $*"
+  }
+  for arg in '-n' '--name' '-t'; do
+    # Act
+    run vedv::image_command::__build "$arg" "$custom_image_name" "$custom_vedvfile"
+    # Assert
+    assert_success
+    assert_output 'vedv::image_service::build MyVedvfile my-image'
+  done
+}
+
+@test "vedv::image_command::__build_help()" {
+  :
 }

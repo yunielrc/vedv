@@ -4,9 +4,11 @@
 # Process command line and call service
 #
 
-# REQUIRE
-# . '../../utils.bash'
-# . '../image/image-service.bash'
+# this is only for code completion
+if false; then
+  . '../../utils.bash'
+  . './image-service.bash'
+fi
 
 # VARIABLES
 
@@ -42,12 +44,12 @@ vedv::image_command::constructor() {
 #
 vedv::image_command::__pull() {
   local image
-
+  # TODO: change if [[ $# == 0 ]]; then; set -- '-h'; fi
   [[ $# == 0 ]] && set -- '-h'
 
   while [[ $# -gt 0 ]]; do
     case "$1" in
-    -h | --help | help)
+    -h | --help)
       vedv::image_command::__pull_help
       return 0
       ;;
@@ -147,7 +149,7 @@ HELPMSG
 #   0 on success, non-zero on error.
 #
 vedv::image_command::__rm() {
-
+  # TODO: change if [[ $# == 0 ]]; then; set -- '-h'; fi
   [[ $# == 0 ]] && set -- '-h'
 
   while [[ $# -gt 0 ]]; do
@@ -220,10 +222,79 @@ Remove unused cache images
 HELPMSG
 }
 
-# IMPL: Build an image from a Vedvfile
+#
+# Build an image from a Vedvfile
+#
+# Flags:
+#   [-h | --help]       show help
+#
+# Options:
+#   [-n | --name | -t]  image name
+#
+# Arguments:
+#   [VEDV_FILE]              Vedvfile (default is 'Vedvfile')
+#
+# Output:
+#   writes process result
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
 vedv::image_command::__build() {
-  echo 'vedv:image:build_run_cmd'
-  vedv::image_service::build
+  local image_name=''
+  local vedvfile=''
+
+  while [[ $# -gt 0 ]]; do
+    local arg="$1"
+
+    case "$arg" in
+    -h | --help)
+      vedv::image_command::__build_help
+      return 0
+      ;;
+    -n | --name | -t)
+      shift
+      image_name="${1:-}"
+      # validate argument
+      if [[ -z "$image_name" ]]; then
+        err "Missing argument for option '${arg}'"
+        vedv::image_command::__build_help
+        return "$ERR_INVAL_ARG"
+      fi
+      shift
+      ;;
+    *)
+      if [[ -z "$vedvfile" ]]; then
+        vedvfile="$1"
+        shift
+      else
+        err "Invalid parameter: ${1}\n"
+        vedv::image_command::__build_help
+        return "$ERR_INVAL_ARG"
+      fi
+      ;;
+    esac
+  done
+
+  vedv::image_service::build "${vedvfile:-Vedvfile}" "$image_name"
+}
+
+#
+# Show help for __rm command
+#
+# Output:
+#  Writes the help to the stdout
+#
+vedv::image_command::__build_help() {
+  cat <<-HELPMSG
+Usage:
+${__VED_IMAGE_COMMAND_SCRIPT_NAME} image build [OPTIONS] [PATH]
+
+Build an image from a Vedvfile
+
+Options:
+  -n, --name, -t   image name
+HELPMSG
 }
 
 #
@@ -247,6 +318,7 @@ ${__VED_IMAGE_COMMAND_SCRIPT_NAME} image COMMAND
 Manage images
 
 Commands:
+  build            Build an image from a Vedvfile
   pull             Pull an image from a registry or file
   list             List images
   remove           Remove one or more images
@@ -257,7 +329,7 @@ HELPMSG
 }
 
 vedv::image_command::run_cmd() {
-
+  # TODO: change if [[ $# == 0 ]]; then; set -- '-h'; fi
   [[ $# == 0 ]] && set -- '-h'
 
   while [[ $# -gt 0 ]]; do

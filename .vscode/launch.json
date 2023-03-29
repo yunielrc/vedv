@@ -42,8 +42,8 @@
         "container",
         "create",
         "--name",
-        "dyli-amoroso1",
-        "/tmp/vedv/test/files/alpine-x86_64.ova"
+        "dyli-amoroso",
+        "large-gull"
       ]
     },
     {
@@ -104,6 +104,20 @@
         "image",
         "rm",
         "alpine-x86_64"
+      ]
+    },
+    {
+      "type": "bashdb",
+      "request": "launch",
+      "name": "Bash-Debug (vedv image build)",
+      "cwd": "${workspaceFolder}/dist/test/lib/vedv/components/image/fixtures/vedvfiles",
+      "env": {
+        "VEDV_HADOLINT_ENABLED": "false"
+      },
+      "program": "${workspaceFolder}/dist/bin/vedv",
+      "args": [
+        "image",
+        "build"
       ]
     }
   ]

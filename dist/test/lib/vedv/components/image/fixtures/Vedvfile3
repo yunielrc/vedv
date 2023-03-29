@@ -1,0 +1,12 @@
+FROM /tmp/vedv/test/files/alpine-x86_64.ova
+
+RUN apk add --no-cache \
+  htop \
+  bat \
+  bmon
+
+COPY homefs/* /home/vedv/
+
+COPY home.config /home/vedv/
+
+RUN ls -la /home/vedv/
