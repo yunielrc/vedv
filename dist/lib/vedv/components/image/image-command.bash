@@ -31,7 +31,7 @@ vedv::image_command::constructor() {
 # Pull an image from a registry or file
 #
 # Flags:
-#   [-h | --help | help]  Show help
+#   [-h | --help]  Show help
 #
 # Arguments:
 #   IMAGE          Image name or an OVF file
@@ -44,8 +44,8 @@ vedv::image_command::constructor() {
 #
 vedv::image_command::__pull() {
   local image
-  # TODO: change if [[ $# == 0 ]]; then; set -- '-h'; fi
-  [[ $# == 0 ]] && set -- '-h'
+
+  if [[ $# == 0 ]]; then set -- '-h'; fi
 
   while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -58,7 +58,7 @@ vedv::image_command::__pull() {
         image="$1"
         shift
       else
-        echo -e "Invalid parameter: ${1}\n" >&2
+        echo -e "Invalid argument: ${1}\n" >&2
         vedv::image_command::__pull_help
         return "$ERR_INVAL_ARG"
       fi
@@ -88,7 +88,7 @@ HELPMSG
 # List images
 #
 # Flags:
-#   [-h | --help | help]        show help
+#   [-h | --help]        show help
 #
 # Output:
 #   writes container id and name to stdout
@@ -124,7 +124,7 @@ vedv::image_command::__list() {
 vedv::image_command::__list_help() {
   cat <<-HELPMSG
 Usage:
-${__VED_IMAGE_COMMAND_SCRIPT_NAME} docker image ls
+${__VED_IMAGE_COMMAND_SCRIPT_NAME} image ls
 
 List images
 
