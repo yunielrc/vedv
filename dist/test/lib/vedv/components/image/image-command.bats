@@ -25,7 +25,7 @@ vedv::image_service::rm() {
   run vedv::image_command::__pull 'image_file' 'invalid_arg'
 
   assert_failure 69
-  assert_output --partial 'Invalid parameter: invalid_arg'
+  assert_output --partial 'Invalid argument: invalid_arg'
 }
 
 @test "vedv::image_command::__pull, with arg '-h|--help|help' should show help" {
@@ -53,7 +53,7 @@ vedv::image_service::rm() {
 }
 
 @test "vedv::image_command::__list(), with arg '-h|--help|help' should show help" {
-  local -r help_output='vedv docker image ls'
+  local -r help_output='vedv image ls'
 
   run vedv::image_command::__list -h
 

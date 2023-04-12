@@ -107,14 +107,14 @@ vedv image rm IMAGE [IMAGE...]
 Remove one or more images"
   done
 }
-
+# bats test_tags=only
 @test "vedv image rm, Should remove the image" {
 
   vedv image pull "$TEST_OVA_FILE"
   run vedv image rm 'alpine-x86_64'
 
   assert_success
-  assert_output 'alpine-x86_64 '
+  assert_output --regexp '^[0-9]+\s*$'
 }
 
 @test "vedv image rm, Should do nothing without passing an image" {

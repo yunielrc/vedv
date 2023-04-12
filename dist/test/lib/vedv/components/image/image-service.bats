@@ -142,7 +142,6 @@ gen_image_vm_name() {
   assert_output "970575228"
 }
 
-# bats test_tags=only
 @test "vedv::image_service::__pull_from_file, should pull" {
   local -r image_file="$TEST_OVA_FILE"
 
@@ -174,63 +173,184 @@ gen_image_vm_name() {
 ^[0-9]+\s+${image_name2}-${VM_TAG}\$"
 }
 
-@test 'vedv::image_service::rm(), Should throw an error Without params' {
-  run vedv::image_service::rm
+# Tests for vedv::image_service::remove_by_id()
+@test 'vedv::image_service::remove_by_id(), Should throw an error Without params' {
+  run vedv::image_service::remove_by_id
 
   assert_failure 69
-  assert_output 'At least one image is required'
+  assert_output 'At least one image id is required'
 }
 
-@test 'vedv::image_service::rm(), With 2 non-existent images Should throw an error' {
-  run vedv::image_service::rm '3582343034' '3582343035'
+@test 'vedv::image_service::remove_by_id(), Should throw an error If getting vm name fails' {
+  local -r image_ids='3582343034 3582343035'
+
+  vedv::image_entity::get_vm_name() {
+    assert_regex "$*" '358234303(4|5)'
+    return 1
+  }
+  vedv::image_entity::get_child_containers_ids() {
+    assert_equal "$*" 'INVALID_CALL'
+  }
+  # shellcheck disable=SC2086
+  run vedv::image_service::remove_by_id $image_ids
+
+  assert_failure 82
+  assert_line --index 0 "Error getting vm name for images: ${image_ids} "
+  assert_line --index 1 "Failed to remove images: ${image_ids} "
+}
+
+@test 'vedv::image_service::remove_by_id(), With 2 non-existent images Should throw an error' {
+  run vedv::image_service::remove_by_id '3582343034' '3582343035'
 
   assert_failure 82
   assert_output --partial 'No such images: 3582343034 3582343035 '
 }
 
-@test 'vedv::image_service::rm(), if image has containers Should throw an error' {
-  local -r vm_name='3582343034'
+@test 'vedv::image_service::remove_by_id(), Should throw an error If getting containers ids fails' {
+  local -r image_ids='3582343034'
 
-  eval "vedv::${TEST_HYPERVISOR}::list_wms_by_partial_name() { echo 'container:dyli|crc:1234567'; }"
-
-  eval "vedv::${TEST_HYPERVISOR}::show_snapshots() {
-    cat <<EOF
-container:awake-bison|crc:933558977
-container:dyli-amoroso|crc:833558977
-EOF
-}"
-  run vedv::image_service::rm "$vm_name"
-
-  assert_failure 82
-  assert_output --partial "Failed to remove image 3582343034 because it has containers, remove them first: awake-bison dyli-amoroso"
-}
-
-@test 'vedv::image_service::rm(), if hypervisor fail Should throw an error' {
-  eval "vedv::${TEST_HYPERVISOR}::list_wms_by_partial_name() { echo 'container:dyli|crc:1234567|'; }"
-  eval "vedv::${TEST_HYPERVISOR}::show_snapshots() { return 0; }"
-  eval "vedv::${TEST_HYPERVISOR}::rm() { return 1; }"
-
-  run vedv::image_service::rm '3582343034' '3582343035'
-
-  assert_failure 82
-  assert_output --partial 'Failed to remove images: 3582343034 3582343035 '
-}
-
-@test 'vedv::image_service::rm(), Should remove images' {
-  eval "vedv::${TEST_HYPERVISOR}::list_wms_by_partial_name() { echo 'image:dyli|crc:1234567|'; }"
-  eval "vedv::${TEST_HYPERVISOR}::show_snapshots() { return 0; }"
-  eval "vedv::${TEST_HYPERVISOR}::rm() { return 0; }"
-  eval "vedv::${TEST_HYPERVISOR}::get_description(){ :; }"
-  eval "vedv::${TEST_HYPERVISOR}::delete_snapshot(){ :; }"
-
-  vedv::image_entity::get_image_cache() {
-    assert_equal "$*" '1234567'
-    echo 'image-cache|crc:1234567|'
+  vedv::image_entity::get_vm_name() {
+    assert_regex "$*" '3582343034'
+    echo 'image:image1|crc:3582343034|'
   }
-  run vedv::image_service::rm '3582343034' '3582343035'
+  vedv::image_entity::get_child_containers_ids() {
+    assert_equal "$*" '3582343034'
+    return 1
+  }
+
+  run vedv::image_service::remove_by_id $image_ids
+
+  assert_failure 82
+  assert_line --index 0 "Error getting child containers for images: ${image_ids} "
+  assert_line --index 1 "Failed to remove images: ${image_ids} "
+}
+
+@test 'vedv::image_service::remove_by_id(), Should throw an error If image has containers' {
+  local -r image_ids='3582343034'
+
+  vedv::image_entity::get_vm_name() {
+    assert_regex "$*" '3582343034'
+    echo 'image:image1|crc:3582343034|'
+  }
+  vedv::image_entity::get_child_containers_ids() {
+    assert_equal "$*" '3582343034'
+    echo '123456 123457'
+  }
+
+  run vedv::image_service::remove_by_id $image_ids
+
+  assert_failure 82
+  assert_line --index 0 "Failed to remove image '3582343034' because it has containers, remove them first: 123456 123457"
+  assert_line --index 1 "Failed to remove images: ${image_ids} "
+}
+
+@test 'vedv::image_service::remove_by_id(), Should throw an error If getting image cache fails' {
+  local -r image_ids='3582343034'
+
+  vedv::image_entity::get_vm_name() {
+    assert_regex "$*" '3582343034'
+    echo 'image:image1|crc:3582343034|'
+  }
+  vedv::image_entity::get_child_containers_ids() {
+    assert_equal "$*" '3582343034'
+  }
+  vedv::image_entity::get_image_cache() {
+    assert_equal "$*" '3582343034'
+    return 1
+  }
+
+  run vedv::image_service::remove_by_id $image_ids
+
+  assert_failure 82
+  assert_line --index 0 "Error getting image cache for images: ${image_ids} "
+  assert_line --index 1 "Failed to remove images: ${image_ids} "
+}
+
+@test 'vedv::image_service::remove_by_id(), Should throw an error If removing image fails' {
+  local -r image_ids='3582343034'
+
+  vedv::image_entity::get_vm_name() {
+    assert_regex "$*" '3582343034'
+    echo 'image:image1|crc:3582343034|'
+  }
+  vedv::image_entity::get_child_containers_ids() {
+    assert_equal "$*" '3582343034'
+  }
+  vedv::image_entity::get_image_cache() {
+    assert_equal "$*" '3582343034'
+    echo 'image-cache|crc:12345678|'
+  }
+  vedv::virtualbox::rm() {
+    assert_equal "$*" 'image:image1|crc:3582343034|'
+    return 1
+  }
+
+  run vedv::image_service::remove_by_id $image_ids
+
+  assert_failure 82
+  assert_output --partial 'Failed to remove images: 3582343034'
+}
+
+@test 'vedv::image_service::remove_by_id(), Should throw an error If deleting snapshot fails' {
+
+  local -r image_ids='3582343034'
+
+  vedv::image_entity::get_vm_name() {
+    assert_regex "$*" '3582343034'
+    echo 'image:image1|crc:3582343034|'
+  }
+  vedv::image_entity::get_child_containers_ids() {
+    assert_equal "$*" '3582343034'
+  }
+  vedv::image_entity::get_image_cache() {
+    assert_equal "$*" '3582343034'
+    echo 'image-cache|crc:12345678|'
+  }
+  vedv::virtualbox::rm() {
+    assert_equal "$*" 'image:image1|crc:3582343034|'
+  }
+  vedv::virtualbox::delete_snapshot() {
+    assert_equal "$*" 'image-cache|crc:12345678| image:image1|crc:3582343034|'
+    return 1
+  }
+
+  run vedv::image_service::remove_by_id $image_ids
+
+  assert_failure 82
+  assert_output '
+Error deleting snapshot for images: 3582343034 '
+}
+# bats test_tags=only
+@test 'vedv::image_service::remove_by_id(), Should remove images' {
+
+  local -r image_ids='3582343034'
+
+  vedv::image_entity::get_vm_name() {
+    assert_regex "$*" '3582343034'
+    echo 'image:image1|crc:3582343034|'
+  }
+  vedv::image_entity::get_child_containers_ids() {
+    assert_equal "$*" '3582343034'
+  }
+  vedv::image_entity::get_image_cache() {
+    assert_equal "$*" '3582343034'
+    echo 'image-cache|crc:12345678|'
+  }
+  vedv::virtualbox::rm() {
+    assert_equal "$*" 'image:image1|crc:3582343034|'
+  }
+  vedv::virtualbox::delete_snapshot() {
+    assert_equal "$*" 'image-cache|crc:12345678| image:image1|crc:3582343034|'
+  }
+
+  run vedv::image_service::remove_by_id $image_ids
 
   assert_success
-  assert_output '3582343034 3582343035 '
+  assert_output --partial '3582343034'
+}
+
+@test 'vedv::image_service::remove(), NOT IMPLEMENTED' {
+  skip
 }
 
 @test 'vedv::image_service::remove_unused_cache(), Should remove cache images' {
@@ -305,18 +425,26 @@ Failed to remove caches: 1234567'
 @test "vedv::image_service::is_started() Should fail If failed to get running vms" {
   local -r image_id="1234"
 
-  eval "vedv::${__VEDV_IMAGE_SERVICE_HYPERVISOR}::list_running() { false; }"
+  vedv::image_entity::get_vm_name() {
+    assert_equal "$*" '1234'
+    echo 'image:image1|crc:1234|'
+  }
+  eval "vedv::${__VEDV_IMAGE_SERVICE_HYPERVISOR}::is_running() { false; }"
 
   run vedv::image_service::is_started "$image_id"
 
   assert_failure "$ERR_HYPERVISOR_OPERATION"
-  assert_output "Failed to get running vms"
+  assert_output "Failed to check if is running vm: 'image:image1|crc:1234|'"
 }
 
 @test "vedv::image_service::is_started() Should returns 1 If image is not running" {
-  local -r image_id="5678"
+  local -r image_id="1234"
 
-  eval "vedv::${__VEDV_IMAGE_SERVICE_HYPERVISOR}::list_running() { echo ''; }"
+  vedv::image_entity::get_vm_name() {
+    assert_equal "$*" '1234'
+    echo 'image:image1|crc:1234|'
+  }
+  eval "vedv::${__VEDV_IMAGE_SERVICE_HYPERVISOR}::is_running() { echo false; }"
 
   run vedv::image_service::is_started "$image_id"
 
@@ -327,7 +455,12 @@ Failed to remove caches: 1234567'
 @test "vedv::image_service::is_started() returns 0 if running" {
   local -r image_id="1234"
 
-  eval "vedv::${__VEDV_IMAGE_SERVICE_HYPERVISOR}::list_running() { echo 'image:image1|crc:1234|'; }"
+  vedv::image_entity::get_vm_name() {
+    assert_equal "$*" '1234'
+    echo 'image:image1|crc:1234|'
+  }
+
+  eval "vedv::${__VEDV_IMAGE_SERVICE_HYPERVISOR}::is_running() { echo true; }"
 
   run vedv::image_service::is_started "$image_id"
 

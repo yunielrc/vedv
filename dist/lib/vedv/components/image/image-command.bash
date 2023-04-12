@@ -58,7 +58,7 @@ vedv::image_command::__pull() {
         image="$1"
         shift
       else
-        echo -e "Invalid argument: ${1}\n" >&2
+        err "Invalid argument: ${1}\n"
         vedv::image_command::__pull_help
         return "$ERR_INVAL_ARG"
       fi
@@ -149,8 +149,8 @@ HELPMSG
 #   0 on success, non-zero on error.
 #
 vedv::image_command::__rm() {
-  # TODO: change if [[ $# == 0 ]]; then; set -- '-h'; fi
-  [[ $# == 0 ]] && set -- '-h'
+
+  if [[ $# == 0 ]]; then set -- '-h'; fi
 
   while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -329,8 +329,7 @@ HELPMSG
 }
 
 vedv::image_command::run_cmd() {
-  # TODO: change if [[ $# == 0 ]]; then; set -- '-h'; fi
-  [[ $# == 0 ]] && set -- '-h'
+  if [[ $# == 0 ]]; then set -- '-h'; fi
 
   while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -364,7 +363,7 @@ vedv::image_command::run_cmd() {
       return $?
       ;;
     *)
-      echo -e "Invalid parameter: ${1}\n" >&2
+      err "Invalid parameter: ${1}\n"
       vedv::image_command::__help
       return "$ERR_INVAL_ARG"
       ;;

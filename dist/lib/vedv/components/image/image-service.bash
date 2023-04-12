@@ -16,10 +16,6 @@ fi
 # REFACTOR: use vedv::hypervisor::<function> instead of
 # vedv::"$__VEDV_IMAGE_SERVICE_HYPERVISOR"::<functions>
 
-#
-# REQUIRE
-# . '../../utils.bash'
-
 # VARIABLES
 
 # FUNCTIONS
@@ -74,14 +70,28 @@ vedv::image_service::__pull_from_file() {
     image_name="$custom_image_name"
   fi
   readonly vm_name image_id image_name
-  # TODO: split the command below to manage errors
-  if [[ -n "$(vedv::"$__VEDV_IMAGE_SERVICE_HYPERVISOR"::list_wms_by_partial_name "$vm_name")" ]]; then
+
+  local image_exists
+  image_exists="$(vedv::"$__VEDV_IMAGE_SERVICE_HYPERVISOR"::list_wms_by_partial_name "$vm_name")" || {
+    err "Error getting virtual machine with name: '${vm_name}'"
+    return "$ERR_IMAGE_OPERATION"
+  }
+  readonly image_exists
+
+  if [[ -n "$image_exists" ]]; then
     err "There is another image with the same name: ${image_name}, you must delete it or use another name"
     return "$ERR_IMAGE_OPERATION"
   fi
 
   # Import an OVF from a file
-  if [[ -z "$(vedv::"$__VEDV_IMAGE_SERVICE_HYPERVISOR"::list_wms_by_partial_name "$image_cache_vm_name")" ]]; then
+  local image_cache_exists
+  image_cache_exists="$(vedv::"$__VEDV_IMAGE_SERVICE_HYPERVISOR"::list_wms_by_partial_name "$image_cache_vm_name")" || {
+    err "Error getting virtual machine with name: '${vm_name}'"
+    return "$ERR_IMAGE_OPERATION"
+  }
+  readonly image_cache_exists
+
+  if [[ -z "$image_cache_exists" ]]; then
     vedv::"$__VEDV_IMAGE_SERVICE_HYPERVISOR"::import &>/dev/null "$image_file" "$image_cache_vm_name" || {
       err "Error creating image cache '${image_cache_vm_name}' vm from ova file '${image_file}'"
       return "$ERR_IMAGE_OPERATION"
@@ -134,7 +144,10 @@ vedv::image_service::pull() {
   local -r return_image_id="${3:-false}"
 
   if [[ -f "$image" ]]; then
-    vedv::image_service::__pull_from_file "$image" "$image_name" "$return_image_id"
+    vedv::image_service::__pull_from_file "$image" "$image_name" "$return_image_id" || {
+      err "Error pulling image '${image}' from file"
+      return "$ERR_IMAGE_OPERATION"
+    }
   else
     # IMPL: Pull an OVF image from a registry
     err "Not implemented: 'vedv::image_service::__pull_from_registry'"
@@ -154,13 +167,27 @@ vedv::image_service::pull() {
 vedv::image_service::list() {
 
   local vm_names
-  vm_names="$(vedv::"$__VEDV_IMAGE_SERVICE_HYPERVISOR"::list)"
+  vm_names="$(vedv::"$__VEDV_IMAGE_SERVICE_HYPERVISOR"::list)" || {
+    err "Error getting virtual machines names"
+    return "$ERR_IMAGE_OPERATION"
+  }
   vm_names="$(echo "$vm_names" | grep "image:.*|" || :)"
   readonly vm_names
 
   for vm_name in $vm_names; do
-    # REFACTOR: use vedv::image_entity::get_image_id
-    echo "$(vedv::image_entity::get_image_id_by_vm_name "$vm_name") $(vedv::image_entity::get_image_name_by_vm_name "$vm_name")"
+    local image_id
+    image_id="$(vedv::image_entity::get_image_id_by_vm_name "$vm_name")" || {
+      err "Error getting image id from vm name: '${vm_name}'"
+      return "$ERR_IMAGE_OPERATION"
+    }
+
+    local image_name
+    image_name="$(vedv::image_entity::get_image_name_by_vm_name "$vm_name")" || {
+      err "Error getting image name from vm name: '${vm_name}'"
+      return "$ERR_IMAGE_OPERATION"
+    }
+
+    echo "${image_id} ${image_name}"
   done
 }
 
@@ -168,73 +195,69 @@ vedv::image_service::list() {
 # Remove one or more images
 #
 # Arguments:
-#   image_name_or_ids string    image names or ids
+#   image_ids string    image ids
 #
 # Output:
-#  writes image_name_or_ids (string) to the stdout
+#  writes deleted image_ids (string) to the stdout
 #
 # Returns:
 #   0 on success, non-zero on error.
 #
-vedv::image_service::rm() {
-  # TODO: stop de image if it is running
-  # TODO: this is ambiguous, put flag to delete by id
-  # And if it happens that you want to delete by id and an image has that id as its name?
-  local -ra image_name_or_ids=("$@")
+vedv::image_service::remove_by_id() {
+  local -ra image_ids=("$@")
 
-  if [[ "${#image_name_or_ids[@]}" -eq 0 ]]; then
-    err 'At least one image is required'
+  if [[ "${#image_ids[@]}" -eq 0 ]]; then
+    err 'At least one image id is required'
     return "$ERR_INVAL_ARG"
   fi
 
   local -A image_failed=()
 
-  for image in "${image_name_or_ids[@]}"; do
-    local is_id=false
-    local vm_name="$(vedv::"${__VEDV_IMAGE_SERVICE_HYPERVISOR}"::list_wms_by_partial_name "image:${image}|" | head -n 1)"
-    # TODO: `use exists_image_with_id`, `exists_image_with_name`
-    if [[ -z "$vm_name" ]]; then
-      vm_name="$(vedv::"${__VEDV_IMAGE_SERVICE_HYPERVISOR}"::list_wms_by_partial_name "|crc:${image}|" | head -n 1)"
+  for image_id in "${image_ids[@]}"; do
 
-      if [[ -z "$vm_name" ]]; then
-        image_failed['No such images']+="$image "
-        continue
-      fi
-      is_id=true
-    fi
-
-    local snapshots
-    # TODO: manage errors
-    snapshots="$(vedv::"$__VEDV_IMAGE_SERVICE_HYPERVISOR"::show_snapshots "$vm_name")"
-    snapshots="$(echo "$snapshots" | grep -o 'container:.*|' | grep -o ':.*|' | tr -d ':|' | tr '\n' ' ' || :)"
-
-    if [[ -n "$snapshots" ]]; then
-      image_failed["Failed to remove image ${image} because it has containers, remove them first"]="$snapshots"
-      image_failed["Failed to remove images"]+="$image "
+    local vm_name
+    vm_name="$(vedv::image_entity::get_vm_name "$image_id")" || {
+      image_failed["Error getting vm name for images"]+="$image_id "
+      image_failed["Failed to remove images"]+="$image_id "
       continue
-    fi
-
-    # local image_cache_vm_name="$(vedv::"$__VEDV_IMAGE_SERVICE_HYPERVISOR"::get_description "$vm_name")"
-
-    local image_id
-    if [[ "$is_id" == true ]]; then
-      image_id="$image"
-    else
-      image_id="$(vedv::image_entity::get_image_id_by_vm_name "$vm_name")"
-    fi
-
-    local image_cache_vm_name="$(vedv::image_entity::get_image_cache "$image_id")" || {
-      err "Error getting image cache for image id: ${image_id}"
-      return "$ERR_IMAGE_OPERATION"
     }
 
-    if ! vedv::"$__VEDV_IMAGE_SERVICE_HYPERVISOR"::rm "$vm_name" &>/dev/null; then
-      image_failed["Failed to remove images"]+="$image "
+    if [[ -z "$vm_name" ]]; then
+      image_failed['No such images']+="$image_id "
       continue
     fi
-    vedv::"$__VEDV_IMAGE_SERVICE_HYPERVISOR"::delete_snapshot "$image_cache_vm_name" "$vm_name" &>/dev/null
 
-    echo -n "$image "
+    local containers_ids
+    containers_ids="$(vedv::image_entity::get_child_containers_ids "$image_id")" || {
+      image_failed["Error getting child containers for images"]+="$image_id "
+      image_failed["Failed to remove images"]+="$image_id "
+      continue
+    }
+
+    if [[ -n "$containers_ids" ]]; then
+      image_failed["Failed to remove image '${image_id}' because it has containers, remove them first"]="$containers_ids"
+      image_failed["Failed to remove images"]+="$image_id "
+      continue
+    fi
+
+    local image_cache_vm_name
+    image_cache_vm_name="$(vedv::image_entity::get_image_cache "$image_id")" || {
+      image_failed["Error getting image cache for images"]+="$image_id "
+      image_failed["Failed to remove images"]+="$image_id "
+      continue
+    }
+
+    vedv::"$__VEDV_IMAGE_SERVICE_HYPERVISOR"::rm "$vm_name" &>/dev/null || {
+      image_failed["Failed to remove images"]+="$image_id "
+      continue
+    }
+
+    vedv::"$__VEDV_IMAGE_SERVICE_HYPERVISOR"::delete_snapshot "$image_cache_vm_name" "$vm_name" &>/dev/null || {
+      image_failed["Error deleting snapshot for images"]+="$image_id "
+      continue
+    }
+
+    echo -n "$image_id "
   done
 
   echo
@@ -250,6 +273,59 @@ vedv::image_service::rm() {
 }
 
 #
+# Remove one or more images
+#
+# Arguments:
+#   image_ids_or_names string    image ids or names
+#
+# Output:
+#  writes deleted image_ids (string) to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::image_service::remove() {
+  local -ra image_ids_or_names=("$@")
+
+  if [[ "${#image_ids_or_names[@]}" -eq 0 ]]; then
+    err 'At least one image is required'
+    return "$ERR_INVAL_ARG"
+  fi
+
+  local -a image_ids
+
+  for image_id_or_name in "${image_ids_or_names[@]}"; do
+    local image_id
+    image_id="$(vedv::image_entity::get_id_by_image_name "$image_id_or_name")" || {
+      if [[ $? != "$ERR_NOT_FOUND" ]]; then
+        err "Error getting image id by image name: '${image_id_or_name}'"
+      fi
+      image_ids+=("$image_id_or_name")
+      continue
+    }
+    image_ids+=("$image_id")
+  done
+
+  vedv::image_service::remove_by_id "${image_ids[@]}"
+}
+
+#
+# Remove one or more images
+#
+# Arguments:
+#   image_ids_or_names string    image ids or names
+#
+# Output:
+#  writes deleted image_ids (string) to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::image_service::rm() {
+  vedv::image_service::remove "$@"
+}
+
+#
 # Remove unused images cache
 #
 # Output:
@@ -259,21 +335,33 @@ vedv::image_service::rm() {
 #   0 on success, non-zero on error.
 #
 vedv::image_service::remove_unused_cache() {
-  local -r image_cache_vm_names="$(vedv::"$__VEDV_IMAGE_SERVICE_HYPERVISOR"::list_wms_by_partial_name 'image-cache|')"
+  local image_cache_vm_names
+  image_cache_vm_names="$(vedv::"$__VEDV_IMAGE_SERVICE_HYPERVISOR"::list_wms_by_partial_name 'image-cache|')" || {
+    err 'Error getting image cache vm names'
+    return "$ERR_IMAGE_OPERATION"
+  }
+  readonly image_cache_vm_names
 
   local failed_remove=''
 
   for vm_name in $image_cache_vm_names; do
     local snapshots
-    snapshots="$(vedv::"$__VEDV_IMAGE_SERVICE_HYPERVISOR"::show_snapshots "$vm_name")"
+    snapshots="$(vedv::"$__VEDV_IMAGE_SERVICE_HYPERVISOR"::show_snapshots "$vm_name")" || {
+      err "Error getting snapshots for vm: '$vm_name'"
+      return "$ERR_IMAGE_OPERATION"
+    }
 
     if [[ -z "$snapshots" ]]; then
-      local image_id="$(vedv::image_cache_entity::get_image_id_by_vm_name "$vm_name")"
+      local image_id
+      image_id="$(vedv::image_cache_entity::get_image_id_by_vm_name "$vm_name")" || {
+        err "Error getting image id by vm name: '$vm_name'"
+        return "$ERR_IMAGE_OPERATION"
+      }
 
-      if ! vedv::"$__VEDV_IMAGE_SERVICE_HYPERVISOR"::rm "$vm_name" &>/dev/null; then
+      vedv::"$__VEDV_IMAGE_SERVICE_HYPERVISOR"::rm "$vm_name" &>/dev/null || {
         failed_remove+="$image_id "
         continue
-      fi
+      }
 
       echo -n "$image_id "
     fi
@@ -307,15 +395,23 @@ vedv::image_service::is_started() {
     return "$ERR_INVAL_ARG"
   fi
 
-  local running_vms
-  running_vms="$(vedv::"$__VEDV_IMAGE_SERVICE_HYPERVISOR"::list_running)" || {
-    err "Failed to get running vms"
+  local vm_name
+  vm_name="$(vedv::image_entity::get_vm_name "$image_id")" || {
+    err "Failed to get vm name for image: '$image_id'"
+    return "$ERR_IMAGE_OPERATION"
+  }
+
+  local is_running
+  is_running="$(vedv::"$__VEDV_IMAGE_SERVICE_HYPERVISOR"::is_running "$vm_name")" || {
+    err "Failed to check if is running vm: '$vm_name'"
     return "$ERR_HYPERVISOR_OPERATION"
   }
-  readonly running_vms
-
-  echo "$running_vms" | grep --quiet "|crc:${image_id}|" ||
+  readonly is_running
+  # TODO: use echo true|false instead of returning 1|0
+  if [[ "$is_running" == false ]]; then
     return 1
+  fi
+  return 0
 }
 
 #

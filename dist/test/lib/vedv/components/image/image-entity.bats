@@ -827,3 +827,9 @@ EOF
   assert_success
   assert_output "54323"
 }
+
+# Tests for vedv::image_entity::has_containers()
+@test "vedv::image_entity::has_containers(): NO IMPLEMENTED" {
+  skip
+  # TODO: implement test
+}

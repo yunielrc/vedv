@@ -536,6 +536,36 @@ vedv::image_entity::get_child_containers_ids() {
 }
 
 #
+# Has containers
+#
+# Arguments:
+#   image_id  string       image id
+#
+# Output:
+#  Writes true (bool) if has containers, or false to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::image_entity::has_containers() {
+  local -r image_id="$1"
+
+  local child_containers_ids
+  child_containers_ids="$(vedv::image_entity::get_child_containers_ids "$image_id")" || {
+    err "Failed to get child containers ids for image '${image_id}'"
+    return "$ERR_IMAGE_OPERATION"
+  }
+  readonly child_containers_ids
+
+  if [[ -z "$child_containers_ids" ]]; then
+    echo false
+    return 0
+  fi
+
+  echo true
+}
+
+#
 # Get layers
 #
 # Arguments:

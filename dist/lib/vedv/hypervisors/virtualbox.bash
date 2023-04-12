@@ -113,7 +113,7 @@ vedv::virtualbox::import() {
 #   vm_partial_name         name of the exported VM
 #
 # Output:
-#   writes vms names to stdout
+#   writes vm_names (text) to stdout
 #
 # Returns:
 #   0 on success, non-zero on error.
