@@ -1,5 +1,7 @@
+#
 # Image Entity
 #
+
 # this is only for code completion
 if false; then
   . './../../utils.bash'
@@ -54,7 +56,7 @@ vedv::image_entity::__validate_attribute() {
 # Returns:
 #   0 if valid, 1 if invalid
 #
-vedv::image_entity::validate_vm_name() {
+vedv::image_entity::__validate_vm_name() {
   local -r vm_name="$1"
   # validate arguments
   if [[ -z "$vm_name" ]]; then
@@ -142,7 +144,13 @@ vedv::image_entity::get_vm_name() {
 
   utils::validate_name_or_id "$image_id" || return "$?"
 
-  vedv::"$__VEDV_IMAGE_ENTITY_HYPERVISOR"::list_wms_by_partial_name "|crc:${image_id}|" | head -n 1
+  local vms
+  vms="$(vedv::"$__VEDV_IMAGE_ENTITY_HYPERVISOR"::list_wms_by_partial_name "|crc:${image_id}|")" || {
+    err "Failed to get vm name of imae: ${image_id}"
+    return "$ERR_IMAGE_ENTITY"
+  }
+
+  head -n 1 <<<"$vms"
 }
 
 #
@@ -185,7 +193,7 @@ vedv::image_entity::get_vm_name_by_image_name() {
 vedv::image_entity::get_image_name_by_vm_name() {
   local -r image_vm_name="$1"
   # validate arguments
-  vedv::image_entity::validate_vm_name "$image_vm_name" || return "$?"
+  vedv::image_entity::__validate_vm_name "$image_vm_name" || return "$?"
 
   local image_name="${image_vm_name#'image:'}"
   image_name="${image_name%'|crc:'*}"
@@ -207,7 +215,7 @@ vedv::image_entity::get_image_name_by_vm_name() {
 vedv::image_entity::get_image_id_by_vm_name() {
   local -r image_vm_name="$1"
 
-  vedv::image_entity::validate_vm_name "$image_vm_name" || return "$?"
+  vedv::image_entity::__validate_vm_name "$image_vm_name" || return "$?"
 
   local result="${image_vm_name#*'|crc:'}"
   echo "${result%'|'}"
@@ -310,7 +318,7 @@ vedv::image_entity::__get_attribute() {
   }
   readonly image_vm_name
   # validate vm name
-  vedv::image_entity::validate_vm_name "$image_vm_name" || return "$?"
+  vedv::image_entity::__validate_vm_name "$image_vm_name" || return "$?"
 
   (
     local description

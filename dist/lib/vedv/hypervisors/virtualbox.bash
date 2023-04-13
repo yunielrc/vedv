@@ -20,7 +20,7 @@
 # Returns:
 #   0 if name is valid or non-zero otherwise.
 #
-vedv::virtualbox::validate_vm_name() {
+vedv::hypervisor::validate_vm_name() {
   local -r vm_name="$1"
   local -r type="${2:-vm}"
 
@@ -39,18 +39,7 @@ vedv::virtualbox::validate_vm_name() {
 
   return 0
 }
-
-# IMAGE
-
-# IMPL: Pull an image or a repository from a registry or a file
-vedv::virtualbox::image::pull() {
-
-  echo 'vedv::virtualbox::image::pull'
-}
-# IMPL: Build an image
-vedv::virtualbox::image::build() {
-  echo 'vedv::virtualbox::image::build'
-}
+vedv::virtualbox::validate_vm_name() { vedv::hypervisor::validate_vm_name "$@"; }
 
 #
 # Create a clone of an existing virtual machine
@@ -62,24 +51,24 @@ vedv::virtualbox::image::build() {
 # Returns:
 #   0 on success, non-zero on error.
 #
-vedv::virtualbox::clonevm_link() {
+vedv::hypervisor::clonevm_link() {
   local -r vm_name="$1"
   local -r vm_clone_name="$2"
   local -r vm_snapshot="${3:-"$vm_clone_name"}"
 
-  if ! vedv::virtualbox::validate_vm_name "$vm_clone_name" 'clone_vm_name'; then
+  if ! vedv::hypervisor::validate_vm_name "$vm_clone_name" 'clone_vm_name'; then
     return "$ERR_INVAL_ARG"
   fi
-  vedv::virtualbox::take_snapshot "$vm_name" "$vm_clone_name"
+  vedv::hypervisor::take_snapshot "$vm_name" "$vm_clone_name"
 
   VBoxManage clonevm "$vm_name" --name "$vm_clone_name" --register \
     --options 'link' --snapshot "$vm_snapshot" || {
-    vedv::virtualbox::delete_snapshot "$vm_name" "$vm_clone_name"
+    vedv::hypervisor::delete_snapshot "$vm_name" "$vm_clone_name"
     err "Failed to clone VM '${vm_name}' to '${vm_clone_name}'"
     return "$ERR_VIRTUALBOX_OPERATION"
   }
 }
-
+vedv::virtualbox::clonevm_link() { vedv::hypervisor::clonevm_link "$@"; }
 #
 # Import a virtual appliance in OVA format
 # and create virtual machines
@@ -91,7 +80,7 @@ vedv::virtualbox::clonevm_link() {
 # Returns:
 #   0 on success, non-zero on error.
 #
-vedv::virtualbox::import() {
+vedv::hypervisor::import() {
   local -r ova_file="$1"
   local -r vm_name="$2"
 
@@ -100,11 +89,12 @@ vedv::virtualbox::import() {
     return "$ERR_NOFILE"
   fi
 
-  if ! vedv::virtualbox::validate_vm_name "$vm_name" 'import_vm_name'; then
+  if ! vedv::hypervisor::validate_vm_name "$vm_name" 'import_vm_name'; then
     return "$ERR_INVAL_ARG"
   fi
   VBoxManage import "$ova_file" --vsys 0 --vmname "$vm_name"
 }
+vedv::virtualbox::import() { vedv::hypervisor::import "$@"; }
 
 #
 # List virtual machines with name that contains the partial name
@@ -118,11 +108,52 @@ vedv::virtualbox::import() {
 # Returns:
 #   0 on success, non-zero on error.
 #
-# FIXME: fix typo wms with vms
-vedv::virtualbox::list_wms_by_partial_name() {
+vedv::hypervisor::list_vms_by_partial_name() {
+  local -r vm_partial_name="$1"
+  # validate arguments
+  if [[ -z "$vm_partial_name" ]]; then
+    err "Argument 'vm_partial_name' is required"
+    return "$ERR_INVAL_ARG"
+  fi
+
+  local vms
+  vms=$(VBoxManage list vms) || {
+    err "Failed to list vms"
+    return "$ERR_VIRTUALBOX_OPERATION"
+  }
+  readonly vms
+
+  echo "$vms" | grep "$vm_partial_name" | cut -d' ' -f1 | sed 's/"//g' || :
+}
+vedv::virtualbox::list_wms_by_partial_name() { vedv::hypervisor::list_vms_by_partial_name "$@"; }
+
+#
+# Returns if exists virtual machines with partial name
+#
+# Arguments:
+#   vm_partial_name         partial name
+#
+# Output:
+#   writes true if exists or false otherwise to stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::hypervisor::exists_vm_with_partial_name() {
   local -r vm_partial_name="$1"
 
-  VBoxManage list vms | grep "$vm_partial_name" | cut -d' ' -f1 | sed 's/"//g' || :
+  local vms
+  vms=$(vedv::hypervisor::list_vms_by_partial_name "$vm_partial_name") || {
+    err "Failed to get vms list"
+    return "$ERR_VIRTUALBOX_OPERATION"
+  }
+  readonly vms
+
+  if [[ -z "$vms" ]]; then
+    echo false
+  else
+    echo true
+  fi
 }
 
 #
@@ -135,14 +166,14 @@ vedv::virtualbox::list_wms_by_partial_name() {
 # Returns:
 #   0 on success, non-zero on error.
 #
-vedv::virtualbox::snapshot_restore_current() {
+vedv::hypervisor::snapshot_restore_current() {
   local -r vm_name="$1"
   # validate arguments
   if [[ -z "$vm_name" ]]; then
     err "Argument 'vm_name' is required"
     return "$ERR_INVAL_ARG"
   fi
-  vedv::virtualbox::poweroff "$vm_name" || {
+  vedv::hypervisor::poweroff "$vm_name" || {
     err "Failed to poweroff VM ${vm_name}"
     return "$ERR_VIRTUALBOX_OPERATION"
   }
@@ -151,7 +182,7 @@ vedv::virtualbox::snapshot_restore_current() {
     return "$ERR_VIRTUALBOX_OPERATION"
   }
 }
-
+vedv::virtualbox::snapshot_restore_current() { vedv::hypervisor::snapshot_restore_current "$@"; }
 #
 # Takes a snapshot of the current state of the VM
 #
@@ -162,16 +193,16 @@ vedv::virtualbox::snapshot_restore_current() {
 # Returns:
 #   0 on success, non-zero on error.
 #
-vedv::virtualbox::take_snapshot() {
+vedv::hypervisor::take_snapshot() {
   local -r vm_name="$1"
   local -r snapshot_name="$2"
 
-  if ! vedv::virtualbox::validate_vm_name "$snapshot_name" 'snapshot_vm_name'; then
+  if ! vedv::hypervisor::validate_vm_name "$snapshot_name" 'snapshot_vm_name'; then
     return "$ERR_INVAL_ARG"
   fi
 
   local is_running
-  is_running="$(vedv::virtualbox::is_running "$vm_name")" || {
+  is_running="$(vedv::hypervisor::is_running "$vm_name")" || {
     err "Failed to check if VM ${vm_name} is running"
     return "$ERR_VIRTUALBOX_OPERATION"
   }
@@ -183,6 +214,7 @@ vedv::virtualbox::take_snapshot() {
     VBoxManage snapshot "$vm_name" take "$snapshot_name"
   fi
 }
+vedv::virtualbox::take_snapshot() { vedv::hypervisor::take_snapshot "$@"; }
 
 #
 # Restore a snapshot
@@ -194,7 +226,7 @@ vedv::virtualbox::take_snapshot() {
 # Returns:
 #   0 on success, non-zero on error.
 #
-vedv::virtualbox::restore_snapshot() {
+vedv::hypervisor::restore_snapshot() {
   local -r vm_name="$1"
   local -r snapshot_name="$2"
   # validate arguments
@@ -207,12 +239,13 @@ vedv::virtualbox::restore_snapshot() {
     return "$ERR_INVAL_ARG"
   fi
 
-  if ! vedv::virtualbox::validate_vm_name "$snapshot_name" 'snapshot_vm_name'; then
+  if ! vedv::hypervisor::validate_vm_name "$snapshot_name" 'snapshot_vm_name'; then
     return "$ERR_INVAL_ARG"
   fi
-  vedv::virtualbox::poweroff "$vm_name"
+  vedv::hypervisor::poweroff "$vm_name"
   VBoxManage snapshot "$vm_name" restore "$snapshot_name"
 }
+vedv::virtualbox::restore_snapshot() { vedv::hypervisor::restore_snapshot "$@"; }
 
 #
 # Show snapshoots for a given vm
@@ -226,7 +259,7 @@ vedv::virtualbox::restore_snapshot() {
 # Returns:
 #   0 on success, non-zero on error.
 #
-vedv::virtualbox::show_snapshots() {
+vedv::hypervisor::show_snapshots() {
   local -r vm_name="$1"
 
   local output
@@ -234,7 +267,7 @@ vedv::virtualbox::show_snapshots() {
 
   echo "$output" | grep -o '^SnapshotName.*' | grep -o '".*"' | tr -d '"' || :
 }
-
+vedv::virtualbox::show_snapshots() { vedv::hypervisor::show_snapshots "$@"; }
 #
 # Delete a snapshot
 #
@@ -245,13 +278,13 @@ vedv::virtualbox::show_snapshots() {
 # Returns:
 #   0 on success, non-zero on error.
 #
-vedv::virtualbox::delete_snapshot() {
+vedv::hypervisor::delete_snapshot() {
   local -r vm_name="$1"
   local -r snapshot_name="$2"
 
   VBoxManage snapshot "$vm_name" delete "$snapshot_name"
 }
-
+vedv::virtualbox::delete_snapshot() { vedv::hypervisor::delete_snapshot "$@"; }
 #
 # Start a virtual machine
 #
@@ -264,12 +297,12 @@ vedv::virtualbox::delete_snapshot() {
 # Returns:
 #   0 on success, non-zero on error.
 #
-vedv::virtualbox::start() {
+vedv::hypervisor::start() {
   local -r vm_name="$1"
 
   VBoxManage startvm "$vm_name"
 }
-
+vedv::virtualbox::start() { vedv::hypervisor::start "$@"; }
 #
 # Shutdown the virtual machine
 #
@@ -282,11 +315,11 @@ vedv::virtualbox::start() {
 # Returns:
 #   0 on success, non-zero on error.
 #
-vedv::virtualbox::shutdown() {
+vedv::hypervisor::shutdown() {
   local -r vm_name="$1"
 
   local running
-  running="$(vedv::virtualbox::is_running "$vm_name")" || {
+  running="$(vedv::hypervisor::is_running "$vm_name")" || {
     err "Failed to check if vm is running"
     return "$ERR_VIRTUALBOX_OPERATION"
   }
@@ -297,6 +330,7 @@ vedv::virtualbox::shutdown() {
     # VBoxManage controlvm "$vm_name" savestate
   fi
 }
+vedv::virtualbox::shutdown() { vedv::hypervisor::shutdown "$@"; }
 
 #
 # Stop a virtual machine
@@ -310,11 +344,11 @@ vedv::virtualbox::shutdown() {
 # Returns:
 #   0 on success, non-zero on error.
 #
-vedv::virtualbox::poweroff() {
+vedv::hypervisor::poweroff() {
   local -r vm_name="$1"
 
   local running
-  running="$(vedv::virtualbox::is_running "$vm_name")" || {
+  running="$(vedv::hypervisor::is_running "$vm_name")" || {
     err "Failed to check if vm is running"
     return "$ERR_VIRTUALBOX_OPERATION"
   }
@@ -324,9 +358,24 @@ vedv::virtualbox::poweroff() {
     VBoxManage controlvm "$vm_name" poweroff
   fi
 }
-vedv::virtualbox::stop() { vedv::virtualbox::poweroff "$@"; }
+vedv::hypervisor::stop() { vedv::hypervisor::poweroff "$@"; }
 
-vedv::virtualbox::is_running() {
+vedv::virtualbox::poweroff() { vedv::hypervisor::poweroff "$@"; }
+vedv::virtualbox::stop() { vedv::hypervisor::poweroff "$@"; }
+
+#
+# Check if a virtual machine is running
+#
+# Arguments:
+#   vm_name        virtual machine name
+#
+# Output:
+#   writes true or false to stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::hypervisor::is_running() {
   local -r vm_name="$1"
 
   if [[ -z "$vm_name" ]]; then
@@ -335,7 +384,7 @@ vedv::virtualbox::is_running() {
   fi
 
   local running_vms
-  running_vms="$(vedv::virtualbox::list_running)" || {
+  running_vms="$(vedv::hypervisor::list_running)" || {
     err "Failed to get running vms"
     return "$ERR_VIRTUALBOX_OPERATION"
   }
@@ -347,6 +396,7 @@ vedv::virtualbox::is_running() {
     echo false
   fi
 }
+vedv::virtualbox::is_running() { vedv::hypervisor::is_running "$@"; }
 
 #
 # Remove a virtual machine
@@ -360,10 +410,10 @@ vedv::virtualbox::is_running() {
 # Returns:
 #   0 on success, non-zero on error.
 #
-vedv::virtualbox::rm() {
+vedv::hypervisor::rm() {
   local -r vm_name="$1"
 
-  vedv::virtualbox::poweroff "$vm_name"
+  vedv::hypervisor::poweroff "$vm_name"
   sleep 2
 
   local vm_info
@@ -402,15 +452,16 @@ vedv::virtualbox::rm() {
     }
   fi
 
-  vedv::virtualbox::remove_inaccessible_hdds
+  vedv::hypervisor::remove_inaccessible_hdds
 }
+vedv::virtualbox::rm() { vedv::hypervisor::rm "$@"; }
 
 #
 # Remove all inaccessible virtual machines HDDs
 #
 # Returns:
 #   0 on success, non-zero on error.
-vedv::virtualbox::remove_inaccessible_hdds() {
+vedv::hypervisor::remove_inaccessible_hdds() {
   local -ri calls="${1:-0}"
 
   if [[ "$calls" -gt 10 ]]; then
@@ -440,10 +491,11 @@ vedv::virtualbox::remove_inaccessible_hdds() {
     done <<<"$inaccessible_hdds"
 
     if [[ "$there_is_error" == true ]]; then
-      vedv::virtualbox::remove_inaccessible_hdds "$((calls + 1))"
+      vedv::hypervisor::remove_inaccessible_hdds "$((calls + 1))"
     fi
   fi
 }
+vedv::virtualbox::remove_inaccessible_hdds() { vedv::hypervisor::remove_inaccessible_hdds "$@"; }
 
 #
 # List all virtual machines
@@ -454,9 +506,10 @@ vedv::virtualbox::remove_inaccessible_hdds() {
 # Returns:
 #   0 on success, non-zero on error.
 #
-vedv::virtualbox::list() {
+vedv::hypervisor::list() {
   VBoxManage list vms | cut -d' ' -f1 | sed 's/"//g' || :
 }
+vedv::virtualbox::list() { vedv::hypervisor::list "$@"; }
 
 #
 # List running virtual machines
@@ -467,9 +520,10 @@ vedv::virtualbox::list() {
 # Returns:
 #   0 on success, non-zero on error.
 #
-vedv::virtualbox::list_running() {
+vedv::hypervisor::list_running() {
   VBoxManage list runningvms | cut -d' ' -f1 | sed 's/"//g' || :
 }
+vedv::virtualbox::list_running() { vedv::hypervisor::list_running "$@"; }
 
 #
 # Set description
@@ -481,7 +535,7 @@ vedv::virtualbox::list_running() {
 # Returns:
 #   0 on success, non-zero on error.
 #
-vedv::virtualbox::set_description() {
+vedv::hypervisor::set_description() {
   local -r vm_name="$1"
   local -r description="$2"
 
@@ -499,6 +553,7 @@ vedv::virtualbox::set_description() {
     return "$ERR_VIRTUALBOX_OPERATION"
   fi
 }
+vedv::virtualbox::set_description() { vedv::hypervisor::set_description "$@"; }
 
 #
 # Get description
@@ -512,7 +567,7 @@ vedv::virtualbox::set_description() {
 # Returns:
 #   0 on success, non-zero on error.
 #
-vedv::virtualbox::get_description() {
+vedv::hypervisor::get_description() {
   local -r vm_name="$1"
 
   if [ -z "$vm_name" ]; then
@@ -535,6 +590,7 @@ vedv::virtualbox::get_description() {
     echo "${description:-}"
   )
 }
+vedv::virtualbox::get_description() { vedv::hypervisor::get_description "$@"; }
 
 #
 # Add forwarding port
@@ -548,7 +604,7 @@ vedv::virtualbox::get_description() {
 # Returns:
 #   0 on success, non-zero on error.
 #
-vedv::virtualbox::add_forwarding_port() {
+vedv::hypervisor::add_forwarding_port() {
   local -r vm_name="$1"
   local -r rule_name="$2"
   local -r host_port="$3"
@@ -579,6 +635,7 @@ vedv::virtualbox::add_forwarding_port() {
 
   return 0
 }
+vedv::virtualbox::add_forwarding_port() { vedv::hypervisor::add_forwarding_port "$@"; }
 
 #
 # Delete forwarding port
@@ -590,7 +647,7 @@ vedv::virtualbox::add_forwarding_port() {
 # Returns:
 #   0 on success, non-zero on error.
 #
-vedv::virtualbox::delete_forwarding_port() {
+vedv::hypervisor::delete_forwarding_port() {
   local -r vm_name="$1"
   local -r rule_name="$2"
 
@@ -611,6 +668,7 @@ vedv::virtualbox::delete_forwarding_port() {
 
   return 0
 }
+vedv::virtualbox::delete_forwarding_port() { vedv::hypervisor::delete_forwarding_port "$@"; }
 
 #
 # Assign random host forwarding port to a vm
@@ -626,20 +684,16 @@ vedv::virtualbox::delete_forwarding_port() {
 # Returns:
 #   0 on success, non-zero on error.
 #
-vedv::virtualbox::assign_random_host_forwarding_port() {
+vedv::hypervisor::assign_random_host_forwarding_port() {
   local -r vm_name="$1"
   local -r rule_name="$2"
   local -r guest_port="$3"
 
   local -ri host_port="$(get_a_dynamic_port)"
-  vedv::virtualbox::delete_forwarding_port "$vm_name" "$rule_name" &>/dev/null || :
+  vedv::hypervisor::delete_forwarding_port "$vm_name" "$rule_name" &>/dev/null || :
   # add_forwarding_port do all validations
-  vedv::virtualbox::add_forwarding_port "$vm_name" "$rule_name" $host_port "$guest_port"
+  vedv::hypervisor::add_forwarding_port "$vm_name" "$rule_name" $host_port "$guest_port"
 
   echo "$host_port"
 }
-
-# IMPL: Create and run a container from an image
-vedv::virtualbox::container::run() {
-  echo 'vedv::virtualbox::container::run'
-}
+vedv::virtualbox::assign_random_host_forwarding_port() { vedv::hypervisor::assign_random_host_forwarding_port "$@"; }

@@ -18,64 +18,66 @@ gen_vm_clone_name() {
   echo "$(gen_vm_name "${1:-}")-clone"
 }
 
-@test "vedv::virtualbox::validate_vm_name(), should be short name" {
+# Tests for vedv::hypervisor::validate_vm_name()
+@test "vedv::hypervisor::validate_vm_name(), should be short name" {
   local -r vm_name='1234'
 
-  run vedv::virtualbox::validate_vm_name "$vm_name"
+  run vedv::hypervisor::validate_vm_name "$vm_name"
 
   assert_failure 69
   assert_output 'The vm name cannot be shorter than 5 characters'
 }
 
-@test "vedv::virtualbox::validate_vm_name(), should be large name" {
+@test "vedv::hypervisor::validate_vm_name(), should be large name" {
   local -r vm_name="$(printf 'n%.0s' {1..61})"
 
-  run vedv::virtualbox::validate_vm_name "$vm_name"
+  run vedv::hypervisor::validate_vm_name "$vm_name"
 
   assert_failure 69
   assert_output 'The vm name cannot be longer than 60 characters'
 }
 
-@test "vedv::virtualbox::validate_vm_name(), should be ok" {
+@test "vedv::hypervisor::validate_vm_name(), should be ok" {
   local -r vm_name="$(printf 'n%.0s' {1..60})"
 
-  run vedv::virtualbox::validate_vm_name "$vm_name"
+  run vedv::hypervisor::validate_vm_name "$vm_name"
 
   assert_success
   assert_output ''
 }
 
-@test "vedv::virtualbox::import(), with 'ova_file' undefined should return error" {
-  run vedv::virtualbox::import
+# Tests for vedv::hypervisor::import()
+@test "vedv::hypervisor::import(), with 'ova_file' undefined should return error" {
+  run vedv::hypervisor::import
 
   assert_failure 1
   assert_output --partial '$1: unbound variable'
 }
 
-@test "vedv::virtualbox::import(), with 'vm_name' undefined should return error" {
+@test "vedv::hypervisor::import(), with 'vm_name' undefined should return error" {
   local -r ova_file="/tmp/${RANDOM}${RANDOM}.ova"
 
-  run vedv::virtualbox::import "$ova_file"
+  run vedv::hypervisor::import "$ova_file"
 
   assert_failure 1
   assert_output --partial '$2: unbound variable'
 }
 
-@test "vedv::virtualbox::import(), with 'ova_file' that doesnt't exist should return error" {
+@test "vedv::hypervisor::import(), with 'ova_file' that doesnt't exist should return error" {
   local -r ova_file="/tmp/feacd213baf31d50798a.ova"
   local -r vm_name="alpine-feacd213baf31d50798a"
 
-  run vedv::virtualbox::import "$ova_file" "$vm_name"
+  run vedv::hypervisor::import "$ova_file" "$vm_name"
 
   assert_failure 64
   assert_output "OVA file doesn't exist"
 }
 
-@test "vedv::virtualbox::import(), should import a vm from ova" {
+@test "vedv::hypervisor::import(), should import a vm from ova" {
   local -r ova_file="$TEST_OVA_FILE"
   local -r vm_name="$(gen_vm_name)"
 
-  run vedv::virtualbox::import "$ova_file" "$vm_name"
+  run vedv::hypervisor::import "$ova_file" "$vm_name"
 
   assert_success
 
@@ -84,196 +86,246 @@ gen_vm_clone_name() {
   assert_output --partial "$vm_name"
 }
 
-@test "vedv::virtualbox::take_snapshot(), with 'vm_name' undefined should return error" {
-  run vedv::virtualbox::take_snapshot
+# Tests for vedv::hypervisor::take_snapshot()
+@test "vedv::hypervisor::take_snapshot(), with 'vm_name' undefined should return error" {
+  run vedv::hypervisor::take_snapshot
 
   assert_failure 1
   assert_output --partial '$1: unbound variable'
 }
 
-@test "vedv::virtualbox::take_snapshot(), with 'snapshot_name' undefined should return error" {
+@test "vedv::hypervisor::take_snapshot(), with 'snapshot_name' undefined should return error" {
   local -r vm_name="vm1"
 
-  run vedv::virtualbox::take_snapshot "$vm_name"
+  run vedv::hypervisor::take_snapshot "$vm_name"
 
   assert_failure 1
   assert_output --partial '$2: unbound variable'
 }
 
-@test "vedv::virtualbox::take_snapshot(), should create a snapshot" {
+@test "vedv::hypervisor::take_snapshot(), should create a snapshot" {
   local -r vm_name="$(create_vm)"
   local -r snapshot_name="snapshot1"
 
-  run vedv::virtualbox::take_snapshot "$vm_name" "$snapshot_name"
+  run vedv::hypervisor::take_snapshot "$vm_name" "$snapshot_name"
 
   assert_success
   assert_output --partial "Snapshot taken"
 }
 
-@test "vedv::virtualbox::clonevm_link(), with 'vm_name' undefined should return error" {
-  run vedv::virtualbox::clonevm_link
+# Tests for vedv::hypervisor::clonevm_link()
+@test "vedv::hypervisor::clonevm_link(), with 'vm_name' undefined should return error" {
+  run vedv::hypervisor::clonevm_link
 
   assert_failure 1
   assert_output --partial '$1: unbound variable'
 }
 
-@test "vedv::virtualbox::clonevm_link(), with 'vm_clone_name' undefined should return error" {
+@test "vedv::hypervisor::clonevm_link(), with 'vm_clone_name' undefined should return error" {
   local -r vm_name='vm'
-  run vedv::virtualbox::clonevm_link "$vm_name"
+  run vedv::hypervisor::clonevm_link "$vm_name"
 
   assert_failure 1
   assert_output --partial '$2: unbound variable'
 }
 
-@test "vedv::virtualbox::clonevm_link(), with a 'vm_name' that doesn't exist should return error" {
+@test "vedv::hypervisor::clonevm_link(), with a 'vm_name' that doesn't exist should return error" {
   local -r vm_name='vm'
   local -r vm_clone_name='vm_clone'
 
-  run vedv::virtualbox::clonevm_link "$vm_name" "$vm_clone_name"
+  run vedv::hypervisor::clonevm_link "$vm_name" "$vm_clone_name"
 
   assert_failure
   assert_output --partial "Could not find a registered machine named 'vm'"
 }
 
-@test "vedv::virtualbox::clonevm_link(), should clone the vm" {
+@test "vedv::hypervisor::clonevm_link(), should clone the vm" {
   local -r vm_name="$(create_vm)"
   # shellcheck disable=SC2119
   local -r vm_clone_name="$(gen_vm_clone_name)"
 
-  run vedv::virtualbox::clonevm_link "$vm_name" "$vm_clone_name"
+  run vedv::hypervisor::clonevm_link "$vm_name" "$vm_clone_name"
 
   assert_success
   assert_output --partial "Machine has been successfully cloned"
 }
 
-@test "vedv::virtualbox::list_wms_by_partial_name, with 'vm_partial_name()' that doesn't exist should print an empty list" {
+# Tests for vedv::hypervisor::list_vms_by_partial_name()
+@test "vedv::hypervisor::list_vms_by_partial_name, with 'vm_partial_name()' that doesn't exist should print an empty list" {
   local -r vm_partial_name='container:happy'
 
-  run vedv::virtualbox::list_wms_by_partial_name "$vm_partial_name"
+  run vedv::hypervisor::list_vms_by_partial_name "$vm_partial_name"
 
   assert_success
   assert_output ''
 }
 
-@test "vedv::virtualbox::list_wms_by_partial_name(), should print a list of vm" {
+@test "vedv::hypervisor::list_vms_by_partial_name(), should print a list of vm" {
   local -r vm_partial_name='virtualbox'
   create_vm
 
-  run vedv::virtualbox::list_wms_by_partial_name "$vm_partial_name"
+  run vedv::hypervisor::list_vms_by_partial_name "$vm_partial_name"
 
   assert_success
   assert_output --partial 'virtualbox'
 }
 
-@test "vedv::virtualbox::poweroff(), with 'vm_name' undefined should throw an error" {
-  run vedv::virtualbox::poweroff
+# Tests for vedv::hypervisor::exists_vm_with_partial_name()
+@test "vedv::hypervisor::exists_vm_with_partial_name() Should fails If lis_vms_by_partial_name() fails" {
+  local -r vm_partial_name="test_vm"
+
+  vedv::hypervisor::list_vms_by_partial_name() {
+    assert_equal "$1" "test_vm"
+    return 1
+  }
+
+  run vedv::hypervisor::exists_vm_with_partial_name "$vm_partial_name"
+
+  assert_failure
+  assert_output 'Failed to get vms list'
+}
+
+@test "vedv::hypervisor::exists_vm_with_partial_name() returns true when VM exists" {
+  local -r vm_partial_name="test_vm"
+
+  vedv::hypervisor::list_vms_by_partial_name() {
+    assert_equal "$1" "test_vm"
+    echo "test_vm"
+  }
+
+  run vedv::hypervisor::exists_vm_with_partial_name "$vm_partial_name"
+
+  assert_success
+  assert_output true
+}
+
+@test "vedv::hypervisor::exists_vm_with_partial_name() returns false when VM does not exist" {
+  local -r vm_partial_name="test_vm"
+
+  vedv::hypervisor::list_vms_by_partial_name() {
+    assert_equal "$1" "test_vm"
+  }
+
+  run vedv::hypervisor::exists_vm_with_partial_name "$vm_partial_name"
+
+  assert_success
+  assert_output false
+}
+
+# Tests for vedv::hypervisor::poweroff()
+@test "vedv::hypervisor::poweroff(), with 'vm_name' undefined should throw an error" {
+  run vedv::hypervisor::poweroff
 
   assert_failure 1
   assert_output --partial '$1: unbound variable'
 }
-# bats test_tags=only
-@test "vedv::virtualbox::poweroff(), should poweroff a vm" {
+
+@test "vedv::hypervisor::poweroff(), should poweroff a vm" {
   skip # this test is problematic
   local -r vm_name="$(create_vm)"
   VBoxManage startvm "$vm_name"
 
-  run vedv::virtualbox::poweroff "$vm_name"
+  run vedv::hypervisor::poweroff "$vm_name"
 
   assert_success
   assert_output --partial '<put the output here>'
 }
 
-@test "vedv::virtualbox::rm(), with 'vm_name' undefined should throw an error" {
-  run vedv::virtualbox::rm
+# Tests for vedv::hypervisor::rm()
+@test "vedv::hypervisor::rm(), with 'vm_name' undefined should throw an error" {
+  run vedv::hypervisor::rm
 
   assert_failure 1
   assert_output --partial '$1: unbound variable'
 }
 
-@test "vedv::virtualbox::rm(), Should remove the vm" {
+@test "vedv::hypervisor::rm(), Should remove the vm" {
   local -r vm_name="$(create_vm)"
 
-  vedv::virtualbox::remove_inaccessible_hdds() {
+  vedv::hypervisor::remove_inaccessible_hdds() {
     return 0
   }
 
-  run vedv::virtualbox::rm "$vm_name"
+  run vedv::hypervisor::rm "$vm_name"
 
   assert_success
 }
 
-@test "vedv::virtualbox::list(), Should print all vms" {
+# Tests for vedv::hypervisor::list()
+@test "vedv::hypervisor::list(), Should print all vms" {
   local -r vm_name1="$(create_vm)"
   local -r vm_name2="$(create_vm)"
 
-  run vedv::virtualbox::list
+  run vedv::hypervisor::list
 
   assert_success
   assert_output --partial "${vm_name1}
 ${vm_name2}"
 }
 
-@test "vedv::virtualbox::list(), Should print running vms" {
+@test "vedv::hypervisor::list(), Should print running vms" {
   local -r vm_name1="$(create_vm)"
   local -r vm_name2="$(create_vm)"
 
   VBoxManage startvm "$vm_name1" --type headless
 
-  run vedv::virtualbox::list_running
+  run vedv::hypervisor::list_running
 
   assert_success
   assert_output --partial "${vm_name1}"
 }
 
-@test "vedv::virtualbox::show_snapshots(), Should print no snapshots" {
+# Tests for vedv::hypervisor::show_snapshots()
+@test "vedv::hypervisor::show_snapshots(), Should print no snapshots" {
   local -r vm_name1="$(create_vm)"
 
-  run vedv::virtualbox::show_snapshots "$vm_name1"
+  run vedv::hypervisor::show_snapshots "$vm_name1"
 
   assert_success
   assert_output ''
 }
 
-@test "vedv::virtualbox::show_snapshots(), Should print snapshots" {
+@test "vedv::hypervisor::show_snapshots(), Should print snapshots" {
   local -r vm_name1="$(create_vm)"
   local -r snapshot_name1="snapshot1"
   local -r snapshot_name2="snapshot2"
 
   VBoxManage snapshot "$vm_name1" take "$snapshot_name1"
   VBoxManage snapshot "$vm_name1" take "$snapshot_name2"
-  run vedv::virtualbox::show_snapshots "$vm_name1"
+  run vedv::hypervisor::show_snapshots "$vm_name1"
 
   assert_success
   assert_output "${snapshot_name1}
 ${snapshot_name2}"
 }
 
-@test "vedv::virtualbox::set_description(): Should fail When 'vm_name' is empty" {
-  run vedv::virtualbox::set_description "" "Test description"
+# Tests for vedv::hypervisor::set_description()
+@test "vedv::hypervisor::set_description(): Should fail When 'vm_name' is empty" {
+  run vedv::hypervisor::set_description "" "Test description"
 
   assert_failure 69
   assert_output "Argument 'vm_name' must not be empty"
 }
 
-@test "vedv::virtualbox::set_description(): Should fail When description is empty" {
-  run vedv::virtualbox::set_description 'testvm' ""
+@test "vedv::hypervisor::set_description(): Should fail When description is empty" {
+  run vedv::hypervisor::set_description 'testvm' ""
 
   assert_failure 69
   assert_output "Argument 'description' must not be empty"
 }
 
-@test "vedv::virtualbox::set_description(): Should fail When 'vm_name' doesn't exist" {
-  run vedv::virtualbox::set_description 'testvm' "Test description"
+@test "vedv::hypervisor::set_description(): Should fail When 'vm_name' doesn't exist" {
+  run vedv::hypervisor::set_description 'testvm' "Test description"
 
   assert_failure 86
   assert_output --partial "Error setting description, vm: testvm"
 }
 
-@test "vedv::virtualbox::set_description(): Should succeed" {
+@test "vedv::hypervisor::set_description(): Should succeed" {
   local -r vm_name="$(create_vm)"
   local -r description="Test description"
 
-  run vedv::virtualbox::set_description "$vm_name" "Test description"
+  run vedv::hypervisor::set_description "$vm_name" "Test description"
 
   assert_success
   assert_output ''
@@ -281,22 +333,23 @@ ${snapshot_name2}"
   assert [ VBoxManage showvminfo "$vm_name" | grep -q "$description" ]
 }
 
-@test "vedv::virtualbox::get_description(): Should fail When 'vm_name' is empty" {
-  run vedv::virtualbox::get_description ""
+# Tests for vedv::hypervisor::get_description()
+@test "vedv::hypervisor::get_description(): Should fail When 'vm_name' is empty" {
+  run vedv::hypervisor::get_description ""
 
   assert_failure 69
   assert_output "Argument 'vm_name' must not be empty"
 }
 
-@test "vedv::virtualbox::get_description(): Should fail When 'vm_name' doesn't exist" {
+@test "vedv::hypervisor::get_description(): Should fail When 'vm_name' doesn't exist" {
 
-  run vedv::virtualbox::get_description "vm_1"
+  run vedv::hypervisor::get_description "vm_1"
 
   assert_failure 86
   assert_output --partial "Error getting description of vm: vm_1"
 }
 
-@test "vedv::virtualbox::get_description(): Should succeed" {
+@test "vedv::hypervisor::get_description(): Should succeed" {
   (
     fix_var_names() { echo "$*"; }
     VBoxManage() {
@@ -307,7 +360,7 @@ ssh_port=22"
 var2="value2"'
     }
 
-    run vedv::virtualbox::get_description 'vm_name'
+    run vedv::hypervisor::get_description 'vm_name'
 
     assert_success
     assert_output 'image_cache=value1
@@ -316,105 +369,100 @@ ssh_port=22'
   )
 }
 
-# Validate that the function fails when vm_name is not set.
-@test "vedv::virtualbox::add_forwarding_port(): Should fail With unset vm_name" {
-  run vedv::virtualbox::add_forwarding_port "" "rule_name" 8080 8080
+# Tests for vedv::hypervisor::add_forwarding_port()
+@test "vedv::hypervisor::add_forwarding_port(): Should fail With unset vm_name" {
+  run vedv::hypervisor::add_forwarding_port "" "rule_name" 8080 8080
 
   assert_failure "$ERR_INVAL_ARG"
   assert_output "Argument 'vm_name' must not be empty"
 }
 
-# Validate that the function fails when rule_name is not set.
-@test "vedv::virtualbox::add_forwarding_port(): Should fail With unset rule_name" {
-  run vedv::virtualbox::add_forwarding_port "vm_name" "" 8080 8080
+@test "vedv::hypervisor::add_forwarding_port(): Should fail With unset rule_name" {
+  run vedv::hypervisor::add_forwarding_port "vm_name" "" 8080 8080
 
   assert_failure "$ERR_INVAL_ARG"
   assert_output "Argument 'rule_name' must not be empty"
 }
 
-# Validate that the function fails when host_port is not set.
-@test "vedv::virtualbox::add_forwarding_port(): Should fail With unset host_port" {
-  run vedv::virtualbox::add_forwarding_port "vm_name" "rule_name" "" 8080
+@test "vedv::hypervisor::add_forwarding_port(): Should fail With unset host_port" {
+  run vedv::hypervisor::add_forwarding_port "vm_name" "rule_name" "" 8080
 
   assert_failure "$ERR_INVAL_ARG"
   assert_output "Argument 'host_port' must not be empty"
 }
 
-# Validate that the function fails when guest_port is not set.
-@test "vedv::virtualbox::add_forwarding_port(): Should fail With unset guest_port" {
-  run vedv::virtualbox::add_forwarding_port "vm_name" "rule_name" 8080 ""
+@test "vedv::hypervisor::add_forwarding_port(): Should fail With unset guest_port" {
+  run vedv::hypervisor::add_forwarding_port "vm_name" "rule_name" 8080 ""
   assert_failure "$ERR_INVAL_ARG"
   assert_output "Argument 'guest_port' must not be empty"
 }
 
-# Validate that the function succeeds with correct arguments
-@test "vedv::virtualbox::add_forwarding_port(): Should fail With vm_name that doesn't exist" {
-  run vedv::virtualbox::add_forwarding_port "vm_name" "rule_name" 8080 8080
+@test "vedv::hypervisor::add_forwarding_port(): Should fail With vm_name that doesn't exist" {
+  run vedv::hypervisor::add_forwarding_port "vm_name" "rule_name" 8080 8080
 
   assert_failure "$ERR_VIRTUALBOX_OPERATION"
   assert_output --partial "Error adding forwarding port, rule name: rule_name"
 }
 
-@test "vedv::virtualbox::add_forwarding_port(): Should succeed With correct args" {
+@test "vedv::hypervisor::add_forwarding_port(): Should succeed With correct args" {
   (
     VBoxManage() { :; }
 
-    run vedv::virtualbox::add_forwarding_port "vm_name" "ssh" 2022 22
+    run vedv::hypervisor::add_forwarding_port "vm_name" "ssh" 2022 22
 
     assert_success
   )
 }
 
-# Validate that the function fails when vm_name is not set.
-@test "vedv::virtualbox::delete_forwarding_port(): Should fail With unset vm_name" {
-  run vedv::virtualbox::delete_forwarding_port "" "rule_name"
+# Tests for vedv::hypervisor::delete_forwarding_port()
+@test "vedv::hypervisor::delete_forwarding_port(): Should fail With unset vm_name" {
+  run vedv::hypervisor::delete_forwarding_port "" "rule_name"
 
   assert_failure "$ERR_INVAL_ARG"
   assert_output "Argument 'vm_name' must not be empty"
 }
 
-# Validate that the function fails when rule_name is not set.
-@test "vedv::virtualbox::delete_forwarding_port(): Should fail With unset rule_name" {
-  run vedv::virtualbox::delete_forwarding_port "vm_name" ""
+@test "vedv::hypervisor::delete_forwarding_port(): Should fail With unset rule_name" {
+  run vedv::hypervisor::delete_forwarding_port "vm_name" ""
 
   assert_failure "$ERR_INVAL_ARG"
   assert_output "Argument 'rule_name' must not be empty"
 }
 
-# Validate that the function succeeds with correct arguments
-@test "vedv::virtualbox::delete_forwarding_port(): Should fail With vm_name that doesn't exist" {
-  run vedv::virtualbox::delete_forwarding_port "vm_name" "rule_name"
+@test "vedv::hypervisor::delete_forwarding_port(): Should fail With vm_name that doesn't exist" {
+  run vedv::hypervisor::delete_forwarding_port "vm_name" "rule_name"
 
   assert_failure "$ERR_VIRTUALBOX_OPERATION"
   assert_output --partial "Error deleting forwarding port, rule name: rule_name"
 }
 
-@test "vedv::virtualbox::delete_forwarding_port(): Should succeed With correct args" {
+@test "vedv::hypervisor::delete_forwarding_port(): Should succeed With correct args" {
   (
     VBoxManage() { :; }
 
-    run vedv::virtualbox::delete_forwarding_port "vm_name" "ssh"
+    run vedv::hypervisor::delete_forwarding_port "vm_name" "ssh"
 
     assert_success
   )
 }
 
-@test "vedv::virtualbox::assign_random_host_forwarding_port(): Should succeed With correct args" {
+# Tests for vedv::hypervisor::assign_random_host_forwarding_port()
+@test "vedv::hypervisor::assign_random_host_forwarding_port(): Should succeed With correct args" {
   get_a_dynamic_port() { echo 2024; }
-  vedv::virtualbox::delete_forwarding_port() { :; }
-  vedv::virtualbox::add_forwarding_port() { :; }
+  vedv::hypervisor::delete_forwarding_port() { :; }
+  vedv::hypervisor::add_forwarding_port() { :; }
 
-  run vedv::virtualbox::assign_random_host_forwarding_port "vm_name" "ssh" 22
+  run vedv::hypervisor::assign_random_host_forwarding_port "vm_name" "ssh" 22
 
   assert_success
   assert_output 2024
 }
 
-@test "vedv::virtualbox::restore_snapshot(): NO TEST" {
+@test "vedv::hypervisor::restore_snapshot(): NO TEST" {
   :
 }
 
-@test "vedv::virtualbox::remove_inaccessible_hdds(): TEST" {
+@test "vedv::hypervisor::remove_inaccessible_hdds(): TEST" {
   skip
   local create_m_out=''
   for i in {1..3}; do
@@ -425,7 +473,7 @@ ssh_port=22'
     rm -f "/tmp/disk${i}.vmdk"
   done
 
-  run vedv::virtualbox::remove_inaccessible_hdds
+  run vedv::hypervisor::remove_inaccessible_hdds
 
   VBoxManage closemedium "/tmp/disk3.vmdk" --delete 2>/dev/null
 

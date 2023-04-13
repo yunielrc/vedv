@@ -210,30 +210,30 @@ ssh_port=${value}"
   assert_output ""
 }
 
-# Test vedv::image_entity::validate_vm_name()
-@test "vedv::image_entity::validate_vm_name() prints error message for empty vm name" {
+# Test vedv::image_entity::__validate_vm_name()
+@test "vedv::image_entity::__validate_vm_name() prints error message for empty vm name" {
   # Arrange
   local -r name=""
   # Act
-  run vedv::image_entity::validate_vm_name "$name"
+  run vedv::image_entity::__validate_vm_name "$name"
   # Assert
   assert_failure
 }
 
-@test "vedv::image_entity::validate_vm_name() returns 1 for invalid vm name: foo_bar" {
+@test "vedv::image_entity::__validate_vm_name() returns 1 for invalid vm name: foo_bar" {
   # Arrange
   local -r name="foo_bar"
   # Act
-  run vedv::image_entity::validate_vm_name "$name"
+  run vedv::image_entity::__validate_vm_name "$name"
   # Assert
   assert_failure
 }
 
-@test "vedv::image_entity::validate_vm_name() returns 0 for valid vm name" {
+@test "vedv::image_entity::__validate_vm_name() returns 0 for valid vm name" {
   # Arrange
   local -r name="image:foo-bar|crc:123456|"
   # Act
-  run vedv::image_entity::validate_vm_name "$name"
+  run vedv::image_entity::__validate_vm_name "$name"
   # Assert
   assert_success
   assert_output ""
