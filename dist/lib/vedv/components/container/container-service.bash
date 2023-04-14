@@ -10,6 +10,8 @@ if false; then
   . '../image/image-service.bash'
   . '../image/image-entity.bash'
   . './../../ssh-client.bash'
+  . './container-entity.bash'
+  . './../../hypervisors/virtualbox.bash'
 fi
 
 # VARIABLES
@@ -19,101 +21,11 @@ fi
 #
 # Constructor
 #
-# Arguments:
-#   hypervisor       name of the script
-#
 # Returns:
 #   0 on success, non-zero on error.
 #
 vedv::container_service::constructor() {
-  readonly __VEDV_CONTAINER_SERVICE_HYPERVISOR="$1"
-}
-
-#
-# Generate container vm name from a image vm name
-#
-# Arguments:
-#   image_vm_name     image name
-#
-# Output:
-#  Writes generated name to the stdout
-#
-# Returns:
-#   0 on success, non-zero on error.
-#
-vedv::container_service::__gen_container_vm_name_from_image_vm_name() {
-  local -r image_vm_name="$1"
-
-  local container_name="${image_vm_name#'image:'}"
-  container_name="${container_name%'|crc'*}"
-
-  local -r crc_sum="$(echo "$container_name" | cksum | cut -d' ' -f1)"
-  local -r container_vm_name="container:${container_name}|crc:${crc_sum}"
-
-  echo "$container_vm_name"
-}
-
-#
-# Generate container vm name
-#
-# Arguments:
-#   [container_name]       container name
-#
-# Output:
-#  Writes generated name to the stdout
-#
-# Returns:
-#   0 on success, non-zero on error.
-#
-vedv::container_service::__gen_container_vm_name() {
-  local container_name="${1:-}"
-
-  if [[ -z "$container_name" ]]; then
-    container_name="$(petname)"
-  fi
-
-  local -r crc_sum="$(echo "$container_name" | cksum | cut -d' ' -f1)"
-  # TODO: add | to the end of the name, and fix the code that uses this function
-  local -r container_vm_name="container:${container_name}|crc:${crc_sum}"
-
-  echo "$container_vm_name"
-}
-
-#
-# Get container name from container vm name
-#
-# Arguments:
-#   container_vm_name       container vm name
-#
-# Output:
-#  Writes container name to the stdout
-#
-# Returns:
-#   0 on success, non-zero on error.
-#
-vedv::container_service::_get_container_name() {
-  local -r container_vm_name="$1"
-
-  local container_name="${container_vm_name#'container:'}"
-  container_name="${container_name%'|crc:'*}"
-  echo "$container_name"
-}
-
-# Get container id from container vm name
-#
-# Arguments:
-#   container_vm_name       container vm name
-#
-# Output:
-#  Writes container id to the stdout
-#
-# Returns:
-#   0 on success, non-zero on error.
-#
-vedv::container_service::_get_container_id() {
-  local -r container_vm_name="$1"
-
-  echo "${container_vm_name#*'|crc:'}"
+  :
 }
 
 #
@@ -133,6 +45,25 @@ vedv::container_service::create() {
   local -r image="$1"
   local container_name="${2:-}"
 
+  if [[ -z "$image" ]]; then
+    err "Invalid argument 'image': it's empty"
+    return "$ERR_INVAL_ARG"
+  fi
+
+  if [[ -n "$container_name" ]]; then
+    local exists_container
+    exists_container="$(vedv::container_service::__exits_with_name "$container_name")" || {
+      err "Failed to check if container with name: '${container_name}' already exist"
+      return "$ERR_CONTAINER_OPERATION"
+    }
+    readonly exists_container
+
+    if [[ "$exists_container" == true ]]; then
+      err "Container with name: '${container_name}' already exist"
+      return "$ERR_CONTAINER_OPERATION"
+    fi
+  fi
+
   local image_name
 
   if [[ -f "$image" ]]; then
@@ -140,7 +71,7 @@ vedv::container_service::create() {
       err "Failed to generate a random name"
       return "$ERR_CONTAINER_OPERATION"
     }
-    vedv::image_service::pull "$image" "$image_name" 1>/dev/null || {
+    vedv::image_service::pull "$image" "$image_name" &>/dev/null || {
       err "Failed to pull image: '$image'"
       return "$ERR_CONTAINER_OPERATION"
     }
@@ -157,21 +88,15 @@ vedv::container_service::create() {
   readonly image_vm_name
 
   if [[ -z "$image_vm_name" ]]; then
-    err "Image: '$image_name' does not exist"
+    err "Image: '${image_name}' does not exist"
     return "$ERR_NOT_FOUND"
   fi
 
   local container_vm_name
-  container_vm_name="$(vedv::container_service::__gen_container_vm_name "$container_name")"
+  container_vm_name="$(vedv::container_entity::gen_vm_name "$container_name")"
   readonly container_vm_name
 
-  if [[ -n "$(vedv::"$__VEDV_CONTAINER_SERVICE_HYPERVISOR"::list_wms_by_partial_name "$container_vm_name")" ]]; then
-    err "container with name: '${container_name}' already exist"
-    return "$ERR_VM_EXIST"
-  fi
-
   # create a vm snapshoot, the snapshoot is the container
-
   local image_id
   image_id="$(vedv::image_entity::get_id_by_image_name "$image_name")" || {
     err "Failed to get image id for image: '$image_name'"
@@ -186,29 +111,34 @@ vedv::container_service::create() {
   }
   readonly last_layer_id
 
-  local layer_vm_snapshot_name
-  layer_vm_snapshot_name="$(vedv::image_entity::get_snapshot_name_by_layer_id "$image_id" "$last_layer_id")" || {
-    err "Failed to get image layer snapshot name for image: '$image_name'"
-    return "$ERR_CONTAINER_OPERATION"
-  }
+  local layer_vm_snapshot_name=''
+
+  if [[ -n "$last_layer_id" ]]; then
+    layer_vm_snapshot_name="$(vedv::image_entity::get_snapshot_name_by_layer_id "$image_id" "$last_layer_id")" || {
+      err "Failed to get image layer snapshot name for image: '$image_name'"
+      return "$ERR_CONTAINER_OPERATION"
+    }
+  fi
   readonly layer_vm_snapshot_name
 
-  local output
-  local -i ecode=0
-  output="$(vedv::"$__VEDV_CONTAINER_SERVICE_HYPERVISOR"::clonevm_link "$image_vm_name" "$container_vm_name" "$layer_vm_snapshot_name" 2>&1)" || ecode=$?
+  vedv::hypervisor::clonevm_link "$image_vm_name" "$container_vm_name" "$layer_vm_snapshot_name" &>/dev/null || {
+    err "Failed to clone vm: '$image_vm_name' to: '$container_vm_name'"
+    return "$ERR_CONTAINER_OPERATION"
+  }
 
-  if [[ $ecode -eq 0 ]]; then
-    # TODO: change if [[ $# == 0 ]]; then; set -- '-h'; fi
-    [[ -z "$container_name" ]] &&
-      container_name="$(vedv::container_service::_get_container_name "$container_vm_name")"
+  vedv::hypervisor::set_description "$container_vm_name" "$image_vm_name" || {
+    err "Failed to set description for vm: '$container_vm_name'"
+    return "$ERR_CONTAINER_OPERATION"
+  }
 
-    vedv::"$__VEDV_CONTAINER_SERVICE_HYPERVISOR"::set_description "$container_vm_name" "$image_vm_name" 2>&1
-    echo "$container_name"
-  else
-    err "$output"
+  if [[ -z "$container_name" ]]; then
+    container_name="$(vedv::container_entity::get_container_name_by_vm_name "$container_vm_name")" || {
+      err "Failed to get container name for vm: '$container_vm_name'"
+      return "$ERR_CONTAINER_OPERATION"
+    }
   fi
 
-  return $ecode
+  echo "$container_name"
 }
 
 #
@@ -250,11 +180,22 @@ vedv::container_service::__execute_operation_upon_containers() {
 
   local -A containers_failed=()
 
+  local vm_name
+  ___assign_vm_name_by_partial_name() {
+    local -r __partial_name="$1"
+
+    vm_name="$(vedv::hypervisor::list_vms_by_partial_name "$__partial_name")" || {
+      err "Failed to get vm name for container: '${container}'"
+      return "$ERR_CONTAINER_OPERATION"
+    }
+    vm_name="$(head -n 1 <<<"$vm_name" || :)"
+  }
+
   for container in "${container_name_or_ids[@]}"; do
-    local vm_name="$(vedv::"${__VEDV_CONTAINER_SERVICE_HYPERVISOR}"::list_wms_by_partial_name "container:${container}|" | head -n 1)"
-    # FIXME: use |crc:<number>|
+    ___assign_vm_name_by_partial_name "container:${container}|"
+
     if [[ -z "$vm_name" ]]; then
-      vm_name="$(vedv::"${__VEDV_CONTAINER_SERVICE_HYPERVISOR}"::list_wms_by_partial_name "|crc:${container}" | head -n 1)"
+      ___assign_vm_name_by_partial_name "|crc:${container}|"
 
       if [[ -z "$vm_name" ]]; then
         containers_failed['No such containers']+="$container "
@@ -262,22 +203,32 @@ vedv::container_service::__execute_operation_upon_containers() {
       fi
     fi
 
-    local container_image_vm_name
+    local container_image_vm_name=''
 
     if [[ "$operation" == 'rm' ]]; then
-      container_image_vm_name="$(vedv::"$__VEDV_CONTAINER_SERVICE_HYPERVISOR"::get_description "$vm_name")"
+      container_image_vm_name="$(vedv::hypervisor::get_description "$vm_name")" || {
+        containers_failed["Failed to get vm description for containers"]+="$container "
+        continue
+      }
+
+      if [[ -z "$container_image_vm_name" ]]; then
+        containers_failed["no 'container_image_vm_name' for containers"]+="$container "
+        continue
+      fi
     fi
 
-    if ! vedv::"$__VEDV_CONTAINER_SERVICE_HYPERVISOR"::"$operation" "$vm_name" &>/dev/null; then
+    vedv::hypervisor::"$operation" "$vm_name" &>/dev/null || {
       containers_failed["Failed to ${operation} containers"]+="$container "
       continue
-    fi
+    }
 
     if [[ "$operation" == 'rm' ]]; then
-      vedv::"$__VEDV_CONTAINER_SERVICE_HYPERVISOR"::delete_snapshot "$container_image_vm_name" "$vm_name" &>/dev/null
+      vedv::hypervisor::delete_snapshot "$container_image_vm_name" "$vm_name" &>/dev/null || {
+        containers_failed["Failed to delete snapshot for containers"]+="$container "
+        continue
+      }
     fi
 
-    # FIX: delete the snapshot in the image when the operation is rm
     echo -n "$container "
   done
 
@@ -338,8 +289,6 @@ vedv::container_service::stop() {
 #   0 on success, non-zero on error.
 #
 vedv::container_service::rm() {
-  # FIXME: to remove running containers must require a `force` flag
-  # FIXME: remove deleted container parent image snapshot
   vedv::container_service::__execute_operation_upon_containers rm "$@"
 }
 
@@ -370,21 +319,65 @@ vedv::container_service::list() {
   local vm_names
 
   if [[ -n "$partial_name" ]]; then
-    vm_names="$(vedv::"$__VEDV_CONTAINER_SERVICE_HYPERVISOR"::"$hypervisor_cmd")"
-    vm_names="$(echo "$vm_names" | grep "container:${partial_name}.*|" || :)"
+    vm_names="$(vedv::hypervisor::"$hypervisor_cmd")" || {
+      err "Failed to list containers"
+      return "$ERR_CONTAINER_OPERATION"
+    }
+    vm_names="$(grep "container:${partial_name}.*|" <<<"$vm_names" || :)"
   else
-    vm_names="$(vedv::"$__VEDV_CONTAINER_SERVICE_HYPERVISOR"::"$hypervisor_cmd")"
-    vm_names="$(echo "$vm_names" | grep "container:.*|" || :)"
+    vm_names="$(vedv::hypervisor::"$hypervisor_cmd")" || {
+      err "Failed to list containers"
+      return "$ERR_CONTAINER_OPERATION"
+    }
+    vm_names="$(grep "container:.*|" <<<"$vm_names" || :)"
   fi
   readonly vm_names
 
   for vm_name in $vm_names; do
-    echo "$(vedv::container_service::_get_container_id "$vm_name") $(vedv::container_service::_get_container_name "$vm_name")"
+    local container_id container_name
+
+    container_id="$(vedv::container_entity::get_container_id_by_vm_name "$vm_name")" || {
+      err "Failed to get container id for vm: '${vm_name}'"
+      return "$ERR_CONTAINER_OPERATION"
+    }
+    container_name="$(vedv::container_entity::get_container_name_by_vm_name "$vm_name")" || {
+      err "Failed to get container name for vm: '${vm_name}'"
+      return "$ERR_CONTAINER_OPERATION"
+    }
+    echo "${container_id} ${container_name}"
   done
+}
+
+#
+#  Exists container with name
+#
+# Arguments:
+#  container_name           container name
+#
+# Output:
+#  writes true if exists otherwise false to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::container_service::__exits_with_name() {
+  local -r container_name="$1"
+  # validate argument
+  if [[ -z "$container_name" ]]; then
+    err "Argument 'container_name' is required"
+    return "$ERR_INVAL_ARG"
+  fi
+
+  local output
+  output="$(vedv::hypervisor::exists_vm_with_partial_name "container:${container_name}|")" || {
+    err "Hypervisor failed to check if container with name '${container_name}' exists"
+    return "$ERR_CONTAINER_OPERATION"
+  }
+
+  echo "$output"
 }
 
 # IMPL: Create and run a container from an image
 vedv::container_service::run() {
   echo 'vedv::container_service::run'
-  vedv::"$__VEDV_CONTAINER_SERVICE_HYPERVISOR"::container::run
 }
