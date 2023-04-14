@@ -2,6 +2,11 @@
 # Manage Vedvfile
 #
 
+# this is only for code completion
+if false; then
+  . './../../utils.bash'
+fi
+
 # Variables:
 readonly VEDVFILE_SUPPORTED_COMMANDS='FROM|RUN|COPY'
 
@@ -19,6 +24,11 @@ vedv::image_vedvfile_service::constructor() {
   readonly __VEDV_IMAGE_VEDVFILE_HADOLINT_ENABLED="${2:-true}"
 }
 
+__vedvfile-parser() {
+  local -r bin_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/__bin"
+  "${bin_dir}/vedvfile-parser" "$@"
+}
+
 #
 # Validate commands
 #
@@ -31,7 +41,7 @@ vedv::image_vedvfile_service::constructor() {
 # Returns:
 #   0 on success, 1 otherwise
 #
-vedv::image_vedvfile_service::are_supported_commands() {
+vedv::image_vedvfile_service::__are_supported_commands() {
   local -r commands="$1"
 
   if [[ -z "$commands" ]]; then
@@ -42,7 +52,7 @@ vedv::image_vedvfile_service::are_supported_commands() {
   local -r clean_cmds="$(utils::string::trim "$commands")"
 
   while IFS= read -r cmd; do
-    if ! echo "$cmd" | grep -qP "^($VEDVFILE_SUPPORTED_COMMANDS)\s+"; then
+    if ! grep -qP "^($VEDVFILE_SUPPORTED_COMMANDS)\s+" <<<"$cmd"; then
       err "Command '${cmd}' isn't supported, valid commands are: ${VEDVFILE_SUPPORTED_COMMANDS}"
       return 1
     fi
@@ -63,7 +73,7 @@ vedv::image_vedvfile_service::are_supported_commands() {
 # Returns:
 #   0 on success, 1 otherwise
 #
-vedv::image_vedvfile_service::validate_file() {
+vedv::image_vedvfile_service::__validate_file() {
   local -r vedvfile="$1"
 
   if [ ! -f "$vedvfile" ]; then
@@ -73,7 +83,7 @@ vedv::image_vedvfile_service::validate_file() {
 
   local -r commands="$(cat "$vedvfile")"
 
-  vedv::image_vedvfile_service::are_supported_commands "$commands" ||
+  vedv::image_vedvfile_service::__are_supported_commands "$commands" ||
     return 1
 
   if [[ "$__VEDV_IMAGE_VEDVFILE_HADOLINT_ENABLED" == true ]] && ! hadolint --config "$__VEDV_IMAGE_VEDVFILE_HADOLINT_CONFIG" "$vedvfile" >/dev/null; then
@@ -99,11 +109,23 @@ vedv::image_vedvfile_service::validate_file() {
 vedv::image_vedvfile_service::get_commands() {
   local -r vedvfile="$1"
 
-  vedv::image_vedvfile_service::validate_file "$vedvfile" ||
+  if [ ! -f "$vedvfile" ]; then
+    err "Invalid argument 'vedvfile', file ${vedvfile} doesn't exist"
+    return "$ERR_INVAL_ARG"
+  fi
+
+  local vedvfile_parsed
+  vedvfile_parsed="$(__vedvfile-parser "$vedvfile")" || {
+    err "Failed to parse Vedvfile: ${vedvfile}"
+    return "$ERR_VEDV_FILE"
+  }
+  local -r vedvfile_parsed_file="$(mktemp)"
+  echo "$vedvfile_parsed" >"$vedvfile_parsed_file"
+
+  vedv::image_vedvfile_service::__validate_file "$vedvfile_parsed_file" ||
     return "$ERR_INVAL_ARG"
 
-  local -r commands="$(cat "$vedvfile")"
-  utils::string::trim "$commands" | nl -w 1 -s'  '
+  nl -w 1 -s'  ' <<<"$vedvfile_parsed"
 }
 
 #

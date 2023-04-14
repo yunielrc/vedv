@@ -1,0 +1,10 @@
+#!/usr/bin/env python
+
+import sys
+from dockerfile_parse import DockerfileParser
+
+dfp = DockerfileParser()
+dfp.dockerfile_path = sys.argv[1]
+
+for item in dfp.structure:
+    print(item['instruction'], item['value'])
