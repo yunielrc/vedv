@@ -22,9 +22,6 @@ setup_file() {
   vedv::image_vedvfile_service::constructor "$TEST_HYPERVISOR" false
   export __VEDV_IMAGE_VEDVFILE_SERVICE_HYPERVISOR
   export __VEDV_IMAGE_VEDVFILE_HADOLINT_ENABLED
-  vedv::container_service::constructor "$TEST_HYPERVISOR"
-  export __VEDV_CONTAINER_SERVICE_HYPERVISOR
-
 }
 
 teardown_file() {

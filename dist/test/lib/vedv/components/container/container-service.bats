@@ -1,14 +1,12 @@
-# shellcheck disable=SC2016
+# shellcheck disable=SC2016,SC2317
 load test_helper
 
 setup_file() {
   delete_vms_directory
 
-  vedv::container_service::constructor "$TEST_HYPERVISOR"
   vedv::image_service::constructor "$TEST_HYPERVISOR" "$TEST_SSH_IP"
   export __VEDV_IMAGE_SERVICE_HYPERVISOR
   export __VEDV_IMAGE_SERVICE_SSH_IP
-  export __VEDV_CONTAINER_SERVICE_HYPERVISOR
   vedv::image_entity::constructor "$TEST_HYPERVISOR"
   export __VEDV_IMAGE_ENTITY_HYPERVISOR
 }
@@ -31,56 +29,10 @@ gen_container_vm_name() {
   fi
 
   local -r crc_sum="$(echo "${container_name}-${VM_TAG}" | cksum | cut -d' ' -f1)"
-  echo "container:${container_name}-${VM_TAG}|crc:${crc_sum}"
+  echo "container:${container_name}-${VM_TAG}|crc:${crc_sum}|"
 }
 
-@test "vedv::container_service::__gen_container_vm_name_from_image_vm_name(), with 'image_vm_name' unset should throw an error" {
-  run vedv::container_service::__gen_container_vm_name_from_image_vm_name
-
-  assert_failure 1
-  assert_output --partial '$1: unbound variable'
-}
-
-@test "vedv::container_service::__gen_container_vm_name_from_image_vm_name(), should generate the name" {
-  local image_vm_name='image:base-image|crc:261268494'
-  run vedv::container_service::__gen_container_vm_name_from_image_vm_name "$image_vm_name"
-
-  assert_success
-  assert_output 'container:base-image|crc:261268494'
-}
-
-@test "vedv::container_service::__gen_container_vm_name(), should generate the name" {
-  petname() { echo 'tintin-pet'; }
-  run vedv::container_service::__gen_container_vm_name
-
-  assert_success
-  assert_output 'container:tintin-pet|crc:1823374605'
-}
-
-@test "vedv::container_service::__gen_container_vm_name(), with name, should generate the name" {
-  local -r container_name='rinti-love'
-  run vedv::container_service::__gen_container_vm_name "$container_name"
-
-  assert_success
-  assert_output 'container:rinti-love|crc:1085124909'
-}
-
-@test 'vedv::container_service::_get_container_name(), should print container name' {
-  local -r container_vm_name='container:lala-lolo|crc:1234567'
-
-  run vedv::container_service::_get_container_name "$container_vm_name"
-
-  assert_output 'lala-lolo'
-}
-
-@test 'vedv::container_service::_get_container_id(), should print container id' {
-  local -r container_vm_name='container:lala-lolo|crc:1234567'
-
-  run vedv::container_service::_get_container_id "$container_vm_name"
-
-  assert_output '1234567'
-}
-
+# Tests for vedv::container_service::create()
 @test "vedv::container_service::create(), with name unset, should throw an error" {
   run vedv::container_service::create
 
@@ -105,14 +57,14 @@ gen_container_vm_name() {
   local -r image="$TEST_OVA_FILE"
   local -r container_name="dyli-${VM_TAG}"
 
-  eval "vedv::${TEST_HYPERVISOR}::get_description(){ :; }"
-  eval "vedv::${TEST_HYPERVISOR}::delete_snapshot(){ :; }"
+  vedv::hypervisor::get_description() { :; }
+  vedv::hypervisor::delete_snapshot() { :; }
 
   vedv::container_service::create "$image" "$container_name"
   run vedv::container_service::create "$image" "$container_name"
 
-  assert_failure 80
-  assert_output "container with name: 'dyli-${VM_TAG}' already exist"
+  assert_failure
+  assert_output "Container with name: 'dyli-${VM_TAG}' already exist"
 }
 
 @test 'vedv::container_service::__execute_operation_upon_containers(), without params should throw an error' {
@@ -138,8 +90,8 @@ gen_container_vm_name() {
 
 @test 'vedv::container_service::__execute_operation_upon_containers(), if hypervisor fail should throw an error' {
   # shellcheck disable=SC2317
-  vedv::virtualbox::list_wms_by_partial_name() { echo 'container:dyli|crc:1234567'; }
-  vedv::virtualbox::stop() { return 1; }
+  vedv::hypervisor::list_vms_by_partial_name() { echo 'container:dyli|crc:12345'; }
+  vedv::hypervisor::stop() { return 1; }
 
   run vedv::container_service::__execute_operation_upon_containers stop '3582343034' '3582343035'
 
@@ -149,8 +101,9 @@ gen_container_vm_name() {
 
 @test 'vedv::container_service::__execute_operation_upon_containers(), should execute operations on containers' {
   local -r container_name='dyli'
-  vedv::virtualbox::list_wms_by_partial_name() { echo 'container:dyli|crc:1234567'; }
-  vedv::virtualbox::start() { return 0; }
+
+  vedv::hypervisor::list_vms_by_partial_name() { echo 'container:dyli|crc:12345'; }
+  vedv::hypervisor::start() { :; }
 
   run vedv::container_service::__execute_operation_upon_containers start "$container_name"
 
@@ -211,7 +164,7 @@ gen_container_vm_name() {
   assert_success
   assert_output --regexp "^[0-9]+\s+${container_name1}-${VM_TAG}\$"
 }
-# bats test_tags=only
+
 @test "vedv::container_service::list(), With list_all=true Should show all containers" {
   skip
   local -r container_name1='ct1'
@@ -237,4 +190,57 @@ gen_container_vm_name() {
 
   assert_success
   assert_output --regexp "^[0-9]+\s+${container_name1}-${VM_TAG}\$"
+}
+
+# Tests for vedv::container_service::__exits_with_name()
+# bats test_tags=only
+@test "vedv::container_service::__exits_with_name() Should fails With empty container name" {
+  local -r container_name=""
+
+  run vedv::container_service::__exits_with_name "$container_name"
+
+  assert_failure
+  assert_output "Argument 'container_name' is required"
+}
+# bats test_tags=only
+@test "vedv::container_service::__exits_with_name() Should fails If exists_vm_with_partial_name fails" {
+  local -r container_name=""
+
+  vedv::hypervisor::exists_vm_with_partial_name() {
+    assert_equal "$1" "container:${container_name}|"
+    return 1
+  }
+
+  run vedv::container_service::__exits_with_name "$container_name"
+
+  assert_failure
+  assert_output "Argument 'container_name' is required"
+}
+# bats test_tags=only
+@test "vedv::container_service::__exits_with_name() Should return true if container exists" {
+  local -r container_name="my_container"
+
+  vedv::hypervisor::exists_vm_with_partial_name() {
+    assert_equal "$1" "container:${container_name}|"
+    echo true
+  }
+
+  run vedv::container_service::__exits_with_name "$container_name"
+
+  assert_success
+  assert_output true
+}
+# bats test_tags=only
+@test "vedv::container_service::__exits_with_name() Should return false if container does not exists" {
+  local -r container_name="non_existing_container"
+
+  vedv::hypervisor::exists_vm_with_partial_name() {
+    assert_equal "$1" "container:${container_name}|"
+    echo false
+  }
+
+  run vedv::container_service::__exits_with_name "$container_name"
+
+  assert_success
+  assert_output false
 }

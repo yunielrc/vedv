@@ -97,7 +97,6 @@ vedv::__run_cmd() {
   vedv::image_service::constructor "$hypervisor" "$VEDV_SSH_IP"
   vedv::image_command::constructor "$__VEDV_SCRIPT_NAME"
 
-  vedv::container_service::constructor "$hypervisor"
   vedv::container_command::constructor "$__VEDV_SCRIPT_NAME"
 
   # parse arguments

@@ -45,8 +45,9 @@ vedv::virtualbox::validate_vm_name() { vedv::hypervisor::validate_vm_name "$@"; 
 # Create a clone of an existing virtual machine
 #
 # Arguments:
-#   vm_name             name of the exported VM
-#   vm_clone_name       name of the exported VM
+#   vm_name             name of the VM
+#   vm_clone_name       name of the cloned VM
+#   vm_snapshot         name of the snapshot that will be used to clone
 #
 # Returns:
 #   0 on success, non-zero on error.

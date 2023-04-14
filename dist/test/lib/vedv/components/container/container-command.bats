@@ -24,12 +24,6 @@ vedv::container_service::list() { echo "include stopped containers: ${1:-false}"
 
   assert_success
   assert_output --partial "$help_output"
-
-  run vedv::container_command::__create help
-
-  assert_success
-  assert_output --partial "$help_output"
-
 }
 
 @test 'vedv::container_command::__create(), should create a container' {
@@ -71,12 +65,6 @@ vedv::container_service::list() { echo "include stopped containers: ${1:-false}"
 
   assert_success
   assert_output --partial "$help_output"
-
-  run vedv::container_command::__start help
-
-  assert_success
-  assert_output --partial "$help_output"
-
 }
 
 @test 'vedv::container_command::__start(), should start a container' {
@@ -100,12 +88,6 @@ vedv::container_service::list() { echo "include stopped containers: ${1:-false}"
 
   assert_success
   assert_output --partial "$help_output"
-
-  run vedv::container_command::__stop help
-
-  assert_success
-  assert_output --partial "$help_output"
-
 }
 
 @test 'vedv::container_command::__stop(), should stop a container' {
@@ -129,12 +111,6 @@ vedv::container_service::list() { echo "include stopped containers: ${1:-false}"
 
   assert_success
   assert_output --partial "$help_output"
-
-  run vedv::container_command::__rm help
-
-  assert_success
-  assert_output --partial "$help_output"
-
 }
 
 @test 'vedv::container_command::__rm(), should remove a container' {
@@ -155,11 +131,6 @@ vedv::container_service::list() { echo "include stopped containers: ${1:-false}"
   assert_output --partial "$help_output"
 
   run vedv::container_command::__list --help
-
-  assert_success
-  assert_output --partial "$help_output"
-
-  run vedv::container_command::__list help
 
   assert_success
   assert_output --partial "$help_output"
@@ -196,11 +167,6 @@ vedv::container_service::list() { echo "include stopped containers: ${1:-false}"
   assert_output --partial "$help_output"
 
   run vedv::container_command::run_cmd --help
-
-  assert_success
-  assert_output --partial "$help_output"
-
-  run vedv::container_command::run_cmd help
 
   assert_success
   assert_output --partial "$help_output"

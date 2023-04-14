@@ -4,9 +4,11 @@
 # Process command line and call service
 #
 
-# REQUIRE
-# . '../../utils.bash'
-# . './container-service.bash'
+# this is only for code completion
+if false; then
+  . '../../utils.bash'
+  . './container-service.bash'
+fi
 
 # VARIABLES
 
@@ -44,28 +46,36 @@ vedv::container_command::constructor() {
 #   0 on success, non-zero on error.
 #
 vedv::container_command::__create() {
-  local image
+  local image=''
   local name=''
-  # TODO: change if [[ $# == 0 ]]; then; set -- '-h'; fi
-  [[ $# == 0 ]] && set -- '-h'
+
+  if [[ $# == 0 ]]; then set -- '-h'; fi
 
   while [[ $# -gt 0 ]]; do
-    case "$1" in
-    -h | --help | help)
+    local arg="$1"
+
+    case "$arg" in
+    -h | --help)
       vedv::container_command::__create_help
       return 0
       ;;
     --name)
       shift
-      name="$1"
+      name="${1:-}"
+      # validate argument
+      if [[ -z "$name" ]]; then
+        err "Missing argument for option '${arg}'\n"
+        vedv::container_command::__create_help
+        return "$ERR_INVAL_ARG"
+      fi
       shift
       ;;
     *)
-      if [[ -z "${image:-}" ]]; then
+      if [[ -z "$image" ]]; then
         image="$1"
         shift
       else
-        echo -e "Invalid parameter: ${1}\n" >&2
+        err "Invalid parameter: ${1}\n"
         vedv::container_command::__create_help
         return "$ERR_INVAL_ARG"
       fi
@@ -73,7 +83,7 @@ vedv::container_command::__create() {
     esac
   done
 
-  vedv::container_service::create "${image:-}" "${name:-}"
+  vedv::container_service::create "$image" "$name"
 }
 
 #
@@ -110,12 +120,11 @@ HELPMSG
 #   0 on success, non-zero on error.
 #
 vedv::container_command::__start() {
-  # TODO: change if [[ $# == 0 ]]; then; set -- '-h'; fi
-  [[ $# == 0 ]] && set -- '-h'
+  if [[ $# == 0 ]]; then set -- '-h'; fi
 
   while [[ $# -gt 0 ]]; do
     case "$1" in
-    -h | --help | help)
+    -h | --help)
       vedv::container_command::__start_help
       return 0
       ;;
@@ -158,12 +167,11 @@ HELPMSG
 #   0 on success, non-zero on error.
 #
 vedv::container_command::__rm() {
-  # TODO: change if [[ $# == 0 ]]; then; set -- '-h'; fi
-  [[ $# == 0 ]] && set -- '-h'
+  if [[ $# == 0 ]]; then set -- '-h'; fi
 
   while [[ $# -gt 0 ]]; do
     case "$1" in
-    -h | --help | help)
+    -h | --help)
       vedv::container_command::__rm_help
       return 0
       ;;
@@ -206,12 +214,11 @@ HELPMSG
 #   0 on success, non-zero on error.
 #
 vedv::container_command::__stop() {
-  # TODO: change if [[ $# == 0 ]]; then; set -- '-h'; fi
-  [[ $# == 0 ]] && set -- '-h'
+  if [[ $# == 0 ]]; then set -- '-h'; fi
 
   while [[ $# -gt 0 ]]; do
     case "$1" in
-    -h | --help | help)
+    -h | --help)
       vedv::container_command::__stop_help
       return 0
       ;;
@@ -253,11 +260,11 @@ HELPMSG
 #
 vedv::container_command::__list() {
   local list_all=false
-  local partial_name
+  local partial_name=''
 
   while [[ $# -gt 0 ]]; do
     case "$1" in
-    -h | --help | help)
+    -h | --help)
       vedv::container_command::__list_help
       return 0
       ;;
@@ -266,7 +273,7 @@ vedv::container_command::__list() {
       list_all=true
       ;;
     *)
-      if [[ -z "${partial_name:-}" ]]; then
+      if [[ -z "$partial_name" ]]; then
         partial_name="$1"
         shift
       else
@@ -278,7 +285,7 @@ vedv::container_command::__list() {
     esac
   done
 
-  vedv::container_service::list $list_all "${partial_name:-}"
+  vedv::container_service::list "$list_all" "$partial_name"
 }
 
 #
@@ -340,8 +347,7 @@ HELPMSG
 }
 
 vedv::container_command::run_cmd() {
-  # TODO: change if [[ $# == 0 ]]; then; set -- '-h'; fi
-  [[ $# == 0 ]] && set -- '-h'
+  if [[ $# == 0 ]]; then set -- '-h'; fi
 
   while [[ $# -gt 0 ]]; do
     case "$1" in

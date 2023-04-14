@@ -41,9 +41,7 @@
       "args": [
         "container",
         "create",
-        "--name",
-        "dyli-amoroso",
-        "large-gull"
+        "loyal-poodle"
       ]
     },
     {
