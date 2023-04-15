@@ -25,7 +25,7 @@
       "request": "launch",
       "name": "Bash-Debug (vedv image pull)",
       "cwd": "${workspaceFolder}",
-      "program": "${workspaceFolder}/dist/bin/vedv",
+      "program": "${workspaceFolder}/dist/usr/bin/vedv",
       "args": [
         "image",
         "pull",
@@ -37,7 +37,7 @@
       "request": "launch",
       "name": "Bash-Debug (vedv container create)",
       "cwd": "${workspaceFolder}",
-      "program": "${workspaceFolder}/dist/bin/vedv",
+      "program": "${workspaceFolder}/dist/usr/bin/vedv",
       "args": [
         "container",
         "create",
@@ -49,7 +49,7 @@
       "request": "launch",
       "name": "Bash-Debug (vedv container stop)",
       "cwd": "${workspaceFolder}",
-      "program": "${workspaceFolder}/dist/bin/vedv",
+      "program": "${workspaceFolder}/dist/usr/bin/vedv",
       "args": [
         "container",
         "stop",
@@ -63,7 +63,7 @@
       "request": "launch",
       "name": "Bash-Debug (vedv container rm)",
       "cwd": "${workspaceFolder}",
-      "program": "${workspaceFolder}/dist/bin/vedv",
+      "program": "${workspaceFolder}/dist/usr/bin/vedv",
       "args": [
         "container",
         "rm",
@@ -75,7 +75,7 @@
       "request": "launch",
       "name": "Bash-Debug (vedv container ls)",
       "cwd": "${workspaceFolder}",
-      "program": "${workspaceFolder}/dist/bin/vedv",
+      "program": "${workspaceFolder}/dist/usr/bin/vedv",
       "args": [
         "container",
         "ls"
@@ -86,7 +86,7 @@
       "request": "launch",
       "name": "Bash-Debug (vedv image remove-cache)",
       "cwd": "${workspaceFolder}",
-      "program": "${workspaceFolder}/dist/bin/vedv",
+      "program": "${workspaceFolder}/dist/usr/bin/vedv",
       "args": [
         "image",
         "remove-cache"
@@ -97,7 +97,7 @@
       "request": "launch",
       "name": "Bash-Debug (vedv image rm)",
       "cwd": "${workspaceFolder}",
-      "program": "${workspaceFolder}/dist/bin/vedv",
+      "program": "${workspaceFolder}/dist/usr/bin/vedv",
       "args": [
         "image",
         "rm",
@@ -112,7 +112,7 @@
       "env": {
         "VEDV_HADOLINT_ENABLED": "false"
       },
-      "program": "${workspaceFolder}/dist/bin/vedv",
+      "program": "${workspaceFolder}/dist/usr/bin/vedv",
       "args": [
         "image",
         "build"

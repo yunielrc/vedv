@@ -5,12 +5,16 @@ setup_file() {
   vedv::image_builder::constructor "$TEST_HYPERVISOR" \
     "$TEST_SSH_USER" \
     "$TEST_SSH_PASSWORD" \
-    "$TEST_SSH_IP"
+    "$TEST_SSH_IP" \
+    "$TEST_BASE_VEDVFILEIGNORE" \
+    "$TEST_VEDVFILEIGNORE"
 
   export __VEDV_IMAGE_BUILDER_HYPERVISOR
   export __VEDV_IMAGE_BUILDER_SSH_USER
   export __VEDV_IMAGE_BUILDER_SSH_PASSWORD
   export __VEDV_IMAGE_BUILDER_SSH_IP
+  export __VEDV_IMAGE_BUILDER_BASE_VEDVFILEIGNORE_PATH
+  export __VEDV_IMAGE_BUILDER_VEDVFILEIGNORE_PATH
 
   vedv::image_service::constructor "$TEST_HYPERVISOR" "$TEST_SSH_IP"
   export __VEDV_IMAGE_SERVICE_HYPERVISOR
@@ -19,6 +23,15 @@ setup_file() {
 
 @test 'vedv::image_builder::constructor() Should succeed' {
   :
+}
+
+# Test for vedv:image_builder::__get_joined_vedvfileignore()
+@test 'vedv:image_builder::__get_joined_vedvfileignore() should return success and write the file path to stdout' {
+  local __VEDV_IMAGE_BUILDER_VEDVFILEIGNORE_PATH="dist/test/lib/vedv/components/image/fixtures/.vedvfileignore"
+  run vedv:image_builder::__get_joined_vedvfileignore
+
+  assert_success
+  assert_output --partial "/tmp/tmp."
 }
 
 # Tests for vedv::image_builder::__create_layer()
@@ -943,7 +956,7 @@ Failed to execute command '1 COPY dummy_source dummy_dest'"
   run vedv::image_builder::__layer_copy_calc_id "$cmd"
   # assert
   assert_success
-  assert_output "1 COPY source/ dest/source/"
+  assert_output --partial "1 COPY source/ dest/source/"
 }
 
 # Test vedv::image_builder::__layer_copy() function
@@ -1860,7 +1873,7 @@ Failed to execute command '1 COPY dummy_source dummy_dest'"
   assert_failure
   assert_output --partial "The first command must be valid because it's the command 'FROM'"
 }
-# bats test_tags=only
+
 @test "vedv::image_builder::__build() Should fails if There is no command to run" {
   skip
   # Arrange

@@ -12,14 +12,18 @@ if false; then
   . './image-entity.bash'
   . './image-vedvfile-service.bash'
 fi
+
 #
 # Constructor
 #
 # Arguments:
-#   hypervisor  string       name of the script
-#   ssh_user  string         ssh user
-#   ssh_password  string     ssh password
-#   ssh_ip  string           ssh ip
+#   hypervisor  string               name of the script
+#   ssh_user  string                 ssh user
+#   ssh_password  string             ssh password
+#   ssh_ip  string                   ssh ip
+#   base_vedvfileignore_path  string  path to the base vedvfileignore
+#   vedvfileignore_path  string       path to the .vedvfileignore
+#
 #
 # Returns:
 #   0 on success, non-zero on error.
@@ -29,6 +33,40 @@ vedv::image_builder::constructor() {
   readonly __VEDV_IMAGE_BUILDER_SSH_USER="$2"
   readonly __VEDV_IMAGE_BUILDER_SSH_PASSWORD="$3"
   readonly __VEDV_IMAGE_BUILDER_SSH_IP="$4"
+  readonly __VEDV_IMAGE_BUILDER_BASE_VEDVFILEIGNORE_PATH="$5"
+  readonly __VEDV_IMAGE_BUILDER_VEDVFILEIGNORE_PATH="${6:-}"
+}
+
+#
+# Return the file path of joined vedvfileignore
+#
+# Output:
+#  Writes the file path to stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv:image_builder::__get_joined_vedvfileignore() {
+
+  if [[ ! -f "$__VEDV_IMAGE_BUILDER_BASE_VEDVFILEIGNORE_PATH" ]]; then
+    err "File ${__VEDV_IMAGE_BUILDER_BASE_VEDVFILEIGNORE_PATH} does not exist"
+    return "$ERR_INVAL_VALUE"
+  fi
+
+  local vedvfileignore_path
+
+  if [[ ! -f "$__VEDV_IMAGE_BUILDER_VEDVFILEIGNORE_PATH" ]]; then
+    vedvfileignore_path="$__VEDV_IMAGE_BUILDER_BASE_VEDVFILEIGNORE_PATH"
+  else
+    vedvfileignore_path="$(mktemp)" || {
+      err "Failed to create temporary file"
+      return "$ERR_IMAGE_BUILDER_OPERATION"
+    }
+    cat "$__VEDV_IMAGE_BUILDER_BASE_VEDVFILEIGNORE_PATH" \
+      "$__VEDV_IMAGE_BUILDER_VEDVFILEIGNORE_PATH" >"$vedvfileignore_path"
+  fi
+
+  echo "$vedvfileignore_path"
 }
 
 #
@@ -474,8 +512,30 @@ vedv::image_builder::__layer_copy_calc_id() {
   }
   readonly crc_sum_source
 
+  if [[ ! -f "$__VEDV_IMAGE_BUILDER_BASE_VEDVFILEIGNORE_PATH" ]]; then
+    err "File ${__VEDV_IMAGE_BUILDER_BASE_VEDVFILEIGNORE_PATH} does not exist"
+    return "$ERR_INVAL_VALUE"
+  fi
+
+  local crc_sum_base_vedvfileignore
+  crc_sum_base_vedvfileignore="$(utils::crc_file_sum "$__VEDV_IMAGE_BUILDER_BASE_VEDVFILEIGNORE_PATH")" || {
+    err "Failed to calc 'crc_sum_base_vedvfileignore'"
+    return "$ERR_IMAGE_BUILDER_OPERATION"
+  }
+  readonly crc_sum_base_vedvfileignore
+
+  local crc_sum_vedvfileignore=''
+
+  if [[ -f "$__VEDV_IMAGE_BUILDER_VEDVFILEIGNORE_PATH" ]]; then
+    crc_sum_vedvfileignore="$(utils::crc_file_sum "$__VEDV_IMAGE_BUILDER_VEDVFILEIGNORE_PATH")" || {
+      err "Failed to calc 'crc_sum_vedvfileignore'"
+      return "$ERR_IMAGE_BUILDER_OPERATION"
+    }
+  fi
+  readonly crc_sum_vedvfileignore
+
   local crc_sum_all
-  crc_sum_all="$(utils::crc_sum <<<"${crc_sum_cmd}${crc_sum_source}")"
+  crc_sum_all="$(utils::crc_sum <<<"${crc_sum_cmd}${crc_sum_source}${crc_sum_base_vedvfileignore}${crc_sum_vedvfileignore}")"
   readonly crc_sum_all
 
   echo "$crc_sum_all"
@@ -531,9 +591,17 @@ vedv::image_builder::__layer_copy() {
     return "$ERR_INVAL_VALUE"
   fi
 
-  local -r exec_func="vedv::ssh_client::copy \"\$user\" \"\$ip\"  \"\$password\" \"\$port\" '$_source' '$dest'"
+  local vedvfileignore
+  vedvfileignore="$(vedv:image_builder::__get_joined_vedvfileignore)" ||
+    return $?
+  readonly vedvfileignore
 
-  vedv::image_builder::__layer_execute_cmd "$image_id" "$cmd" "COPY" "$exec_func"
+  local -r exec_func="vedv::ssh_client::copy \"\$user\" \"\$ip\"  \"\$password\" \"\$port\" '${_source}' '${dest}' '${vedvfileignore}'"
+
+  vedv::image_builder::__layer_execute_cmd "$image_id" "$cmd" "COPY" "$exec_func" || {
+    err "Failed to execute command '$cmd'"
+    return "$ERR_IMAGE_BUILDER_OPERATION"
+  }
 }
 
 #

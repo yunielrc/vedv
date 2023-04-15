@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+
 #
 # A tool for developing with reproducible virtual machines environments
 #
@@ -7,7 +8,7 @@ set -eu
 
 # CONSTANTS
 readonly __VEDV_SCRIPT_NAME="$(basename "${0}")"
-readonly __VEDV_DIST_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+readonly __VEDV_DIST_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 readonly __VEDV_LIB_PATH="${__VEDV_DIST_PATH}/lib/vedv"
 readonly __VEDV_COMPONENTS_PATH="${__VEDV_DIST_PATH}/lib/vedv/components"
 readonly __VEDV_HYPERVISORS_PATH="${__VEDV_DIST_PATH}/lib/vedv/hypervisors"
@@ -22,6 +23,7 @@ if [[ -f "$VEDV_CONFIG" ]]; then source "$VEDV_CONFIG"; fi
 : "${VEDV_SSH_USER:="${SSH_USER:-vedv}"}"
 : "${VEDV_SSH_PASSWORD:="${SSH_PASSWORD:-"$VEDV_SSH_USER"}"}"
 : "${VEDV_SSH_IP:="${SSH_IP:-127.0.0.1}"}"
+: "${VEDV_BASE_VEDVFILEIGNORE:="${BASE_VEDVFILEIGNORE:-"${VEDV_CONFIG_DIR}/vedvfileignore"}"}"
 
 # INCLUDE
 . "${__VEDV_LIB_PATH}/utils.bash"
@@ -93,7 +95,21 @@ vedv::__run_cmd() {
   vedv::image_entity::constructor "$hypervisor"
   vedv::image_cache_entity::constructor "$hypervisor"
   vedv::image_vedvfile_service::constructor "$hypervisor" "$VEDV_HADOLINT_ENABLED"
-  vedv::image_builder::constructor "$hypervisor" "$VEDV_SSH_USER" "$VEDV_SSH_PASSWORD" "$VEDV_SSH_IP"
+
+  local vedvfileignore_path=''
+
+  if [[ -f "./.vedvfileignore" ]]; then
+    vedvfileignore_path="${PWD}/.vedvfileignore"
+  fi
+  readonly vedvfileignore_path
+
+  vedv::image_builder::constructor "$hypervisor" \
+    "$VEDV_SSH_USER" \
+    "$VEDV_SSH_PASSWORD" \
+    "$VEDV_SSH_IP" \
+    "$VEDV_BASE_VEDVFILEIGNORE" \
+    "$vedvfileignore_path"
+
   vedv::image_service::constructor "$hypervisor" "$VEDV_SSH_IP"
   vedv::image_command::constructor "$__VEDV_SCRIPT_NAME"
 

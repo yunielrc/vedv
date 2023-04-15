@@ -1,7 +1,8 @@
 FROM /tmp/vedv/test/files/alpine-x86_64.ova
 
-COPY homefs/* /home/vedv/
+RUN ls -la /home/vedv/ > ls-la && \
+  uname -r > /home/vedv/uname
+
+COPY homefs/ /home/vedv/
 
 COPY home.config /home/vedv/
-
-RUN ls -la /home/vedv/

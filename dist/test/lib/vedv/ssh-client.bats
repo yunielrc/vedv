@@ -164,7 +164,7 @@ teardown_file() {
   run vedv::ssh_client::copy "user" "192.168.0.1" "password" "22" "source/file" "dest/file"
 
   assert_failure "$ERR_SSH_OPERATION"
-  assert_output --partial "Error on 'user@192.168.0.1', scp exit code:"
+  assert_output --partial "Error on 'user@192.168.0.1', rsync exit code:"
 }
 
 # bats test_tags=only

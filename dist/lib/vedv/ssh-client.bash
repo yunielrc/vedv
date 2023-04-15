@@ -87,6 +87,7 @@ vedv::ssh_client::copy() {
   local -ri port=${4:-22}
   local -r source="$5"
   local -r dest="$6"
+  local -r exclude_file_path="${7:-}"
 
   if [[ -z "$user" ]]; then
     err "Argument 'user' must not be empty"
@@ -118,15 +119,12 @@ vedv::ssh_client::copy() {
 
   {
     # shellcheck disable=SC2086
-    IFS='' sshpass -p "$password" \
-      scp -r -T -o 'ConnectTimeout=1' \
-      -o 'UserKnownHostsFile=/dev/null' \
-      -o 'PubkeyAuthentication=no' \
-      -o 'StrictHostKeyChecking=no' \
-      -P "$port" \
-      $source "${user}@${ip}:${dest}" 2>/dev/null
+    IFS='' rsync -az \
+      --exclude-from="$exclude_file_path" \
+      -e "sshpass -p ${password} ssh -o 'ConnectTimeout=1' -o 'UserKnownHostsFile=/dev/null'  -o 'PubkeyAuthentication=no' -o 'StrictHostKeyChecking=no' -p ${port}" \
+      $source "${user}@${ip}:${dest}" &>/dev/null
   } || {
-    err "Error on '${user}@${ip}', scp exit code: $?"
+    err "Error on '${user}@${ip}', rsync exit code: $?"
     return "$ERR_SSH_OPERATION"
   }
   return 0

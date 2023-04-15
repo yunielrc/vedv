@@ -107,7 +107,7 @@ vedv image rm IMAGE [IMAGE...]
 Remove one or more images"
   done
 }
-# bats test_tags=only
+
 @test "vedv image rm, Should remove the image" {
 
   vedv image pull "$TEST_OVA_FILE"

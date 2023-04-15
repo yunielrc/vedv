@@ -15,7 +15,7 @@ readonly VM_TAG
 export VM_TAG
 
 vedv() {
-  "${DIST_PATH}/bin/vedv" "$@"
+  "${DIST_PATH}/usr/bin/vedv" "$@"
 }
 export -f vedv
 # LOAD COMMON PROJECT LIBS
@@ -30,9 +30,9 @@ if [[ ! -f "$TEST_OVA_FILE" ]]; then
 
     cd "${TEST_OVA_FILE%/*}" || exit
 
-    wget -O "${TEST_OVA_FILE##*/}" "https://onedrive.live.com/download?cid=DBA0B75F07574EAA&resid=DBA0B75F07574EAA%21128&authkey=ADnFTg7imrwjcEo"
+    wget -O "${TEST_OVA_FILE##*/}" "https://onedrive.live.com/download?cid=DBA0B75F07574EAA&resid=DBA0B75F07574EAA%21131&authkey=AGx8f0GvQOu9HBc"
 
-    wget -O "${TEST_OVA_FILE##*/}.sha256" "https://onedrive.live.com/download?cid=DBA0B75F07574EAA&resid=DBA0B75F07574EAA%21127&authkey=AHbCGUC-YIttmc4"
+    wget -O "${TEST_OVA_FILE##*/}.sha256" "https://onedrive.live.com/download?cid=DBA0B75F07574EAA&resid=DBA0B75F07574EAA%21130&authkey=APsRKl4LDert-oU"
 
     sha256sum -c "${TEST_OVA_FILE##*/}.sha256"
   )
