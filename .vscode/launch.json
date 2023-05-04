@@ -35,13 +35,48 @@
     {
       "type": "bashdb",
       "request": "launch",
+      "name": "Bash-Debug (vedv image list)",
+      "cwd": "${workspaceFolder}",
+      "program": "${workspaceFolder}/dist/usr/bin/vedv",
+      "args": [
+        "image",
+        "list"
+      ]
+    },
+    {
+      "type": "bashdb",
+      "request": "launch",
+      "name": "Bash-Debug (vedv image)",
+      "cwd": "${workspaceFolder}",
+      "program": "${workspaceFolder}/dist/usr/bin/vedv",
+      "args": [
+        "image"
+      ]
+    },
+    {
+      "type": "bashdb",
+      "request": "launch",
       "name": "Bash-Debug (vedv container create)",
       "cwd": "${workspaceFolder}",
       "program": "${workspaceFolder}/dist/usr/bin/vedv",
       "args": [
         "container",
         "create",
-        "loyal-poodle"
+        "-n",
+        "dyli1",
+        "/tmp/vedv/test/files/alpine-x86_64.ova"
+      ]
+    },
+    {
+      "type": "bashdb",
+      "request": "launch",
+      "name": "Bash-Debug (vedv container start)",
+      "cwd": "${workspaceFolder}",
+      "program": "${workspaceFolder}/dist/usr/bin/vedv",
+      "args": [
+        "container",
+        "start",
+        "create",
       ]
     },
     {
@@ -53,9 +88,7 @@
       "args": [
         "container",
         "stop",
-        "dyli-amoroso1",
-        "dyli-amoroso",
-        "/tmp/vedv/test/files/alpine-x86_64.ova"
+        "339074491"
       ]
     },
     {
@@ -67,7 +100,9 @@
       "args": [
         "container",
         "rm",
-        "dyli-amoroso"
+        "-f",
+        "dyli1",
+        "dyli2"
       ]
     },
     {
@@ -101,7 +136,7 @@
       "args": [
         "image",
         "rm",
-        "2238451087"
+        "1250835371"
       ]
     },
     {

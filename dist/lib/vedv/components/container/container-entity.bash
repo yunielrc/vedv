@@ -5,6 +5,7 @@
 # this is only for code completion
 if false; then
   . './../../utils.bash'
+  . './../__base/vmobj-entity.bash'
   . './../../hypervisors/virtualbox.bash'
 fi
 
@@ -14,36 +15,14 @@ fi
 # | - id: string               |
 # | - name: string             |
 # +----------------------------+
-vedv::container_entity::constructor() {
-  readonly __VEDV_CONTAINER_ENTITY_HYPERVISOR="$1"
-}
 
-#
-# Validate vm name
-#
-# Arguments:
-#   vm_name string   name to validate
-#
-# Returns:
-#   0 if valid, 1 if invalid
-#
-vedv::container_entity::__validate_vm_name() {
-  local -r vm_name="$1"
-  # validate arguments
-  if [[ -z "$vm_name" ]]; then
-    err "Argument must not be empty"
-    return "$ERR_INVAL_ARG"
-  fi
-  local -r name_pattern="$UTILS_REGEX_NAME"
-  local -r pattern="^container:${name_pattern}\|crc:${name_pattern}\|\$"
+# VARIABLES
 
-  if [[ ! "$vm_name" =~ $pattern ]]; then
-    err "Invalid container vm name: '${vm_name}'"
-    return "$ERR_INVAL_ARG"
-  fi
+readonly VEDV_CONTAINER_ENTITY_TYPE='container'
+# shellcheck disable=SC2034
+readonly VEDV_CONTAINER_ENTITY_VALID_ATTRIBUTES='parent_image_id|ssh_port'
 
-  return 0
-}
+# FUNCTIONS
 
 #
 # Generate container vm name
@@ -58,18 +37,7 @@ vedv::container_entity::__validate_vm_name() {
 #   0 on success, non-zero on error.
 #
 vedv::container_entity::gen_vm_name() {
-  local container_name="${1:-}"
-
-  if [[ -z "$container_name" ]]; then
-    container_name="$(petname)" || {
-      err "Failed to generate a random name"
-      return "$ERR_CONTAINER_ENTITY"
-    }
-  fi
-
-  local -r crc_sum="$(echo "$container_name" | utils::crc_sum)"
-
-  echo "container:${container_name}|crc:${crc_sum}|"
+  vedv::vmobj_entity::gen_vm_name "$VEDV_CONTAINER_ENTITY_TYPE" "$@"
 }
 
 #
@@ -85,17 +53,7 @@ vedv::container_entity::gen_vm_name() {
 #   0 on success, non-zero on error.
 #
 vedv::container_entity::get_vm_name() {
-  local -r container_id="$1"
-
-  utils::validate_name_or_id "$container_id" || return "$?"
-
-  local vms
-  vms="$(vedv::"$__VEDV_CONTAINER_ENTITY_HYPERVISOR"::list_wms_by_partial_name "|crc:${container_id}|")" || {
-    err "Failed to get vm name of container: ${container_id}"
-    return "$ERR_CONTAINER_ENTITY"
-  }
-
-  head -n 1 <<<"$vms"
+  vedv::vmobj_entity::get_vm_name "$VEDV_CONTAINER_ENTITY_TYPE" "$@"
 }
 
 #
@@ -111,16 +69,7 @@ vedv::container_entity::get_vm_name() {
 #   0 on success, non-zero on error.
 #
 vedv::container_entity::get_vm_name_by_container_name() {
-  local -r container_name="$1"
-  utils::validate_name_or_id "$container_name" || return "$?"
-
-  local vm_name
-  vm_name="$(vedv::"$__VEDV_CONTAINER_ENTITY_HYPERVISOR"::list_wms_by_partial_name "container:${container_name}|")" || {
-    err "Failed to get vm name of container: ${container_name}"
-    return "$ERR_IMAGE_ENTITY"
-  }
-
-  head -n 1 <<<"$vm_name"
+  vedv::vmobj_entity::get_vm_name_by_vmobj_name "$VEDV_CONTAINER_ENTITY_TYPE" "$@"
 }
 
 #
@@ -136,13 +85,7 @@ vedv::container_entity::get_vm_name_by_container_name() {
 #   0 on success, non-zero on error.
 #
 vedv::container_entity::get_container_name_by_vm_name() {
-  local -r container_vm_name="$1"
-  # validate arguments
-  vedv::container_entity::__validate_vm_name "$container_vm_name" || return "$?"
-
-  local container_name="${container_vm_name#'container:'}"
-  container_name="${container_name%'|crc:'*}"
-  echo "$container_name"
+  vedv::vmobj_entity::get_vmobj_name_by_vm_name "$VEDV_CONTAINER_ENTITY_TYPE" "$@"
 }
 
 #
@@ -157,13 +100,8 @@ vedv::container_entity::get_container_name_by_vm_name() {
 # Returns:
 #   0 on success, non-zero on error.
 #
-vedv::container_entity::get_container_id_by_vm_name() {
-  local -r container_vm_name="$1"
-
-  vedv::container_entity::__validate_vm_name "$container_vm_name" || return "$?"
-
-  local result="${container_vm_name#*'|crc:'}"
-  echo "${result%'|'}"
+vedv::container_entity::get_id_by_vm_name() {
+  vedv::vmobj_entity::get_vmobj_id_by_vm_name "$VEDV_CONTAINER_ENTITY_TYPE" "$@"
 }
 
 #
@@ -179,22 +117,82 @@ vedv::container_entity::get_container_id_by_vm_name() {
 #   0 on success, non-zero on error.
 #
 vedv::container_entity::get_id_by_container_name() {
-  local -r container_name="$1"
+  vedv::vmobj_entity::get_id_by_vmobj_name "$VEDV_CONTAINER_ENTITY_TYPE" "$@"
+}
 
-  utils::validate_name_or_id "$container_name" || return "$?"
+#
+# Set ssh_port value
+#
+# Arguments:
+#   container_id  string       container id
+#   ssh_port      int          ssh port
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::container_entity::set_ssh_port() {
+  local -r container_id="$1"
+  local -r value="$2"
 
-  local container_vm_name
-  container_vm_name="$(vedv::container_entity::get_vm_name_by_container_name "$container_name")"
-  readonly container_vm_name
+  vedv::vmobj_entity::set_ssh_port "$VEDV_CONTAINER_ENTITY_TYPE" "$container_id" "$value"
+}
 
-  if [[ -z "$container_vm_name" ]]; then
-    err "Container with name '${container_name}' not found"
-    return "$ERR_NOT_FOUND"
-  fi
+#
+# Get ssh_port value
+#
+# Arguments:
+#   container_id string       container id
+#
+# Output:
+#  Writes ssh_port (int) value
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::container_entity::get_ssh_port() {
+  local -r container_id="$1"
 
-  local container_id
-  container_id="$(vedv::container_entity::get_container_id_by_vm_name "$container_vm_name")"
-  readonly container_id
+  vedv::vmobj_entity::get_ssh_port "$VEDV_CONTAINER_ENTITY_TYPE" "$container_id"
+}
 
-  echo "$container_id"
+#
+# Set parent image id value
+#
+# Arguments:
+#   container_id  string       container id
+#   image      int             image
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::container_entity::set_parent_image_id() {
+  local -r container_id="$1"
+  local -r value="$2"
+
+  vedv::vmobj_entity::__set_attribute \
+    "$VEDV_CONTAINER_ENTITY_TYPE" \
+    "$container_id" \
+    'parent_image_id' \
+    "$value"
+}
+
+#
+# Get parent image id value
+#
+# Arguments:
+#   container_id string       container_id id
+#
+# Output:
+#  Writes image (int) value
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::container_entity::get_parent_image_id() {
+  local -r container_id="$1"
+
+  vedv::vmobj_entity::__get_attribute \
+    "$VEDV_CONTAINER_ENTITY_TYPE" \
+    "$container_id" \
+    'parent_image_id'
 }

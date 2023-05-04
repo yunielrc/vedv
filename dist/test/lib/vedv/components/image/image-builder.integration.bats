@@ -1,29 +1,20 @@
 load test_helper
 
 setup_file() {
-  vedv::image_builder::constructor "$TEST_HYPERVISOR" \
+  vedv::image_builder::constructor \
     "$TEST_SSH_USER" \
     "$TEST_SSH_PASSWORD" \
     "$TEST_SSH_IP" \
     "$TEST_BASE_VEDVFILEIGNORE" \
     "$TEST_VEDVFILEIGNORE"
 
-  export __VEDV_IMAGE_BUILDER_HYPERVISOR
   export __VEDV_IMAGE_BUILDER_SSH_USER
   export __VEDV_IMAGE_BUILDER_SSH_PASSWORD
   export __VEDV_IMAGE_BUILDER_SSH_IP
   export __VEDV_IMAGE_BUILDER_BASE_VEDVFILEIGNORE_PATH
   export __VEDV_IMAGE_BUILDER_VEDVFILEIGNORE_PATH
 
-  vedv::image_service::constructor "$TEST_HYPERVISOR" "$TEST_SSH_IP"
-  export __VEDV_IMAGE_SERVICE_HYPERVISOR
-  export __VEDV_IMAGE_SERVICE_SSH_IP
-
-  vedv::image_entity::constructor "$TEST_HYPERVISOR"
-  export __VEDV_IMAGE_ENTITY_HYPERVISOR
-  vedv::image_cache_entity::constructor "$TEST_HYPERVISOR"
-  export __VEDV_IMAGE_CACHE_ENTITY_HYPERVISOR
-  vedv::image_vedvfile_service::constructor "$TEST_HYPERVISOR" false
+  vedv::image_vedvfile_service::constructor "$TEST_HADOLINT_CONFIG" false
   export __VEDV_IMAGE_VEDVFILE_SERVICE_HYPERVISOR
   export __VEDV_IMAGE_VEDVFILE_HADOLINT_ENABLED
 }

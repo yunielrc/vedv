@@ -185,7 +185,7 @@ Options:
     assert_output --partial "Missing argument for option '${arg}'"
   done
 }
-
+# bats test_tags=only
 @test "vedv image build, Should build the image" {
   cd "${BATS_TEST_DIRNAME}/fixtures/vedvfiles"
 
@@ -194,8 +194,6 @@ Options:
   assert_success
   assert_output --regexp "
 created layer '.*' for command 'FROM'
-Waiting for VM \"image:image123\|crc:.*\|\" to power on...
-VM \"image:image123\|crc:.*\|\" has been successfully started.
 created layer '.*' for command 'COPY'
 created layer '.*' for command 'RUN'
 

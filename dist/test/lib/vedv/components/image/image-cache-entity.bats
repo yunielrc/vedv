@@ -1,10 +1,5 @@
 load test_helper
 
-setup_file() {
-  vedv::image_cache_entity::constructor "$TEST_HYPERVISOR"
-  export __VEDV_IMAGE_CACHE_ENTITY_HYPERVISOR
-}
-
 # Test vedv::image_cache_entity::constructor()
 @test 'vedv::image_cache_entity::constructor() Succeed' {
   :
@@ -53,7 +48,9 @@ setup_file() {
 }
 
 @test "vedv::image_cache_entity::get_vm_name() Should success" {
-  eval "vedv::${__VEDV_IMAGE_CACHE_ENTITY_HYPERVISOR}::list_wms_by_partial_name() { echo \"image-cache\$1\"; }"
+  vedv::hypervisor::list_vms_by_partial_name() {
+    echo "image-cache${1}"
+  }
 
   run vedv::image_cache_entity::get_vm_name "12345678"
 

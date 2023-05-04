@@ -13,7 +13,7 @@ setup_file() {
 vedv::image_service::list() {
   echo "vedv::image_service::list $*"
 }
-vedv::image_service::rm() {
+vedv::image_service::remove() {
   echo "vedv::image_service::__rm $*"
 }
 

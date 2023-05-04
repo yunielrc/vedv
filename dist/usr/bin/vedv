@@ -6,24 +6,42 @@
 
 set -eu
 
+# CODE COMPLETION
+if false; then
+  # __base
+  . './../../lib/vedv/components/__base/vmobj-service.bash'
+  . './../../lib/vedv/components/__base/vmobj-entity.bash'
+  # image
+  . './../../lib/vedv/components/image/image-service.bash'
+  . './../../lib/vedv/components/image/image-entity.bash'
+  . './../../lib/vedv/components/image/image-command.bash'
+  . './../../lib/vedv/components/image/image-builder.bash'
+  . './../../lib/vedv/components/image/image-vedvfile-service.bash'
+  # container
+  . './../../lib/vedv/components/container/container-service.bash'
+  . './../../lib/vedv/components/container/container-entity.bash'
+  . './../../lib/vedv/components/container/container-command.bash'
+fi
+
 # CONSTANTS
-readonly __VEDV_SCRIPT_NAME="$(basename "${0}")"
+readonly __VEDV_SCRIPT_NAME="$(basename "$0")"
 readonly __VEDV_DIST_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 readonly __VEDV_LIB_PATH="${__VEDV_DIST_PATH}/lib/vedv"
 readonly __VEDV_COMPONENTS_PATH="${__VEDV_DIST_PATH}/lib/vedv/components"
 readonly __VEDV_HYPERVISORS_PATH="${__VEDV_DIST_PATH}/lib/vedv/hypervisors"
-readonly VEDV_CONFIG_DIR="${__VEDV_DIST_PATH}/etc/vedv"
-readonly VEDV_CONFIG="${VEDV_CONFIG_DIR}/vedv.env"
+readonly __VEDV_CONFIG_DIR="${__VEDV_DIST_PATH}/etc/vedv"
+readonly __VEDV_CONFIG="${__VEDV_CONFIG_DIR}/vedv.env"
 
-if [[ -f "$VEDV_CONFIG" ]]; then source "$VEDV_CONFIG"; fi
+# CONFIG
+if [[ -f "$__VEDV_CONFIG" ]]; then source "$__VEDV_CONFIG"; fi
 
 # ENVIRONMENT
 : "${VEDV_HADOLINT_ENABLED:="${HADOLINT_ENABLED:-true}"}"
-: "${VEDV_HADOLINT_CONFIG:="${HADOLINT_CONFIG:-"${VEDV_CONFIG_DIR}/hadolint.yaml"}"}"
+: "${VEDV_HADOLINT_CONFIG:="${HADOLINT_CONFIG:-"${__VEDV_CONFIG_DIR}/hadolint.yaml"}"}"
 : "${VEDV_SSH_USER:="${SSH_USER:-vedv}"}"
 : "${VEDV_SSH_PASSWORD:="${SSH_PASSWORD:-"$VEDV_SSH_USER"}"}"
 : "${VEDV_SSH_IP:="${SSH_IP:-127.0.0.1}"}"
-: "${VEDV_BASE_VEDVFILEIGNORE:="${BASE_VEDVFILEIGNORE:-"${VEDV_CONFIG_DIR}/vedvfileignore"}"}"
+: "${VEDV_BASE_VEDVFILEIGNORE:="${BASE_VEDVFILEIGNORE:-"${__VEDV_CONFIG_DIR}/vedvfileignore"}"}"
 
 # INCLUDE
 . "${__VEDV_LIB_PATH}/utils.bash"
@@ -32,8 +50,6 @@ if [[ -f "$VEDV_CONFIG" ]]; then source "$VEDV_CONFIG"; fi
 for f in "${__VEDV_COMPONENTS_PATH}/"*/*.bash; do . "$f"; done
 
 # COMMANDS
-
-# OPTIONS
 vedv::__help() {
   cat <<-HELPMSG
 Usage:
@@ -41,13 +57,13 @@ ${__VEDV_SCRIPT_NAME} [HYPERVISOR] COMMAND
 
 A tool for developing with reproducible virtual machines environments
 
-Options:
+Flags:
   -h, --help       Show this help
 
 Commands:
   container        Manage containers
   image            Manage images
-  build            Build an image from a Dockerfile
+  build            Build an image from a Vedvfile
 
 Run '${__VEDV_SCRIPT_NAME} COMMAND --help' for more information on a command.
 HELPMSG
@@ -63,10 +79,9 @@ vedv::__on_exit() {
 
 vedv::__run_cmd() {
   # IMPL: test this function
-  # TODO: change if [[ $# == 0 ]]; then; set -- '-h'; fi
-  [[ $# == 0 ]] && set -- '-h'
+  if [[ $# == 0 ]]; then set -- '-h'; fi
 
-  if [[ "${1:-}" == @(-h|--help) ]]; then
+  if [[ "$1" == @(-h|--help) ]]; then
     vedv::__help
     return 0
   fi
@@ -91,10 +106,9 @@ vedv::__run_cmd() {
   . "${__VEDV_HYPERVISORS_PATH}/${hypervisor}.bash"
 
   # initialize components
-
-  vedv::image_entity::constructor "$hypervisor"
-  vedv::image_cache_entity::constructor "$hypervisor"
-  vedv::image_vedvfile_service::constructor "$hypervisor" "$VEDV_HADOLINT_ENABLED"
+  vedv::image_vedvfile_service::constructor \
+    "$VEDV_HADOLINT_CONFIG" \
+    "$VEDV_HADOLINT_ENABLED"
 
   local vedvfileignore_path=''
 
@@ -103,15 +117,33 @@ vedv::__run_cmd() {
   fi
   readonly vedvfileignore_path
 
-  vedv::image_builder::constructor "$hypervisor" \
+  vedv::image_builder::constructor \
     "$VEDV_SSH_USER" \
     "$VEDV_SSH_PASSWORD" \
     "$VEDV_SSH_IP" \
     "$VEDV_BASE_VEDVFILEIGNORE" \
     "$vedvfileignore_path"
 
-  vedv::image_service::constructor "$hypervisor" "$VEDV_SSH_IP"
+  local -r vmobj_types='container|image'
+  # shellcheck disable=SC2034
+  local -r -A vmobj_types_attributes_dict=(
+    [image]="$VEDV_IMAGE_ENTITY_VALID_ATTRIBUTES"
+    [container]="$VEDV_CONTAINER_ENTITY_VALID_ATTRIBUTES"
+  )
+
+  vedv::vmobj_entity::constructor \
+    "$vmobj_types" \
+    "$(arr2str vmobj_types_attributes_dict)"
+
+  vedv::vmobj_service::constructor \
+    "$VEDV_SSH_IP"
+
   vedv::image_command::constructor "$__VEDV_SCRIPT_NAME"
+
+  vedv::container_service::constructor \
+    "$VEDV_SSH_USER" \
+    "$VEDV_SSH_PASSWORD" \
+    "$VEDV_SSH_IP"
 
   vedv::container_command::constructor "$__VEDV_SCRIPT_NAME"
 
@@ -131,8 +163,7 @@ vedv::__run_cmd() {
       return $?
       ;;
     *)
-      # TODO: use err
-      err "Invalid parameter: ${1}\n"
+      err "Invalid argument: ${1}\n"
       vedv::__help
       return 10
       ;;
@@ -144,7 +175,6 @@ vedv::main() {
   vedv::__run_cmd "$@"
 }
 
-if [[ "${BASH_SOURCE[0]}" = "${0}" ]]; then
+if [[ "${BASH_SOURCE[0]}" = "$0" ]]; then
   vedv::main "$@"
-  exit $?
 fi

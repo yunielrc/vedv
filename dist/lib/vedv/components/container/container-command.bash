@@ -31,13 +31,13 @@ vedv::container_command::constructor() {
 # Create a new container
 #
 # Flags:
-#   [-h | --help | help]  Show help
+#   [-h | --help ]      Show help
 #
 # Options:
-#   [--name]              Container name
+#   [-n | --name]            Container name
 #
 # Arguments:
-#   IMAGE                 Image name or an OVF file
+#   IMAGE               Image name or an OVF file
 #
 # Output:
 #  Writes container ID to the stdout
@@ -46,8 +46,8 @@ vedv::container_command::constructor() {
 #   0 on success, non-zero on error.
 #
 vedv::container_command::__create() {
-  local image=''
   local name=''
+  local image=''
 
   if [[ $# == 0 ]]; then set -- '-h'; fi
 
@@ -59,7 +59,7 @@ vedv::container_command::__create() {
       vedv::container_command::__create_help
       return 0
       ;;
-    --name)
+    -n | --name)
       shift
       name="${1:-}"
       # validate argument
@@ -75,13 +75,19 @@ vedv::container_command::__create() {
         image="$1"
         shift
       else
-        err "Invalid parameter: ${1}\n"
+        err "Invalid argument '${1}'\n"
         vedv::container_command::__create_help
         return "$ERR_INVAL_ARG"
       fi
       ;;
     esac
   done
+
+  if [[ -z "$image" ]]; then
+    err "Missing argument 'IMAGE'\n"
+    vedv::container_command::__create_help
+    return "$ERR_INVAL_ARG"
+  fi
 
   vedv::container_service::create "$image" "$name"
 }
@@ -100,7 +106,7 @@ ${__VED_CONTAINER_COMMAND_SCRIPT_NAME} container create [OPTIONS] IMAGE
 Create a new container
 
 Options:
-  --name           Assign a name to the container
+  -n, --name name         Assign a name to the container
 HELPMSG
 }
 
@@ -108,7 +114,8 @@ HELPMSG
 # Start one or more stopped containers
 #
 # Flags:
-#   [-h | --help | help]          show help
+#   [-h | --help]          show help
+#   [-w | --wait]          wait for SSH
 #
 # Arguments:
 #   CONTAINER  [CONTAINER...]     one or more container name or id
@@ -122,14 +129,24 @@ HELPMSG
 vedv::container_command::__start() {
   if [[ $# == 0 ]]; then set -- '-h'; fi
 
+  local wait_for_ssh=false
+
   while [[ $# -gt 0 ]]; do
     case "$1" in
     -h | --help)
       vedv::container_command::__start_help
       return 0
       ;;
+    -w | --wait)
+      wait_for_ssh=true
+      shift
+      ;;
     *)
-      vedv::container_service::start "${@}"
+      if [[ "$wait_for_ssh" == false ]]; then
+        vedv::container_service::start_no_wait_ssh "$@"
+      else
+        vedv::container_service::start "$@"
+      fi
       return $?
       ;;
     esac
@@ -148,6 +165,9 @@ Usage:
 ${__VED_CONTAINER_COMMAND_SCRIPT_NAME} container start CONTAINER [CONTAINER...]
 
 Start one or more stopped containers
+
+Flags:
+  -w, --wait          Wait for SSH
 HELPMSG
 }
 
@@ -155,7 +175,8 @@ HELPMSG
 # Remove one or more running containers
 #
 # Flags:
-#   [-h | --help | help]          show help
+#   [-h | --help]          show help
+#   [-f | --force]         force remove
 #
 # Arguments:
 #   CONTAINER  [CONTAINER...]     one or more container name or id
@@ -167,6 +188,8 @@ HELPMSG
 #   0 on success, non-zero on error.
 #
 vedv::container_command::__rm() {
+  local force=false
+
   if [[ $# == 0 ]]; then set -- '-h'; fi
 
   while [[ $# -gt 0 ]]; do
@@ -175,8 +198,12 @@ vedv::container_command::__rm() {
       vedv::container_command::__rm_help
       return 0
       ;;
+    -f | --force)
+      shift
+      force=true
+      ;;
     *)
-      vedv::container_service::rm "${@}"
+      vedv::container_service::remove "$force" "$@"
       return $?
       ;;
     esac
@@ -195,6 +222,9 @@ Usage:
 ${__VED_CONTAINER_COMMAND_SCRIPT_NAME} container rm CONTAINER [CONTAINER...]
 
 Remove one or more running containers
+
+Flags:
+  -f, --force         Force remove
 HELPMSG
 }
 
@@ -202,7 +232,7 @@ HELPMSG
 # Stop one or more running containers
 #
 # Flags:
-#   [-h | --help | help]          show help
+#   [-h | --help]          show help
 #
 # Arguments:
 #   CONTAINER  [CONTAINER...]     one or more container name or id
@@ -223,7 +253,7 @@ vedv::container_command::__stop() {
       return 0
       ;;
     *)
-      vedv::container_service::stop "${@}"
+      vedv::container_service::stop "$@"
       return $?
       ;;
     esac
@@ -249,7 +279,7 @@ HELPMSG
 # List containers
 #
 # Flags:
-#   [-h | --help | help]     show help
+#   [-h | --help]     show help
 #   [-a, --all]              show all containers (default shows just running)
 #
 # Output:
@@ -277,7 +307,7 @@ vedv::container_command::__list() {
         partial_name="$1"
         shift
       else
-        err "Invalid parameter: ${1}\n"
+        err "Invalid argument: ${1}\n"
         vedv::container_command::__list_help
         return "$ERR_INVAL_ARG"
       fi
@@ -309,12 +339,6 @@ Options:
 HELPMSG
 }
 
-# IMPL: Create and run a container from an image
-vedv::container_command::__run() {
-  echo 'vedv::container_command::__run'
-  vedv::container_service::run
-}
-
 #
 # Show help
 #
@@ -337,9 +361,9 @@ Manage containers
 
 Commands:
   create           Create a new container
-  start            Start one or more stopped containers
-  rm               Remove one or more running containers
-  stop             Stop one or more running containers
+  start            Start one or more containers
+  rm               Remove one or more containers
+  stop             Stop one or more containers
   list             List containers
 
 Run '${__VED_CONTAINER_COMMAND_SCRIPT_NAME} container COMMAND --help' for more information on a command.
@@ -380,15 +404,8 @@ vedv::container_command::run_cmd() {
       vedv::container_command::__list "$@"
       return $?
       ;;
-
-    run)
-      shift
-      vedv::container_command::__run "$@"
-      return $?
-      ;;
-
     *)
-      err "Invalid parameter: ${1}\n"
+      err "Invalid argument: ${1}\n"
       vedv::container_command::__help
       return "$ERR_INVAL_ARG"
       ;;

@@ -6,11 +6,11 @@
 # this is only for code completion
 if false; then
   . './../../utils.bash'
-  . './../../hypervisors/virtualbox.bash'
-  . '../image/image-service.bash'
-  . '../image/image-entity.bash'
-  . './../../ssh-client.bash'
   . './container-entity.bash'
+  . './../__base/vmobj-service.bash'
+  . '../image/image-entity.bash'
+  . '../image/image-service.bash'
+  . './../../ssh-client.bash'
   . './../../hypervisors/virtualbox.bash'
 fi
 
@@ -21,19 +21,24 @@ fi
 #
 # Constructor
 #
+# Arguments:
+#  ssh_ip string    ssh ip address
+#
 # Returns:
 #   0 on success, non-zero on error.
 #
 vedv::container_service::constructor() {
-  :
+  readonly __VEDV_CONTAINER_SERVICE_SSH_USER="$1"
+  readonly __VEDV_CONTAINER_SERVICE_SSH_PASSWORD="$2"
+  readonly __VEDV_CONTAINER_SERVICE_SSH_IP="$3"
 }
 
 #
 # Create a new container
 #
 # Arguments:
-#   image                image name or an OVF file
-#   container_name       container name
+#   image           string  image name or an OVF file
+#   container_name  string  container name
 #
 # Output:
 #  Writes container ID to the stdout
@@ -52,7 +57,7 @@ vedv::container_service::create() {
 
   if [[ -n "$container_name" ]]; then
     local exists_container
-    exists_container="$(vedv::container_service::__exits_with_name "$container_name")" || {
+    exists_container="$(vedv::vmobj_service::exists_with_name 'container' "$container_name")" || {
       err "Failed to check if container with name: '${container_name}' already exist"
       return "$ERR_CONTAINER_OPERATION"
     }
@@ -72,7 +77,7 @@ vedv::container_service::create() {
       return "$ERR_CONTAINER_OPERATION"
     }
     vedv::image_service::pull "$image" "$image_name" &>/dev/null || {
-      err "Failed to pull image: '$image'"
+      err "Failed to pull image: '${image}'"
       return "$ERR_CONTAINER_OPERATION"
     }
   else
@@ -82,7 +87,7 @@ vedv::container_service::create() {
 
   local image_vm_name
   image_vm_name="$(vedv::image_entity::get_vm_name_by_image_name "$image_name")" || {
-    err "Failed to get image vm name for image: '$image_name'"
+    err "Failed to get image vm name for image: '${image_name}'"
     return "$ERR_CONTAINER_OPERATION"
   }
   readonly image_vm_name
@@ -93,20 +98,23 @@ vedv::container_service::create() {
   fi
 
   local container_vm_name
-  container_vm_name="$(vedv::container_entity::gen_vm_name "$container_name")"
+  container_vm_name="$(vedv::container_entity::gen_vm_name "$container_name")" || {
+    err "Failed to generate container vm name for container: '${container_name}'"
+    return "$ERR_CONTAINER_OPERATION"
+  }
   readonly container_vm_name
 
   # create a vm snapshoot, the snapshoot is the container
   local image_id
-  image_id="$(vedv::image_entity::get_id_by_image_name "$image_name")" || {
-    err "Failed to get image id for image: '$image_name'"
+  image_id="$(vedv::image_entity::get_id_by_vm_name "$image_vm_name")" || {
+    err "Failed to get image id for image: '${image_name}'"
     return "$ERR_CONTAINER_OPERATION"
   }
   readonly image_id
 
   local last_layer_id
   last_layer_id="$(vedv::image_entity::get_last_layer_id "$image_id")" || {
-    err "Failed to get last image layer id for image: '$image_name'"
+    err "Failed to get last image layer id for image: '${image_name}'"
     return "$ERR_CONTAINER_OPERATION"
   }
   readonly last_layer_id
@@ -126,170 +134,308 @@ vedv::container_service::create() {
     return "$ERR_CONTAINER_OPERATION"
   }
 
-  vedv::hypervisor::set_description "$container_vm_name" "$image_vm_name" || {
-    err "Failed to set description for vm: '$container_vm_name'"
-    return "$ERR_CONTAINER_OPERATION"
-  }
-
   if [[ -z "$container_name" ]]; then
     container_name="$(vedv::container_entity::get_container_name_by_vm_name "$container_vm_name")" || {
-      err "Failed to get container name for vm: '$container_vm_name'"
+      err "Failed to get container name for vm: '${container_vm_name}'"
       return "$ERR_CONTAINER_OPERATION"
     }
+    readonly container_name
   fi
+
+  local container_id
+  container_id="$(vedv::container_entity::get_id_by_vm_name "$container_vm_name")" || {
+    err "Failed to get container id for vm: '${container_vm_name}'"
+    return "$ERR_CONTAINER_OPERATION"
+  }
+  readonly container_id
+
+  vedv::container_entity::set_parent_image_id "$container_id" "$image_id" || {
+    err "Failed to set parent image id for container: '${container_name}'"
+    return "$ERR_CONTAINER_OPERATION"
+  }
 
   echo "$container_name"
 }
 
 #
-# Execute an operation (function) upon one or more stopped containers
+# Tell if a container is started
 #
 # Arguments:
-#   container_name_or_ids     container name or id
+#   container_id string       container id
 #
 # Output:
-#  writes container name or id to the stdout
+#  Writes true if started otherwise false to the stdout
 #
 # Returns:
 #   0 on success, non-zero on error.
 #
-vedv::container_service::__execute_operation_upon_containers() {
-  # TODO: this is ambiguous, put flag run the operation by id
-  # And if it happens that you want to run by id and a container has that id as its name?
-  local -r operation="${1:-}"
-
-  if [[ -z "$operation" ]]; then
-    err "Invalid argument 'operation': it's empty"
-    return "$ERR_INVAL_ARG"
-  fi
-  shift
-
-  local -ra container_name_or_ids=("$@")
-
-  local -r valid_operations='start|stop|rm'
-
-  if [[ "$operation" != @($valid_operations) ]]; then
-    err "Invalid operation: ${operation}, valid operations are: ${valid_operations}"
-    return "$ERR_INVAL_ARG"
-  fi
-
-  if [[ "${#container_name_or_ids[@]}" -eq 0 ]]; then
-    err 'At least one container is required'
-    return "$ERR_INVAL_ARG"
-  fi
-
-  local -A containers_failed=()
-
-  local vm_name
-  ___assign_vm_name_by_partial_name() {
-    local -r __partial_name="$1"
-
-    vm_name="$(vedv::hypervisor::list_vms_by_partial_name "$__partial_name")" || {
-      err "Failed to get vm name for container: '${container}'"
-      return "$ERR_CONTAINER_OPERATION"
-    }
-    vm_name="$(head -n 1 <<<"$vm_name" || :)"
-  }
-
-  for container in "${container_name_or_ids[@]}"; do
-    ___assign_vm_name_by_partial_name "container:${container}|"
-
-    if [[ -z "$vm_name" ]]; then
-      ___assign_vm_name_by_partial_name "|crc:${container}|"
-
-      if [[ -z "$vm_name" ]]; then
-        containers_failed['No such containers']+="$container "
-        continue
-      fi
-    fi
-
-    local container_image_vm_name=''
-
-    if [[ "$operation" == 'rm' ]]; then
-      container_image_vm_name="$(vedv::hypervisor::get_description "$vm_name")" || {
-        containers_failed["Failed to get vm description for containers"]+="$container "
-        continue
-      }
-
-      if [[ -z "$container_image_vm_name" ]]; then
-        containers_failed["no 'container_image_vm_name' for containers"]+="$container "
-        continue
-      fi
-    fi
-
-    vedv::hypervisor::"$operation" "$vm_name" &>/dev/null || {
-      containers_failed["Failed to ${operation} containers"]+="$container "
-      continue
-    }
-
-    if [[ "$operation" == 'rm' ]]; then
-      vedv::hypervisor::delete_snapshot "$container_image_vm_name" "$vm_name" &>/dev/null || {
-        containers_failed["Failed to delete snapshot for containers"]+="$container "
-        continue
-      }
-    fi
-
-    echo -n "$container "
-  done
-
-  echo
-  for err_msg in "${!containers_failed[@]}"; do
-    err "${err_msg}: ${containers_failed["$err_msg"]}"
-  done
-
-  if [[ "${#containers_failed[@]}" -ne 0 ]]; then
-    return "$ERR_CONTAINER_OPERATION"
-  fi
-
-  return 0
+vedv::container_service::is_started() {
+  vedv::vmobj_service::is_started 'container' "$@"
 }
 
 #
-# Start one or more stopped containers
+# Start one or more containers by name or id
 #
 # Arguments:
-#   container_name_or_ids     container name or id
+#   containers_name_or_id     containers name or id
 #
 # Output:
-#  writes container name or id to the stdout
+#  writes started containers name or id to the stdout
 #
 # Returns:
 #   0 on success, non-zero on error.
 #
 vedv::container_service::start() {
-  vedv::container_service::__execute_operation_upon_containers start "$@"
+  vedv::vmobj_service::start 'container' true "$@"
 }
 
 #
-#  Stop one or more running containers
+# Start one or more containers by name or id
+# without waiting for ssh to be started
 #
 # Arguments:
-#   container_name_or_ids     container name or id
+#   containers_name_or_id     containers name or id
 #
 # Output:
-#  writes container name or id to the stdout
+#  writes started containers name or id to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::container_service::start_no_wait_ssh() {
+  vedv::vmobj_service::start 'container' false "$@"
+}
+
+#
+#  Stop securely one or more running containers by name or id
+#
+# Arguments:
+#   containers_name_or_id     containers name or id
+#
+# Output:
+#  writes stopped containers name or id to the stdout
 #
 # Returns:
 #   0 on success, non-zero on error.
 #
 vedv::container_service::stop() {
-  vedv::container_service::__execute_operation_upon_containers stop "$@"
+  vedv::vmobj_service::stop 'container' true "$@"
 }
 
 #
-#  Remove one or more running containers
+#  Remove a container
 #
 # Arguments:
-#   container_name_or_ids     container name or id
+#   container_id  string     container id
+#   force         bool       force remove container
 #
 # Output:
-#  writes container name or id to the stdout
+#  writes removed container id to the stdout
 #
 # Returns:
 #   0 on success, non-zero on error.
 #
-vedv::container_service::rm() {
-  vedv::container_service::__execute_operation_upon_containers rm "$@"
+vedv::container_service::remove_one() {
+  local -r container_id="$1"
+  local -r force="${2:-false}"
+  # validate arguments
+  if [[ -z "$container_id" ]]; then
+    err "Invalid argument 'container_id': it's empty"
+    return "$ERR_INVAL_ARG"
+  fi
+  if [[ -z "$force" ]]; then
+    err "Invalid argument 'force': it's empty"
+    return "$ERR_INVAL_ARG"
+  fi
+
+  local container_vm_name
+  container_vm_name="$(vedv::container_entity::get_vm_name "$container_id")" || {
+    err "Failed to get vm name for container: '${container_id}'"
+    return "$ERR_CONTAINER_OPERATION"
+  }
+  readonly container_vm_name
+
+  if [[ -z "$container_vm_name" ]]; then
+    err "There is no container with id '${container_id}'"
+    return "$ERR_CONTAINER_OPERATION"
+  fi
+
+  local parent_image_id
+  parent_image_id="$(vedv::container_entity::get_parent_image_id "$container_id")" || {
+    err "Failed to get parent image id for container '${container_id}'"
+    return "$ERR_CONTAINER_OPERATION"
+  }
+  readonly parent_image_id
+
+  if [[ -z "$parent_image_id" ]]; then
+    err "No 'parent_image_id' for container: '${container_id}'"
+    return "$ERR_CONTAINER_OPERATION"
+  fi
+
+  # If the container that is being removed (CBR) has siblings running containers
+  # (SRC) with a snapshot on the parent image that was created after the snapshot
+  # of the CBR, then we can't remove the CBR snapshot because it's being used
+  # by the SRC and the hypervisor fails doing the CBR snapshot removal.
+  #
+  # The solution is to stop all the SRC and then remove the CBR snapshot.
+  #
+  local running_siblings_ids
+  running_siblings_ids="$(vedv::container_service::__get_running_siblings_ids "$container_id")" || {
+    err "Failed to get running siblings ids for container: '${container_id}'"
+    return "$ERR_CONTAINER_OPERATION"
+  }
+  readonly running_siblings_ids
+
+  if [[ -n "$running_siblings_ids" ]]; then
+
+    if [[ "$force" == false ]]; then
+      err "Can't remove container: '${container_id}' because it has running sibling containers"
+      err "You can Use the 'force' flag to stop them automatically and remove the container"
+      err "Or you can stop them manually and then remove the container"
+      err "Sibling containers ids: '${running_siblings_ids}'"
+      return "$ERR_CONTAINER_OPERATION"
+    fi
+    # shellcheck disable=SC2086
+    vedv::container_service::stop $running_siblings_ids >/dev/null || {
+      err "Failed to stop some sibling container"
+      return "$ERR_CONTAINER_OPERATION"
+    }
+  fi
+
+  vedv::hypervisor::rm "$container_vm_name" &>/dev/null || {
+    err "Failed to remove container: '${container_id}'"
+    return "$ERR_CONTAINER_OPERATION"
+  }
+
+  local parent_image_vm_name
+  parent_image_vm_name="$(vedv::image_entity::get_vm_name "$parent_image_id")" || {
+    err "Failed to get vm name for parent image id: '${parent_image_id}'"
+    return "$ERR_CONTAINER_OPERATION"
+  }
+  readonly parent_image_vm_name
+
+  vedv::hypervisor::delete_snapshot "$parent_image_vm_name" "$container_vm_name" &>/dev/null || {
+    err "Failed to delete snapshot of container '${container_id}' on parent image '${parent_image_id}'"
+    return "$ERR_CONTAINER_OPERATION"
+  }
+
+  echo "$container_id"
+}
+
+#
+#  Remove a container
+#
+# Arguments:
+#   force         bool       force remove container
+#   container_id  string     container id
+#
+# Output:
+#  writes removed container id to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::container_service::remove_one_batch() {
+  local -r force="$1"
+  local -r container_id="$2"
+
+  vedv::container_service::remove_one "$container_id" "$force"
+}
+
+#
+# Get the running sibling containers ids of a container
+#
+# Arguments:
+#   container_id  string     container id
+#
+# Output:
+#  writes running sibling containers ids to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::container_service::__get_running_siblings_ids() {
+  local -r container_id="$1"
+  # validate arguments
+  if [[ -z "$container_id" ]]; then
+    err "Invalid argument 'container_id': it's empty"
+    return "$ERR_INVAL_ARG"
+  fi
+
+  local parent_image_id
+  parent_image_id="$(vedv::container_entity::get_parent_image_id "$container_id")" || {
+    err "Failed to get parent image id for container '${container_id}'"
+    return "$ERR_CONTAINER_OPERATION"
+  }
+  readonly parent_image_id
+
+  if [[ -z "$parent_image_id" ]]; then
+    err "No 'parent_image_id' for container: '${container_id}'"
+    return "$ERR_CONTAINER_OPERATION"
+  fi
+
+  local image_childs_ids
+  image_childs_ids="$(vedv::image_entity::get_child_containers_ids "$parent_image_id")" || {
+    err "Failed to get child containers ids for image: '${parent_image_id}'"
+    return "$ERR_CONTAINER_OPERATION"
+  }
+  readonly image_childs_ids
+
+  if [[ -z "$image_childs_ids" ]]; then
+    err "No child containers ids for image: '${parent_image_id}'"
+    return "$ERR_CONTAINER_OPERATION"
+  fi
+  # shellcheck disable=SC2206
+  local -a image_childs_ids_arr=($image_childs_ids)
+
+  local -a running_siblings_ids_arr=()
+
+  for image_child_id in "${image_childs_ids_arr[@]}"; do
+
+    if [[ "$image_child_id" == "$container_id" ]]; then
+      continue
+    fi
+
+    local is_started
+    is_started="$(vedv::container_service::is_started "$image_child_id")" || {
+      err "Failed to check if container is started: '${image_child_id}'"
+      return "$ERR_CONTAINER_OPERATION"
+    }
+
+    if [[ "$is_started" == true ]]; then
+      running_siblings_ids_arr+=("$image_child_id")
+    fi
+  done
+
+  echo "${running_siblings_ids_arr[*]}"
+}
+
+#
+# Remove one or more containers by name or id
+#
+# Arguments:
+#   force         bool       force remove container (true|false)
+#   containers_name_or_id string     containers name or id
+#
+# Output:
+#  writes removed containers name or id to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::container_service::remove() {
+  local -r force="$1"
+  # validate arguments
+  if [[ -z "$force" ]]; then
+    err "Invalid argument 'force': it's empty"
+    return "$ERR_INVAL_ARG"
+  fi
+  shift
+
+  vedv::vmobj_service::exec_func_on_many_vmobj \
+    'container' \
+    "vedv::container_service::remove_one_batch ${force}" \
+    "$@"
 }
 
 #
@@ -309,75 +455,8 @@ vedv::container_service::list() {
   local -r list_all="${1:-false}"
   local -r partial_name="${2:-}"
 
-  local hypervisor_cmd='list_running'
-
-  if [[ "$list_all" == true ]]; then
-    hypervisor_cmd='list'
-  fi
-  readonly hypervisor_cmd
-
-  local vm_names
-
-  if [[ -n "$partial_name" ]]; then
-    vm_names="$(vedv::hypervisor::"$hypervisor_cmd")" || {
-      err "Failed to list containers"
-      return "$ERR_CONTAINER_OPERATION"
-    }
-    vm_names="$(grep "container:${partial_name}.*|" <<<"$vm_names" || :)"
-  else
-    vm_names="$(vedv::hypervisor::"$hypervisor_cmd")" || {
-      err "Failed to list containers"
-      return "$ERR_CONTAINER_OPERATION"
-    }
-    vm_names="$(grep "container:.*|" <<<"$vm_names" || :)"
-  fi
-  readonly vm_names
-
-  for vm_name in $vm_names; do
-    local container_id container_name
-
-    container_id="$(vedv::container_entity::get_container_id_by_vm_name "$vm_name")" || {
-      err "Failed to get container id for vm: '${vm_name}'"
-      return "$ERR_CONTAINER_OPERATION"
-    }
-    container_name="$(vedv::container_entity::get_container_name_by_vm_name "$vm_name")" || {
-      err "Failed to get container name for vm: '${vm_name}'"
-      return "$ERR_CONTAINER_OPERATION"
-    }
-    echo "${container_id} ${container_name}"
-  done
-}
-
-#
-#  Exists container with name
-#
-# Arguments:
-#  container_name           container name
-#
-# Output:
-#  writes true if exists otherwise false to the stdout
-#
-# Returns:
-#   0 on success, non-zero on error.
-#
-vedv::container_service::__exits_with_name() {
-  local -r container_name="$1"
-  # validate argument
-  if [[ -z "$container_name" ]]; then
-    err "Argument 'container_name' is required"
-    return "$ERR_INVAL_ARG"
-  fi
-
-  local output
-  output="$(vedv::hypervisor::exists_vm_with_partial_name "container:${container_name}|")" || {
-    err "Hypervisor failed to check if container with name '${container_name}' exists"
-    return "$ERR_CONTAINER_OPERATION"
-  }
-
-  echo "$output"
-}
-
-# IMPL: Create and run a container from an image
-vedv::container_service::run() {
-  echo 'vedv::container_service::run'
+  vedv::vmobj_service::list \
+    'container' \
+    "$list_all" \
+    "$partial_name"
 }

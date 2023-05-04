@@ -2,23 +2,18 @@
 load test_helper
 
 setup_file() {
-  vedv::image_builder::constructor "$TEST_HYPERVISOR" \
+  vedv::image_builder::constructor \
     "$TEST_SSH_USER" \
     "$TEST_SSH_PASSWORD" \
     "$TEST_SSH_IP" \
     "$TEST_BASE_VEDVFILEIGNORE" \
     "$TEST_VEDVFILEIGNORE"
 
-  export __VEDV_IMAGE_BUILDER_HYPERVISOR
   export __VEDV_IMAGE_BUILDER_SSH_USER
   export __VEDV_IMAGE_BUILDER_SSH_PASSWORD
   export __VEDV_IMAGE_BUILDER_SSH_IP
   export __VEDV_IMAGE_BUILDER_BASE_VEDVFILEIGNORE_PATH
   export __VEDV_IMAGE_BUILDER_VEDVFILEIGNORE_PATH
-
-  vedv::image_service::constructor "$TEST_HYPERVISOR" "$TEST_SSH_IP"
-  export __VEDV_IMAGE_SERVICE_HYPERVISOR
-  export __VEDV_IMAGE_SERVICE_SSH_IP
 }
 
 @test 'vedv::image_builder::constructor() Should succeed' {
@@ -150,7 +145,7 @@ setup_file() {
     echo "layer_id"
     return 0
   }
-  vedv::virtualbox::take_snapshot() {
+  vedv::hypervisor::take_snapshot() {
     assert_equal "$*" "image:image1|crc:image_id| layer:RUN|id:layer_id|"
     return 1
   }
@@ -180,7 +175,7 @@ setup_file() {
     echo "layer_id"
     return 0
   }
-  vedv::virtualbox::take_snapshot() {
+  vedv::hypervisor::take_snapshot() {
     assert_equal "$*" "image:image1|crc:image_id| layer:RUN|id:layer_id|"
     return 0
   }
@@ -398,7 +393,7 @@ setup_file() {
   }
   vedv::image_service::is_started() {
     assert_equal "$*" "$image_id"
-    return 1
+    echo false
   }
 
   run vedv::image_builder::__layer_execute_cmd "$image_id" "$cmd" "$caller_command" "$exec_func"
@@ -419,6 +414,7 @@ setup_file() {
   }
   vedv::image_service::is_started() {
     assert_equal "$*" "$image_id"
+    echo true
   }
   vedv::image_builder::__create_layer() {
     assert_equal "$*" "${image_id} ${cmd}"
@@ -447,6 +443,7 @@ setup_file() {
   }
   vedv::image_service::is_started() {
     assert_equal "$*" "$image_id"
+    echo true
   }
   vedv::image_entity::get_ssh_port() {
     assert_equal "$*" "$image_id"
@@ -475,6 +472,7 @@ setup_file() {
   }
   vedv::image_service::is_started() {
     assert_equal "$*" "$image_id"
+    echo true
   }
   vedv::image_builder::__create_layer() {
     assert_equal "$*" "${image_id} ${cmd}"
@@ -510,6 +508,7 @@ setup_file() {
   }
   vedv::image_service::is_started() {
     assert_equal "$*" "$image_id"
+    echo true
   }
   vedv::image_entity::get_ssh_port() {
     assert_equal "$*" "$image_id"
@@ -543,6 +542,7 @@ Failed to execute command '1 COPY dummy_source dummy_dest'"
   }
   vedv::image_service::is_started() {
     assert_equal "$*" "$image_id"
+    echo true
   }
   vedv::image_entity::get_ssh_port() {
     assert_equal "$*" "$image_id"
@@ -578,6 +578,7 @@ Failed to execute command '1 COPY dummy_source dummy_dest'"
   }
   vedv::image_service::is_started() {
     assert_equal "$*" "$image_id"
+    echo true
   }
   vedv::image_entity::get_ssh_port() {
     assert_equal "$*" "$image_id"
@@ -1577,7 +1578,7 @@ Failed to execute command '1 COPY dummy_source dummy_dest'"
   vedv::image_service::child_containers_remove_all() {
     assert_equal "$*" "$image_id"
   }
-  vedv::image_service::rm() {
+  vedv::image_service::remove() {
     assert_equal "$*" "$image_id"
     false
   }
@@ -1612,7 +1613,7 @@ Failed to execute command '1 COPY dummy_source dummy_dest'"
   vedv::image_service::child_containers_remove_all() {
     assert_equal "$*" "$image_id"
   }
-  vedv::image_service::rm() {
+  vedv::image_service::remove() {
     assert_equal "$*" "$image_id"
   }
   vedv::image_vedvfile_service::get_cmd_body() {
@@ -1650,7 +1651,7 @@ Failed to execute command '1 COPY dummy_source dummy_dest'"
   vedv::image_service::child_containers_remove_all() {
     assert_equal "$*" "$image_id"
   }
-  vedv::image_service::rm() {
+  vedv::image_service::remove() {
     assert_equal "$*" "$image_id"
   }
   vedv::image_vedvfile_service::get_cmd_body() {
@@ -1691,7 +1692,7 @@ Failed to execute command '1 COPY dummy_source dummy_dest'"
   vedv::image_service::child_containers_remove_all() {
     assert_equal "$*" "INVALID_CALL"
   }
-  vedv::image_service::rm() {
+  vedv::image_service::remove() {
     assert_equal "$*" "INVALID_CALL"
   }
   vedv::image_vedvfile_service::get_cmd_body() {
@@ -1732,7 +1733,7 @@ Failed to execute command '1 COPY dummy_source dummy_dest'"
   vedv::image_builder::__validate_layer_from() {
     assert_equal "$*" "INVALID_CALL"
   }
-  vedv::image_service::rm() {
+  vedv::image_service::remove() {
     assert_equal "$*" "INVALID_CALL"
   }
   vedv::image_vedvfile_service::get_cmd_body() {
@@ -1790,7 +1791,7 @@ Failed to execute command '1 COPY dummy_source dummy_dest'"
   vedv::image_service::child_containers_remove_all() {
     assert_equal "$*" "INVALID_CALL"
   }
-  vedv::image_service::rm() {
+  vedv::image_service::remove() {
     assert_equal "$*" "INVALID_CALL"
   }
   vedv::image_builder::__layer_from() {
@@ -1848,7 +1849,7 @@ Failed to execute command '1 COPY dummy_source dummy_dest'"
   vedv::image_service::child_containers_remove_all() {
     assert_equal "$*" "INVALID_CALL"
   }
-  vedv::image_service::rm() {
+  vedv::image_service::remove() {
     assert_equal "$*" "INVALID_CALL"
   }
   vedv::image_vedvfile_service::get_cmd_body() {
@@ -1901,7 +1902,7 @@ Failed to execute command '1 COPY dummy_source dummy_dest'"
   vedv::image_service::child_containers_remove_all() {
     assert_equal "$*" "INVALID_CALL"
   }
-  vedv::image_service::rm() {
+  vedv::image_service::remove() {
     assert_equal "$*" "INVALID_CALL"
   }
   vedv::image_vedvfile_service::get_cmd_body() {
@@ -1952,7 +1953,7 @@ Failed to execute command '1 COPY dummy_source dummy_dest'"
   vedv::image_service::child_containers_remove_all() {
     assert_equal "$*" "INVALID_CALL"
   }
-  vedv::image_service::rm() {
+  vedv::image_service::remove() {
     assert_equal "$*" "INVALID_CALL"
   }
   vedv::image_builder::__layer_from() {
@@ -2002,7 +2003,7 @@ Failed to execute command '1 COPY dummy_source dummy_dest'"
   vedv::image_service::child_containers_remove_all() {
     assert_equal "$*" "INVALID_CALL"
   }
-  vedv::image_service::rm() {
+  vedv::image_service::remove() {
     assert_equal "$*" "INVALID_CALL"
   }
   vedv::image_builder::__layer_from() {
@@ -2061,7 +2062,7 @@ Failed to execute command '1 COPY dummy_source dummy_dest'"
   vedv::image_service::child_containers_remove_all() {
     assert_equal "$*" "INVALID_CALL"
   }
-  vedv::image_service::rm() {
+  vedv::image_service::remove() {
     assert_equal "$*" "INVALID_CALL"
   }
   vedv::image_builder::__layer_from() {
@@ -2089,7 +2090,7 @@ Failed to execute command '1 COPY dummy_source dummy_dest'"
     assert_equal "$*" "$image_id"
     echo 'my-vm-name'
   }
-  vedv::virtualbox::snapshot_restore_current() {
+  vedv::hypervisor::snapshot_restore_current() {
     assert_equal "$*" "my-vm-name"
   }
   # Act
@@ -2134,7 +2135,7 @@ EOF
   vedv::image_service::child_containers_remove_all() {
     assert_equal "$*" "INVALID_CALL"
   }
-  vedv::image_service::rm() {
+  vedv::image_service::remove() {
     assert_equal "$*" "INVALID_CALL"
   }
   vedv::image_builder::__layer_from() {
@@ -2274,7 +2275,7 @@ You must stop and remove it."
   vedv::image_service::stop() {
     assert_equal "$*" "12345678"
   }
-  vedv::image_service::rm() {
+  vedv::image_service::remove() {
     assert_equal "$*" "12345678"
     return 1
   }
@@ -2305,7 +2306,7 @@ You must remove it."
   vedv::image_service::stop() {
     assert_equal "$*" "12345678"
   }
-  vedv::image_service::rm() {
+  vedv::image_service::remove() {
     assert_equal "$*" "12345678"
   }
   run vedv::image_builder::build "$vedvfile" "$image_name"

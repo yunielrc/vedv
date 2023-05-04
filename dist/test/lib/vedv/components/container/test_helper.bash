@@ -5,3 +5,5 @@
 . "${DIST_PATH}/lib/vedv/components/container/container-service.bash"
 . "${DIST_PATH}/lib/vedv/components/container/container-command.bash"
 . "${DIST_PATH}/lib/vedv/components/container/container-entity.bash"
+. "${DIST_PATH}/lib/vedv/components/__base/vmobj-entity.bash"
+. "${DIST_PATH}/lib/vedv/components/__base/vmobj-service.bash"

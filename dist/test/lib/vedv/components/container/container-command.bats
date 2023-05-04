@@ -8,8 +8,9 @@ setup_file() {
 
 vedv::container_service::create() { echo "container created, arguments: $*"; }
 vedv::container_service::start() { echo "$@"; }
+vedv::container_service::start_no_wait_ssh() { echo "$@"; }
 vedv::container_service::stop() { echo "$@"; }
-vedv::container_service::rm() { echo "$@"; }
+vedv::container_service::remove() { echo "$@"; }
 vedv::container_service::list() { echo "include stopped containers: ${1:-false}"; }
 
 @test "vedv::container_command::__create(), with arg '-h|--help|help' should show help" {
@@ -50,7 +51,7 @@ vedv::container_service::list() { echo "include stopped containers: ${1:-false}"
   run vedv::container_command::__create 'image_file' 'invalid_arg'
 
   assert_failure 69
-  assert_output --partial 'Invalid parameter: invalid_arg'
+  assert_output --partial "Invalid argument 'invalid_arg'"
 }
 
 @test "vedv::container_command::__start(), with arg '-h|--help|help' should show help" {
@@ -119,7 +120,7 @@ vedv::container_service::list() { echo "include stopped containers: ${1:-false}"
   run vedv::container_command::__rm "$container_name_or_id"
 
   assert_success
-  assert_output "${container_name_or_id}"
+  assert_output "false ${container_name_or_id}"
 }
 
 @test "vedv::container_command::__list(), with arg '-h|--help|help' should show help" {
@@ -141,7 +142,7 @@ vedv::container_service::list() { echo "include stopped containers: ${1:-false}"
   run vedv::container_command::__list 'partial_name' 'invalid_arg'
 
   assert_failure 69
-  assert_output --partial 'Invalid parameter: invalid_arg'
+  assert_output --partial 'Invalid argument: invalid_arg'
 }
 
 @test 'vedv::container_command::__list(), should show the running containers' {
@@ -208,18 +209,9 @@ vedv::container_service::list() { echo "include stopped containers: ${1:-false}"
   assert_output 'container removed, arguments: container_name'
 }
 
-@test "vedv::container_command::run_cmd(), with arg 'run' should run a container" {
-  vedv::container_command::__run() { echo "container running, arguments: $*"; }
-
-  run vedv::container_command::run_cmd run container_name
-
-  assert_success
-  assert_output 'container running, arguments: container_name'
-}
-
 @test "vedv::container_command::run_cmd(), with invalid parameter should throw an error" {
   run vedv::container_command::run_cmd invalid_cmd
 
   assert_failure 69
-  assert_output --partial 'Invalid parameter: invalid_cmd'
+  assert_output --partial 'Invalid argument: invalid_cmd'
 }

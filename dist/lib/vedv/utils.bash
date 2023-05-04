@@ -19,6 +19,8 @@ readonly ERR_HYPERVISOR_OPERATION=88
 readonly ERR_IMAGE_BUILDER_OPERATION=88
 readonly ERR_IMAGE_ENTITY=89
 readonly ERR_CONTAINER_ENTITY=90
+readonly ERR_VMOBJ_ENTITY=91
+readonly ERR_VMOBJ_OPERATION=92
 
 # REGEX
 UTILS_REGEX_NAME='[[:alnum:]]+((-|_)[[:alnum:]]+)*'
@@ -308,3 +310,34 @@ utils::get_first_invalid_positions_between_two_arrays() {
 
   echo "${first_invalid_pos_a}|${first_invalid_pos_b}"
 }
+
+#
+# Return the array as a string
+#
+# Arguments:
+#   arr_name  string    array name
+#
+# Output:
+#   writes the array as a string to stdout
+#
+utils::array::to_string() {
+  local -r arr_name="$1"
+
+  local arr_text
+  arr_text="$(declare -p "$arr_name")"
+
+  echo "${arr_text#*=}"
+}
+
+#
+# Return the array as a string
+#
+# Arguments:
+#   arr_name  string    array name
+#
+# Output:
+#   writes the array as a string to stdout
+#
+arr2str() { utils::array::to_string "$@"; }
+
+utils::sleep() { sleep "$@"; }

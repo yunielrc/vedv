@@ -101,7 +101,7 @@ vedv::virtualbox::import() { vedv::hypervisor::import "$@"; }
 # List virtual machines with name that contains the partial name
 #
 # Arguments:
-#   vm_partial_name         name of the exported VM
+#   vm_partial_name string     name of the exported VM
 #
 # Output:
 #   writes vm_names (text) to stdout
@@ -252,10 +252,10 @@ vedv::virtualbox::restore_snapshot() { vedv::hypervisor::restore_snapshot "$@"; 
 # Show snapshoots for a given vm
 #
 # Arguments:
-#   vm_name           name of the VM
+#   vm_name string           name of the VM
 #
 # Output:
-#   writes snapshot vms names to stdout
+#   writes snapshot vm_names (text) to stdout
 #
 # Returns:
 #   0 on success, non-zero on error.
@@ -273,8 +273,8 @@ vedv::virtualbox::show_snapshots() { vedv::hypervisor::show_snapshots "$@"; }
 # Delete a snapshot
 #
 # Arguments:
-#   vm_name           name of the VM
-#   snapshot_name     name of the snapshot
+#   vm_name         string      name of the VM
+#   snapshot_name   string      name of the snapshot
 #
 # Returns:
 #   0 on success, non-zero on error.
@@ -304,6 +304,34 @@ vedv::hypervisor::start() {
   VBoxManage startvm "$vm_name"
 }
 vedv::virtualbox::start() { vedv::hypervisor::start "$@"; }
+
+#
+#  Saves the current state of the VM to disk and then stops the VM
+#
+# Arguments:
+#   vm_name        virtual machine name
+#
+# Output:
+#   writes vm name to stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::hypervisor::save_state_stop() {
+  local -r vm_name="$1"
+
+  local running
+  running="$(vedv::hypervisor::is_running "$vm_name")" || {
+    err "Failed to check if vm is running"
+    return "$ERR_VIRTUALBOX_OPERATION"
+  }
+  readonly running
+
+  if [[ "$running" == true ]]; then
+    VBoxManage controlvm "$vm_name" savestate
+  fi
+}
+
 #
 # Shutdown the virtual machine
 #
@@ -368,7 +396,7 @@ vedv::virtualbox::stop() { vedv::hypervisor::poweroff "$@"; }
 # Check if a virtual machine is running
 #
 # Arguments:
-#   vm_name        virtual machine name
+#   vm_name string      virtual machine name
 #
 # Output:
 #   writes true or false to stdout
@@ -414,8 +442,17 @@ vedv::virtualbox::is_running() { vedv::hypervisor::is_running "$@"; }
 vedv::hypervisor::rm() {
   local -r vm_name="$1"
 
-  vedv::hypervisor::poweroff "$vm_name"
-  sleep 2
+  local is_running
+  is_running="$(vedv::hypervisor::is_running "$vm_name")" || {
+    err "Failed to check if vm is running"
+    return "$ERR_VIRTUALBOX_OPERATION"
+  }
+  readonly is_running
+
+  if [[ "$is_running" == true ]]; then
+    VBoxManage controlvm "$vm_name" poweroff
+    sleep 2
+  fi
 
   local vm_info
   vm_info="$(VBoxManage showvminfo "$vm_name" --machinereadable)" || {
@@ -502,7 +539,7 @@ vedv::virtualbox::remove_inaccessible_hdds() { vedv::hypervisor::remove_inaccess
 # List all virtual machines
 #
 # Output:
-#   writes vms names to stdout
+#   writes vms_names (text) to stdout
 #
 # Returns:
 #   0 on success, non-zero on error.
@@ -516,7 +553,7 @@ vedv::virtualbox::list() { vedv::hypervisor::list "$@"; }
 # List running virtual machines
 #
 # Output:
-#   writes vms names to stdout
+#   writes vms_names (text) to stdout
 #
 # Returns:
 #   0 on success, non-zero on error.
@@ -581,15 +618,10 @@ vedv::hypervisor::get_description() {
     err "Error getting description of vm: ${vm_name}"
     return "$ERR_VIRTUALBOX_OPERATION"
   }
-  readonly vminfo
-  local vminfo_vars_fixed
-  vminfo_vars_fixed="$(fix_var_names "$vminfo")"
-  local -r output="$(echo "$vminfo_vars_fixed" | pcregrep -M 'description="[^"]*"')"
-  # the subshell avoid loading global variables
-  (
-    eval "$output"
-    echo "${description:-}"
-  )
+
+  echo "$vminfo" |
+    grep -o '^description=".*"' |
+    sed -e 's/^description="//' -e 's/"$//'
 }
 vedv::virtualbox::get_description() { vedv::hypervisor::get_description "$@"; }
 

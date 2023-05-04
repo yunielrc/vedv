@@ -17,7 +17,6 @@ fi
 # Constructor
 #
 # Arguments:
-#   hypervisor  string               name of the script
 #   ssh_user  string                 ssh user
 #   ssh_password  string             ssh password
 #   ssh_ip  string                   ssh ip
@@ -29,12 +28,11 @@ fi
 #   0 on success, non-zero on error.
 #
 vedv::image_builder::constructor() {
-  readonly __VEDV_IMAGE_BUILDER_HYPERVISOR="$1"
-  readonly __VEDV_IMAGE_BUILDER_SSH_USER="$2"
-  readonly __VEDV_IMAGE_BUILDER_SSH_PASSWORD="$3"
-  readonly __VEDV_IMAGE_BUILDER_SSH_IP="$4"
-  readonly __VEDV_IMAGE_BUILDER_BASE_VEDVFILEIGNORE_PATH="$5"
-  readonly __VEDV_IMAGE_BUILDER_VEDVFILEIGNORE_PATH="${6:-}"
+  readonly __VEDV_IMAGE_BUILDER_SSH_USER="$1"
+  readonly __VEDV_IMAGE_BUILDER_SSH_PASSWORD="$2"
+  readonly __VEDV_IMAGE_BUILDER_SSH_IP="$3"
+  readonly __VEDV_IMAGE_BUILDER_BASE_VEDVFILEIGNORE_PATH="$4"
+  readonly __VEDV_IMAGE_BUILDER_VEDVFILEIGNORE_PATH="${5:-}"
 }
 
 #
@@ -130,7 +128,7 @@ vedv::image_builder::__create_layer() {
 
   local -r full_layer_name="layer:${cmd_name}|id:${layer_id}|"
 
-  vedv::"$__VEDV_IMAGE_BUILDER_HYPERVISOR"::take_snapshot "$image_vm_name" "$full_layer_name" &>/dev/null || {
+  vedv::hypervisor::take_snapshot "$image_vm_name" "$full_layer_name" &>/dev/null || {
     err "Failed to create layer '${full_layer_name}' for image '${image_id}', code: $?"
     return "$ERR_IMAGE_BUILDER_OPERATION"
   }
@@ -239,14 +237,18 @@ vedv::image_builder::__layer_execute_cmd() {
     return "$ERR_INVAL_ARG"
   fi
 
-  vedv::image_service::is_started "$image_id" || {
-    if [[ $? -gt 1 ]]; then
-      err "Failed to check if image '${image_id}' is started"
-      return "$ERR_IMAGE_BUILDER_OPERATION"
-    fi
-    err "Image '${image_id}' is not started"
+  local is_started
+  is_started="$(vedv::image_service::is_started "$image_id")" || {
+    err "Failed to check if image '${image_id}' is started"
     return "$ERR_IMAGE_BUILDER_OPERATION"
   }
+  readonly is_started
+
+  if [[ "$is_started" == false ]]; then
+    err "Image '${image_id}' is not started"
+    return "$ERR_IMAGE_BUILDER_OPERATION"
+  fi
+
   # shellcheck disable=SC2034
   local -r user="$__VEDV_IMAGE_BUILDER_SSH_USER"
   # shellcheck disable=SC2034
@@ -722,7 +724,7 @@ vedv::image_builder::__delete_invalid_layers() {
   readonly layers_ids
 
   local -a arr_cmds
-  mapfile -t arr_cmds <<<"$cmds"
+  readarray -t arr_cmds <<<"$cmds"
   # shellcheck disable=SC2034
   readonly arr_cmds
 
@@ -847,7 +849,8 @@ vedv::image_builder::__build() {
       return "$ERR_IMAGE_BUILDER_OPERATION"
     }
     local -a arr_layer_ids
-    arr_layer_ids=("$(vedv::image_entity::get_layers_ids "$image_id")") || {
+    # shellcheck disable=SC2207
+    arr_layer_ids=($(vedv::image_entity::get_layers_ids "$image_id")) || {
       err "Failed to get layers ids for image '${image_name}'"
       return "$ERR_IMAGE_BUILDER_OPERATION"
     }
@@ -869,7 +872,7 @@ vedv::image_builder::__build() {
         err "Failed to remove child containers for image '${image_id}'"
         return "$ERR_IMAGE_BUILDER_OPERATION"
       }
-      vedv::image_service::rm "$image_id" || {
+      vedv::image_service::remove "$image_id" >/dev/null || {
         err "Failed to remove image '${image_name}'"
         return "$ERR_IMAGE_BUILDER_OPERATION"
       }
@@ -918,13 +921,13 @@ vedv::image_builder::__build() {
     return "$ERR_IMAGE_BUILDER_OPERATION"
   fi
 
-  vedv::image_service::start "$image_id" || {
+  vedv::image_service::start "$image_id" >/dev/null || {
     err "Failed to start image '${image_name}'"
     return "$ERR_IMAGE_BUILDER_OPERATION"
   }
 
   __stop_vm() {
-    vedv::image_service::stop "$image_id" || {
+    vedv::image_service::stop "$image_id" >/dev/null || {
       err "Failed to stop image '${image_name}'"
       return "$ERR_IMAGE_BUILDER_OPERATION"
     }
@@ -970,6 +973,7 @@ vedv::image_builder::build() {
     err "Argument 'vedvfile' is required"
     return "$ERR_INVAL_ARG"
   fi
+
   if [[ ! -f "$vedvfile" ]]; then
     err "File '${vedvfile}' does not exist"
     return "$ERR_NOT_FOUND"
@@ -996,7 +1000,7 @@ vedv::image_builder::build() {
 
   ___stop_vm_64695() {
     if [[ -n "$image_id" ]]; then
-      vedv::image_service::stop "$image_id" || {
+      vedv::image_service::stop "$image_id" >/dev/null || {
         err "Failed to stop the image '${image_name}'.\nYou must stop and remove it."
         return "$ERR_IMAGE_BUILDER_OPERATION"
       }
@@ -1011,7 +1015,7 @@ vedv::image_builder::build() {
       err "The image '${image_name}' is corrupted."
 
       ___stop_vm_64695 || return
-      vedv::image_service::rm "$image_id" || {
+      vedv::image_service::remove "$image_id" >/dev/null || {
         err "Failed to remove the image '${image_name}'.\nYou must remove it."
         return "$ERR_IMAGE_BUILDER_OPERATION"
       }

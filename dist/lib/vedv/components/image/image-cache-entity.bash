@@ -11,9 +11,6 @@ fi
 # +----------------------------+
 # | - id: string               |
 # +----------------------------+
-vedv::image_cache_entity::constructor() {
-  readonly __VEDV_IMAGE_CACHE_ENTITY_HYPERVISOR="$1"
-}
 
 #
 # Validate vm name
@@ -57,9 +54,16 @@ vedv::image_cache_entity::validate_vm_name() {
 vedv::image_cache_entity::get_vm_name() {
   local -r image_id="$1"
 
-  utils::validate_name_or_id "$image_id" || return "$?"
-  # TODO: solve, this way mask the errors
-  vedv::"$__VEDV_IMAGE_CACHE_ENTITY_HYPERVISOR"::list_wms_by_partial_name "|crc:${image_id}|" | head -n 1
+  utils::validate_name_or_id "$image_id" ||
+    return "$?"
+
+  local vms
+  vms="$(vedv::hypervisor::list_vms_by_partial_name "|crc:${image_id}|")" || {
+    err "Failed to list vms"
+    return "$ERR_HYPERVISOR_OPERATION"
+  }
+
+  head -n 1 <<<"$vms"
 }
 
 #

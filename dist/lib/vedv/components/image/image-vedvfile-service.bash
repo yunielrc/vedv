@@ -14,7 +14,8 @@ readonly VEDVFILE_SUPPORTED_COMMANDS='FROM|RUN|COPY'
 # Constructor
 #
 # Arguments:
-#   hypervisor       name of the script
+#   config     config file
+#   enabled    Hadolint enabled, default: true
 #
 # Returns:
 #   0 on success, non-zero on error.

@@ -604,3 +604,20 @@ calc_item_id_from_array_b() { echo "$1"; }
   assert_success
   assert_output "1|1"
 }
+
+# Tests for utils::array::to_string()
+# bats test_tags=only
+@test "utils::array::to_string() Should succeed With empty array" {
+  # shellcheck disable=SC2034
+  local -r arr=()
+
+  run utils::array::to_string arr
+
+  assert_success
+  assert_output "()"
+
+  run arr2str arr
+
+  assert_success
+  assert_output "()"
+}

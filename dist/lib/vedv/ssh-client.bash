@@ -171,10 +171,12 @@ vedv::ssh_client::wait_for_ssh_service() {
     -o 'PasswordAuthentication=no' \
     -p "$port" \
     "vedv@${ip}" 2>&1 | grep -q 'Permission denied'; do
+
     if [[ $i -ge $max ]]; then
       err "Timeout waiting for ssh service on '${ip}'"
       return 1
     fi
+
     sleep 1
     ((i += 1))
   done

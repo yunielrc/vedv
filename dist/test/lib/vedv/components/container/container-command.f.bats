@@ -25,7 +25,7 @@ vedv container create [OPTIONS] IMAGE
 Create a new container
 
 Options:
-  --name           Assign a name to the container"
+  -n, --name name         Assign a name to the container"
 }
 
 @test "vedv container create -h , Should show help" {
@@ -40,7 +40,7 @@ vedv container create [OPTIONS] IMAGE
 Create a new container
 
 Options:
-  --name           Assign a name to the container"
+  -n, --name name         Assign a name to the container"
   done
 }
 
@@ -57,7 +57,7 @@ vedv container create [OPTIONS] IMAGE
 Create a new container
 
 Options:
-  --name           Assign a name to the container"
+  -n, --name name         Assign a name to the container"
 }
 
 @test "vedv container create --name container123, Should throw error Without passing an image" {
@@ -65,15 +65,15 @@ Options:
   run vedv container create --name 'container123'
 
   assert_failure
-  assert_output "Invalid argument 'image': it's empty"
+  assert_output --partial "Missing argument 'IMAGE'"
 }
-
+# bats test_tags=only
 @test "vedv container create --name container123 image1 image2, Should throw error If passing more than one image" {
 
   run vedv container create --name 'container123' 'image1' 'image2'
 
   assert_failure
-  assert_output "Invalid parameter: image2
+  assert_output "Invalid argument 'image2'
 
 Usage:
 vedv container create [OPTIONS] IMAGE
@@ -81,7 +81,7 @@ vedv container create [OPTIONS] IMAGE
 Create a new container
 
 Options:
-  --name           Assign a name to the container"
+  -n, --name name         Assign a name to the container"
 }
 
 @test "vedv container create --name container123 image, Should create a container" {
@@ -97,7 +97,7 @@ Options:
   run vedv container start
 
   assert_success
-  assert_output "Usage:
+  assert_output --partial "Usage:
 vedv container start CONTAINER [CONTAINER...]
 
 Start one or more stopped containers"
@@ -109,7 +109,7 @@ Start one or more stopped containers"
     run vedv container start "$arg"
 
     assert_success
-    assert_output "Usage:
+    assert_output --partial "Usage:
 vedv container start CONTAINER [CONTAINER...]
 
 Start one or more stopped containers"
@@ -124,7 +124,8 @@ Start one or more stopped containers"
   run vedv container start 'container123a' 'container123b'
 
   assert_success
-  assert_output --partial "container123a container123b"
+  assert_output "375138354
+339074491"
 }
 
 # Tests for 'vedv container rm'
@@ -135,7 +136,10 @@ Start one or more stopped containers"
   assert_output "Usage:
 vedv container rm CONTAINER [CONTAINER...]
 
-Remove one or more running containers"
+Remove one or more running containers
+
+Flags:
+  -f, --force         Force remove"
 }
 
 @test "vedv container rm -h , Should show help" {
@@ -147,7 +151,10 @@ Remove one or more running containers"
     assert_output "Usage:
 vedv container rm CONTAINER [CONTAINER...]
 
-Remove one or more running containers"
+Remove one or more running containers
+
+Flags:
+  -f, --force         Force remove"
   done
 }
 
@@ -159,7 +166,8 @@ Remove one or more running containers"
   run vedv container rm 'container123a' 'container123b'
 
   assert_success
-  assert_output --partial "container123a container123b"
+  assert_output "375138354
+339074491"
 }
 
 # Tests for 'vedv container stop'
@@ -195,7 +203,8 @@ Stop one or more running containers"
   run vedv container stop 'container123a' 'container123b'
 
   assert_success
-  assert_output --partial "container123a container123b"
+  assert_output "375138354
+339074491"
 }
 
 # Tests for 'vedv container list'
@@ -235,8 +244,8 @@ Options:
   run vedv container list
 
   assert_success
-  assert_output --partial "375138354 container123a
-339074491 container123"
+  assert_output "375138354 container123a
+339074491 container123b"
 }
 
 @test "vedv container list --all, Should list all containers" {
@@ -249,5 +258,7 @@ Options:
   run vedv container list --all
 
   assert_success
-  assert_output --partial ""
+  assert_output "375138354 container123a
+339074491 container123b
+367882556 container123c"
 }

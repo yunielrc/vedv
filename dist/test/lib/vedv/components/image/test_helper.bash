@@ -8,3 +8,5 @@
 . "${DIST_PATH}/lib/vedv/components/image/image-cache-entity.bash"
 . "${DIST_PATH}/lib/vedv/components/image/image-builder.bash"
 . "${DIST_PATH}/lib/vedv/components/container/container-service.bash"
+. "${DIST_PATH}/lib/vedv/components/__base/vmobj-entity.bash"
+. "${DIST_PATH}/lib/vedv/components/__base/vmobj-service.bash"

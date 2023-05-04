@@ -43,7 +43,7 @@ vedv::image_command::constructor() {
 #   0 on success, non-zero on error.
 #
 vedv::image_command::__pull() {
-  local image
+  local image=''
 
   if [[ $# == 0 ]]; then set -- '-h'; fi
 
@@ -54,7 +54,7 @@ vedv::image_command::__pull() {
       return 0
       ;;
     *)
-      if [[ -z "${image:-}" ]]; then
+      if [[ -z "$image" ]]; then
         image="$1"
         shift
       else
@@ -159,7 +159,7 @@ vedv::image_command::__rm() {
       return 0
       ;;
     *)
-      vedv::image_service::rm "$@"
+      vedv::image_service::remove "$@"
       return $?
       ;;
     esac
