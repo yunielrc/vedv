@@ -499,3 +499,29 @@ vedv::container_service::connect() {
 
   vedv::vmobj_service::connect 'container' "$container_id_or_name"
 }
+
+#
+# Copy files from local filesystem to a container
+#
+# Arguments:
+#   container_id_or_name  string     container id or name
+#   src                   string     local source path
+#   dest                  string     container destination path
+#
+# Output:
+#  writes command output to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::container_service::copy() {
+  local -r container_id_or_name="$1"
+  local -r src="$2"
+  local -r dest="$3"
+
+  vedv::vmobj_service::copy \
+    'container' \
+    "$container_id_or_name" \
+    "$src" \
+    "$dest"
+}

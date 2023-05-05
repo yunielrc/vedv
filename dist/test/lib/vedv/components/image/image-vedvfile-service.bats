@@ -1,9 +1,16 @@
 load test_helper
 
 setup_file() {
-  vedv::image_vedvfile_service::constructor "$TEST_HADOLINT_CONFIG"
+  vedv::image_vedvfile_service::constructor \
+    "$TEST_HADOLINT_CONFIG" \
+    true \
+    "$TEST_BASE_VEDVFILEIGNORE" \
+    "$TEST_VEDVFILEIGNORE"
+
   export __VEDV_IMAGE_VEDVFILE_HADOLINT_CONFIG
   export __VEDV_IMAGE_VEDVFILE_HADOLINT_ENABLED
+  export __VEDV_IMAGE_VEDVFILE_BASE_VEDVFILEIGNORE_PATH
+  export __VEDV_IMAGE_VEDVFILE_VEDVFILEIGNORE_PATH
 }
 
 @test "vedv::image_vedvfile_service::__are_supported_commands() Should succeed With empty 'command'" {
@@ -87,7 +94,7 @@ EOF
   assert_failure "$ERR_INVAL_ARG"
   assert_output 'ERROR'
 }
-# bats test_tags=only
+
 @test 'vedv::image_vedvfile_service::get_commands(), Should succeed With a valid Vedvfile' {
   local -r vedvfile='dist/test/lib/vedv/components/image/fixtures/Vedvfile'
 
@@ -139,4 +146,17 @@ EOF
   run vedv::image_vedvfile_service::get_cmd_body " RUN apt-get update "
   assert_success
   assert_output "apt-get update"
+}
+
+# Test for vedv:image_builder::get_joined_vedvfileignore()
+# bats test_tags=only
+@test 'vedv:image_builder::get_joined_vedvfileignore() should return success and write the file path to stdout' {
+  local __VEDV_IMAGE_VEDVFILE_VEDVFILEIGNORE_PATH="dist/test/lib/vedv/components/image/fixtures/.vedvfileignore"
+
+  local -r vevfileignore=$(vedv:image_vedvfile_service::get_joined_vedvfileignore)
+  run cat "$vevfileignore"
+
+  assert_success
+  assert_output ".git/
+.vscode/"
 }

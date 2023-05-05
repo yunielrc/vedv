@@ -394,6 +394,7 @@ HELPMSG
 #
 # Arguments:
 #   CONTAINER           container name or id
+#   CMD                 command to execute
 #
 # Output:
 #   writes any error to stderr
@@ -457,6 +458,70 @@ HELPMSG
 }
 
 #
+# Copy files from local filesystem to a container
+#
+# Flags:
+#   [-h | --help]       show help
+#
+# Arguments:
+#   CONTAINER           container name or id
+#   SRC                 source file or directory
+#   DEST                destination file or directory
+#
+# Output:
+#   writes any error to stderr
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::container_command::__copy() {
+  if [[ $# == 0 ]]; then set -- '-h'; fi
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+    -h | --help)
+      vedv::container_command::__copy_help
+      return 0
+      ;;
+    *)
+      local container_name_or_id="$1"
+      local src="${2:-}"
+      local dest="${3:-}"
+      # validate arguments
+      if [[ -z "$src" ]]; then
+        err "No source file specified\n"
+        vedv::container_command::__copy_help
+        return "$ERR_INVAL_ARG"
+      fi
+      if [[ -z "$dest" ]]; then
+        err "No dest file specified\n"
+        vedv::container_command::__copy_help
+        return "$ERR_INVAL_ARG"
+      fi
+
+      vedv::container_service::copy "$container_name_or_id" "$src" "$dest"
+      return $?
+      ;;
+    esac
+  done
+}
+
+#
+# Show help for __copy command
+#
+# Output:
+#  Writes the help to the stdout
+#
+vedv::container_command::__copy_help() {
+  cat <<-HELPMSG
+Usage:
+${__VED_CONTAINER_COMMAND_SCRIPT_NAME} container copy CONTAINER LOCAL_SRC CONTAINER_DEST
+
+Copy files from local filesystem to a container
+HELPMSG
+}
+
+#
 # Show help
 #
 # Flags:
@@ -484,6 +549,7 @@ Commands:
   list             List containers
   login            Login to a container
   exec             Execute a command in a container
+  copy             Copy files from local filesystem to a container
 
 Run '${__VED_CONTAINER_COMMAND_SCRIPT_NAME} container COMMAND --help' for more information on a command.
 HELPMSG
@@ -531,6 +597,11 @@ vedv::container_command::run_cmd() {
     exec)
       shift
       vedv::container_command::__execute_cmd "$@"
+      return $?
+      ;;
+    copy)
+      shift
+      vedv::container_command::__copy "$@"
       return $?
       ;;
     *)

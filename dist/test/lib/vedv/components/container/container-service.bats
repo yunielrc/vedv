@@ -941,3 +941,8 @@ Sibling containers ids: '123457 123458'"
 @test "vedv::container_service::connect()" {
   :
 }
+
+# Tests for vedv::container_service::copy()
+@test "vedv::container_service::copy()" {
+  :
+}

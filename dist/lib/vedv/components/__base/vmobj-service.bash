@@ -825,3 +825,83 @@ vedv::vmobj_service::connect() {
   }
   vedv::vmobj_service::connect_by_id "$type" "$vmobj_id"
 }
+
+#
+# Copy files from local filesystem to a container
+#
+# Arguments:
+#   type                  string     type (e.g. 'container|image')
+#   vmobj_id  string     container id or name
+#   src                   string     local source path
+#   dest                  string     container destination path
+#
+# Output:
+#  writes command output to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::vmobj_service::copy_by_id() {
+  local -r type="$1"
+  local -r vmobj_id="$2"
+  local -r src="$3"
+  local -r dest="$4"
+  # validate arguments
+  vedv::vmobj_entity::validate_type "$type" ||
+    return "$?"
+  if [[ -z "$vmobj_id" ]]; then
+    err "Invalid argument 'vmobj_id': it's empty"
+    return "$ERR_INVAL_ARG"
+  fi
+  if [[ -z "$src" ]]; then
+    err "Invalid argument 'src': it's empty"
+    return "$ERR_INVAL_ARG"
+  fi
+  if [[ -z "$dest" ]]; then
+    err "Invalid argument 'dest': it's empty"
+    return "$ERR_INVAL_ARG"
+  fi
+
+  local vedvfileignore
+  vedvfileignore="$(vedv:image_vedvfile_service::get_joined_vedvfileignore)" || {
+    err "Failed to get joined vedvfileignore"
+    return "$ERR_VMOBJ_OPERATION"
+  }
+  readonly vedvfileignore
+
+  local -r exec_func="vedv::ssh_client::copy \"\$user\" \"\$ip\"  \"\$password\" \"\$port\" '${src}' '${dest}' ${vedvfileignore}"
+
+  vedv::vmobj_service::__exec_ssh_func "$type" "$vmobj_id" "$exec_func" || {
+    err "Failed to copy to ${type}: ${vmobj_id}"
+    return "$ERR_VMOBJ_OPERATION"
+  }
+}
+
+#
+# Copy files from local filesystem to a container
+#
+# Arguments:
+#   type      string     type (e.g. 'container|image')
+#   vmobj_id  string     container id or name
+#   src       string     local source path
+#   dest      string     container destination path
+#
+# Output:
+#  writes command output to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::vmobj_service::copy() {
+  local -r type="$1"
+  local -r vmobj_id_or_name="$2"
+  local -r src="$3"
+  local -r dest="$4"
+
+  local vmobj_id
+  vmobj_id="$(vedv::vmobj_service::get_ids_from_vmobj_names_or_ids "$type" "$vmobj_id_or_name")" || {
+    err "Failed to get ${type} id by name or id: ${vmobj_id_or_name}"
+    return "$ERR_VMOBJ_OPERATION"
+  }
+  vedv::vmobj_service::copy_by_id "$type" "$vmobj_id" "$src" "$dest"
+}

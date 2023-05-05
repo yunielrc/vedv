@@ -1264,7 +1264,7 @@ EOF
 }
 
 # Tests for vedv::vmobj_service::execute_cmd()
-# bats test_tags=only
+
 @test "vedv::vmobj_service::execute_cmd(), Should fail If get_ids_from_vmobj_names_or_ids fails" {
   local -r type="container"
   local -r vmobj_id=12345
@@ -1280,7 +1280,7 @@ EOF
   assert_failure
   assert_output "Failed to get container id by name or id: 12345"
 }
-# bats test_tags=only
+
 @test "vedv::vmobj_service::execute_cmd(), Should succeed" {
   local -r type="container"
   local -r vmobj_id=12345
@@ -1301,7 +1301,7 @@ EOF
 }
 
 # Tests for vedv::vmobj_service::connect_by_id()
-# bats test_tags=only
+
 @test "vedv::vmobj_service::connect_by_id(), Should fail with invalid type" {
   local -r type="invalid"
   local -r vmobj_id=""
@@ -1311,7 +1311,7 @@ EOF
   assert_failure
   assert_output "Invalid type: invalid, valid types are: container|image"
 }
-# bats test_tags=only
+
 @test "vedv::vmobj_service::connect_by_id(), Should fail With empty vmobj_id" {
   local -r type="container"
   local -r vmobj_id=""
@@ -1321,7 +1321,7 @@ EOF
   assert_failure
   assert_output "Invalid argument 'vmobj_id': it's empty"
 }
-# bats test_tags=only
+
 @test "vedv::vmobj_service::connect_by_id(), Should fail If __exec_ssh_func fails" {
   local -r type="container"
   local -r vmobj_id=12345
@@ -1338,7 +1338,7 @@ EOF
 }
 
 # Tests for vedv::vmobj_service::connect()
-# bats test_tags=only
+
 @test "vedv::vmobj_service::connect(), Should fail If get_ids_from_vmobj_names_or_ids fails" {
   local -r type="container"
   local -r vmobj_id=12345
@@ -1353,7 +1353,7 @@ EOF
   assert_failure
   assert_output "Failed to get container id by name or id: 12345"
 }
-# bats test_tags=only
+
 @test "vedv::vmobj_service::connect(), Should succeed" {
   local -r type="container"
   local -r vmobj_id=12345
@@ -1367,6 +1367,131 @@ EOF
   }
 
   run vedv::vmobj_service::connect "$type" "$vmobj_id"
+
+  assert_success
+  assert_output ""
+}
+
+# Tests for vedv::vmobj_service::copy_by_id()
+# bats test_tags=only
+@test "vedv::vmobj_service::copy_by_id(), Should fail with invalid type" {
+  local -r type="invalid"
+  local -r vmobj_id=""
+  local -r src="src"
+  local -r dest="dest"
+
+  run vedv::vmobj_service::copy_by_id "$type" "$vmobj_id" "$src" "$dest"
+
+  assert_failure
+  assert_output "Invalid type: invalid, valid types are: container|image"
+}
+# bats test_tags=only
+@test "vedv::vmobj_service::copy_by_id(), Should fail With empty vmobj_id" {
+  local -r type="container"
+  local -r vmobj_id=""
+  local -r src="src"
+  local -r dest="dest"
+
+  run vedv::vmobj_service::copy_by_id "$type" "$vmobj_id" "$src" "$dest"
+
+  assert_failure
+  assert_output "Invalid argument 'vmobj_id': it's empty"
+}
+# bats test_tags=only
+@test "vedv::vmobj_service::copy_by_id(), Should fail With empty src" {
+  local -r type="container"
+  local -r vmobj_id=12345
+  local -r src=""
+  local -r dest="dest"
+
+  run vedv::vmobj_service::copy_by_id "$type" "$vmobj_id" "$src" "$dest"
+
+  assert_failure
+  assert_output "Invalid argument 'src': it's empty"
+}
+# bats test_tags=only
+@test "vedv::vmobj_service::copy_by_id(), Should fail With empty dest" {
+  local -r type="container"
+  local -r vmobj_id=12345
+  local -r src="src"
+  local -r dest=""
+
+  run vedv::vmobj_service::copy_by_id "$type" "$vmobj_id" "$src" "$dest"
+
+  assert_failure
+  assert_output "Invalid argument 'dest': it's empty"
+}
+# bats test_tags=only
+@test "vedv::vmobj_service::copy_by_id(), Should fail If get_joined_vedvfileignore fails" {
+  local -r type="container"
+  local -r vmobj_id=12345
+  local -r src="src"
+  local -r dest="dest"
+
+  vedv:image_vedvfile_service::get_joined_vedvfileignore() {
+    return 1
+  }
+
+  run vedv::vmobj_service::copy_by_id "$type" "$vmobj_id" "$src" "$dest"
+
+  assert_failure
+  assert_output "Failed to get joined vedvfileignore"
+}
+# bats test_tags=only
+@test "vedv::vmobj_service::copy_by_id(), Should fail If __exec_ssh_func fails" {
+  local -r type="container"
+  local -r vmobj_id=12345
+  local -r src="src"
+  local -r dest="dest"
+
+  vedv:image_vedvfile_service::get_joined_vedvfileignore() {
+    echo "/tmp/vedvfileignore"
+  }
+  vedv::vmobj_service::__exec_ssh_func() {
+    assert_regex "$*" "container 12345 vedv::ssh_client::copy.*"
+    return 1
+  }
+
+  run vedv::vmobj_service::copy_by_id "$type" "$vmobj_id" "$src" "$dest"
+
+  assert_failure
+  assert_output "Failed to copy to container: 12345"
+}
+
+# Tests for vedv::vmobj_service::copy()
+# bats test_tags=only
+@test "vedv::vmobj_service::copy(), Should fail If get_ids_from_vmobj_names_or_ids fails" {
+  local -r type="container"
+  local -r vmobj_id=12345
+  local -r src="src"
+  local -r dest="dest"
+
+  vedv::vmobj_service::get_ids_from_vmobj_names_or_ids() {
+    assert_equal "$*" "container 12345"
+    return 1
+  }
+
+  run vedv::vmobj_service::copy "$type" "$vmobj_id" "$src" "$dest"
+
+  assert_failure
+  assert_output "Failed to get container id by name or id: 12345"
+}
+# bats test_tags=only
+@test "vedv::vmobj_service::copy(), Should succeed" {
+  local -r type="container"
+  local -r vmobj_id=12345
+  local -r src="src"
+  local -r dest="dest"
+
+  vedv::vmobj_service::get_ids_from_vmobj_names_or_ids() {
+    assert_equal "$*" "container 12345"
+    echo 12345
+  }
+  vedv::vmobj_service::copy_by_id() {
+    assert_equal "$*" "container 12345 src dest"
+  }
+
+  run vedv::vmobj_service::copy "$type" "$vmobj_id" "$src" "$dest"
 
   assert_success
   assert_output ""

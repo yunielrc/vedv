@@ -14,9 +14,16 @@ setup_file() {
   export __VEDV_IMAGE_BUILDER_BASE_VEDVFILEIGNORE_PATH
   export __VEDV_IMAGE_BUILDER_VEDVFILEIGNORE_PATH
 
-  vedv::image_vedvfile_service::constructor "$TEST_HADOLINT_CONFIG" false
-  export __VEDV_IMAGE_VEDVFILE_SERVICE_HYPERVISOR
+  vedv::image_vedvfile_service::constructor \
+    "$TEST_HADOLINT_CONFIG" \
+    false \
+    "$TEST_BASE_VEDVFILEIGNORE" \
+    "$TEST_VEDVFILEIGNORE"
+
+  export __VEDV_IMAGE_VEDVFILE_HADOLINT_CONFIG
   export __VEDV_IMAGE_VEDVFILE_HADOLINT_ENABLED
+  export __VEDV_IMAGE_VEDVFILE_BASE_VEDVFILEIGNORE_PATH
+  export __VEDV_IMAGE_VEDVFILE_VEDVFILEIGNORE_PATH
 }
 
 teardown_file() {

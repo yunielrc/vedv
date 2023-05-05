@@ -17,11 +17,11 @@ fi
 # Constructor
 #
 # Arguments:
-#   ssh_user  string                 ssh user
-#   ssh_password  string             ssh password
-#   ssh_ip  string                   ssh ip
-#   base_vedvfileignore_path  string  path to the base vedvfileignore
-#   vedvfileignore_path  string       path to the .vedvfileignore
+#   ssh_user                  string    ssh user
+#   ssh_password              string    ssh password
+#   ssh_ip                    string    ssh ip
+#   base_vedvfileignore_path  string    path to the base vedvfileignore
+#   vedvfileignore_path       string    path to the .vedvfileignore
 #
 #
 # Returns:

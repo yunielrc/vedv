@@ -264,7 +264,7 @@ Options:
 }
 
 # Tests for vedv container login
-# bats test_tags=only
+
 @test "vedv container login container123a, Should login" {
 
   vedv container create --name 'container123a' "$TEST_OVA_FILE"
@@ -309,4 +309,21 @@ SSHEOF
 
   assert_success
   assert_success "Linux"
+}
+
+# bats test_tags=only
+@test "vedv container copy container123a " {
+
+  vedv container create --name 'container123a' "$TEST_OVA_FILE"
+  vedv container start --wait 'container123a'
+
+  local -r src="$(mktemp)"
+  echo "file123" >"$src"
+
+  vedv container copy container123a "$src" /home/vedv/file123
+
+  run vedv container exec container123a cat /home/vedv/file123
+
+  assert_success
+  assert_success "file123"
 }

@@ -106,9 +106,6 @@ vedv::__run_cmd() {
   . "${__VEDV_HYPERVISORS_PATH}/${hypervisor}.bash"
 
   # initialize components
-  vedv::image_vedvfile_service::constructor \
-    "$VEDV_HADOLINT_CONFIG" \
-    "$VEDV_HADOLINT_ENABLED"
 
   local vedvfileignore_path=''
 
@@ -116,6 +113,12 @@ vedv::__run_cmd() {
     vedvfileignore_path="${PWD}/.vedvfileignore"
   fi
   readonly vedvfileignore_path
+
+  vedv::image_vedvfile_service::constructor \
+    "$VEDV_HADOLINT_CONFIG" \
+    "$VEDV_HADOLINT_ENABLED" \
+    "$VEDV_BASE_VEDVFILEIGNORE" \
+    "$vedvfileignore_path"
 
   vedv::image_builder::constructor \
     "$VEDV_SSH_USER" \

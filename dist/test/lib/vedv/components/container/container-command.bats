@@ -311,3 +311,68 @@ Execute a command in a container"
   assert_success
   assert_output ""
 }
+
+# Tests for vedv::container_command::__copy()
+# bats test_tags=only
+@test "vedv::container_command::__copy() Should show help with no args" {
+  vedv::container_service::copy() {
+    assert_equal "$*" 'INVALID_CALL'
+  }
+  # Act
+  run vedv::container_command::__copy
+  # Assert
+  assert_success
+  assert_output "Usage:
+vedv container copy CONTAINER LOCAL_SRC CONTAINER_DEST
+
+Copy files from local filesystem to a container"
+}
+# bats test_tags=only
+@test "vedv::container_command::__copy() Should show help" {
+  vedv::container_service::copy() {
+    assert_equal "$*" 'INVALID_CALL'
+  }
+
+  for arg in '-h' '--help'; do
+    # Act
+    run vedv::container_command::__copy "$arg"
+    # Assert
+    assert_success
+    assert_output "Usage:
+vedv container copy CONTAINER LOCAL_SRC CONTAINER_DEST
+
+Copy files from local filesystem to a container"
+  done
+}
+# bats test_tags=only
+@test "vedv::container_command::__copy() Should show error when src is missing" {
+  vedv::container_service::copy() {
+    assert_equal "$*" 'container1 local_src container_dest'
+  }
+  # Act
+  run vedv::container_command::__copy 'container1'
+  # Assert
+  assert_failure
+  assert_output "No source file specified
+
+Usage:
+vedv container copy CONTAINER LOCAL_SRC CONTAINER_DEST
+
+Copy files from local filesystem to a container"
+}
+# bats test_tags=only
+@test "vedv::container_command::__copy() Should show error when dest is missing" {
+  vedv::container_service::copy() {
+    assert_equal "$*" 'container1 local_src container_dest'
+  }
+  # Act
+  run vedv::container_command::__copy 'container1' 'local_src'
+  # Assert
+  assert_failure
+  assert_output "No dest file specified
+
+Usage:
+vedv container copy CONTAINER LOCAL_SRC CONTAINER_DEST
+
+Copy files from local filesystem to a container"
+}

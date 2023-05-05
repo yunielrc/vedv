@@ -14,15 +14,18 @@ readonly VEDVFILE_SUPPORTED_COMMANDS='FROM|RUN|COPY'
 # Constructor
 #
 # Arguments:
-#   config     config file
-#   enabled    Hadolint enabled, default: true
-#
+#   config                    string    config file
+#   enabled                   bool      Hadolint enabled
+#   base_vedvfileignore_path  string    path to the base vedvfileignore
+#   vedvfileignore_path       string    path to the .vedvfileignore
 # Returns:
 #   0 on success, non-zero on error.
 #
 vedv::image_vedvfile_service::constructor() {
   readonly __VEDV_IMAGE_VEDVFILE_HADOLINT_CONFIG="$1"
-  readonly __VEDV_IMAGE_VEDVFILE_HADOLINT_ENABLED="${2:-true}"
+  readonly __VEDV_IMAGE_VEDVFILE_HADOLINT_ENABLED="$2"
+  readonly __VEDV_IMAGE_VEDVFILE_BASE_VEDVFILEIGNORE_PATH="$3"
+  readonly __VEDV_IMAGE_VEDVFILE_VEDVFILEIGNORE_PATH="$4"
 }
 
 __vedvfile-parser() {
@@ -182,4 +185,36 @@ vedv::image_vedvfile_service::get_cmd_body() {
   fi
 
   echo "$cmd" | sed -e 's/\s*\([[:digit:]]\+\s\+\)\?\(FROM\|RUN\|CMD\|LABEL\|EXPOSE\|ENV\|ADD\|COPY\|ENTRYPOINT\|VOLUME\|USER\|WORKDIR\|ARG\|ONBUILD\|STOPSIGNAL\|HEALTHCHECK\|SHELL\)\s\+//' -e 's/[[:space:]]*$//'
+}
+
+#
+# Return the file path of joined vedvfileignore
+#
+# Output:
+#  Writes the file path to stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv:image_vedvfile_service::get_joined_vedvfileignore() {
+
+  if [[ ! -f "$__VEDV_IMAGE_VEDVFILE_BASE_VEDVFILEIGNORE_PATH" ]]; then
+    err "File ${__VEDV_IMAGE_VEDVFILE_BASE_VEDVFILEIGNORE_PATH} does not exist"
+    return "$ERR_INVAL_VALUE"
+  fi
+
+  local vedvfileignore_path
+
+  if [[ ! -f "$__VEDV_IMAGE_VEDVFILE_VEDVFILEIGNORE_PATH" ]]; then
+    vedvfileignore_path="$__VEDV_IMAGE_VEDVFILE_BASE_VEDVFILEIGNORE_PATH"
+  else
+    vedvfileignore_path="$(mktemp)" || {
+      err "Failed to create temporary file"
+      return 1
+    }
+    cat "$__VEDV_IMAGE_VEDVFILE_BASE_VEDVFILEIGNORE_PATH" \
+      "$__VEDV_IMAGE_VEDVFILE_VEDVFILEIGNORE_PATH" >"$vedvfileignore_path"
+  fi
+
+  echo "$vedvfileignore_path"
 }
