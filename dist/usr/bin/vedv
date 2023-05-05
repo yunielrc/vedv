@@ -136,14 +136,11 @@ vedv::__run_cmd() {
     "$(arr2str vmobj_types_attributes_dict)"
 
   vedv::vmobj_service::constructor \
-    "$VEDV_SSH_IP"
+    "$VEDV_SSH_IP" \
+    "$VEDV_SSH_USER" \
+    "$VEDV_SSH_PASSWORD"
 
   vedv::image_command::constructor "$__VEDV_SCRIPT_NAME"
-
-  vedv::container_service::constructor \
-    "$VEDV_SSH_USER" \
-    "$VEDV_SSH_PASSWORD" \
-    "$VEDV_SSH_IP"
 
   vedv::container_command::constructor "$__VEDV_SCRIPT_NAME"
 

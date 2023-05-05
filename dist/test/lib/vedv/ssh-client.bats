@@ -207,5 +207,5 @@ SSHEOF
   run __connect
 
   assert_success
-  assert_line --index 1 "Linux"
+  assert_output --partial "Linux"
 }

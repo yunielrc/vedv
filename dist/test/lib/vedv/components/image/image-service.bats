@@ -11,8 +11,14 @@ setup_file() {
   export __VEDV_VMOBJ_ENTITY_TYPE
   export __VEDV_VMOBJ_ENTITY_VALID_ATTRIBUTES_DICT_STR
 
-  vedv::vmobj_service::constructor "$TEST_SSH_IP"
+  vedv::vmobj_service::constructor \
+    "$TEST_SSH_IP" \
+    "$TEST_SSH_USER" \
+    "$TEST_SSH_PASSWORD"
+
   export __VEDV_VMOBJ_SERVICE_SSH_IP
+  export __VEDV_VMOBJ_SERVICE_SSH_USER
+  export __VEDV_VMOBJ_SERVICE_SSH_PASSWORD
 }
 
 # Tests for vedv::image_service::__pull_from_file()

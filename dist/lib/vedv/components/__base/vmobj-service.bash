@@ -27,6 +27,8 @@ fi
 #
 vedv::vmobj_service::constructor() {
   readonly __VEDV_VMOBJ_SERVICE_SSH_IP="$1"
+  readonly __VEDV_VMOBJ_SERVICE_SSH_USER="$2"
+  readonly __VEDV_VMOBJ_SERVICE_SSH_PASSWORD="$3"
 }
 
 #
@@ -101,13 +103,13 @@ vedv::vmobj_service::get_ids_from_vmobj_names_or_ids() {
   local -a vmobj_ids
   local -A err_messages=()
 
-  for vmobj_id_or_name in "${vmobj_ids_or_names[@]}"; do
+  for _vmobj_id_or_name in "${vmobj_ids_or_names[@]}"; do
     local vmobj_id
-    vmobj_id="$(vedv::vmobj_entity::get_id_by_vmobj_name "$type" "$vmobj_id_or_name" 2>/dev/null)" || {
+    vmobj_id="$(vedv::vmobj_entity::get_id_by_vmobj_name "$type" "$_vmobj_id_or_name" 2>/dev/null)" || {
       if [[ $? != "$ERR_NOT_FOUND" ]]; then
-        err_messages["Error getting vmobj id for ${type}s"]+="'${vmobj_id_or_name}' "
+        err_messages["Error getting vmobj id for ${type}s"]+="'${_vmobj_id_or_name}' "
       fi
-      vmobj_ids+=("$vmobj_id_or_name")
+      vmobj_ids+=("$_vmobj_id_or_name")
       continue
     }
     vmobj_ids+=("$vmobj_id")
@@ -140,11 +142,9 @@ vedv::vmobj_service::get_ids_from_vmobj_names_or_ids() {
 #
 vedv::vmobj_service::exec_func_on_many_vmobj() {
   local -r type="$1"
-  shift
-  local -r exec_func="$1"
-  shift
+  local -r exec_func="$2"
+  shift 2
   local -ra names_or_ids=("$@")
-  # vmobj_names_or_ids is $@
   # validate arguments
   vedv::vmobj_entity::validate_type "$type" ||
     return "$?"
@@ -643,4 +643,185 @@ vedv::vmobj_service::list() {
     }
     echo "${vmobj_id} ${vmobj_name}"
   done
+}
+
+#
+# Execute a ssh function
+#
+# The exec_func should has the variables: $user, $ip, $password, $port
+# as plain string, this function will replace them with the values
+#
+# Arguments:
+#   type       string     type (e.g. 'container|image')
+#   vmobj_id   string     vmobj id or name
+#   exec_func  string     function to execute
+#
+# Output:
+#  writes command output to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::vmobj_service::__exec_ssh_func() {
+  local -r type="$1"
+  local -r vmobj_id="$2"
+  local -r exec_func="$3"
+  # validate arguments
+  vedv::vmobj_entity::validate_type "$type" ||
+    return "$?"
+  if [[ -z "$vmobj_id" ]]; then
+    err "Invalid argument 'vmobj_id': it's empty"
+    return "$ERR_INVAL_ARG"
+  fi
+  if [[ -z "$exec_func" ]]; then
+    err "Invalid argument 'exec_func': it's empty"
+    return "$ERR_INVAL_ARG"
+  fi
+
+  vedv::vmobj_service::start_one "$type" true "$vmobj_id" >/dev/null || {
+    err "Failed to start ${type}: ${vmobj_id}"
+    return "$ERR_VMOBJ_OPERATION"
+  }
+  # shellcheck disable=SC2034
+  local -r ip="$__VEDV_VMOBJ_SERVICE_SSH_IP"
+  # shellcheck disable=SC2034
+  local -r user="$__VEDV_VMOBJ_SERVICE_SSH_USER"
+  # shellcheck disable=SC2034
+  local -r password="$__VEDV_VMOBJ_SERVICE_SSH_PASSWORD"
+
+  local port
+  port="$(vedv::vmobj_entity::get_ssh_port "$type" "$vmobj_id")" || {
+    err "Failed to get ssh port for ${type}: ${vmobj_id}"
+    return "$ERR_VMOBJ_OPERATION"
+  }
+  # shellcheck disable=SC2034
+  readonly port
+
+  eval "$exec_func" || {
+    err "Failed to execute function on ${type}: ${vmobj_id}"
+    return "$ERR_VMOBJ_OPERATION"
+  }
+}
+
+#
+# Execute cmd in a vmobj
+#
+# Arguments:
+#   type      string     type (e.g. 'container|image')
+#   vmobj_id  string     vmobj id
+#   cmd       string     command to execute
+#
+# Output:
+#  writes command output to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::vmobj_service::execute_cmd_by_id() {
+  local -r type="$1"
+  local -r vmobj_id="$2"
+  local -r cmd="$3"
+  # validate arguments
+  vedv::vmobj_entity::validate_type "$type" ||
+    return "$?"
+
+  if [[ -z "$vmobj_id" ]]; then
+    err "Invalid argument 'vmobj_id': it's empty"
+    return "$ERR_INVAL_ARG"
+  fi
+  if [[ -z "$cmd" ]]; then
+    err "Invalid argument 'cmd': it's empty"
+    return "$ERR_INVAL_ARG"
+  fi
+
+  local -r exec_func="vedv::ssh_client::run_cmd \"\$user\" \"\$ip\"  \"\$password\" '${cmd}' \"\$port\""
+
+  vedv::vmobj_service::__exec_ssh_func "$type" "$vmobj_id" "$exec_func" || {
+    err "Failed to execute command in ${type}: ${vmobj_id}"
+    return "$ERR_VMOBJ_OPERATION"
+  }
+}
+
+#
+# Execute cmd in a vmobj
+#
+# Arguments:
+#   type              string     type (e.g. 'container|image')
+#   vmobj_id_or_name  string     vmobj id or name
+#   cmd               string     command to execute
+#
+# Output:
+#  writes command output to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::vmobj_service::execute_cmd() {
+  local -r type="$1"
+  local -r vmobj_id_or_name="$2"
+  local -r cmd="$3"
+
+  local vmobj_id
+  vmobj_id="$(vedv::vmobj_service::get_ids_from_vmobj_names_or_ids "$type" "$vmobj_id_or_name")" || {
+    err "Failed to get ${type} id by name or id: ${vmobj_id_or_name}"
+    return "$ERR_VMOBJ_OPERATION"
+  }
+  vedv::vmobj_service::execute_cmd_by_id "$type" "$vmobj_id" "$cmd"
+}
+
+#
+# Establish a ssh connection to a vmobj
+#
+# Arguments:
+#   type      string     type (e.g. 'container|image')
+#   vmobj_id  string     vmobj id
+#
+# Output:
+#  writes command output to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::vmobj_service::connect_by_id() {
+  local -r type="$1"
+  local -r vmobj_id="$2"
+  # validate arguments
+  vedv::vmobj_entity::validate_type "$type" ||
+    return "$?"
+  if [[ -z "$vmobj_id" ]]; then
+    err "Invalid argument 'vmobj_id': it's empty"
+    return "$ERR_INVAL_ARG"
+  fi
+
+  local -r exec_func="vedv::ssh_client::connect \"\$user\" \"\$ip\"  \"\$password\" \"\$port\""
+
+  vedv::vmobj_service::__exec_ssh_func "$type" "$vmobj_id" "$exec_func" || {
+    err "Failed to connect to ${type}: ${vmobj_id}"
+    return "$ERR_VMOBJ_OPERATION"
+  }
+}
+
+#
+# Establish a ssh connection to a vmobj
+#
+# Arguments:
+#   type              string     type (e.g. 'container|image')
+#   vmobj_id_or_name  string     vmobj id or name
+#
+# Output:
+#  writes command output to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::vmobj_service::connect() {
+  local -r type="$1"
+  local -r vmobj_id_or_name="$2"
+
+  local vmobj_id
+  vmobj_id="$(vedv::vmobj_service::get_ids_from_vmobj_names_or_ids "$type" "$vmobj_id_or_name")" || {
+    err "Failed to get ${type} id by name or id: ${vmobj_id_or_name}"
+    return "$ERR_VMOBJ_OPERATION"
+  }
+  vedv::vmobj_service::connect_by_id "$type" "$vmobj_id"
 }

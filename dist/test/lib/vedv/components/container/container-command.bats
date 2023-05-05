@@ -216,44 +216,97 @@ vedv::container_service::list() { echo "include stopped containers: ${1:-false}"
   assert_output --partial 'Invalid argument: invalid_cmd'
 }
 
-# Tests for vedv::container_command::__login()
-@test "vedv::container_command::__login() Should show help with no args" {
-  vedv::container_service::login() {
+# Tests for vedv::container_command::__connect()
+@test "vedv::container_command::__connect() Should show help with no args" {
+  vedv::container_service::connect() {
     assert_equal "$*" 'INVALID_CALL'
   }
   # Act
-  run vedv::container_command::__login
+  run vedv::container_command::__connect
   # Assert
   assert_success
   assert_output "Usage:
-vedv container login CONTAINER
+vedv container login|connect CONTAINER
 
 Login to a container"
 }
 
-@test "vedv::container_command::__login() Should show help" {
-  vedv::container_service::login() {
+@test "vedv::container_command::__connect() Should show help" {
+  vedv::container_service::connect() {
     assert_equal "$*" 'INVALID_CALL'
   }
 
   for arg in '-h' '--help'; do
     # Act
-    run vedv::container_command::__login "$arg"
+    run vedv::container_command::__connect "$arg"
     # Assert
     assert_success
     assert_output "Usage:
-vedv container login CONTAINER
+vedv container login|connect CONTAINER
 
 Login to a container"
   done
 }
 
-@test "vedv::container_command::__login() Should login" {
-  vedv::container_service::login() {
+@test "vedv::container_command::__connect() Should login" {
+  vedv::container_service::connect() {
     assert_equal "$*" 'container1'
   }
   # Act
-  run vedv::container_command::__login 'container1'
+  run vedv::container_command::__connect 'container1'
+  # Assert
+  assert_success
+  assert_output ""
+}
+
+# Tests for vedv::container_command::__execute_cmd()
+@test "vedv::container_command::__execute_cmd() Should show help with no args" {
+  vedv::container_service::execute_cmd() {
+    assert_equal "$*" 'INVALID_CALL'
+  }
+  # Act
+  run vedv::container_command::__execute_cmd
+  # Assert
+  assert_success
+  assert_output "Usage:
+vedv container exec CONTAINER COMMAND1 [COMMAND2] ...
+vedv container exec CONTAINER <<EOF
+COMMAND1
+[COMMAND2]
+...
+EOF
+
+Execute a command in a container"
+}
+
+@test "vedv::container_command::__execute_cmd() Should show help" {
+  vedv::container_service::connect() {
+    assert_equal "$*" 'INVALID_CALL'
+  }
+
+  for arg in '-h' '--help'; do
+    # Act
+    run vedv::container_command::__execute_cmd "$arg"
+    # Assert
+    assert_success
+    assert_output "Usage:
+vedv container exec CONTAINER COMMAND1 [COMMAND2] ...
+vedv container exec CONTAINER <<EOF
+COMMAND1
+[COMMAND2]
+...
+EOF
+
+Execute a command in a container"
+  done
+}
+
+@test "vedv::container_command::__execute_cmd() Should run command" {
+  vedv::container_service::execute_cmd() {
+    assert_equal "$*" 'container1 command1'
+  }
+  # Act
+  run vedv::container_command::__execute_cmd 'container1' 'command1'
   # Assert
   assert_success
   assert_output ""

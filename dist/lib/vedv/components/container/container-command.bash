@@ -340,7 +340,7 @@ HELPMSG
 }
 
 #
-# Login to a container
+# Establish a ssh connection to a container
 #
 # Flags:
 #   [-h | --help]       show help
@@ -354,17 +354,17 @@ HELPMSG
 # Returns:
 #   0 on success, non-zero on error.
 #
-vedv::container_command::__login() {
+vedv::container_command::__connect() {
   if [[ $# == 0 ]]; then set -- '-h'; fi
 
   while [[ $# -gt 0 ]]; do
     case "$1" in
     -h | --help)
-      vedv::container_command::__login_help
+      vedv::container_command::__connect_help
       return 0
       ;;
     *)
-      vedv::container_service::login "$1"
+      vedv::container_service::connect "$1"
       return $?
       ;;
     esac
@@ -372,17 +372,87 @@ vedv::container_command::__login() {
 }
 
 #
-# Show help for __login command
+# Show help for __connect command
 #
 # Output:
 #  Writes the help to the stdout
 #
-vedv::container_command::__login_help() {
+vedv::container_command::__connect_help() {
   cat <<-HELPMSG
 Usage:
-${__VED_CONTAINER_COMMAND_SCRIPT_NAME} container login CONTAINER
+${__VED_CONTAINER_COMMAND_SCRIPT_NAME} container login|connect CONTAINER
 
 Login to a container
+HELPMSG
+}
+
+#
+# Execute cmd in a container
+#
+# Flags:
+#   [-h | --help]       show help
+#
+# Arguments:
+#   CONTAINER           container name or id
+#
+# Output:
+#   writes any error to stderr
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::container_command::__execute_cmd() {
+  if [[ $# == 0 ]]; then set -- '-h'; fi
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+    -h | --help)
+      vedv::container_command::__execute_cmd_help
+      return 0
+      ;;
+    *)
+      local container_name_or_id="$1"
+      shift
+      local cmd
+
+      if [[ "$#" -ne 0 ]]; then
+        cmd="$*"
+      elif [[ ! -t 0 ]]; then
+        # if stdin FD is not opened on a terminal its because there is input data,
+        cmd="$(cat -)"
+      fi
+      readonly cmd
+
+      if [[ -z "$cmd" ]]; then
+        err "No command specified\n"
+        vedv::container_command::__execute_cmd_help
+        return "$ERR_INVAL_ARG"
+      fi
+
+      vedv::container_service::execute_cmd "$container_name_or_id" "$cmd"
+      return $?
+      ;;
+    esac
+  done
+}
+
+#
+# Show help for __execute_cmd command
+#
+# Output:
+#  Writes the help to the stdout
+#
+vedv::container_command::__execute_cmd_help() {
+  cat <<-HELPMSG
+Usage:
+${__VED_CONTAINER_COMMAND_SCRIPT_NAME} container exec CONTAINER COMMAND1 [COMMAND2] ...
+${__VED_CONTAINER_COMMAND_SCRIPT_NAME} container exec CONTAINER <<EOF
+COMMAND1
+[COMMAND2]
+...
+EOF
+
+Execute a command in a container
 HELPMSG
 }
 
@@ -413,6 +483,7 @@ Commands:
   stop             Stop one or more containers
   list             List containers
   login            Login to a container
+  exec             Execute a command in a container
 
 Run '${__VED_CONTAINER_COMMAND_SCRIPT_NAME} container COMMAND --help' for more information on a command.
 HELPMSG
@@ -452,9 +523,14 @@ vedv::container_command::run_cmd() {
       vedv::container_command::__list "$@"
       return $?
       ;;
-    login)
+    login | connect)
       shift
-      vedv::container_command::__login "$@"
+      vedv::container_command::__connect "$@"
+      return $?
+      ;;
+    exec)
+      shift
+      vedv::container_command::__execute_cmd "$@"
       return $?
       ;;
     *)

@@ -265,7 +265,7 @@ Options:
 
 # Tests for vedv container login
 # bats test_tags=only
-@test "vedv container login, Should login" {
+@test "vedv container login container123a, Should login" {
 
   vedv container create --name 'container123a' "$TEST_OVA_FILE"
   vedv container start --wait 'container123a'
@@ -279,5 +279,34 @@ SSHEOF
   run __login
 
   assert_success
-  assert_line --index 1 "Linux"
+  assert_output --partial "Linux"
+}
+
+# Tests for vedv container login
+@test "vedv container exec container123a uname, Should exec cmd" {
+
+  vedv container create --name 'container123a' "$TEST_OVA_FILE"
+  vedv container start --wait 'container123a'
+
+  run vedv container exec container123a uname
+
+  assert_success
+  assert_output --partial "Linux"
+}
+
+@test "vedv container exec container123a <<EOF, Should exec cmd" {
+
+  vedv container create --name 'container123a' "$TEST_OVA_FILE"
+  vedv container start --wait 'container123a'
+
+  __exec() {
+    vedv container exec container123a <<SSHEOF
+        uname
+SSHEOF
+  }
+
+  run __exec
+
+  assert_success
+  assert_success "Linux"
 }

@@ -27,11 +27,9 @@ fi
 # Returns:
 #   0 on success, non-zero on error.
 #
-vedv::container_service::constructor() {
-  readonly __VEDV_CONTAINER_SERVICE_SSH_USER="$1"
-  readonly __VEDV_CONTAINER_SERVICE_SSH_PASSWORD="$2"
-  readonly __VEDV_CONTAINER_SERVICE_SSH_IP="$3"
-}
+# vedv::container_service::constructor() {
+
+# }
 
 #
 # Create a new container
@@ -442,8 +440,8 @@ vedv::container_service::remove() {
 #  List containers
 #
 # Arguments:
-#   [list_all]               default: false, list running containers
-#   [partial_name]           name of the exported VM
+#   [list_all]      bool       default: false, list running containers
+#   [partial_name]  string     name of the exported VM
 #
 # Output:
 #  writes image id, name to the stdout
@@ -462,10 +460,11 @@ vedv::container_service::list() {
 }
 
 #
-# Login to a container by ssh
+# Execute cmd in a container
 #
 # Arguments:
-#   container_id  string     container id
+#   container_id_or_name  string     container id or name
+#   cmd                   string     command to execute
 #
 # Output:
 #  writes command output to the stdout
@@ -473,38 +472,18 @@ vedv::container_service::list() {
 # Returns:
 #   0 on success, non-zero on error.
 #
-vedv::container_service::login_by_id() {
-  local -r container_id="$1"
-  # validate arguments
-  if [[ -z "$container_id" ]]; then
-    err "Invalid argument 'container_id': it's empty"
-    return "$ERR_INVAL_ARG"
-  fi
+vedv::container_service::execute_cmd() {
+  local -r container_id_or_name="$1"
+  local -r cmd="$2"
 
-  vedv::container_service::start "$container_id" >/dev/null || {
-    err "Failed to start container: ${container_id}"
-    return "$ERR_CONTAINER_OPERATION"
-  }
-
-  local -r user="$__VEDV_CONTAINER_SERVICE_SSH_USER"
-  local -r ip="$__VEDV_CONTAINER_SERVICE_SSH_IP"
-  local -r password="$__VEDV_CONTAINER_SERVICE_SSH_PASSWORD"
-
-  local port
-  port="$(vedv::container_entity::get_ssh_port "$container_id")" || {
-    err "Failed to get ssh port for container: ${container_id}"
-    return "$ERR_CONTAINER_OPERATION"
-  }
-  readonly port
-
-  vedv::ssh_client::connect "$user" "$ip" "$password" "$port" || {
-    err "Failed to connect to container: ${container_id}"
-    return "$ERR_CONTAINER_OPERATION"
-  }
+  vedv::vmobj_service::execute_cmd \
+    'container' \
+    "$container_id_or_name" \
+    "$cmd"
 }
 
 #
-# Login to a container by ssh
+# Establish a ssh connection to a container
 #
 # Arguments:
 #   container_id_or_name  string     container id or name
@@ -515,13 +494,8 @@ vedv::container_service::login_by_id() {
 # Returns:
 #   0 on success, non-zero on error.
 #
-vedv::container_service::login() {
+vedv::container_service::connect() {
   local -r container_id_or_name="$1"
 
-  local container_id
-  container_id="$(vedv::vmobj_service::get_ids_from_vmobj_names_or_ids 'container' "$container_id_or_name")" || {
-    err "Failed to get container id by name or id: ${container_id_or_name}"
-    return "$ERR_CONTAINER_OPERATION"
-  }
-  vedv::container_service::login_by_id "$container_id"
+  vedv::vmobj_service::connect 'container' "$container_id_or_name"
 }

@@ -9,8 +9,14 @@ setup_file() {
   export __VEDV_VMOBJ_ENTITY_TYPE
   export __VEDV_VMOBJ_ENTITY_VALID_ATTRIBUTES_DICT_STR
 
-  vedv::vmobj_service::constructor "$TEST_SSH_IP"
+  vedv::vmobj_service::constructor \
+    "$TEST_SSH_IP" \
+    "$TEST_SSH_USER" \
+    "$TEST_SSH_PASSWORD"
   export __VEDV_VMOBJ_SERVICE_SSH_IP
+  export __VEDV_VMOBJ_SERVICE_SSH_USER
+  export __VEDV_VMOBJ_SERVICE_SSH_PASSWORD
+
 }
 
 # Tests for vedv::vmobj_service::is_started()
@@ -956,7 +962,7 @@ Failed to poweroff container: 12345"
 }
 
 # Tests for vedv::vmobj_service::list()
-# bats test_tags=only
+
 @test "vedv::vmobj_service::list(), Should fail with invalid type" {
   local -r type="invalid"
 
@@ -965,7 +971,7 @@ Failed to poweroff container: 12345"
   assert_failure
   assert_output "Invalid type: invalid, valid types are: container|image"
 }
-# bats test_tags=only
+
 @test "vedv::vmobj_service::list(), Should fail If hypervisor::list_running fails" {
   local -r type="container"
 
@@ -982,7 +988,7 @@ Failed to poweroff container: 12345"
   assert_failure
   assert_output "Error getting virtual machines names"
 }
-# bats test_tags=only
+
 @test "vedv::vmobj_service::list(), Should fail If hypervisor::list fails" {
   local -r type="container"
   local -r list_all=true
@@ -1000,7 +1006,7 @@ Failed to poweroff container: 12345"
   assert_failure
   assert_output "Error getting virtual machines names"
 }
-# bats test_tags=only
+
 @test "vedv::vmobj_service::list(), Should fail If get_vmobj_id_by_vm_name fails" {
   local -r type="container"
 
@@ -1027,7 +1033,7 @@ EOF
   assert_failure
   assert_output "Failed to get container id for vm: 'container:foo-bar|crc:12345|'"
 }
-# bats test_tags=only
+
 @test "vedv::vmobj_service::list(), Should fail If get_vmobj_name_by_vm_name fails" {
   local -r type="container"
 
@@ -1058,7 +1064,7 @@ EOF
   assert_failure
   assert_output "Failed to get container name for vm: 'container:foo-bar|crc:12345|'"
 }
-# bats test_tags=only
+
 @test "vedv::vmobj_service::list(), Should succeed" {
   local -r type="container"
 
@@ -1090,4 +1096,278 @@ EOF
   assert_output "12345 foo-bar
 12346 pri-pal
 12348 dan-din"
+}
+
+# Tests for vedv::vmobj_service::__exec_ssh_func
+@test "vedv::vmobj_service::__exec_ssh_func(), Should fail with invalid type" {
+  local -r type="invalid"
+  local -r vmobj_id=""
+  local -r exec_func=""
+
+  run vedv::vmobj_service::__exec_ssh_func "$type" "$vmobj_id" "$exec_func"
+
+  assert_failure
+  assert_output "Invalid type: invalid, valid types are: container|image"
+}
+
+@test "vedv::vmobj_service::__exec_ssh_func(), Should fail With empty vmobj_id" {
+  local -r type="container"
+  local -r vmobj_id=""
+  local -r exec_func=""
+
+  run vedv::vmobj_service::__exec_ssh_func "$type" "$vmobj_id" "$exec_func"
+
+  assert_failure
+  assert_output "Invalid argument 'vmobj_id': it's empty"
+}
+
+@test "vedv::vmobj_service::__exec_ssh_func(), Should fail With empty exec_func" {
+  local -r type="container"
+  local -r vmobj_id=12345
+  local -r exec_func=""
+
+  run vedv::vmobj_service::__exec_ssh_func "$type" "$vmobj_id" "$exec_func"
+
+  assert_failure
+  assert_output "Invalid argument 'exec_func': it's empty"
+}
+
+@test "vedv::vmobj_service::__exec_ssh_func(), Should fail If start_one fails" {
+  local -r type="container"
+  local -r vmobj_id=12345
+  local -r exec_func="ssh_func"
+
+  vedv::vmobj_service::start_one() {
+    assert_equal "$*" "container true 12345"
+    return 1
+  }
+
+  run vedv::vmobj_service::__exec_ssh_func "$type" "$vmobj_id" "$exec_func"
+
+  assert_failure
+  assert_output "Failed to start container: 12345"
+}
+
+@test "vedv::vmobj_service::__exec_ssh_func(), Should fail If get_ssh_port fails" {
+  local -r type="container"
+  local -r vmobj_id=12345
+  local -r exec_func="ssh_func"
+
+  vedv::vmobj_service::start_one() {
+    assert_equal "$*" "container true 12345"
+  }
+  vedv::vmobj_entity::get_ssh_port() {
+    assert_equal "$*" "container 12345"
+    return 1
+  }
+
+  run vedv::vmobj_service::__exec_ssh_func "$type" "$vmobj_id" "$exec_func"
+
+  assert_failure
+  assert_output "Failed to get ssh port for container: 12345"
+}
+
+@test "vedv::vmobj_service::__exec_ssh_func(), Should fail If exec_func fails" {
+  local -r type="container"
+  local -r vmobj_id=12345
+  local -r exec_func="ssh_func"
+
+  vedv::vmobj_service::start_one() {
+    assert_equal "$*" "container true 12345"
+  }
+  vedv::vmobj_entity::get_ssh_port() {
+    assert_equal "$*" "container 12345"
+    echo 2022
+  }
+  ssh_func() {
+    assert_equal "$*" ""
+    return 1
+  }
+
+  run vedv::vmobj_service::__exec_ssh_func "$type" "$vmobj_id" "$exec_func"
+
+  assert_failure
+  assert_output "Failed to execute function on container: 12345"
+}
+
+@test "vedv::vmobj_service::__exec_ssh_func(), Should succeed" {
+  local -r type="container"
+  local -r vmobj_id=12345
+  local -r exec_func="ssh_func"
+
+  vedv::vmobj_service::start_one() {
+    assert_equal "$*" "container true 12345"
+  }
+  vedv::vmobj_entity::get_ssh_port() {
+    assert_equal "$*" "container 12345"
+    echo 2022
+  }
+  ssh_func() {
+    assert_equal "$*" ""
+  }
+
+  run vedv::vmobj_service::__exec_ssh_func "$type" "$vmobj_id" "$exec_func"
+
+  assert_success
+  assert_output ""
+}
+
+# Tests for vedv::vmobj_service::execute_cmd_by_id()
+
+@test "vedv::vmobj_service::execute_cmd_by_id(), Should fail with invalid type" {
+  local -r type="invalid"
+  local -r vmobj_id=""
+  local -r cmd=""
+
+  run vedv::vmobj_service::execute_cmd_by_id "$type" "$vmobj_id" "$cmd"
+
+  assert_failure
+  assert_output "Invalid type: invalid, valid types are: container|image"
+}
+
+@test "vedv::vmobj_service::execute_cmd_by_id(), Should fail With empty vmobj_id" {
+  local -r type="container"
+  local -r vmobj_id=""
+  local -r cmd=""
+
+  run vedv::vmobj_service::execute_cmd_by_id "$type" "$vmobj_id" "$cmd"
+
+  assert_failure
+  assert_output "Invalid argument 'vmobj_id': it's empty"
+}
+
+@test "vedv::vmobj_service::execute_cmd_by_id(), Should fail With empty cmd" {
+  local -r type="container"
+  local -r vmobj_id=12345
+  local -r cmd=""
+
+  run vedv::vmobj_service::execute_cmd_by_id "$type" "$vmobj_id" "$cmd"
+
+  assert_failure
+  assert_output "Invalid argument 'cmd': it's empty"
+}
+
+@test "vedv::vmobj_service::execute_cmd_by_id(), Should fail If __exec_ssh_func fails" {
+  local -r type="container"
+  local -r vmobj_id=12345
+  local -r cmd="cmd"
+
+  vedv::vmobj_service::__exec_ssh_func() {
+    assert_regex "$*" "container 12345 vedv::ssh_client::run_cmd.*"
+    return 1
+  }
+
+  run vedv::vmobj_service::execute_cmd_by_id "$type" "$vmobj_id" "$cmd"
+
+  assert_failure
+  assert_output "Failed to execute command in container: 12345"
+}
+
+# Tests for vedv::vmobj_service::execute_cmd()
+# bats test_tags=only
+@test "vedv::vmobj_service::execute_cmd(), Should fail If get_ids_from_vmobj_names_or_ids fails" {
+  local -r type="container"
+  local -r vmobj_id=12345
+  local -r cmd=":"
+
+  vedv::vmobj_service::get_ids_from_vmobj_names_or_ids() {
+    assert_equal "$*" "container 12345"
+    return 1
+  }
+
+  run vedv::vmobj_service::execute_cmd "$type" "$vmobj_id" "$cmd"
+
+  assert_failure
+  assert_output "Failed to get container id by name or id: 12345"
+}
+# bats test_tags=only
+@test "vedv::vmobj_service::execute_cmd(), Should succeed" {
+  local -r type="container"
+  local -r vmobj_id=12345
+  local -r cmd=":"
+
+  vedv::vmobj_service::get_ids_from_vmobj_names_or_ids() {
+    assert_equal "$*" "container 12345"
+    echo 12345
+  }
+  vedv::vmobj_service::execute_cmd_by_id() {
+    assert_equal "$*" "container 12345 :"
+  }
+
+  run vedv::vmobj_service::execute_cmd "$type" "$vmobj_id" "$cmd"
+
+  assert_success
+  assert_output ""
+}
+
+# Tests for vedv::vmobj_service::connect_by_id()
+# bats test_tags=only
+@test "vedv::vmobj_service::connect_by_id(), Should fail with invalid type" {
+  local -r type="invalid"
+  local -r vmobj_id=""
+
+  run vedv::vmobj_service::connect_by_id "$type" "$vmobj_id"
+
+  assert_failure
+  assert_output "Invalid type: invalid, valid types are: container|image"
+}
+# bats test_tags=only
+@test "vedv::vmobj_service::connect_by_id(), Should fail With empty vmobj_id" {
+  local -r type="container"
+  local -r vmobj_id=""
+
+  run vedv::vmobj_service::connect_by_id "$type" "$vmobj_id"
+
+  assert_failure
+  assert_output "Invalid argument 'vmobj_id': it's empty"
+}
+# bats test_tags=only
+@test "vedv::vmobj_service::connect_by_id(), Should fail If __exec_ssh_func fails" {
+  local -r type="container"
+  local -r vmobj_id=12345
+
+  vedv::vmobj_service::__exec_ssh_func() {
+    assert_regex "$*" "container 12345 vedv::ssh_client::connect.*"
+    return 1
+  }
+
+  run vedv::vmobj_service::connect_by_id "$type" "$vmobj_id"
+
+  assert_failure
+  assert_output "Failed to connect to container: 12345"
+}
+
+# Tests for vedv::vmobj_service::connect()
+# bats test_tags=only
+@test "vedv::vmobj_service::connect(), Should fail If get_ids_from_vmobj_names_or_ids fails" {
+  local -r type="container"
+  local -r vmobj_id=12345
+
+  vedv::vmobj_service::get_ids_from_vmobj_names_or_ids() {
+    assert_equal "$*" "container 12345"
+    return 1
+  }
+
+  run vedv::vmobj_service::connect "$type" "$vmobj_id"
+
+  assert_failure
+  assert_output "Failed to get container id by name or id: 12345"
+}
+# bats test_tags=only
+@test "vedv::vmobj_service::connect(), Should succeed" {
+  local -r type="container"
+  local -r vmobj_id=12345
+
+  vedv::vmobj_service::get_ids_from_vmobj_names_or_ids() {
+    assert_equal "$*" "container 12345"
+    echo 12345
+  }
+  vedv::vmobj_service::connect_by_id() {
+    assert_equal "$*" "container 12345"
+  }
+
+  run vedv::vmobj_service::connect "$type" "$vmobj_id"
+
+  assert_success
+  assert_output ""
 }

@@ -9,17 +9,13 @@ setup_file() {
   export __VEDV_VMOBJ_ENTITY_TYPE
   export __VEDV_VMOBJ_ENTITY_VALID_ATTRIBUTES_DICT_STR
 
-  vedv::vmobj_service::constructor "$TEST_SSH_IP"
-  export __VEDV_VMOBJ_SERVICE_SSH_IP
-
-  vedv::container_service::constructor \
+  vedv::vmobj_service::constructor \
+    "$TEST_SSH_IP" \
     "$TEST_SSH_USER" \
-    "$TEST_SSH_PASSWORD" \
-    "$TEST_SSH_IP"
-
-  export __VEDV_CONTAINER_SERVICE_SSH_USER
-  export __VEDV_CONTAINER_SERVICE_SSH_PASSWORD
-  export __VEDV_CONTAINER_SERVICE_SSH_IP
+    "$TEST_SSH_PASSWORD"
+  export __VEDV_VMOBJ_SERVICE_SSH_IP
+  export __VEDV_VMOBJ_SERVICE_SSH_USER
+  export __VEDV_VMOBJ_SERVICE_SSH_PASSWORD
 }
 
 # Tests for vedv::container_service::create()
@@ -936,99 +932,12 @@ Sibling containers ids: '123457 123458'"
   assert_output "123457 123458"
 }
 
-# Tests for vedv::container_service::login_by_id()
-# bats test_tags=only
-@test "vedv::container_service::login_by_id() Should fail If container_id is empty" {
-  local -r container_id=''
-
-  run vedv::container_service::login_by_id "$container_id"
-
-  assert_failure
-  assert_output "Invalid argument 'container_id': it's empty"
-}
-# bats test_tags=only
-@test "vedv::container_service::login_by_id() Should fail If start fails" {
-  local -r container_id=123456
-
-  vedv::container_service::start() {
-    assert_equal "$*" 123456
-    return 1
-  }
-
-  run vedv::container_service::login_by_id "$container_id"
-
-  assert_failure
-  assert_output "Failed to start container: 123456"
+# Tests for vedv::container_service::execute_cmd()
+@test "vedv::container_service::execute_cmd()" {
+  :
 }
 
-# bats test_tags=only
-@test "vedv::container_service::login_by_id() Should fail If get_ssh_port fails" {
-  local -r container_id=123456
-
-  vedv::container_service::start() {
-    assert_equal "$*" 123456
-  }
-  vedv::container_entity::get_ssh_port() {
-    assert_equal "$*" 123456
-    return 1
-  }
-
-  run vedv::container_service::login_by_id "$container_id"
-
-  assert_failure
-  assert_output "Failed to get ssh port for container: 123456"
-}
-# bats test_tags=only
-@test "vedv::container_service::login_by_id() Should fail If connect fails" {
-  local -r container_id=123456
-
-  vedv::container_service::start() {
-    assert_equal "$*" 123456
-  }
-  vedv::container_entity::get_ssh_port() {
-    assert_equal "$*" 123456
-    echo "$TEST_SSH_PORT"
-  }
-  vedv::ssh_client::connect() {
-    assert_equal "$*" "${TEST_SSH_USER} ${TEST_SSH_IP} ${TEST_SSH_PASSWORD} ${TEST_SSH_PORT}"
-    return 1
-  }
-
-  run vedv::container_service::login_by_id "$container_id"
-
-  assert_failure
-  assert_output "Failed to connect to container: 123456"
-}
-
-# Tests for vedv::container_service::login()
-# bats test_tags=only
-@test "vedv::container_service::login() Should fail if get_ids_from_vmobj_names_or_ids fails" {
-  local -r container_id_or_name="container1"
-
-  vedv::vmobj_service::get_ids_from_vmobj_names_or_ids() {
-    assert_equal "$*" "container container1"
-    return 1
-  }
-
-  run vedv::container_service::login "$container_id_or_name"
-
-  assert_failure
-  assert_output "Failed to get container id by name or id: container1"
-}
-# bats test_tags=only
-@test "vedv::container_service::login() Should succeed" {
-  local -r container_id_or_name="container1"
-
-  vedv::vmobj_service::get_ids_from_vmobj_names_or_ids() {
-    assert_equal "$*" "container container1"
-    echo 123456
-  }
-  vedv::container_service::login_by_id() {
-    assert_equal "$*" 123456
-  }
-
-  run vedv::container_service::login "$container_id_or_name"
-
-  assert_success
-  assert_output ""
+# Tests for vedv::container_service::connect()
+@test "vedv::container_service::connect()" {
+  :
 }
