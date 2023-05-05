@@ -340,6 +340,53 @@ HELPMSG
 }
 
 #
+# Login to a container
+#
+# Flags:
+#   [-h | --help]       show help
+#
+# Arguments:
+#   CONTAINER           container name or id
+#
+# Output:
+#   writes any error to stderr
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::container_command::__login() {
+  if [[ $# == 0 ]]; then set -- '-h'; fi
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+    -h | --help)
+      vedv::container_command::__login_help
+      return 0
+      ;;
+    *)
+      vedv::container_service::login "$1"
+      return $?
+      ;;
+    esac
+  done
+}
+
+#
+# Show help for __login command
+#
+# Output:
+#  Writes the help to the stdout
+#
+vedv::container_command::__login_help() {
+  cat <<-HELPMSG
+Usage:
+${__VED_CONTAINER_COMMAND_SCRIPT_NAME} container login CONTAINER
+
+Login to a container
+HELPMSG
+}
+
+#
 # Show help
 #
 # Flags:
@@ -365,6 +412,7 @@ Commands:
   rm               Remove one or more containers
   stop             Stop one or more containers
   list             List containers
+  login            Login to a container
 
 Run '${__VED_CONTAINER_COMMAND_SCRIPT_NAME} container COMMAND --help' for more information on a command.
 HELPMSG
@@ -402,6 +450,11 @@ vedv::container_command::run_cmd() {
     ls | ps | list)
       shift
       vedv::container_command::__list "$@"
+      return $?
+      ;;
+    login)
+      shift
+      vedv::container_command::__login "$@"
       return $?
       ;;
     *)

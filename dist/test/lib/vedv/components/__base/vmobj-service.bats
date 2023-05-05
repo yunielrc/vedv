@@ -88,29 +88,29 @@ setup_file() {
   assert_output 'true'
 }
 
-# Tests for vedv::vmobj_service::__get_ids_from_vmobj_names_or_ids()
+# Tests for vedv::vmobj_service::get_ids_from_vmobj_names_or_ids()
 
-@test "vedv::vmobj_service::__get_ids_from_vmobj_names_or_ids() Should fail With invalid type" {
+@test "vedv::vmobj_service::get_ids_from_vmobj_names_or_ids() Should fail With invalid type" {
   local -r type='invalid'
   local -r vmobj_ids_or_names='name1 id1 name2 id2'
   # shellcheck disable=SC2086
-  run vedv::vmobj_service::__get_ids_from_vmobj_names_or_ids "$type" $vmobj_ids_or_names
+  run vedv::vmobj_service::get_ids_from_vmobj_names_or_ids "$type" $vmobj_ids_or_names
 
   assert_failure
   assert_output "Invalid type: invalid, valid types are: container|image"
 }
 
-@test "vedv::vmobj_service::__get_ids_from_vmobj_names_or_ids() Should fail With empty ids_or_names" {
+@test "vedv::vmobj_service::get_ids_from_vmobj_names_or_ids() Should fail With empty ids_or_names" {
   local -r type='container'
   local -r vmobj_ids_or_names=''
   # shellcheck disable=SC2086
-  run vedv::vmobj_service::__get_ids_from_vmobj_names_or_ids "$type" $vmobj_ids_or_names
+  run vedv::vmobj_service::get_ids_from_vmobj_names_or_ids "$type" $vmobj_ids_or_names
 
   assert_failure
   assert_output 'At least one container is required'
 }
 
-@test "vedv::vmobj_service::__get_ids_from_vmobj_names_or_ids() Should fail If get_id_by_vmobj_name fails" {
+@test "vedv::vmobj_service::get_ids_from_vmobj_names_or_ids() Should fail If get_id_by_vmobj_name fails" {
   local -r type='container'
   local -r vmobj_ids_or_names='name1 id1 name2 id2'
 
@@ -119,14 +119,14 @@ setup_file() {
     return 1
   }
   # shellcheck disable=SC2086
-  run vedv::vmobj_service::__get_ids_from_vmobj_names_or_ids "$type" $vmobj_ids_or_names
+  run vedv::vmobj_service::get_ids_from_vmobj_names_or_ids "$type" $vmobj_ids_or_names
 
   assert_failure
   assert_output "name1 id1 name2 id2
 Error getting vmobj id for containers: 'name1' 'id1' 'name2' 'id2' "
 }
 
-@test "vedv::vmobj_service::__get_ids_from_vmobj_names_or_ids() Should succeed" {
+@test "vedv::vmobj_service::get_ids_from_vmobj_names_or_ids() Should succeed" {
   local -r type='container'
   local -r vmobj_ids_or_names='name1 id2 name3 id4'
 
@@ -146,7 +146,7 @@ Error getting vmobj id for containers: 'name1' 'id1' 'name2' 'id2' "
     esac
   }
   # shellcheck disable=SC2086
-  run vedv::vmobj_service::__get_ids_from_vmobj_names_or_ids "$type" $vmobj_ids_or_names
+  run vedv::vmobj_service::get_ids_from_vmobj_names_or_ids "$type" $vmobj_ids_or_names
 
   assert_success
   assert_output "id1 id2 id3 id4"
@@ -181,7 +181,7 @@ Error getting vmobj id for containers: 'name1' 'id1' 'name2' 'id2' "
   local -r exec_func='func1'
   local -r vmobj_ids_or_names='name1 id2 name3 id4'
 
-  vedv::vmobj_service::__get_ids_from_vmobj_names_or_ids() {
+  vedv::vmobj_service::get_ids_from_vmobj_names_or_ids() {
     assert_equal "$*" 'container name1 id2 name3 id4'
     return 1
   }
@@ -202,7 +202,7 @@ Error getting vmobj id for containers: 'name1' 'id1' 'name2' 'id2' "
     return 1
   }
 
-  vedv::vmobj_service::__get_ids_from_vmobj_names_or_ids() {
+  vedv::vmobj_service::get_ids_from_vmobj_names_or_ids() {
     assert_equal "$*" 'container name1 id2 name3 id4'
     echo 'id1 id2 id3 id4'
   }
@@ -222,7 +222,7 @@ Error getting vmobj id for containers: 'name1' 'id1' 'name2' 'id2' "
     assert_regex "$*" '(id1|id2|id3|id4)'
   }
 
-  vedv::vmobj_service::__get_ids_from_vmobj_names_or_ids() {
+  vedv::vmobj_service::get_ids_from_vmobj_names_or_ids() {
     assert_equal "$*" 'container name1 id2 name3 id4'
     echo 'id1 id2 id3 id4'
   }

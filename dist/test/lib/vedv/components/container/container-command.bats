@@ -1,4 +1,4 @@
-# shellcheck disable=SC2016
+# shellcheck disable=SC2016,SC2317
 load test_helper
 
 setup_file() {
@@ -214,4 +214,47 @@ vedv::container_service::list() { echo "include stopped containers: ${1:-false}"
 
   assert_failure 69
   assert_output --partial 'Invalid argument: invalid_cmd'
+}
+
+# Tests for vedv::container_command::__login()
+@test "vedv::container_command::__login() Should show help with no args" {
+  vedv::container_service::login() {
+    assert_equal "$*" 'INVALID_CALL'
+  }
+  # Act
+  run vedv::container_command::__login
+  # Assert
+  assert_success
+  assert_output "Usage:
+vedv container login CONTAINER
+
+Login to a container"
+}
+
+@test "vedv::container_command::__login() Should show help" {
+  vedv::container_service::login() {
+    assert_equal "$*" 'INVALID_CALL'
+  }
+
+  for arg in '-h' '--help'; do
+    # Act
+    run vedv::container_command::__login "$arg"
+    # Assert
+    assert_success
+    assert_output "Usage:
+vedv container login CONTAINER
+
+Login to a container"
+  done
+}
+
+@test "vedv::container_command::__login() Should login" {
+  vedv::container_service::login() {
+    assert_equal "$*" 'container1'
+  }
+  # Act
+  run vedv::container_command::__login 'container1'
+  # Assert
+  assert_success
+  assert_output ""
 }

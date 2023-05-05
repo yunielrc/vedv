@@ -189,3 +189,23 @@ teardown_file() {
   assert_success
   assert_output "line1"
 }
+
+# Tests for vedv::ssh_client::connect()
+# bats test_tags=only
+@test "vedv::ssh_client::connect(), Should connect" {
+  local -r user="$TEST_SSH_USER"
+  local -r ip="$TEST_SSH_IP"
+  local -r password="$TEST_SSH_USER"
+  local -r port="$TEST_SSH_PORT"
+
+  __connect() {
+    vedv::ssh_client::connect "$user" "$ip" "$password" "$port" <<SSHEOF
+      uname
+SSHEOF
+  }
+
+  run __connect
+
+  assert_success
+  assert_line --index 1 "Linux"
+}

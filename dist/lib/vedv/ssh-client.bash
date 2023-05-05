@@ -182,3 +182,59 @@ vedv::ssh_client::wait_for_ssh_service() {
   done
   return 0
 }
+
+#
+# Connecto to a vm
+#
+# Arguments:
+#   user          virtual machine ip
+#   ip            ip
+#   password      password
+#   port          ssh port
+#
+# Output:
+#  Writes command output to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::ssh_client::connect() {
+  local -r user="$1"
+  local -r ip="$2"
+  local -r password="$3"
+  local -ri port=${4:-22}
+
+  if [[ -z "$user" ]]; then
+    err "Argument 'user' must not be empty"
+    return "$ERR_INVAL_ARG"
+  fi
+
+  if ! utils::valid_ip "$ip"; then
+    err "Invalid Argument 'ip': '${ip}'"
+    return "$ERR_INVAL_ARG"
+  fi
+
+  if [[ -z "$password" ]]; then
+    err "Argument 'password' must not be empty"
+    return "$ERR_INVAL_ARG"
+  fi
+
+  if ! utils::validate_port "$port"; then
+    err "Argument 'port' must be a value between 0-65535"
+    return "$ERR_INVAL_ARG"
+  fi
+
+  {
+    sshpass -p "$password" \
+      ssh -o 'ConnectTimeout=1' \
+      -o 'UserKnownHostsFile=/dev/null' \
+      -o 'PubkeyAuthentication=no' \
+      -o 'StrictHostKeyChecking=no' \
+      -p "$port" \
+      "${user}@${ip}"
+  } || {
+    err "Error on '${user}@${ip}', exit code: $?"
+    return "$ERR_SSH_OPERATION"
+  }
+  return 0
+}

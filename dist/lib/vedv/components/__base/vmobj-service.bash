@@ -85,7 +85,7 @@ vedv::vmobj_service::is_started() {
 # Returns:
 #   0 on success, non-zero on error.
 #
-vedv::vmobj_service::__get_ids_from_vmobj_names_or_ids() {
+vedv::vmobj_service::get_ids_from_vmobj_names_or_ids() {
   local -r type="$1"
   shift
   local -ra vmobj_ids_or_names=("$@")
@@ -156,7 +156,7 @@ vedv::vmobj_service::exec_func_on_many_vmobj() {
 
   local -a vmobj_ids
   # shellcheck disable=SC2207
-  vmobj_ids=($(vedv::vmobj_service::__get_ids_from_vmobj_names_or_ids "$type" "${names_or_ids[@]}")) || {
+  vmobj_ids=($(vedv::vmobj_service::get_ids_from_vmobj_names_or_ids "$type" "${names_or_ids[@]}")) || {
     err 'Error getting vmobj ids'
     return "$ERR_VMOBJ_OPERATION"
   }

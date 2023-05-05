@@ -67,7 +67,7 @@ Options:
   assert_failure
   assert_output --partial "Missing argument 'IMAGE'"
 }
-# bats test_tags=only
+
 @test "vedv container create --name container123 image1 image2, Should throw error If passing more than one image" {
 
   run vedv container create --name 'container123' 'image1' 'image2'
@@ -261,4 +261,23 @@ Options:
   assert_output "375138354 container123a
 339074491 container123b
 367882556 container123c"
+}
+
+# Tests for vedv container login
+# bats test_tags=only
+@test "vedv container login, Should login" {
+
+  vedv container create --name 'container123a' "$TEST_OVA_FILE"
+  vedv container start --wait 'container123a'
+
+  __login() {
+    vedv container login 'container123a' <<SSHEOF
+      uname
+SSHEOF
+  }
+
+  run __login
+
+  assert_success
+  assert_line --index 1 "Linux"
 }

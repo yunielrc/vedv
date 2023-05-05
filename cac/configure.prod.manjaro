@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euE
+set -eu
 
 # Install prod dependencies
 sudo pacman -Syu --noconfirm --needed yay

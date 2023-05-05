@@ -6,7 +6,7 @@
 
 set -eu
 
-# CODE COMPLETION
+# FOR CODE COMPLETION
 if false; then
   # __base
   . './../../lib/vedv/components/__base/vmobj-service.bash'
