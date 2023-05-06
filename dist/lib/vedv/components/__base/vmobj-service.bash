@@ -655,6 +655,7 @@ vedv::vmobj_service::list() {
 #   type       string     type (e.g. 'container|image')
 #   vmobj_id   string     vmobj id or name
 #   exec_func  string     function to execute
+#   [user]     string     vmobj user
 #
 # Output:
 #  writes command output to the stdout
@@ -666,6 +667,7 @@ vedv::vmobj_service::__exec_ssh_func() {
   local -r type="$1"
   local -r vmobj_id="$2"
   local -r exec_func="$3"
+  local -r user="${4:-"$__VEDV_VMOBJ_SERVICE_SSH_USER"}"
   # validate arguments
   vedv::vmobj_entity::validate_type "$type" ||
     return "$?"
@@ -677,6 +679,10 @@ vedv::vmobj_service::__exec_ssh_func() {
     err "Invalid argument 'exec_func': it's empty"
     return "$ERR_INVAL_ARG"
   fi
+  if [[ -z "$user" ]]; then
+    err "Invalid argument 'user': it's empty"
+    return "$ERR_INVAL_ARG"
+  fi
 
   vedv::vmobj_service::start_one "$type" true "$vmobj_id" >/dev/null || {
     err "Failed to start ${type}: ${vmobj_id}"
@@ -684,8 +690,6 @@ vedv::vmobj_service::__exec_ssh_func() {
   }
   # shellcheck disable=SC2034
   local -r ip="$__VEDV_VMOBJ_SERVICE_SSH_IP"
-  # shellcheck disable=SC2034
-  local -r user="$__VEDV_VMOBJ_SERVICE_SSH_USER"
   # shellcheck disable=SC2034
   local -r password="$__VEDV_VMOBJ_SERVICE_SSH_PASSWORD"
 
@@ -830,10 +834,11 @@ vedv::vmobj_service::connect() {
 # Copy files from local filesystem to a container
 #
 # Arguments:
-#   type                  string     type (e.g. 'container|image')
-#   vmobj_id  string     container id or name
-#   src                   string     local source path
-#   dest                  string     container destination path
+#   type      string     type (e.g. 'container|image')
+#   vmobj_id  string     vmobj id
+#   src       string     local source path
+#   dest      string     vmobj destination path
+#   [user]    string     user name
 #
 # Output:
 #  writes command output to the stdout
@@ -846,6 +851,7 @@ vedv::vmobj_service::copy_by_id() {
   local -r vmobj_id="$2"
   local -r src="$3"
   local -r dest="$4"
+  local -r user="${5:-}"
   # validate arguments
   vedv::vmobj_entity::validate_type "$type" ||
     return "$?"
@@ -871,7 +877,7 @@ vedv::vmobj_service::copy_by_id() {
 
   local -r exec_func="vedv::ssh_client::copy \"\$user\" \"\$ip\"  \"\$password\" \"\$port\" '${src}' '${dest}' ${vedvfileignore}"
 
-  vedv::vmobj_service::__exec_ssh_func "$type" "$vmobj_id" "$exec_func" || {
+  vedv::vmobj_service::__exec_ssh_func "$type" "$vmobj_id" "$exec_func" "$user" || {
     err "Failed to copy to ${type}: ${vmobj_id}"
     return "$ERR_VMOBJ_OPERATION"
   }
@@ -881,10 +887,11 @@ vedv::vmobj_service::copy_by_id() {
 # Copy files from local filesystem to a container
 #
 # Arguments:
-#   type      string     type (e.g. 'container|image')
-#   vmobj_id  string     container id or name
-#   src       string     local source path
-#   dest      string     container destination path
+#   type              string     type (e.g. 'container|image')
+#   vmobj_id_or_name  string     vmobj id or name
+#   src               string     local source path
+#   dest              string     vmobj destination path
+#   [user]            string     user name
 #
 # Output:
 #  writes command output to the stdout
@@ -897,11 +904,17 @@ vedv::vmobj_service::copy() {
   local -r vmobj_id_or_name="$2"
   local -r src="$3"
   local -r dest="$4"
+  local -r user="${5:-}"
 
   local vmobj_id
   vmobj_id="$(vedv::vmobj_service::get_ids_from_vmobj_names_or_ids "$type" "$vmobj_id_or_name")" || {
     err "Failed to get ${type} id by name or id: ${vmobj_id_or_name}"
     return "$ERR_VMOBJ_OPERATION"
   }
-  vedv::vmobj_service::copy_by_id "$type" "$vmobj_id" "$src" "$dest"
+  vedv::vmobj_service::copy_by_id \
+    "$type" \
+    "$vmobj_id" \
+    "$src" \
+    "$dest" \
+    "$user"
 }

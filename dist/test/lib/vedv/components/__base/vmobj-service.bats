@@ -1132,6 +1132,18 @@ EOF
   assert_output "Invalid argument 'exec_func': it's empty"
 }
 
+@test "vedv::vmobj_service::__exec_ssh_func(), Should fail With empty user" {
+  local -r type="container"
+  local -r vmobj_id=12345
+  local -r exec_func="exec_func"
+  __VEDV_VMOBJ_SERVICE_SSH_USER=""
+
+  run vedv::vmobj_service::__exec_ssh_func "$type" "$vmobj_id" "$exec_func"
+
+  assert_failure
+  assert_output "Invalid argument 'user': it's empty"
+}
+
 @test "vedv::vmobj_service::__exec_ssh_func(), Should fail If start_one fails" {
   local -r type="container"
   local -r vmobj_id=12345
@@ -1488,7 +1500,7 @@ EOF
     echo 12345
   }
   vedv::vmobj_service::copy_by_id() {
-    assert_equal "$*" "container 12345 src dest"
+    assert_equal "$*" "container 12345 src dest "
   }
 
   run vedv::vmobj_service::copy "$type" "$vmobj_id" "$src" "$dest"

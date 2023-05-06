@@ -507,6 +507,7 @@ vedv::container_service::connect() {
 #   container_id_or_name  string     container id or name
 #   src                   string     local source path
 #   dest                  string     container destination path
+#   [user]                string     container user
 #
 # Output:
 #  writes command output to the stdout
@@ -518,10 +519,13 @@ vedv::container_service::copy() {
   local -r container_id_or_name="$1"
   local -r src="$2"
   local -r dest="$3"
+  local -r user="${4:-}"
 
   vedv::vmobj_service::copy \
     'container' \
     "$container_id_or_name" \
     "$src" \
-    "$dest"
+    "$dest" \
+    "$user"
+
 }

@@ -313,7 +313,7 @@ Execute a command in a container"
 }
 
 # Tests for vedv::container_command::__copy()
-# bats test_tags=only
+
 @test "vedv::container_command::__copy() Should show help with no args" {
   vedv::container_service::copy() {
     assert_equal "$*" 'INVALID_CALL'
@@ -327,7 +327,7 @@ vedv container copy CONTAINER LOCAL_SRC CONTAINER_DEST
 
 Copy files from local filesystem to a container"
 }
-# bats test_tags=only
+
 @test "vedv::container_command::__copy() Should show help" {
   vedv::container_service::copy() {
     assert_equal "$*" 'INVALID_CALL'
@@ -345,6 +345,22 @@ Copy files from local filesystem to a container"
   done
 }
 # bats test_tags=only
+@test "vedv::container_command::__copy() Should show error when user is missing" {
+  vedv::container_service::copy() {
+    assert_equal "$*" 'container1 local_src container_dest'
+  }
+  # Act
+  run vedv::container_command::__copy --user
+  # Assert
+  assert_failure
+  assert_output "No user specified
+
+Usage:
+vedv container copy CONTAINER LOCAL_SRC CONTAINER_DEST
+
+Copy files from local filesystem to a container"
+}
+
 @test "vedv::container_command::__copy() Should show error when src is missing" {
   vedv::container_service::copy() {
     assert_equal "$*" 'container1 local_src container_dest'
@@ -360,7 +376,7 @@ vedv container copy CONTAINER LOCAL_SRC CONTAINER_DEST
 
 Copy files from local filesystem to a container"
 }
-# bats test_tags=only
+
 @test "vedv::container_command::__copy() Should show error when dest is missing" {
   vedv::container_service::copy() {
     assert_equal "$*" 'container1 local_src container_dest'

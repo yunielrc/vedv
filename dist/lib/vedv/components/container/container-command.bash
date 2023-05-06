@@ -463,6 +463,9 @@ HELPMSG
 # Flags:
 #   [-h | --help]       show help
 #
+# Options:
+#   [-u, --user]        user to use for copy
+#
 # Arguments:
 #   CONTAINER           container name or id
 #   SRC                 source file or directory
@@ -475,6 +478,8 @@ HELPMSG
 #   0 on success, non-zero on error.
 #
 vedv::container_command::__copy() {
+  local user=''
+
   if [[ $# == 0 ]]; then set -- '-h'; fi
 
   while [[ $# -gt 0 ]]; do
@@ -482,6 +487,21 @@ vedv::container_command::__copy() {
     -h | --help)
       vedv::container_command::__copy_help
       return 0
+      ;;
+    --root | --sudo)
+      shift
+      set -- '-u' 'root' "$@"
+      ;;
+    -u | --user)
+      shift
+      user="${1:-}"
+      # validate argument
+      if [[ -z "$user" ]]; then
+        err "No user specified\n"
+        vedv::container_command::__copy_help
+        return "$ERR_INVAL_ARG"
+      fi
+      shift
       ;;
     *)
       local container_name_or_id="$1"
@@ -499,7 +519,7 @@ vedv::container_command::__copy() {
         return "$ERR_INVAL_ARG"
       fi
 
-      vedv::container_service::copy "$container_name_or_id" "$src" "$dest"
+      vedv::container_service::copy "$container_name_or_id" "$src" "$dest" "$user"
       return $?
       ;;
     esac
