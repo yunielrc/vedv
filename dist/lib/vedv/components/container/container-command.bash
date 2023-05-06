@@ -461,15 +461,16 @@ HELPMSG
 # Copy files from local filesystem to a container
 #
 # Flags:
-#   [-h | --help]       show help
+#   -h | --help               show help
+#   --root                    use root user for copy
 #
 # Options:
-#   [-u, --user]        user to use for copy
+#   -u, --user <user> string    user to use for copy
 #
 # Arguments:
-#   CONTAINER           container name or id
-#   SRC                 source file or directory
-#   DEST                destination file or directory
+#   CONTAINER         string    container name or id
+#   SRC               string    source file or directory
+#   DEST              string    destination file or directory
 #
 # Output:
 #   writes any error to stderr
@@ -488,7 +489,7 @@ vedv::container_command::__copy() {
       vedv::container_command::__copy_help
       return 0
       ;;
-    --root | --sudo)
+    --root)
       shift
       set -- '-u' 'root' "$@"
       ;;

@@ -7,4 +7,5 @@ dfp = DockerfileParser()
 dfp.dockerfile_path = sys.argv[1]
 
 for item in dfp.structure:
-    print(item['instruction'], item['value'])
+    if item['instruction'] != 'COMMENT':
+        print(item['instruction'], item['value'])
