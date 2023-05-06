@@ -51,8 +51,9 @@ vedv::ssh_client::run_cmd() {
       -o 'UserKnownHostsFile=/dev/null' \
       -o 'PubkeyAuthentication=no' \
       -o 'StrictHostKeyChecking=no' \
+      -o 'LogLevel=ERROR' \
       -p "$port" \
-      "${user}@${ip}" 2>/dev/null <<SSHEOF
+      "${user}@${ip}" <<SSHEOF
          eval "$cmd"
 SSHEOF
   } || {
@@ -121,8 +122,8 @@ vedv::ssh_client::copy() {
     # shellcheck disable=SC2086
     IFS='' rsync -az \
       --exclude-from="$exclude_file_path" \
-      -e "sshpass -p ${password} ssh -o 'ConnectTimeout=1' -o 'UserKnownHostsFile=/dev/null'  -o 'PubkeyAuthentication=no' -o 'StrictHostKeyChecking=no' -p ${port}" \
-      $source "${user}@${ip}:${dest}" &>/dev/null
+      -e "sshpass -p ${password} ssh -o 'ConnectTimeout=1' -o 'UserKnownHostsFile=/dev/null'  -o 'PubkeyAuthentication=no' -o 'StrictHostKeyChecking=no' -o 'LogLevel=ERROR' -p ${port}" \
+      $source "${user}@${ip}:${dest}"
   } || {
     err "Error on '${user}@${ip}', rsync exit code: $?"
     return "$ERR_SSH_OPERATION"
@@ -230,6 +231,7 @@ vedv::ssh_client::connect() {
       -o 'UserKnownHostsFile=/dev/null' \
       -o 'PubkeyAuthentication=no' \
       -o 'StrictHostKeyChecking=no' \
+      -o 'LogLevel=ERROR' \
       -p "$port" \
       "${user}@${ip}"
   } || {

@@ -36,12 +36,15 @@ readonly __VEDV_CONFIG="${__VEDV_CONFIG_DIR}/vedv.env"
 if [[ -f "$__VEDV_CONFIG" ]]; then source "$__VEDV_CONFIG"; fi
 
 # ENVIRONMENT
-: "${VEDV_HADOLINT_ENABLED:="${HADOLINT_ENABLED:-true}"}"
-: "${VEDV_HADOLINT_CONFIG:="${HADOLINT_CONFIG:-"${__VEDV_CONFIG_DIR}/hadolint.yaml"}"}"
-: "${VEDV_SSH_USER:="${SSH_USER:-vedv}"}"
-: "${VEDV_SSH_PASSWORD:="${SSH_PASSWORD:-"$VEDV_SSH_USER"}"}"
-: "${VEDV_SSH_IP:="${SSH_IP:-127.0.0.1}"}"
-: "${VEDV_BASE_VEDVFILEIGNORE:="${BASE_VEDVFILEIGNORE:-"${__VEDV_CONFIG_DIR}/vedvfileignore"}"}"
+# scheme:        VAR="${ENVIRONMENT_VAR:-"${CONFIG_VAR:-default}"}"
+# e.g.: readonly VEDV_VAR="${VEDV_VAR:-"${VAR:-default}"}"
+readonly VEDV_HADOLINT_ENABLED="${VEDV_HADOLINT_ENABLED:-"${HADOLINT_ENABLED:-true}"}"
+readonly VEDV_HADOLINT_CONFIG="${VEDV_HADOLINT_CONFIG:-"${HADOLINT_CONFIG:-"${__VEDV_CONFIG_DIR}/hadolint.yaml"}"}"
+readonly VEDV_SSH_USER="${VEDV_SSH_USER:-"${SSH_USER:-vedv}"}"
+readonly VEDV_SSH_PASSWORD="${VEDV_SSH_PASSWORD:-"${SSH_PASSWORD:-"$VEDV_SSH_USER"}"}"
+readonly VEDV_SSH_IP="${VEDV_SSH_IP:-"${SSH_IP:-127.0.0.1}"}"
+readonly VEDV_BASE_VEDVFILEIGNORE="${VEDV_BASE_VEDVFILEIGNORE:-"${BASE_VEDVFILEIGNORE:-"${__VEDV_CONFIG_DIR}/vedvfileignore"}"}"
+readonly VEDV_HYPERVISOR_FRONTEND="${VEDV_HYPERVISOR_FRONTEND:-"${HYPERVISOR_FRONTEND:-headless}"}"
 
 # INCLUDE
 . "${__VEDV_LIB_PATH}/utils.bash"
@@ -106,6 +109,7 @@ vedv::__run_cmd() {
   . "${__VEDV_HYPERVISORS_PATH}/${hypervisor}.bash"
 
   # initialize components
+  vedv::hypervisor::constructor "$VEDV_HYPERVISOR_FRONTEND"
 
   local vedvfileignore_path=''
 
@@ -154,7 +158,7 @@ vedv::__run_cmd() {
     # COMMANDS
     image)
       shift
-      vedv::image_command::run_cmd "$@" # implemented
+      vedv::image_command::run_cmd "$@"
       return $?
       ;;
     container)

@@ -5,7 +5,33 @@
 # REQUIRE
 # . '../../utils.bash'
 
+# CONSTANTS
+readonly VEDV_HYPERVISOR_FRONTEND_HEADLESS='headless'
+readonly VEDV_HYPERVISOR_FRONTEND_GUI='gui'
+
+# VARIABLES
+__VEDV_HYPERVISOR_FRONTEND="$VEDV_HYPERVISOR_FRONTEND_HEADLESS"
+
 # FUNCTIONS
+
+#
+# Constructor
+#
+# Arguments:
+#   [frontend]  string    hypervisor frontend
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::hypervisor::constructor() {
+  readonly __VEDV_HYPERVISOR_FRONTEND="${1:-"$VEDV_HYPERVISOR_FRONTEND_HEADLESS"}"
+  # validate arguments
+  if [[ "$__VEDV_HYPERVISOR_FRONTEND" != "$VEDV_HYPERVISOR_FRONTEND_HEADLESS" &&
+    "$__VEDV_HYPERVISOR_FRONTEND" != "$VEDV_HYPERVISOR_FRONTEND_GUI" ]]; then
+    err "Invalid hypervisor frontend: '${__VEDV_HYPERVISOR_FRONTEND}'"
+    return "$ERR_INVAL_ARG"
+  fi
+}
 
 #
 # Validate vm name
@@ -301,7 +327,7 @@ vedv::virtualbox::delete_snapshot() { vedv::hypervisor::delete_snapshot "$@"; }
 vedv::hypervisor::start() {
   local -r vm_name="$1"
 
-  VBoxManage startvm "$vm_name"
+  VBoxManage startvm "$vm_name" --type "$__VEDV_HYPERVISOR_FRONTEND"
 }
 vedv::virtualbox::start() { vedv::hypervisor::start "$@"; }
 
