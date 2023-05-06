@@ -538,6 +538,13 @@ Usage:
 ${__VED_CONTAINER_COMMAND_SCRIPT_NAME} container copy CONTAINER LOCAL_SRC CONTAINER_DEST
 
 Copy files from local filesystem to a container
+
+Flags:
+  -h, --help        show help
+  --root            copy as root user
+
+Options:
+  -u, --user        copy as specific user
 HELPMSG
 }
 
