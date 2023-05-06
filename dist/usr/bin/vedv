@@ -45,6 +45,7 @@ readonly VEDV_SSH_PASSWORD="${VEDV_SSH_PASSWORD:-"${SSH_PASSWORD:-"$VEDV_SSH_USE
 readonly VEDV_SSH_IP="${VEDV_SSH_IP:-"${SSH_IP:-127.0.0.1}"}"
 readonly VEDV_BASE_VEDVFILEIGNORE="${VEDV_BASE_VEDVFILEIGNORE:-"${BASE_VEDVFILEIGNORE:-"${__VEDV_CONFIG_DIR}/vedvfileignore"}"}"
 readonly VEDV_HYPERVISOR_FRONTEND="${VEDV_HYPERVISOR_FRONTEND:-"${HYPERVISOR_FRONTEND:-headless}"}"
+readonly VEDV_DEFAULT_HYPERVISOR="${VEDV_DEFAULT_HYPERVISOR:-"${DEFAULT_HYPERVISOR:-virtualbox}"}"
 
 # INCLUDE
 . "${__VEDV_LIB_PATH}/utils.bash"
@@ -101,7 +102,7 @@ vedv::__run_cmd() {
     readonly hypervisor='qemu'
     ;;
   *)
-    readonly hypervisor='virtualbox'
+    readonly hypervisor="$VEDV_DEFAULT_HYPERVISOR"
     ;;
   esac
 
