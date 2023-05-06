@@ -5,28 +5,27 @@ setup_file() {
   vedv::image_builder::constructor \
     "$TEST_SSH_USER" \
     "$TEST_SSH_PASSWORD" \
-    "$TEST_SSH_IP" \
-    "$TEST_BASE_VEDVFILEIGNORE" \
-    "$TEST_VEDVFILEIGNORE"
+    "$TEST_SSH_IP"
 
   export __VEDV_IMAGE_BUILDER_SSH_USER
   export __VEDV_IMAGE_BUILDER_SSH_PASSWORD
   export __VEDV_IMAGE_BUILDER_SSH_IP
-  export __VEDV_IMAGE_BUILDER_BASE_VEDVFILEIGNORE_PATH
-  export __VEDV_IMAGE_BUILDER_VEDVFILEIGNORE_PATH
 }
 
 @test 'vedv::image_builder::constructor() Should succeed' {
   :
 }
 
-# Test for vedv:image_builder::__get_joined_vedvfileignore()
-@test 'vedv:image_builder::__get_joined_vedvfileignore() should return success and write the file path to stdout' {
-  local __VEDV_IMAGE_BUILDER_VEDVFILEIGNORE_PATH="dist/test/lib/vedv/components/image/fixtures/.vedvfileignore"
-  run vedv:image_builder::__get_joined_vedvfileignore
+vedv:image_vedvfile_service::get_joined_vedvfileignore() {
+  echo "$TEST_BASE_VEDVFILEIGNORE"
+}
 
-  assert_success
-  assert_output --partial "/tmp/tmp."
+vedv:image_vedvfile_service::get_base_vedvfileignore_path() {
+  echo "$TEST_BASE_VEDVFILEIGNORE"
+}
+
+vedv:image_vedvfile_service::get_vedvfileignore_path() {
+  echo "$TEST_VEDVFILEIGNORE"
 }
 
 # Tests for vedv::image_builder::__create_layer()

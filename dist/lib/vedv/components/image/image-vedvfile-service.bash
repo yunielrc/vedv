@@ -218,3 +218,23 @@ vedv:image_vedvfile_service::get_joined_vedvfileignore() {
 
   echo "$vedvfileignore_path"
 }
+
+#
+# Return the base vedvfileignore path
+#
+# Output:
+#  Writes the file path to stdout
+#
+vedv:image_vedvfile_service::get_base_vedvfileignore_path() {
+  echo "$__VEDV_IMAGE_VEDVFILE_BASE_VEDVFILEIGNORE_PATH"
+}
+
+#
+# Return the vedvfileignore path
+#
+# Output:
+#  Writes the file path to stdout
+#
+vedv:image_vedvfile_service::get_vedvfileignore_path() {
+  echo "$__VEDV_IMAGE_VEDVFILE_VEDVFILEIGNORE_PATH"
+}

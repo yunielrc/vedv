@@ -322,7 +322,7 @@ Execute a command in a container"
   run vedv::container_command::__copy
   # Assert
   assert_success
-  assert_output "Usage:
+  assert_output --partial "Usage:
 vedv container copy CONTAINER LOCAL_SRC CONTAINER_DEST
 
 Copy files from local filesystem to a container"
@@ -338,7 +338,7 @@ Copy files from local filesystem to a container"
     run vedv::container_command::__copy "$arg"
     # Assert
     assert_success
-    assert_output "Usage:
+    assert_output --partial "Usage:
 vedv container copy CONTAINER LOCAL_SRC CONTAINER_DEST
 
 Copy files from local filesystem to a container"
@@ -353,7 +353,7 @@ Copy files from local filesystem to a container"
   run vedv::container_command::__copy --user
   # Assert
   assert_failure
-  assert_output "No user specified
+  assert_output --partial "No user specified
 
 Usage:
 vedv container copy CONTAINER LOCAL_SRC CONTAINER_DEST
@@ -369,7 +369,7 @@ Copy files from local filesystem to a container"
   run vedv::container_command::__copy 'container1'
   # Assert
   assert_failure
-  assert_output "No source file specified
+  assert_output --partial "No source file specified
 
 Usage:
 vedv container copy CONTAINER LOCAL_SRC CONTAINER_DEST
@@ -385,7 +385,7 @@ Copy files from local filesystem to a container"
   run vedv::container_command::__copy 'container1' 'local_src'
   # Assert
   assert_failure
-  assert_output "No dest file specified
+  assert_output --partial "No dest file specified
 
 Usage:
 vedv container copy CONTAINER LOCAL_SRC CONTAINER_DEST

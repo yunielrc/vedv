@@ -4,15 +4,11 @@ setup_file() {
   vedv::image_builder::constructor \
     "$TEST_SSH_USER" \
     "$TEST_SSH_PASSWORD" \
-    "$TEST_SSH_IP" \
-    "$TEST_BASE_VEDVFILEIGNORE" \
-    "$TEST_VEDVFILEIGNORE"
+    "$TEST_SSH_IP"
 
   export __VEDV_IMAGE_BUILDER_SSH_USER
   export __VEDV_IMAGE_BUILDER_SSH_PASSWORD
   export __VEDV_IMAGE_BUILDER_SSH_IP
-  export __VEDV_IMAGE_BUILDER_BASE_VEDVFILEIGNORE_PATH
-  export __VEDV_IMAGE_BUILDER_VEDVFILEIGNORE_PATH
 
   vedv::image_vedvfile_service::constructor \
     "$TEST_HADOLINT_CONFIG" \
