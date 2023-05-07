@@ -1,17 +1,6 @@
 # shellcheck disable=SC2317,SC2034,SC2031,SC2030
 load test_helper
 
-setup_file() {
-  vedv::image_builder::constructor \
-    "$TEST_SSH_USER" \
-    "$TEST_SSH_PASSWORD" \
-    "$TEST_SSH_IP"
-
-  export __VEDV_IMAGE_BUILDER_SSH_USER
-  export __VEDV_IMAGE_BUILDER_SSH_PASSWORD
-  export __VEDV_IMAGE_BUILDER_SSH_IP
-}
-
 @test 'vedv::image_builder::constructor() Should succeed' {
   :
 }
@@ -359,77 +348,6 @@ vedv:image_vedvfile_service::get_vedvfileignore_path() {
   assert_output "Invalid command name 'RUN', it must be 'COPY'"
 }
 
-@test "vedv::image_builder::__layer_execute_cmd(), Should fail checking if image is started" {
-  local -r image_id="dummy_id"
-  local -r cmd="1 COPY dummy_source dummy_dest"
-  local -r caller_command='COPY'
-  local -r exec_func=':'
-  # Stub
-  utils::get_arg_from_string() {
-    assert_equal "$*" "${cmd} 2"
-    echo "COPY"
-  }
-  vedv::image_service::is_started() {
-    assert_equal "$*" "$image_id"
-    return "$ERR_HYPERVISOR_OPERATION"
-  }
-
-  run vedv::image_builder::__layer_execute_cmd "$image_id" "$cmd" "$caller_command" "$exec_func"
-
-  assert_failure "$ERR_IMAGE_BUILDER_OPERATION"
-  assert_output "Failed to check if image '${image_id}' is started"
-}
-
-@test "vedv::image_builder::__layer_execute_cmd(), Should fail If image vm is not started" {
-  local -r image_id="dummy_id"
-  local -r cmd="1 COPY dummy_source dummy_dest"
-  local -r caller_command='COPY'
-  local -r exec_func=':'
-  # Stub
-  utils::get_arg_from_string() {
-    assert_equal "$*" "${cmd} 2"
-    echo "COPY"
-  }
-  vedv::image_service::is_started() {
-    assert_equal "$*" "$image_id"
-    echo false
-  }
-
-  run vedv::image_builder::__layer_execute_cmd "$image_id" "$cmd" "$caller_command" "$exec_func"
-
-  assert_failure "$ERR_IMAGE_BUILDER_OPERATION"
-  assert_output "Image '${image_id}' is not started"
-}
-
-@test "vedv::image_builder::__layer_execute_cmd(), Should fail With get_ssh_port failure" {
-  local -r image_id="dummy_id"
-  local -r cmd="1 COPY dummy_source dummy_dest"
-  local -r caller_command='COPY'
-  local -r exec_func=':'
-  # Stub
-  utils::get_arg_from_string() {
-    assert_equal "$*" "${cmd} 2"
-    echo "COPY"
-  }
-  vedv::image_service::is_started() {
-    assert_equal "$*" "$image_id"
-    echo true
-  }
-  vedv::image_builder::__create_layer() {
-    assert_equal "$*" "${image_id} ${cmd}"
-    echo "layer_id"
-  }
-  vedv::image_entity::get_ssh_port() {
-    assert_equal "$*" "$image_id"
-    return 1
-  }
-
-  run vedv::image_builder::__layer_execute_cmd "$image_id" "$cmd" "$caller_command" "$exec_func"
-
-  assert_failure "$ERR_IMAGE_BUILDER_OPERATION"
-  assert_output "Failed to get ssh port for image '${image_id}'"
-}
-
 @test "vedv::image_builder::__layer_execute_cmd(), Should fail If get_last_layer_id fail" {
   local -r image_id="dummy_id"
   local -r cmd="1 COPY dummy_source dummy_dest"
@@ -443,10 +361,6 @@ vedv:image_vedvfile_service::get_vedvfileignore_path() {
   vedv::image_service::is_started() {
     assert_equal "$*" "$image_id"
     echo true
-  }
-  vedv::image_entity::get_ssh_port() {
-    assert_equal "$*" "$image_id"
-    echo "$TEST_SSH_PORT"
   }
   vedv::image_entity::get_last_layer_id() {
     assert_equal "$*" "$image_id"
@@ -477,10 +391,6 @@ vedv:image_vedvfile_service::get_vedvfileignore_path() {
     assert_equal "$*" "${image_id} ${cmd}"
     echo "layer_id"
   }
-  vedv::image_entity::get_ssh_port() {
-    assert_equal "$*" "$image_id"
-    echo "$TEST_SSH_PORT"
-  }
   vedv::image_entity::get_last_layer_id() {
     assert_equal "$*" "$image_id"
     echo "last_layer_id"
@@ -508,10 +418,6 @@ vedv:image_vedvfile_service::get_vedvfileignore_path() {
   vedv::image_service::is_started() {
     assert_equal "$*" "$image_id"
     echo true
-  }
-  vedv::image_entity::get_ssh_port() {
-    assert_equal "$*" "$image_id"
-    echo "$TEST_SSH_PORT"
   }
   vedv::image_entity::get_last_layer_id() {
     assert_equal "$*" "$image_id"
@@ -542,10 +448,6 @@ Failed to execute command '1 COPY dummy_source dummy_dest'"
   vedv::image_service::is_started() {
     assert_equal "$*" "$image_id"
     echo true
-  }
-  vedv::image_entity::get_ssh_port() {
-    assert_equal "$*" "$image_id"
-    echo "$TEST_SSH_PORT"
   }
   vedv::image_entity::get_last_layer_id() {
     assert_equal "$*" "$image_id"
@@ -578,10 +480,6 @@ Failed to execute command '1 COPY dummy_source dummy_dest'"
   vedv::image_service::is_started() {
     assert_equal "$*" "$image_id"
     echo true
-  }
-  vedv::image_entity::get_ssh_port() {
-    assert_equal "$*" "$image_id"
-    echo "$TEST_SSH_PORT"
   }
   vedv::image_entity::get_last_layer_id() {
     assert_equal "$*" "$image_id"

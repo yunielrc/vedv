@@ -125,13 +125,6 @@ vedv::__run_cmd() {
     "$VEDV_BASE_VEDVFILEIGNORE" \
     "$vedvfileignore_path"
 
-  vedv::image_builder::constructor \
-    "$VEDV_SSH_USER" \
-    "$VEDV_SSH_PASSWORD" \
-    "$VEDV_SSH_IP" \
-    "$VEDV_BASE_VEDVFILEIGNORE" \
-    "$vedvfileignore_path"
-
   local -r vmobj_types='container|image'
   # shellcheck disable=SC2034
   local -r -A vmobj_types_attributes_dict=(

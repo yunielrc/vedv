@@ -17,19 +17,13 @@ fi
 # Constructor
 #
 # Arguments:
-#   ssh_user                  string    ssh user
-#   ssh_password              string    ssh password
-#   ssh_ip                    string    ssh ip
-#
 #
 # Returns:
 #   0 on success, non-zero on error.
 #
-vedv::image_builder::constructor() {
-  readonly __VEDV_IMAGE_BUILDER_SSH_USER="$1"
-  readonly __VEDV_IMAGE_BUILDER_SSH_PASSWORD="$2"
-  readonly __VEDV_IMAGE_BUILDER_SSH_IP="$3"
-}
+# vedv::image_builder::constructor() {
+
+# }
 
 #
 # Create layer
@@ -154,10 +148,10 @@ vedv::image_builder::__calc_command_layer_id() {
 #  The image must be started and running
 #
 # Arguments:
-#   image_id string         image where the files will be copy
-#   cmd string                copy command (e.g. "1 COPY source/ dest/")
-#   caller_command string   caller command (e.g. "RUN" | "COPY" |...)
-#   exec_func string        function that will be executed to execute the command
+#   image_id        string   image where the files will be copy
+#   cmd             string   copy command (e.g. "1 COPY source/ dest/")
+#   caller_command  string   caller command (e.g. "RUN" | "COPY" |...)
+#   exec_func       string   function that will be executed to execute the command
 #
 # Output:
 #  Writes layer_id (string) to the stdout
@@ -200,33 +194,6 @@ vedv::image_builder::__layer_execute_cmd() {
     err "Invalid command name '${cmd_name}', it must be '${caller_command}'"
     return "$ERR_INVAL_ARG"
   fi
-
-  local is_started
-  is_started="$(vedv::image_service::is_started "$image_id")" || {
-    err "Failed to check if image '${image_id}' is started"
-    return "$ERR_IMAGE_BUILDER_OPERATION"
-  }
-  readonly is_started
-
-  if [[ "$is_started" == false ]]; then
-    err "Image '${image_id}' is not started"
-    return "$ERR_IMAGE_BUILDER_OPERATION"
-  fi
-
-  # shellcheck disable=SC2034
-  local -r user="$__VEDV_IMAGE_BUILDER_SSH_USER"
-  # shellcheck disable=SC2034
-  local -r ip="$__VEDV_IMAGE_BUILDER_SSH_IP"
-  # shellcheck disable=SC2034
-  local -r password="$__VEDV_IMAGE_BUILDER_SSH_PASSWORD"
-
-  local -i port
-  port="$(vedv::image_entity::get_ssh_port "$image_id")" || {
-    err "Failed to get ssh port for image '${image_id}'"
-    return "$ERR_IMAGE_BUILDER_OPERATION"
-  }
-  # shellcheck disable=SC2034
-  readonly port
 
   local last_layer_id
   last_layer_id="$(vedv::image_entity::get_last_layer_id "$image_id")" || {
@@ -560,14 +527,10 @@ vedv::image_builder::__layer_copy() {
     return "$ERR_INVAL_VALUE"
   fi
 
-  local vedvfileignore
-  vedvfileignore="$(vedv:image_vedvfile_service::get_joined_vedvfileignore)" || {
-    err "Failed to get joined vedvfileignore"
-    return "$ERR_IMAGE_BUILDER_OPERATION"
-  }
-  readonly vedvfileignore
+  # TODO: parse this option from cmd if it is present
+  local -r user=''
 
-  local -r exec_func="vedv::ssh_client::copy \"\$user\" \"\$ip\"  \"\$password\" \"\$port\" '${_source}' '${dest}' '${vedvfileignore}'"
+  local -r exec_func="vedv::image_service::copy '${image_id}' '${_source}' '${dest}' '${user}'"
 
   vedv::image_builder::__layer_execute_cmd "$image_id" "$cmd" "COPY" "$exec_func" || {
     err "Failed to execute command '$cmd'"
@@ -647,8 +610,7 @@ vedv::image_builder::__layer_run() {
     return "$ERR_INVAL_ARG"
   fi
 
-  local -r exec_func="vedv::ssh_client::run_cmd \"\$user\" \"\$ip\"  \"\$password\" '$cmd_body' \"\$port\""
-
+  local -r exec_func="vedv::image_service::execute_cmd '${image_id}' '${cmd_body}'"
   vedv::image_builder::__layer_execute_cmd "$image_id" "$cmd" "RUN" "$exec_func"
 }
 

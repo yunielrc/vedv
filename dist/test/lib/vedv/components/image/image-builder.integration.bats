@@ -1,15 +1,6 @@
 load test_helper
 
 setup_file() {
-  vedv::image_builder::constructor \
-    "$TEST_SSH_USER" \
-    "$TEST_SSH_PASSWORD" \
-    "$TEST_SSH_IP"
-
-  export __VEDV_IMAGE_BUILDER_SSH_USER
-  export __VEDV_IMAGE_BUILDER_SSH_PASSWORD
-  export __VEDV_IMAGE_BUILDER_SSH_IP
-
   vedv::image_vedvfile_service::constructor \
     "$TEST_HADOLINT_CONFIG" \
     false \

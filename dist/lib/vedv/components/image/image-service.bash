@@ -560,6 +560,58 @@ vedv::image_service::restore_layer() {
 }
 
 #
+# Execute cmd in a image
+#
+# Arguments:
+#   image_id  string     image id or name
+#   cmd       string     command to execute
+#
+# Output:
+#  writes command output to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::image_service::execute_cmd() {
+  local -r image_id="$1"
+  local -r cmd="$2"
+
+  vedv::vmobj_service::execute_cmd_by_id \
+    'image' \
+    "$image_id" \
+    "$cmd"
+}
+
+#
+# Copy files from local filesystem to a image
+#
+# Arguments:
+#   image_id  string     image id or name
+#   src       string     local source path
+#   dest      string     image destination path
+#   [user]    string     image user
+#
+# Output:
+#  writes command output to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::image_service::copy() {
+  local -r image_id="$1"
+  local -r src="$2"
+  local -r dest="$3"
+  local -r user="${4:-}"
+
+  vedv::vmobj_service::copy_by_id \
+    'image' \
+    "$image_id" \
+    "$src" \
+    "$dest" \
+    "$user"
+}
+
+#
 # Build an image from a Vedvfile,
 #
 # Arguments:

@@ -1271,3 +1271,13 @@ EOF
   assert_success
   assert_output ""
 }
+
+# Tests for vedv::image_service::copy()
+@test "vedv::image_service::copy(): NO TEST" {
+  :
+}
+
+# Tests for vedv::image_service::execute_cmd()
+@test "vedv::image_service::execute_cmd(): NO TEST" {
+  :
+}
