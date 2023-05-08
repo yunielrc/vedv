@@ -404,6 +404,7 @@ vedv::image_builder::__validate_layer_from() {
 #
 vedv::image_builder::__layer_copy_calc_id() {
   local -r cmd="$1"
+  shift
   # validate arguments
   if [[ -z "$cmd" ]]; then
     err "Argument 'cmd' is required"
@@ -426,12 +427,34 @@ vedv::image_builder::__layer_copy_calc_id() {
   crc_sum_cmd="$(utils::crc_sum <<<"$cmd")"
   readonly crc_sum_cmd
 
-  local _source
-  _source="$(utils::get_arg_from_string "$cmd" 3)" || {
-    err "Failed to get _source from cmd: '$cmd'"
-    return "$ERR_IMAGE_BUILDER_OPERATION"
-  }
-  readonly _source
+  local _source=''
+  # extract arguments
+  local -a cmd_arr
+  IFS=' ' read -r -a cmd_arr <<<"$cmd"
+  # ...:2 skip the command id and name
+  # 1 COPY --root source/ dest/ -> --root source/ dest/
+  set -- "${cmd_arr[@]:2}"
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+    # flags
+    --root)
+      shift
+      ;;
+    # parameters
+    -u | --user)
+      shift
+      if [[ -n "${1:-}" ]]; then
+        shift # user name
+      fi
+      ;;
+    # arguments
+    *)
+      _source="${1:-}"
+      break
+      ;;
+    esac
+  done
 
   if [[ -z "$_source" ]]; then
     err "_source' must not be empty"
@@ -484,8 +507,8 @@ vedv::image_builder::__layer_copy_calc_id() {
 #  The image must be started and running
 #
 # Arguments:
-#   image_id string       image where the files will be copy
-#   cmd string              copy command (e.g. "1 COPY source/ dest/")
+#   image_id  string       image where the files will be copy
+#   cmd       string       copy command (e.g. "1 COPY --root source/ dest/")
 #
 # Returns:
 #   0 on success, non-zero on error.
@@ -493,7 +516,8 @@ vedv::image_builder::__layer_copy_calc_id() {
 vedv::image_builder::__layer_copy() {
   local -r image_id="$1"
   local -r cmd="$2"
-
+  shift 2
+  # validate arguments
   if [[ -z "$image_id" ]]; then
     err "Argument 'image_id' is required"
     return "$ERR_INVAL_ARG"
@@ -503,34 +527,53 @@ vedv::image_builder::__layer_copy() {
     return "$ERR_INVAL_ARG"
   fi
 
-  local _source
-  _source="$(utils::get_arg_from_string "$cmd" 3)" || {
-    err "Failed to get _source from cmd: '$cmd'"
-    return "$ERR_IMAGE_BUILDER_OPERATION"
-  }
-  readonly _source
+  local src=''
+  local dest=''
+  local user=''
+  # extract arguments
+  local -a cmd_arr
+  IFS=' ' read -r -a cmd_arr <<<"$cmd"
+  # ...:2 skip the command id and name
+  # 1 COPY --root source/ dest/ -> --root source/ dest/
+  set -- "${cmd_arr[@]:2}"
 
-  if [[ -z "$_source" ]]; then
-    err "_source' must not be empty"
-    return "$ERR_INVAL_VALUE"
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+    # flags
+    --root)
+      shift
+      set -- '-u' 'root' "$@"
+      ;;
+    # parameters
+    -u | --user)
+      shift
+      user="${1:-}"
+      # validate argument
+      if [[ -z "$user" ]]; then
+        err "Argument 'user' no specified"
+        return "$ERR_INVAL_ARG"
+      fi
+      shift
+      ;;
+    # arguments
+    *)
+      src="${1:-}"
+      dest="${2:-}"
+      break
+      ;;
+    esac
+  done
+  # validate command arguments
+  if [[ -z "$src" ]]; then
+    err "Argument 'src' must not be empty"
+    return "$ERR_INVAL_ARG"
   fi
-
-  local dest
-  dest="$(utils::get_arg_from_string "$cmd" 4)" || {
-    err "Failed to get dest from cmd: '$cmd'"
-    return "$ERR_IMAGE_BUILDER_OPERATION"
-  }
-  readonly dest
-
   if [[ -z "$dest" ]]; then
-    err "dest' must not be empty"
-    return "$ERR_INVAL_VALUE"
+    err "Argument 'dest' must not be empty"
+    return "$ERR_INVAL_ARG"
   fi
 
-  # TODO: parse this option from cmd if it is present
-  local -r user=''
-
-  local -r exec_func="vedv::image_service::copy '${image_id}' '${_source}' '${dest}' '${user}'"
+  local -r exec_func="vedv::image_service::copy '${image_id}' '${src}' '${dest}' '${user}'"
 
   vedv::image_builder::__layer_execute_cmd "$image_id" "$cmd" "COPY" "$exec_func" || {
     err "Failed to execute command '$cmd'"

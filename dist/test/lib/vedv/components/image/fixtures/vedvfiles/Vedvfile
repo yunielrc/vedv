@@ -1,4 +1,6 @@
 FROM /tmp/vedv/test/files/alpine-x86_64.ova
-COPY TODO /home/vedv/
-RUN uname -r > uname-r.txt && \
-  echo "Hello World" > hello.txt
+
+COPY --root TODO /root
+
+RUN uname -r >uname-r.txt && \
+  echo "Hello World" >hello.txt

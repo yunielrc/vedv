@@ -771,37 +771,9 @@ Failed to execute command '1 COPY dummy_source dummy_dest'"
   assert_output "Invalid command name 'RUN', it must be 'COPY'"
 }
 
-@test "vedv::image_builder::__layer_copy_calc_id(), Should fail If getting _source fails" {
-  # Arrange
-  local -r cmd="1 COPY source/ dest/"
-  # Stub
-  utils::crc_sum() {
-    if [[ ! -t 0 ]]; then
-      assert_equal "$(cat -)" "$cmd"
-    else
-      assert_equal "$*" "$cmd"
-    fi
-    echo "1234"
-  }
-  utils::get_arg_from_string() {
-    if [[ "$*" == "${cmd} 2" ]]; then
-      echo "COPY"
-      return 0
-    fi
-    if [[ "$*" == "${cmd} 3" ]]; then
-      return 1
-    fi
-  }
-  # Act
-  run vedv::image_builder::__layer_copy_calc_id "$cmd"
-  # Assert
-  assert_failure
-  assert_output "Failed to get _source from cmd: '$cmd'"
-}
-
 @test "vedv::image_builder::__layer_copy_calc_id(), Should fail If _source is empty" {
   # Arrange
-  local -r cmd="1 COPY source/ dest/"
+  local -r cmd="1 COPY --root "
   # Stub
   utils::crc_sum() {
     if [[ ! -t 0 ]]; then
@@ -814,10 +786,6 @@ Failed to execute command '1 COPY dummy_source dummy_dest'"
   utils::get_arg_from_string() {
     if [[ "$*" == "${cmd} 2" ]]; then
       echo "COPY"
-      return 0
-    fi
-    if [[ "$*" == "${cmd} 3" ]]; then
-      echo ""
       return 0
     fi
   }
@@ -875,23 +843,17 @@ Failed to execute command '1 COPY dummy_source dummy_dest'"
   assert_output "Argument 'cmd' is required"
 }
 
-@test "vedv::image_builder::__layer_copy(), Should fail If getting _source fails" {
+@test "vedv::image_builder::__layer_copy(), Should fail If getting user fails" {
   # Arrange
   local -r image_id="image_id"
   local -r _source="source/"
   local -r dest="dest/"
-  local -r cmd="1 COPY ${_source} ${dest}"
-  # Stub
-  utils::get_arg_from_string() {
-    if [[ "$*" == "${cmd} 3" ]]; then
-      return 1
-    fi
-  }
+  local -r cmd="1 COPY -u"
   # Act
   run vedv::image_builder::__layer_copy "$image_id" "$cmd"
   # Assert
   assert_failure
-  assert_output "Failed to get _source from cmd: '$cmd'"
+  assert_output "Argument 'user' no specified"
 }
 
 @test "vedv::image_builder::__layer_copy(), Should fail If _source is empty" {
@@ -899,18 +861,13 @@ Failed to execute command '1 COPY dummy_source dummy_dest'"
   local -r image_id="image_id"
   local -r _source="source/"
   local -r dest="dest/"
-  local -r cmd="1 COPY ${_source} ${dest}"
-  # Stub
-  utils::get_arg_from_string() {
-    if [[ "$*" == "${cmd} 3" ]]; then
-      echo ""
-    fi
-  }
+  local -r cmd="1 COPY -u root"
+
   # Act
   run vedv::image_builder::__layer_copy "$image_id" "$cmd"
   # Assert
   assert_failure
-  assert_output "_source' must not be empty"
+  assert_output "Argument 'src' must not be empty"
 }
 
 @test "vedv::image_builder::__layer_copy(), Should fail If getting dest fails" {
@@ -918,45 +875,12 @@ Failed to execute command '1 COPY dummy_source dummy_dest'"
   local -r image_id="image_id"
   local -r _source="source/"
   local -r dest="dest/"
-  local -r cmd="1 COPY ${_source} ${dest}"
-  # Stub
-  utils::get_arg_from_string() {
-    if [[ "$*" == "${cmd} 3" ]]; then
-      echo "source/"
-      return 0
-    fi
-    if [[ "$*" == "${cmd} 4" ]]; then
-      return 1
-    fi
-  }
+  local -r cmd="1 COPY -u root ${_source}"
   # Act
   run vedv::image_builder::__layer_copy "$image_id" "$cmd"
   # Assert
   assert_failure
-  assert_output "Failed to get dest from cmd: '$cmd'"
-}
-
-@test "vedv::image_builder::__layer_copy(), Should fail If dest is empty" {
-  # Arrange
-  local -r image_id="image_id"
-  local -r _source="source/"
-  local -r dest="dest/"
-  local -r cmd="1 COPY ${_source} ${dest}"
-  # Stub
-  utils::get_arg_from_string() {
-    if [[ "$*" == "${cmd} 3" ]]; then
-      echo "source/"
-      return 0
-    fi
-    if [[ "$*" == "${cmd} 4" ]]; then
-      echo ""
-    fi
-  }
-  # Act
-  run vedv::image_builder::__layer_copy "$image_id" "$cmd"
-  # Assert
-  assert_failure
-  assert_output "dest' must not be empty"
+  assert_output "Argument 'dest' must not be empty"
 }
 
 @test "vedv::image_builder::__layer_copy() succeeds if all arguments are valid and __layer_exec_cmd succeeds" {
