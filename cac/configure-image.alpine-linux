@@ -2,15 +2,15 @@
 
 set -eu
 
-readonly DEFAULT_USER="${DEFAULT_USER:-vedv}"
-readonly DEFAULT_PASS="${DEFAULT_PASS:-vedv}"
+readonly VEDV_USER="${VEDV_USER:-vedv}"
+readonly VEDV_PASS="${VEDV_PASS:-vedv}"
 
 # add user
-adduser --disabled-password "$DEFAULT_USER"
-echo "${DEFAULT_USER}:${DEFAULT_PASS}" | chpasswd
+adduser --disabled-password "$VEDV_USER"
+echo "${VEDV_USER}:${VEDV_PASS}" | chpasswd
 
 # change root password
-echo "root:${DEFAULT_PASS}" | chpasswd
+echo "root:${VEDV_PASS}" | chpasswd
 
 # enable community repository
 readonly COMMUNITY_REPO="$(grep 'alpine/v.*/community' /etc/apk/repositories | sed 's/\//\\\//g')"
@@ -20,12 +20,14 @@ sed -i "s/${COMMUNITY_REPO}/${ENABLED_COMMUNITY_REPO}" /etc/apk/repositories
 # install sudo
 apk add sudo
 # configure sudoers
-adduser "$DEFAULT_USER" wheel
-echo "%wheel ALL=(ALL) NOPASSWD: ALL" >/etc/sudoers.d/"${DEFAULT_USER}-nopasswd"
+echo "%wheel ALL=(ALL) NOPASSWD: ALL" >/etc/sudoers.d/"${VEDV_USER}-nopasswd"
+adduser "$VEDV_USER" wheel
 
 # install openssh
 apk add openssh
 # configure sshd
+rc-update add sshd
+
 sed -i \
   -e 's/^#\?\s*PermitRootLogin .*/PermitRootLogin yes/' \
   -e 's/^#\?\s*PasswordAuthentication .*/PasswordAuthentication yes/' \
