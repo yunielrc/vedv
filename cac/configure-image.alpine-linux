@@ -1,0 +1,34 @@
+#!/usr/bin/env sh
+
+set -eu
+
+readonly DEFAULT_USER="${DEFAULT_USER:-vedv}"
+readonly DEFAULT_PASS="${DEFAULT_PASS:-vedv}"
+
+# add user
+adduser --disabled-password "$DEFAULT_USER"
+echo "${DEFAULT_USER}:${DEFAULT_PASS}" | chpasswd
+
+# change root password
+echo "root:${DEFAULT_PASS}" | chpasswd
+
+# enable community repository
+readonly COMMUNITY_REPO="$(grep 'alpine/v.*/community' /etc/apk/repositories | sed 's/\//\\\//g')"
+readonly ENABLED_COMMUNITY_REPO="$(echo "$COMMUNITY_REPO/" | sed 's/^#//')"
+sed -i "s/${COMMUNITY_REPO}/${ENABLED_COMMUNITY_REPO}" /etc/apk/repositories
+
+# install sudo
+apk add sudo
+# configure sudoers
+adduser "$DEFAULT_USER" wheel
+echo "%wheel ALL=(ALL) NOPASSWD: ALL" >/etc/sudoers.d/"${DEFAULT_USER}-nopasswd"
+
+# install openssh
+apk add openssh
+# configure sshd
+sed -i \
+  -e 's/^#\?\s*PermitRootLogin .*/PermitRootLogin yes/' \
+  -e 's/^#\?\s*PasswordAuthentication .*/PasswordAuthentication yes/' \
+  /etc/ssh/sshd_config
+
+service sshd restart
