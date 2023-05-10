@@ -77,4 +77,4 @@ echo "${VED_USER}:${VED_PASS}" | chpasswd
 adduser "$VED_USER" wheel
 EOF
 
-chmod 0755 /usr/local/bin/ved-adduser
+chmod 0755 /usr/local/bin/vedv-adduser
