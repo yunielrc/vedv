@@ -4,8 +4,8 @@ COPY homefs/* /home/vedv/
 
 COPY home.config /home/vedv/
 
-RUN ls -la /home/vedv/ &&
-  cat /home/vedv/home.config &&
+RUN ls -la /home/vedv/ && \
+  cat /home/vedv/home.config && \
   cat /home/vedv/f1
 
 RUN apk add --no-cache \

@@ -4,5 +4,5 @@ COPY --root rootfs/* /root
 
 COPY home.config .
 
-RUN echo fvedv >fvedv &&
+RUN echo fvedv >fvedv && \
   echo froot | sudo tee /root/froot

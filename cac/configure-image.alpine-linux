@@ -7,25 +7,26 @@ set -eu
 readonly VEDV_USER="${VEDV_USER:-vedv}"
 readonly VEDV_PASS="${VEDV_PASS:-vedv}"
 
-# add user
+# ADD USER
 adduser --disabled-password "$VEDV_USER"
 echo "${VEDV_USER}:${VEDV_PASS}" | chpasswd
 
-# change root password
+# CHANGE ROOT PASSWORD
 echo "root:${VEDV_PASS}" | chpasswd
 
-# enable community repository
+# ENABLE COMMUNITY REPOSITORY
 readonly COMMUNITY_REPO="$(grep 'alpine/v.*/community' /etc/apk/repositories | sed 's/\//\\\//g')"
 readonly ENABLED_COMMUNITY_REPO="$(echo "$COMMUNITY_REPO/" | sed 's/^#//')"
 sed -i "s/${COMMUNITY_REPO}/${ENABLED_COMMUNITY_REPO}" /etc/apk/repositories
 
-# install sudo
+# INSTALL SUDO
 apk add -U sudo
 # configure sudoers
-echo "%wheel ALL=(ALL) NOPASSWD: ALL" >/etc/sudoers.d/"${VEDV_USER}-nopasswd"
+echo "%wheel ALL=(ALL) NOPASSWD: ALL" >/etc/sudoers.d/wheel-nopasswd
+chmod 0440 /etc/sudoers.d/wheel-nopasswd
 adduser "$VEDV_USER" wheel
 
-# install openssh
+# INSTALL OPENSSH
 apk add openssh
 # configure sshd
 rc-update add sshd
@@ -37,8 +38,11 @@ sed -i \
 
 service sshd restart
 
-# install rsync
+# INSTALL RSYNC
 apk add rsync
 # configure rsyncd
 rc-update add rsyncd
 service rsyncd start
+
+# DEFINE LINUX DISTRO
+echo 'alpine' >/etc/vedv-distro
