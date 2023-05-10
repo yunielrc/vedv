@@ -49,3 +49,32 @@ apk add bash
 
 # DEFINE LINUX DISTRO
 echo 'alpine' >/etc/vedv-distro
+
+# ADD VEDV STANDARD SCRIPTS
+
+# add ved-adduser script
+cat <<'EOF' >/usr/local/bin/vedv-adduser
+#!/usr/bin/env bash
+# add a user to the system
+
+set -eu
+
+if [[ "$#" -ne 2 ]]; then
+  echo "usage: ved-adduser <username> <password>" >&2
+  exit 1
+fi
+
+readonly VED_USER="$1"
+readonly VED_PASS="$2"
+
+if id "$VED_USER" &>/dev/null; then
+  echo "user '${VED_USER}' already exists"
+  exit 0
+fi
+
+adduser --disabled-password "$VED_USER"
+echo "${VED_USER}:${VED_PASS}" | chpasswd
+adduser "$VED_USER" wheel
+EOF
+
+chmod 0755 /usr/local/bin/ved-adduser
