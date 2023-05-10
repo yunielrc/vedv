@@ -1,5 +1,7 @@
 #!/usr/bin/env sh
 
+# Configure the alpine linux image vm for vedv
+
 set -eu
 
 readonly VEDV_USER="${VEDV_USER:-vedv}"
@@ -18,7 +20,7 @@ readonly ENABLED_COMMUNITY_REPO="$(echo "$COMMUNITY_REPO/" | sed 's/^#//')"
 sed -i "s/${COMMUNITY_REPO}/${ENABLED_COMMUNITY_REPO}" /etc/apk/repositories
 
 # install sudo
-apk add sudo
+apk add -U sudo
 # configure sudoers
 echo "%wheel ALL=(ALL) NOPASSWD: ALL" >/etc/sudoers.d/"${VEDV_USER}-nopasswd"
 adduser "$VEDV_USER" wheel
@@ -34,3 +36,9 @@ sed -i \
   /etc/ssh/sshd_config
 
 service sshd restart
+
+# install rsync
+apk add rsync
+# configure rsyncd
+rc-update add rsyncd
+service rsyncd start
