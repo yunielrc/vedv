@@ -44,5 +44,8 @@ apk add rsync
 rc-update add rsyncd
 service rsyncd start
 
+# INSTALL BASH
+apk add bash
+
 # DEFINE LINUX DISTRO
 echo 'alpine' >/etc/vedv-distro
