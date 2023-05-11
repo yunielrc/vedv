@@ -185,7 +185,7 @@ Options:
     assert_output --partial "Missing argument for option '${arg}'"
   done
 }
-# bats test_tags=only
+
 @test "vedv image build, Should build the image" {
   cd "${BATS_TEST_DIRNAME}/fixtures/vedvfiles"
 
@@ -196,6 +196,26 @@ Options:
 created layer '.*' for command 'FROM'
 created layer '.*' for command 'COPY'
 created layer '.*' for command 'RUN'
+
+Build finished
+.* image123"
+}
+# bats test_tags=only
+@test "vedv image build, Should build the image with USER" {
+  cd "${BATS_TEST_DIRNAME}/fixtures"
+
+  run vedv image build -t 'image123' ./Vedvfile5
+
+  assert_success
+  assert_output --regexp "
+created layer '.*' for command 'FROM'
+created layer '.*' for command 'USER'
+created layer '.*' for command 'COPY'
+created layer '.*' for command 'USER'
+created layer '.*' for command 'RUN'
+created layer '.*' for command 'COPY'
+created layer '.*' for command 'USER'
+created layer '.*' for command 'COPY'
 
 Build finished
 .* image123"

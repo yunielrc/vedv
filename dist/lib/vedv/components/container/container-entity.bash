@@ -20,7 +20,7 @@ fi
 
 readonly VEDV_CONTAINER_ENTITY_TYPE='container'
 # shellcheck disable=SC2034
-readonly VEDV_CONTAINER_ENTITY_VALID_ATTRIBUTES='parent_image_id|ssh_port'
+readonly VEDV_CONTAINER_ENTITY_VALID_ATTRIBUTES='parent_image_id|ssh_port|user_name'
 
 # FUNCTIONS
 
@@ -195,4 +195,39 @@ vedv::container_entity::get_parent_image_id() {
     "$VEDV_CONTAINER_ENTITY_TYPE" \
     "$container_id" \
     'parent_image_id'
+}
+
+#
+# Get user_name value
+#
+# Arguments:
+#   container_id  string  container id
+#
+# Output:
+#  Writes user_name (string) to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::container_entity::get_user_name() {
+  local -r container_id="$1"
+
+  vedv::vmobj_entity::get_user_name "$VEDV_CONTAINER_ENTITY_TYPE" "$container_id"
+}
+
+#
+# Set user_name value
+#
+# Arguments:
+#   container_id  string  container id
+#   user_name     string  user name
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::container_entity::set_user_name() {
+  local -r container_id="$1"
+  local -r value="$2"
+
+  vedv::vmobj_entity::set_user_name "$VEDV_CONTAINER_ENTITY_TYPE" "$container_id" "$value"
 }

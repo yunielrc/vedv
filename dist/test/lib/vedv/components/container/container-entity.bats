@@ -47,7 +47,12 @@ load test_helper
   :
 }
 
-# Test vedv::container_entity::get_parent_image_id()
-@test 'vedv::container_entity::get_parent_image_id() Should succeed' {
+# Test vedv::container_entity::get_user_name()
+@test 'vedv::container_entity::get_user_name() Should succeed' {
+  :
+}
+
+# Test vedv::container_entity::set_user_name()
+@test 'vedv::container_entity::set_user_name() Should succeed' {
   :
 }

@@ -150,7 +150,9 @@
       "program": "${workspaceFolder}/dist/usr/bin/vedv",
       "args": [
         "image",
-        "build"
+        "build",
+        "-t",
+        "image123"
       ]
     }
   ]

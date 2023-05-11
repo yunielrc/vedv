@@ -439,6 +439,120 @@ setup_file() {
   assert_failure
   assert_output "Error setting attribute ova file sum '1234567890' to the image vm 'image:custom_image1|crc:1334567890|'"
 }
+# bats test_tags=only
+@test "vedv::image_service::__pull_from_file() Should fail If get_user_name fails" {
+  local -r image_file="$TEST_OVA_FILE"
+  local -r custom_image_name="custom_image1"
+
+  vedv::image_entity::gen_vm_name_from_ova_file() {
+    assert_equal "$*" "$TEST_OVA_FILE"
+    echo "image:image1|crc:1234567890|"
+  }
+  vedv::image_entity::get_id_by_vm_name() {
+    if [ "$1" == "image:${custom_image_name}|crc:1334567890|" ]; then
+      echo '1334567890'
+    else
+      assert_equal "$*" "image:image1|crc:1234567890|"
+      echo '1234567890'
+    fi
+  }
+  vedv::image_entity::get_image_name_by_vm_name() {
+    assert_equal "$*" "image:image1|crc:1234567890|"
+    echo 'image1'
+  }
+  vedv::image_entity::gen_vm_name() {
+    assert_equal "$*" "$custom_image_name"
+    echo "image:${custom_image_name}|crc:1334567890|"
+  }
+
+  vedv::hypervisor::list_vms_by_partial_name() {
+    if [[ "$1" == "$image_cache_vm_name" ]]; then
+      return 0
+    fi
+    assert_equal "$*" "image:${custom_image_name}|crc:1334567890|"
+  }
+  vedv::hypervisor::import() {
+    assert_equal "$*" "${TEST_OVA_FILE} ${image_cache_vm_name}"
+  }
+  vedv::hypervisor::clonevm_link() {
+    assert_equal "$*" "image-cache|crc:12345678900| image:custom_image1|crc:1334567890|"
+  }
+  vedv::image_entity::set_image_cache() {
+    assert_equal "$*" "1334567890 image-cache|crc:12345678900|"
+  }
+  vedv::image_entity::set_ova_file_sum() {
+    assert_equal "$*" "1334567890 1234567890"
+  }
+  vedv::image_entity::get_user_name() {
+    assert_equal "$*" "1334567890"
+    return 1
+  }
+
+  run vedv::image_service::__pull_from_file "$image_file" "$custom_image_name"
+
+  assert_failure
+  assert_output "Error getting attribute user name from the image '1334567890'"
+}
+# bats test_tags=only
+@test "vedv::image_service::__pull_from_file() Should fail If set_user_name fails" {
+  local -r image_file="$TEST_OVA_FILE"
+  local -r custom_image_name="custom_image1"
+
+  vedv::image_entity::gen_vm_name_from_ova_file() {
+    assert_equal "$*" "$TEST_OVA_FILE"
+    echo "image:image1|crc:1234567890|"
+  }
+  vedv::image_entity::get_id_by_vm_name() {
+    if [ "$1" == "image:${custom_image_name}|crc:1334567890|" ]; then
+      echo '1334567890'
+    else
+      assert_equal "$*" "image:image1|crc:1234567890|"
+      echo '1234567890'
+    fi
+  }
+  vedv::image_entity::get_image_name_by_vm_name() {
+    assert_equal "$*" "image:image1|crc:1234567890|"
+    echo 'image1'
+  }
+  vedv::image_entity::gen_vm_name() {
+    assert_equal "$*" "$custom_image_name"
+    echo "image:${custom_image_name}|crc:1334567890|"
+  }
+
+  vedv::hypervisor::list_vms_by_partial_name() {
+    if [[ "$1" == "$image_cache_vm_name" ]]; then
+      return 0
+    fi
+    assert_equal "$*" "image:${custom_image_name}|crc:1334567890|"
+  }
+  vedv::hypervisor::import() {
+    assert_equal "$*" "${TEST_OVA_FILE} ${image_cache_vm_name}"
+  }
+  vedv::hypervisor::clonevm_link() {
+    assert_equal "$*" "image-cache|crc:12345678900| image:custom_image1|crc:1334567890|"
+  }
+  vedv::image_entity::set_image_cache() {
+    assert_equal "$*" "1334567890 image-cache|crc:12345678900|"
+  }
+  vedv::image_entity::set_ova_file_sum() {
+    assert_equal "$*" "1334567890 1234567890"
+  }
+  vedv::image_entity::get_user_name() {
+    assert_equal "$*" "1334567890"
+  }
+  vedv::vmobj_service::get_ssh_user() {
+    echo "vedv"
+  }
+  vedv::image_entity::set_user_name() {
+    assert_equal "$*" "1334567890 vedv"
+    return 1
+  }
+
+  run vedv::image_service::__pull_from_file "$image_file" "$custom_image_name"
+
+  assert_failure
+  assert_output "Error setting attribute user name 'vedv' to the image '1334567890'"
+}
 
 @test "vedv::image_service::__pull_from_file() Should succeed" {
   local -r image_file="$TEST_OVA_FILE"
@@ -482,6 +596,15 @@ setup_file() {
   }
   vedv::image_entity::set_ova_file_sum() {
     assert_equal "$*" "1334567890 1234567890"
+  }
+  vedv::image_entity::get_user_name() {
+    assert_equal "$*" "1334567890"
+  }
+  vedv::vmobj_service::get_ssh_user() {
+    echo "vedv"
+  }
+  vedv::image_entity::set_user_name() {
+    assert_equal "$*" "1334567890 vedv"
   }
 
   run vedv::image_service::__pull_from_file "$image_file" "$custom_image_name"
@@ -532,6 +655,15 @@ setup_file() {
   }
   vedv::image_entity::set_ova_file_sum() {
     assert_equal "$*" "1334567890 1234567890"
+  }
+  vedv::image_entity::get_user_name() {
+    assert_equal "$*" "1334567890"
+  }
+  vedv::vmobj_service::get_ssh_user() {
+    echo "vedv"
+  }
+  vedv::image_entity::set_user_name() {
+    assert_equal "$*" "1334567890 vedv"
   }
 
   run vedv::image_service::__pull_from_file "$image_file" "$custom_image_name" true

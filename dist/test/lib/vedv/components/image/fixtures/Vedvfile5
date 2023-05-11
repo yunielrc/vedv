@@ -1,0 +1,15 @@
+FROM /tmp/vedv/test/files/alpine-x86_64.ova
+
+# That's the default user for the image and its containers
+USER nalyd
+COPY homefs/* .
+
+USER root
+RUN apk add --no-cache \
+  htop \
+  bat \
+  bmon
+COPY rootfs /
+
+USER vedv
+COPY homefs/* .

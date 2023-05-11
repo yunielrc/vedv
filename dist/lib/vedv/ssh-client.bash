@@ -18,7 +18,7 @@ vedv::ssh_client::run_cmd() {
   local -r user="$1"
   local -r ip="$2"
   local -r password="$3"
-  local -r cmd="$4"
+  local cmd="$4"
   local -ri port=${5:-22}
 
   if [[ -z "$user" ]]; then
@@ -44,6 +44,8 @@ vedv::ssh_client::run_cmd() {
     err "Argument 'cmd' must not be empty"
     return "$ERR_INVAL_ARG"
   fi
+  cmd="$(utils::str_decode "$cmd")"
+  readonly cmd
 
   {
     sshpass -p "$password" \
@@ -120,7 +122,7 @@ vedv::ssh_client::copy() {
 
   {
     # shellcheck disable=SC2086
-    IFS='' rsync -az \
+    IFS='' rsync -az --no-owner --no-group \
       --exclude-from="$exclude_file_path" \
       -e "sshpass -p ${password} ssh -o 'ConnectTimeout=1' -o 'UserKnownHostsFile=/dev/null'  -o 'PubkeyAuthentication=no' -o 'StrictHostKeyChecking=no' -o 'LogLevel=ERROR' -p ${port}" \
       $source "${user}@${ip}:${dest}"

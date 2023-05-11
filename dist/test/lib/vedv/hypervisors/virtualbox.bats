@@ -353,8 +353,7 @@ ${snapshot_name2}"
   (
     fix_var_names() { echo "$*"; }
     VBoxManage() {
-      echo 'var1=value1
-description="image_cache=value1 ova_file_sum=value2"'
+      echo 'image_cache=value1 ova_file_sum=value2'
     }
 
     run vedv::hypervisor::get_description 'vm_name'

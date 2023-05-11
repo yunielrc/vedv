@@ -8,7 +8,7 @@ if false; then
 fi
 
 # Variables:
-readonly VEDVFILE_SUPPORTED_COMMANDS='FROM|RUN|COPY'
+readonly VEDVFILE_SUPPORTED_COMMANDS='FROM|RUN|COPY|USER'
 
 #
 # Constructor
@@ -37,7 +37,7 @@ __vedvfile-parser() {
 # Validate commands
 #
 # Arguments:
-#   commands    text with commands (list of commands, splitted by \n)
+#   commands  text  commands (list of commands, splitted by \n)
 #
 # Output:
 #   writes error message on error
@@ -53,14 +53,28 @@ vedv::image_vedvfile_service::__are_supported_commands() {
     return 0
   fi
 
-  local -r clean_cmds="$(utils::string::trim "$commands")"
+  local -a cmds_arr
+  readarray -t cmds_arr <<<"$commands"
+  readonly cmds_arr
 
-  while IFS= read -r cmd; do
-    if ! grep -qP "^($VEDVFILE_SUPPORTED_COMMANDS)\s+" <<<"$cmd"; then
-      err "Command '${cmd}' isn't supported, valid commands are: ${VEDVFILE_SUPPORTED_COMMANDS}"
+  for cmd_ in "${cmds_arr[@]}"; do
+
+    if [[ -z "$cmd_" ]]; then
+      continue
+    fi
+
+    local -a cmd_arr
+    IFS=' ' read -r -a cmd_arr <<<"$cmd_"
+
+    if [[ "${cmd_arr[0]}" =~ ^[0-9]+$ ]]; then
+      cmd_arr=("${cmd_arr[@]:1}")
+    fi
+
+    if [[ "${cmd_arr[0]}" != @($VEDVFILE_SUPPORTED_COMMANDS) ]]; then
+      err "Command '${cmd_arr[*]}' isn't supported, valid commands are: ${VEDVFILE_SUPPORTED_COMMANDS}"
       return 1
     fi
-  done <<<"$clean_cmds"
+  done
 
   return 0
 }
@@ -102,7 +116,7 @@ vedv::image_vedvfile_service::__validate_file() {
 # Build an image from a Vedvfile
 #
 # Arguments:
-#   vedvfile string            Vedvfile full path
+#   vedvfile  string  Vedvfile full path
 #
 # Output:
 #   writes commands (text) to stdout
@@ -136,39 +150,41 @@ vedv::image_vedvfile_service::get_commands() {
 # Get the command name
 #
 # Arguments:
-#   cmd     command
+#   cmd string  command
 #
 # Output:
-#   writes the command name to stdout
+#   writes the command_name (string) to stdout
 #
 # Returns:
 #   0 on success, non-zero on error.
 #
 vedv::image_vedvfile_service::get_cmd_name() {
-  local -r cmd="$1"
+  local -r _cmd="$1"
 
-  if [[ -z "$cmd" ]]; then
+  if [[ -z "$_cmd" ]]; then
     err "Argument 'cmd' must not be empty"
     return "$ERR_INVAL_ARG"
   fi
-
-  local cmd_name
-  cmd_name="$(utils::string::trim "$cmd" | grep -Po "(\d+\s+)?($VEDVFILE_SUPPORTED_COMMANDS)\s+" |
-    sed -e 's/^[[:digit:]]*\s*//' -e 's/[[:space:]]*$//')"
-
-  if [[ -z "$cmd_name" ]]; then
-    err "There isn't command name in '${cmd}'"
-    return "$ERR_INVAL_ARG"
+  # extract arguments
+  local -a cmd_arr
+  IFS=' ' read -r -a cmd_arr <<<"$_cmd"
+  if [[ "${cmd_arr[0]}" =~ ^[0-9]+$ ]]; then
+    # remove the command id
+    cmd_arr=("${cmd_arr[@]:1}")
   fi
+  readonly cmd_arr
 
-  echo "$cmd_name"
+  vedv::image_vedvfile_service::__are_supported_commands "${cmd_arr[*]}" ||
+    return "$ERR_INVAL_VALUE"
+  # COPY --root source/ dest/ -> COPY
+  echo "${cmd_arr[0]}"
 }
 
 #
 # Get the command body
 #
 # Arguments:
-#   cmd text     command
+#   cmd text  command
 #
 # Output:
 #   writes the command_body (text) to stdout
@@ -177,14 +193,26 @@ vedv::image_vedvfile_service::get_cmd_name() {
 #   0 on success, non-zero on error.
 #
 vedv::image_vedvfile_service::get_cmd_body() {
-  local -r cmd="$1"
+  local -r _cmd="$1"
 
-  if [[ -z "$cmd" ]]; then
+  if [[ -z "$_cmd" ]]; then
     err "Argument 'cmd' must not be empty"
     return "$ERR_INVAL_ARG"
   fi
+  # extract arguments
+  local -a cmd_arr
+  IFS=' ' read -r -a cmd_arr <<<"$_cmd"
 
-  echo "$cmd" | sed -e 's/\s*\([[:digit:]]\+\s\+\)\?\(FROM\|RUN\|CMD\|LABEL\|EXPOSE\|ENV\|ADD\|COPY\|ENTRYPOINT\|VOLUME\|USER\|WORKDIR\|ARG\|ONBUILD\|STOPSIGNAL\|HEALTHCHECK\|SHELL\)\s\+//' -e 's/[[:space:]]*$//'
+  if [[ "${cmd_arr[0]}" =~ ^[0-9]+$ ]]; then
+    # remove the command id
+    cmd_arr=("${cmd_arr[@]:1}")
+  fi
+  readonly cmd_arr
+
+  vedv::image_vedvfile_service::__are_supported_commands "${cmd_arr[*]}" ||
+    return "$ERR_INVAL_VALUE"
+  # COPY --root source/ dest/ -> --root source/ dest/
+  echo "${cmd_arr[*]:1}"
 }
 
 #
@@ -204,7 +232,7 @@ vedv:image_vedvfile_service::get_joined_vedvfileignore() {
   fi
 
   local vedvfileignore_path
-
+  readonly cmd_arr
   if [[ ! -f "$__VEDV_IMAGE_VEDVFILE_VEDVFILEIGNORE_PATH" ]]; then
     vedvfileignore_path="$__VEDV_IMAGE_VEDVFILE_BASE_VEDVFILEIGNORE_PATH"
   else

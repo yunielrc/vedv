@@ -448,7 +448,6 @@ World!"
   assert_output "homefs/*"
 }
 
-# bats test_tags=only
 @test "utils::get_arg_from_string(), Should returns the argument 2 'RUN' from a string uname..." {
   skip # This doesn't work with the current implementation
   run utils::get_arg_from_string "3  RUN uname -r > uname-r.txt" 2
@@ -606,7 +605,7 @@ calc_item_id_from_array_b() { echo "$1"; }
 }
 
 # Tests for utils::array::to_string()
-# bats test_tags=only
+
 @test "utils::array::to_string() Should succeed With empty array" {
   # shellcheck disable=SC2034
   local -r arr=()
@@ -620,4 +619,80 @@ calc_item_id_from_array_b() { echo "$1"; }
 
   assert_success
   assert_output "()"
+}
+
+# Test for utils::str_encode()
+# bats test_tags=only
+@test "utils::str_encode() Should succeed With empty string" {
+  local -r str=""
+
+  run utils::str_encode "$str"
+
+  assert_success
+  assert_output ""
+}
+# bats test_tags=only
+@test "utils::str_encode() Should succeed With string without special characters" {
+  local -r str="foo"
+
+  run utils::str_encode "$str"
+
+  assert_success
+  assert_output "foo"
+}
+# bats test_tags=only
+@test "utils::str_encode() Should succeed With string with special characters" {
+  local -r str="uname -r >uname-r.txt && echo 'Hello World' >hello.txt"
+
+  run utils::str_encode "$str"
+
+  assert_success
+  assert_output "uname -r >uname-r.txt && echo @*^&Hello World@*^& >hello.txt"
+}
+# bats test_tags=only
+@test "utils::str_encode() Should succeed With string with special characters 2" {
+  local -r str='uname -r >uname-r.txt && echo "Hello World" >hello.txt'
+
+  run utils::str_encode "$str"
+
+  assert_success
+  assert_output "uname -r >uname-r.txt && echo *!@%Hello World*!@% >hello.txt"
+}
+
+# Test for utils::str_decode()
+# bats test_tags=only
+@test "utils::str_decode() Should succeed With empty string" {
+  local -r str=""
+
+  run utils::str_decode "$str"
+
+  assert_success
+  assert_output ""
+}
+# bats test_tags=only
+@test "utils::str_decode() Should succeed With string without special characters" {
+  local -r str="foo"
+
+  run utils::str_decode "$str"
+
+  assert_success
+  assert_output "foo"
+}
+# bats test_tags=only
+@test "utils::str_decode() Should succeed With string with special characters" {
+  local -r str="uname -r >uname-r.txt && echo @*^&Hello World@*^& >hello.txt"
+
+  run utils::str_decode "$str"
+
+  assert_success
+  assert_output "uname -r >uname-r.txt && echo 'Hello World' >hello.txt"
+}
+# bats test_tags=only
+@test "utils::str_decode() Should succeed With string with special characters 2" {
+  local -r str="uname -r >uname-r.txt && echo *!@%Hello World*!@% >hello.txt"
+
+  run utils::str_decode "$str"
+
+  assert_success
+  assert_output 'uname -r >uname-r.txt && echo "Hello World" >hello.txt'
 }

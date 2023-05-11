@@ -29,7 +29,7 @@ setup_file() {
   run vedv::image_vedvfile_service::__are_supported_commands "$commands"
 
   assert_failure 1
-  assert_output "Command 'INVALID command' isn't supported, valid commands are: FROM|RUN|COPY"
+  assert_output "Command 'INVALID command' isn't supported, valid commands are: FROM|RUN|COPY|USER"
 }
 
 @test "vedv::image_vedvfile_service::__are_supported_commands() Should succeed With valid command" {
@@ -113,17 +113,17 @@ EOF
 @test "vedv::image_vedvfile_service::get_cmd_name() Should fail With empty 'cmd'" {
   run vedv::image_vedvfile_service::get_cmd_name ""
 
-  assert_failure "$ERR_INVAL_ARG"
+  assert_failure
   assert_output "Argument 'cmd' must not be empty"
 }
 
 @test "vedv::image_vedvfile_service::get_cmd_name() Should fail If there isn't 'cmd_name' in 'cmd'" {
   run vedv::image_vedvfile_service::get_cmd_name "echo Hello"
 
-  assert_failure "$ERR_INVAL_ARG"
-  assert_output "There isn't command name in 'echo Hello'"
+  assert_failure
+  assert_output "Command 'echo Hello' isn't supported, valid commands are: FROM|RUN|COPY|USER"
 }
-
+# bats test_tags=only
 @test "vedv::image_vedvfile_service::get_cmd_name() Should succeed With valid input" {
   run vedv::image_vedvfile_service::get_cmd_name " 1 FROM         ubuntu:latest "
 

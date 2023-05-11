@@ -32,6 +32,16 @@ vedv::vmobj_service::constructor() {
 }
 
 #
+# Get ssh user
+#
+# Output:
+#  Writes ssh_user (string) to the stdout
+#
+vedv::vmobj_service::get_ssh_user() {
+  echo "$__VEDV_VMOBJ_SERVICE_SSH_USER"
+}
+
+#
 # Tell if a vmobj is started
 #
 # Arguments:
@@ -667,7 +677,8 @@ vedv::vmobj_service::__exec_ssh_func() {
   local -r type="$1"
   local -r vmobj_id="$2"
   local -r exec_func="$3"
-  local -r user="${4:-"$__VEDV_VMOBJ_SERVICE_SSH_USER"}"
+  local user="${4:-}"
+
   # validate arguments
   vedv::vmobj_entity::validate_type "$type" ||
     return "$?"
@@ -679,6 +690,14 @@ vedv::vmobj_service::__exec_ssh_func() {
     err "Invalid argument 'exec_func': it's empty"
     return "$ERR_INVAL_ARG"
   fi
+  if [[ -z "$user" ]]; then
+    user="$(vedv::vmobj_entity::get_user_name "$type" "$vmobj_id")" || {
+      err "Failed to get default user for ${type}"
+      return "$ERR_VMOBJ_OPERATION"
+    }
+  fi
+  readonly user
+
   if [[ -z "$user" ]]; then
     err "Invalid argument 'user': it's empty"
     return "$ERR_INVAL_ARG"
@@ -714,6 +733,7 @@ vedv::vmobj_service::__exec_ssh_func() {
 #   type      string     type (e.g. 'container|image')
 #   vmobj_id  string     vmobj id
 #   cmd       string     command to execute
+#   [user]    string     user name
 #
 # Output:
 #  writes command output to the stdout
@@ -725,6 +745,7 @@ vedv::vmobj_service::execute_cmd_by_id() {
   local -r type="$1"
   local -r vmobj_id="$2"
   local -r cmd="$3"
+  local -r user="${4:-}"
   # validate arguments
   vedv::vmobj_entity::validate_type "$type" ||
     return "$?"
@@ -740,7 +761,7 @@ vedv::vmobj_service::execute_cmd_by_id() {
 
   local -r exec_func="vedv::ssh_client::run_cmd \"\$user\" \"\$ip\"  \"\$password\" '${cmd}' \"\$port\""
 
-  vedv::vmobj_service::__exec_ssh_func "$type" "$vmobj_id" "$exec_func" || {
+  vedv::vmobj_service::__exec_ssh_func "$type" "$vmobj_id" "$exec_func" "$user" || {
     err "Failed to execute command in ${type}: ${vmobj_id}"
     return "$ERR_VMOBJ_OPERATION"
   }
@@ -753,6 +774,7 @@ vedv::vmobj_service::execute_cmd_by_id() {
 #   type              string     type (e.g. 'container|image')
 #   vmobj_id_or_name  string     vmobj id or name
 #   cmd               string     command to execute
+#   [user]            string     user name
 #
 # Output:
 #  writes command output to the stdout
@@ -764,13 +786,14 @@ vedv::vmobj_service::execute_cmd() {
   local -r type="$1"
   local -r vmobj_id_or_name="$2"
   local -r cmd="$3"
+  local -r user="${4:-}"
 
   local vmobj_id
   vmobj_id="$(vedv::vmobj_service::get_ids_from_vmobj_names_or_ids "$type" "$vmobj_id_or_name")" || {
     err "Failed to get ${type} id by name or id: ${vmobj_id_or_name}"
     return "$ERR_VMOBJ_OPERATION"
   }
-  vedv::vmobj_service::execute_cmd_by_id "$type" "$vmobj_id" "$cmd"
+  vedv::vmobj_service::execute_cmd_by_id "$type" "$vmobj_id" "$cmd" "$user"
 }
 
 #
@@ -875,7 +898,7 @@ vedv::vmobj_service::copy_by_id() {
   }
   readonly vedvfileignore
 
-  local -r exec_func="vedv::ssh_client::copy \"\$user\" \"\$ip\"  \"\$password\" \"\$port\" '${src}' '${dest}' ${vedvfileignore}"
+  local -r exec_func="vedv::ssh_client::copy \"\$user\" \"\$ip\"  \"\$password\" \"\$port\" '${src}' '${dest}' '${vedvfileignore}'"
 
   vedv::vmobj_service::__exec_ssh_func "$type" "$vmobj_id" "$exec_func" "$user" || {
     err "Failed to copy to ${type}: ${vmobj_id}"
@@ -917,4 +940,61 @@ vedv::vmobj_service::copy() {
     "$src" \
     "$dest" \
     "$user"
+}
+
+#
+# Create an user if not exits and set its name to
+# the vmobj-entity
+#
+# Arguments:
+#   type       string     type (e.g. 'container|image')
+#   vmobj_id   string     vmobj id
+#   user_name  string     user name
+#
+# Output:
+#  writes command output to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::vmobj_service::set_user() {
+  local -r type="$1"
+  local -r vmobj_id="$2"
+  local -r user_name="$3"
+  # validate arguments
+  vedv::vmobj_entity::validate_type "$type" ||
+    return "$?"
+
+  if [[ -z "$vmobj_id" ]]; then
+    err "Invalid argument 'vmobj_id': it's empty"
+    return "$ERR_INVAL_ARG"
+  fi
+  if [[ -z "$user_name" ]]; then
+    err "Invalid argument 'user_name': it's empty"
+    return "$ERR_INVAL_ARG"
+  fi
+
+  local cur_user_name
+  cur_user_name="$(vedv::vmobj_entity::get_user_name "$type" "$vmobj_id")" || {
+    err "Error getting attribute user name from the ${type} '${vmobj_id}'"
+    return "$ERR_VMOBJ_OPERATION"
+  }
+  readonly cur_user_name
+
+  if [[ "$cur_user_name" == "$user_name" ]]; then
+    return 0
+  fi
+
+  # create user if it doesn't exist
+  local -r cmd="vedv-adduser '${user_name}' '${__VEDV_VMOBJ_SERVICE_SSH_PASSWORD}'"
+
+  vedv::vmobj_service::execute_cmd_by_id "$type" "$vmobj_id" "$cmd" 'root' &>/dev/null || {
+    err "Failed to set user '${user_name}' to ${type}: ${vmobj_id}"
+    return "$ERR_VMOBJ_OPERATION"
+  }
+
+  vedv::vmobj_entity::set_user_name "$type" "$vmobj_id" "$user_name" || {
+    err "Error setting attribute user name '${user_name}' to the ${type}: ${vmobj_id}"
+    return "$ERR_VMOBJ_OPERATION"
+  }
 }

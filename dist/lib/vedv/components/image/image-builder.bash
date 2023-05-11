@@ -582,6 +582,47 @@ vedv::image_builder::__layer_copy() {
 }
 
 #
+# Calculates the layer id for simple commands
+#
+# Arguments:
+#   cmd           string  command (e.g. "1 COPY source/ dest/")
+#   command_name  string  command name (e.g. "COPY")
+#
+# Output:
+#  Writes layer_id (string) to the stdout
+#
+# Returns:
+#  0 on success, non-zero on error.
+#
+vedv::image_builder::__simple_layer_command_calc_id() {
+  local -r cmd="$1"
+  local -r command_name="$2"
+  # validate arguments
+  if [[ -z "$cmd" ]]; then
+    err "Argument 'cmd' is required"
+    return "$ERR_INVAL_ARG"
+  fi
+  if [[ -z "$command_name" ]]; then
+    err "Argument 'command_name' is required"
+    return "$ERR_INVAL_ARG"
+  fi
+
+  local cmd_name
+  cmd_name="$(vedv::image_vedvfile_service::get_cmd_name "$cmd")" || {
+    err "Failed to get command name from command '$cmd'"
+    return "$ERR_INVAL_ARG"
+  }
+  readonly cmd_name
+
+  if [[ "$cmd_name" != "$command_name" ]]; then
+    err "Invalid command name '${cmd_name}', it must be '${command_name}'"
+    return "$ERR_INVAL_ARG"
+  fi
+
+  utils::crc_sum <<<"$cmd"
+}
+
+#
 # Calculates the layer id for the run command
 #
 # Arguments:
@@ -595,24 +636,7 @@ vedv::image_builder::__layer_copy() {
 #
 vedv::image_builder::__layer_run_calc_id() {
   local -r cmd="$1"
-  # validate arguments
-  if [[ -z "$cmd" ]]; then
-    err "Argument 'cmd' is required"
-    return "$ERR_INVAL_ARG"
-  fi
-  local cmd_name
-  cmd_name="$(vedv::image_vedvfile_service::get_cmd_name "$cmd")" || {
-    err "Failed to get command name from command '$cmd'"
-    return "$ERR_INVAL_ARG"
-  }
-  readonly cmd_name
-
-  if [[ "$cmd_name" != "RUN" ]]; then
-    err "Invalid command name '${cmd_name}', it must be 'RUN'"
-    return "$ERR_INVAL_ARG"
-  fi
-
-  utils::crc_sum <<<"$cmd"
+  vedv::image_builder::__simple_layer_command_calc_id "$cmd" "RUN"
 }
 
 #
@@ -645,7 +669,11 @@ vedv::image_builder::__layer_run() {
   fi
 
   local cmd_body
-  cmd_body="$(vedv::image_vedvfile_service::get_cmd_body "$cmd")"
+  cmd_body="$(vedv::image_vedvfile_service::get_cmd_body "$cmd")" || {
+    err "Failed to get body from command '${cmd}'"
+    return "$ERR_INVAL_ARG"
+  }
+  cmd_body="$(utils::str_encode "$cmd_body")"
   readonly cmd_body
 
   if [[ -z "$cmd_body" ]]; then
@@ -655,6 +683,72 @@ vedv::image_builder::__layer_run() {
 
   local -r exec_func="vedv::image_service::execute_cmd '${image_id}' '${cmd_body}'"
   vedv::image_builder::__layer_execute_cmd "$image_id" "$cmd" "RUN" "$exec_func"
+}
+
+#
+# Calculates the layer id for the user command
+#
+# Arguments:
+#   cmd string       user command (e.g. "1 USER nalyd")
+#
+# Output:
+#  Writes layer_id (string) to the stdout
+#
+# Returns:
+#  0 on success, non-zero on error.
+#
+vedv::image_builder::__layer_user_calc_id() {
+  local -r cmd="$1"
+  vedv::image_builder::__simple_layer_command_calc_id "$cmd" "USER"
+}
+
+#
+# Creates and set de default user for the image
+#
+# Preconditions:
+#  The image must be started and running
+#
+# Arguments:
+#   image_id  string       image where the user will be set
+#   cmd string             user command (e.g. "1 USER nalyd")
+#
+# Output:
+#  Writes command_output (text) to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::image_builder::__layer_user() {
+  local -r image_id="$1"
+  local -r cmd="$2"
+  shift 2
+  # validate arguments
+  if [[ -z "$image_id" ]]; then
+    err "Argument 'image_id' is required"
+    return "$ERR_INVAL_ARG"
+  fi
+  if [[ -z "$cmd" ]]; then
+    err "Argument 'cmd' is required"
+    return "$ERR_INVAL_ARG"
+  fi
+
+  local -a cmd_arr
+  IFS=' ' read -r -a cmd_arr <<<"$cmd"
+  # 1 USER nalyd -> nalyd
+  local user_name
+  user_name="$(vedv::image_vedvfile_service::get_cmd_body "$cmd")" || {
+    err "Failed to get user name from command '${cmd}'"
+    return "$ERR_INVAL_ARG"
+  }
+  readonly user_name
+
+  if [[ -z "$user_name" ]]; then
+    err "Argument 'user_name' must not be empty"
+    return "$ERR_INVAL_ARG"
+  fi
+
+  local -r exec_func="vedv::image_service::set_user '${image_id}' '${user_name}'"
+  vedv::image_builder::__layer_execute_cmd "$image_id" "$cmd" "USER" "$exec_func"
 }
 
 #

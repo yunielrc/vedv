@@ -612,7 +612,7 @@ vedv::hypervisor::set_description() {
     return "$ERR_INVAL_ARG"
   fi
 
-  if ! VBoxManage modifyvm "$vm_name" --description "$description" >/dev/null; then
+  if ! VBoxManage setextradata "$vm_name" user-data "$description" >/dev/null; then
     err "Error setting description, vm: ${vm_name}"
     return "$ERR_VIRTUALBOX_OPERATION"
   fi
@@ -640,14 +640,17 @@ vedv::hypervisor::get_description() {
   fi
 
   local vminfo
-  vminfo="$(VBoxManage showvminfo "$vm_name" --machinereadable)" || {
+  vminfo="$(VBoxManage getextradata "$vm_name" user-data)" || {
     err "Error getting description of vm: ${vm_name}"
     return "$ERR_VIRTUALBOX_OPERATION"
   }
+  readonly vminfo
 
-  echo "$vminfo" |
-    grep -o '^description=".*"' |
-    sed -e 's/^description="//' -e 's/"$//'
+  if [[ "$vminfo" == "No value set!" ]]; then
+    return 0
+  fi
+
+  echo "${vminfo#'Value:' }"
 }
 vedv::virtualbox::get_description() { vedv::hypervisor::get_description "$@"; }
 

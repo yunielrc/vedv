@@ -569,9 +569,9 @@ vedv::vmobj_entity::__set_attribute() {
 # Set ssh_port value
 #
 # Arguments:
-#   type string            type (e.g. 'container|image')
-#   vmobj_id  string       vmobj id
-#   ssh_port  int          ssh port
+#   type      string  type (e.g. 'container|image')
+#   vmobj_id  string  vmobj id
+#   ssh_port  int     ssh port
 #
 # Returns:
 #   0 on success, non-zero on error.
@@ -592,8 +592,11 @@ vedv::vmobj_entity::set_ssh_port() {
 # Get ssh_port value
 #
 # Arguments:
-#   type string               type (e.g. 'container|image')
-#   vmobj_id  string       vmobj id
+#   type      string  type (e.g. 'container|image')
+#   vmobj_id  string  vmobj id
+#
+# Output:
+#   Writes ssh_port (int) to the stdout.
 #
 # Returns:
 #   0 on success, non-zero on error.
@@ -606,4 +609,50 @@ vedv::vmobj_entity::get_ssh_port() {
     "$type" \
     "$vmobj_id" \
     'ssh_port'
+}
+
+#
+# Set user name
+#
+# Arguments:
+#   type       string  type (e.g. 'container|image')
+#   vmobj_id   string  vmobj id
+#   user_name  string  user name
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::vmobj_entity::set_user_name() {
+  local -r type="$1"
+  local -r vmobj_id="$2"
+  local -r value="$3"
+
+  vedv::vmobj_entity::__set_attribute \
+    "$type" \
+    "$vmobj_id" \
+    'user_name' \
+    "$value"
+}
+
+#
+# Get user name
+#
+# Arguments:
+#   type      string  type (e.g. 'container|image')
+#   vmobj_id  string  vmobj id
+#
+# Output:
+#   Writes user_name (string) to the stdout.
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::vmobj_entity::get_user_name() {
+  local -r type="$1"
+  local -r vmobj_id="$2"
+
+  vedv::vmobj_entity::__get_attribute \
+    "$type" \
+    "$vmobj_id" \
+    'user_name'
 }

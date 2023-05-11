@@ -24,7 +24,7 @@ fi
 
 readonly VEDV_IMAGE_ENTITY_TYPE='image'
 # shellcheck disable=SC2034
-readonly VEDV_IMAGE_ENTITY_VALID_ATTRIBUTES='image_cache|ova_file_sum|ssh_port'
+readonly VEDV_IMAGE_ENTITY_VALID_ATTRIBUTES='image_cache|ova_file_sum|ssh_port|user_name'
 
 # FUNCTIONS
 
@@ -241,10 +241,10 @@ vedv::image_entity::set_image_cache() {
 # Get ssh_port value
 #
 # Arguments:
-#   image_id string       image id
+#   image_id  string  image id
 #
 # Output:
-#  Writes ssh_port (int) value
+#  Writes ssh_port (int) to the stdout
 #
 # Returns:
 #   0 on success, non-zero on error.
@@ -258,8 +258,8 @@ vedv::image_entity::get_ssh_port() {
 # Set ssh_port value
 #
 # Arguments:
-#   image_id  string       image id
-#   ssh_port  int          ssh port
+#   image_id  string  image id
+#   ssh_port  int     ssh port
 #
 # Returns:
 #   0 on success, non-zero on error.
@@ -269,6 +269,40 @@ vedv::image_entity::set_ssh_port() {
   local -r value="$2"
 
   vedv::vmobj_entity::set_ssh_port "$VEDV_IMAGE_ENTITY_TYPE" "$image_id" "$value"
+}
+
+#
+# Get user_name value
+#
+# Arguments:
+#   image_id  string  image id
+#
+# Output:
+#  Writes user_name (string) to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::image_entity::get_user_name() {
+  local -r image_id="$1"
+  vedv::vmobj_entity::get_user_name "$VEDV_IMAGE_ENTITY_TYPE" "$image_id"
+}
+
+#
+# Set user_name value
+#
+# Arguments:
+#   image_id  string  image id
+#   user_name string  ssh port
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::image_entity::set_user_name() {
+  local -r image_id="$1"
+  local -r value="$2"
+
+  vedv::vmobj_entity::set_user_name "$VEDV_IMAGE_ENTITY_TYPE" "$image_id" "$value"
 }
 
 #

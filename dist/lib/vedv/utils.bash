@@ -341,3 +341,69 @@ utils::array::to_string() {
 arr2str() { utils::array::to_string "$@"; }
 
 utils::sleep() { sleep "$@"; }
+
+declare -ga VED_UTILS_DECODED_CHARS=()
+VED_UTILS_DECODED_CHARS[0]="'"
+VED_UTILS_DECODED_CHARS[1]='"'
+readonly VED_UTILS_DECODED_CHARS
+
+declare -ga VED_UTILS_ENCODED_CHARS=()
+VED_UTILS_ENCODED_CHARS[0]="@*^&"
+VED_UTILS_ENCODED_CHARS[1]='*!@%'
+readonly VED_UTILS_ENCODED_CHARS
+
+#
+# Encode a string
+#
+# Arguments:
+#   str   string    string to encode
+#
+# Output:
+#   writes the encoded string to stdout
+#
+utils::str_encode() {
+  local -r str="$1"
+
+  if [[ -z "$str" ]]; then
+    return 0
+  fi
+
+  local str_encoded="$str"
+
+  for ((i = 0; i < ${#VED_UTILS_DECODED_CHARS[@]}; i += 1)); do
+    local decode_char="${VED_UTILS_DECODED_CHARS[$i]}"
+    local encoded_char="${VED_UTILS_ENCODED_CHARS[$i]}"
+
+    str_encoded="${str_encoded//"$decode_char"/"$encoded_char"}"
+  done
+
+  echo "$str_encoded"
+}
+
+#
+# Decode a string
+#
+# Arguments:
+#   str   string    string to decode
+#
+# Output:
+#   writes the decoded string to stdout
+#
+utils::str_decode() {
+  local -r str="$1"
+
+  if [[ -z "$str" ]]; then
+    return 0
+  fi
+
+  local str_decoded="$str"
+
+  for ((i = 0; i < ${#VED_UTILS_ENCODED_CHARS[@]}; i += 1)); do
+    local decode_char="${VED_UTILS_DECODED_CHARS[$i]}"
+    local encoded_char="${VED_UTILS_ENCODED_CHARS[$i]}"
+
+    str_decoded="${str_decoded//"$encoded_char"/"$decode_char"}"
+  done
+
+  echo "$str_decoded"
+}

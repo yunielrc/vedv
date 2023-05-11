@@ -60,7 +60,7 @@ cat <<'EOF' >/usr/local/bin/vedv-adduser
 set -eu
 
 if [[ "$#" -ne 2 ]]; then
-  echo "usage: ved-adduser <username> <password>" >&2
+  echo "usage: vedv-adduser <username> <password>" >&2
   exit 1
 fi
 

@@ -129,6 +129,22 @@ vedv::image_service::__pull_from_file() {
     return "$ERR_IMAGE_OPERATION"
   }
 
+  local user_name
+  user_name="$(vedv::image_entity::get_user_name "$image_id")" || {
+    err "Error getting attribute user name from the image '${image_id}'"
+    return "$ERR_IMAGE_OPERATION"
+  }
+  readonly user_name
+
+  if [[ -z "$user_name" ]]; then
+    local -r default_user_name="$(vedv::vmobj_service::get_ssh_user)"
+
+    vedv::image_entity::set_user_name "$image_id" "$default_user_name" || {
+      err "Error setting attribute user name '${default_user_name}' to the image '${image_id}'"
+      return "$ERR_IMAGE_OPERATION"
+    }
+  fi
+
   if [[ "$return_image_id" != true ]]; then
     echo "$image_name"
   else
@@ -609,6 +625,30 @@ vedv::image_service::copy() {
     "$src" \
     "$dest" \
     "$user"
+}
+
+#
+# Create an user if not exits and set its name to
+# the vmobj-entity
+#
+# Arguments:
+#   image_id   string  image id
+#   user_name  string  user name
+#
+# Output:
+#  writes command output to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::image_service::set_user() {
+  local -r image_id="$1"
+  local -r user_name="$2"
+
+  vedv::vmobj_service::set_user \
+    'image' \
+    "$image_id" \
+    "$user_name"
 }
 
 #
