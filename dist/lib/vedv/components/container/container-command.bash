@@ -390,7 +390,11 @@ HELPMSG
 # Execute cmd in a container
 #
 # Flags:
-#   [-h | --help]       show help
+#   -h | --help               show help
+#   --root                    use root user to execute command
+#
+# Options:
+#   -u, --user <user> string  user to execute command
 #
 # Arguments:
 #   CONTAINER           container name or id
@@ -403,6 +407,9 @@ HELPMSG
 #   0 on success, non-zero on error.
 #
 vedv::container_command::__execute_cmd() {
+  local user=''
+  local container_name_or_id=''
+  local cmd=''
   if [[ $# == 0 ]]; then set -- '-h'; fi
 
   while [[ $# -gt 0 ]]; do
@@ -411,30 +418,50 @@ vedv::container_command::__execute_cmd() {
       vedv::container_command::__execute_cmd_help
       return 0
       ;;
-    *)
-      local container_name_or_id="$1"
+    --root)
       shift
-      local cmd
+      set -- '-u' 'root' "$@"
+      ;;
+    -u | --user)
+      shift
+      readonly user="${1:-}"
+      # validate argument
+      if [[ -z "$user" ]]; then
+        err "No user specified\n"
+        vedv::container_command::__execute_cmd
+        return "$ERR_INVAL_ARG"
+      fi
+      shift
+      ;;
+    *)
+      readonly container_name_or_id="${1:-}"
+
+      if [[ -z "$container_name_or_id" ]]; then
+        err "No container specified\n"
+        vedv::container_command::__execute_cmd_help
+        return "$ERR_INVAL_ARG"
+      fi
+      shift
 
       if [[ "$#" -ne 0 ]]; then
-        cmd="$*"
+        readonly cmd="$*"
       elif [[ ! -t 0 ]]; then
         # if stdin FD is not opened on a terminal its because there is input data,
-        cmd="$(cat -)"
+        readonly cmd="$(cat -)"
       fi
-      readonly cmd
 
       if [[ -z "$cmd" ]]; then
         err "No command specified\n"
         vedv::container_command::__execute_cmd_help
         return "$ERR_INVAL_ARG"
       fi
-
-      vedv::container_service::execute_cmd "$container_name_or_id" "$cmd"
-      return $?
+      # shift $#
+      break
       ;;
     esac
   done
+
+  vedv::container_service::execute_cmd "$container_name_or_id" "$cmd" "$user"
 }
 
 #
@@ -454,6 +481,13 @@ COMMAND1
 EOF
 
 Execute a command in a container
+
+Flags:
+  -h, --help          show help
+  --root              execute command as root user
+
+Options:
+  -u, --user <user>   execute command as specific user
 HELPMSG
 }
 
@@ -480,6 +514,9 @@ HELPMSG
 #
 vedv::container_command::__copy() {
   local user=''
+  local container_name_or_id=''
+  local src=''
+  local dest=''
 
   if [[ $# == 0 ]]; then set -- '-h'; fi
 
@@ -495,7 +532,7 @@ vedv::container_command::__copy() {
       ;;
     -u | --user)
       shift
-      user="${1:-}"
+      readonly user="${1:-}"
       # validate argument
       if [[ -z "$user" ]]; then
         err "No user specified\n"
@@ -505,10 +542,16 @@ vedv::container_command::__copy() {
       shift
       ;;
     *)
-      local container_name_or_id="$1"
-      local src="${2:-}"
-      local dest="${3:-}"
+      readonly container_name_or_id="${1:-}"
+      readonly src="${2:-}"
+      readonly dest="${3:-}"
+      shift 3
       # validate arguments
+      if [[ -z "$container_name_or_id" ]]; then
+        err "No container specified\n"
+        vedv::container_command::__copy_help
+        return "$ERR_INVAL_ARG"
+      fi
       if [[ -z "$src" ]]; then
         err "No source file specified\n"
         vedv::container_command::__copy_help
@@ -519,12 +562,12 @@ vedv::container_command::__copy() {
         vedv::container_command::__copy_help
         return "$ERR_INVAL_ARG"
       fi
-
-      vedv::container_service::copy "$container_name_or_id" "$src" "$dest" "$user"
-      return $?
+      break
       ;;
     esac
   done
+
+  vedv::container_service::copy "$container_name_or_id" "$src" "$dest" "$user"
 }
 
 #
@@ -541,11 +584,11 @@ ${__VED_CONTAINER_COMMAND_SCRIPT_NAME} container copy CONTAINER LOCAL_SRC CONTAI
 Copy files from local filesystem to a container
 
 Flags:
-  -h, --help        show help
-  --root            copy as root user
+  -h, --help          show help
+  --root              copy as root user
 
 Options:
-  -u, --user        copy as specific user
+  -u, --user <user>   copy as specific user
 HELPMSG
 }
 

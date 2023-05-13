@@ -276,7 +276,14 @@ COMMAND1
 ...
 EOF
 
-Execute a command in a container"
+Execute a command in a container
+
+Flags:
+  -h, --help          show help
+  --root              copy as root user
+
+Options:
+  -u, --user <user>   copy as specific user"
 }
 
 @test "vedv::container_command::__execute_cmd() Should show help" {
@@ -297,13 +304,20 @@ COMMAND1
 ...
 EOF
 
-Execute a command in a container"
+Execute a command in a container
+
+Flags:
+  -h, --help          show help
+  --root              copy as root user
+
+Options:
+  -u, --user <user>   copy as specific user"
   done
 }
-
+# bats test_tags=only
 @test "vedv::container_command::__execute_cmd() Should run command" {
   vedv::container_service::execute_cmd() {
-    assert_equal "$*" 'container1 command1'
+    assert_equal "$*" 'container1 command1 '
   }
   # Act
   run vedv::container_command::__execute_cmd 'container1' 'command1'
@@ -344,7 +358,7 @@ vedv container copy CONTAINER LOCAL_SRC CONTAINER_DEST
 Copy files from local filesystem to a container"
   done
 }
-# bats test_tags=only
+
 @test "vedv::container_command::__copy() Should show error when user is missing" {
   vedv::container_service::copy() {
     assert_equal "$*" 'container1 local_src container_dest'
