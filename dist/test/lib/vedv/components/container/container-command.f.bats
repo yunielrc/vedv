@@ -20,12 +20,15 @@ teardown() {
 
   assert_success
   assert_output "Usage:
-vedv container create [OPTIONS] IMAGE
+vedv container create [FLAGS] [OPTIONS] IMAGE
 
 Create a new container
 
+Flags:
+  -h, --help            show help
+
 Options:
-  -n, --name name         Assign a name to the container"
+  -n, --name <name>     assign a name to the container"
 }
 
 @test "vedv container create -h , Should show help" {
@@ -35,12 +38,15 @@ Options:
 
     assert_success
     assert_output "Usage:
-vedv container create [OPTIONS] IMAGE
+vedv container create [FLAGS] [OPTIONS] IMAGE
 
 Create a new container
 
+Flags:
+  -h, --help            show help
+
 Options:
-  -n, --name name         Assign a name to the container"
+  -n, --name <name>     assign a name to the container"
   done
 }
 
@@ -49,15 +55,18 @@ Options:
   run vedv container create --name
 
   assert_failure
-  assert_output "Missing argument for option '--name'
+  assert_output "No container name specified
 
 Usage:
-vedv container create [OPTIONS] IMAGE
+vedv container create [FLAGS] [OPTIONS] IMAGE
 
 Create a new container
 
+Flags:
+  -h, --help            show help
+
 Options:
-  -n, --name name         Assign a name to the container"
+  -n, --name <name>     assign a name to the container"
 }
 
 @test "vedv container create --name container123, Should throw error Without passing an image" {
@@ -73,15 +82,7 @@ Options:
   run vedv container create --name 'container123' 'image1' 'image2'
 
   assert_failure
-  assert_output "Invalid argument 'image2'
-
-Usage:
-vedv container create [OPTIONS] IMAGE
-
-Create a new container
-
-Options:
-  -n, --name name         Assign a name to the container"
+  assert_output "Image: 'image1' does not exist"
 }
 
 @test "vedv container create --name container123 image, Should create a container" {
@@ -98,9 +99,13 @@ Options:
 
   assert_success
   assert_output --partial "Usage:
-vedv container start CONTAINER [CONTAINER...]
+vedv container start [FLAGS] CONTAINER [CONTAINER...]
 
-Start one or more stopped containers"
+Start one or more stopped containers
+
+Flags:
+  -h, --help          show help
+  -w, --wait          wait for SSH"
 }
 
 @test "vedv container start -h , Should show help" {
@@ -110,9 +115,13 @@ Start one or more stopped containers"
 
     assert_success
     assert_output --partial "Usage:
-vedv container start CONTAINER [CONTAINER...]
+vedv container start [FLAGS] CONTAINER [CONTAINER...]
 
-Start one or more stopped containers"
+Start one or more stopped containers
+
+Flags:
+  -h, --help          show help
+  -w, --wait          wait for SSH"
   done
 }
 
@@ -134,12 +143,16 @@ Start one or more stopped containers"
 
   assert_success
   assert_output "Usage:
-vedv container rm CONTAINER [CONTAINER...]
+vedv container rm [FLAGS] CONTAINER [CONTAINER...]
 
 Remove one or more running containers
 
+Aliases:
+  rm, remove
+
 Flags:
-  -f, --force         Force remove"
+  -h, --help          show help
+  -f, --force         force remove"
 }
 
 @test "vedv container rm -h , Should show help" {
@@ -149,12 +162,16 @@ Flags:
 
     assert_success
     assert_output "Usage:
-vedv container rm CONTAINER [CONTAINER...]
+vedv container rm [FLAGS] CONTAINER [CONTAINER...]
 
 Remove one or more running containers
 
+Aliases:
+  rm, remove
+
 Flags:
-  -f, --force         Force remove"
+  -h, --help          show help
+  -f, --force         force remove"
   done
 }
 
@@ -178,7 +195,10 @@ Flags:
   assert_output "Usage:
 vedv container stop CONTAINER [CONTAINER...]
 
-Stop one or more running containers"
+Stop one or more running containers
+
+Flags:
+  -h, --help          show help"
 }
 
 @test "vedv container stop -h , Should show help" {
@@ -190,7 +210,10 @@ Stop one or more running containers"
     assert_output "Usage:
 vedv container stop CONTAINER [CONTAINER...]
 
-Stop one or more running containers"
+Stop one or more running containers
+
+Flags:
+  -h, --help          show help"
   done
 }
 
@@ -215,15 +238,16 @@ Stop one or more running containers"
 
     assert_success
     assert_output "Usage:
-vedv docker container ls [OPTIONS] [CONTAINER PARTIAL NAME]
+vedv container ls [FLAGS] [CONTAINER PARTIAL NAME]
 
 List containers
 
 Aliases:
   ls, ps, list
 
-Options:
-  -a, --all        Show all containers (default shows just running)"
+Flags:
+  -h, --help      show help
+  -a, --all       show all containers (default shows just running)"
   done
 }
 

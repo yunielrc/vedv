@@ -521,6 +521,7 @@ vedv::container_service::execute_cmd() {
 #
 # Arguments:
 #   container_id_or_name  string     container id or name
+#   [user]                string     container user
 #
 # Output:
 #  writes command output to the stdout
@@ -530,8 +531,9 @@ vedv::container_service::execute_cmd() {
 #
 vedv::container_service::connect() {
   local -r container_id_or_name="$1"
+  local -r user="${2:-}"
 
-  vedv::vmobj_service::connect 'container' "$container_id_or_name"
+  vedv::vmobj_service::connect 'container' "$container_id_or_name" "$user"
 }
 
 #

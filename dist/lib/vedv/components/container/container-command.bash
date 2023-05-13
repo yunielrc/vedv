@@ -52,33 +52,28 @@ vedv::container_command::__create() {
   if [[ $# == 0 ]]; then set -- '-h'; fi
 
   while [[ $# -gt 0 ]]; do
-    local arg="$1"
 
-    case "$arg" in
+    case "$1" in
+    # flags
     -h | --help)
       vedv::container_command::__create_help
       return 0
       ;;
+    # options
     -n | --name)
       shift
-      name="${1:-}"
+      readonly name="${1:-}"
       # validate argument
       if [[ -z "$name" ]]; then
-        err "Missing argument for option '${arg}'\n"
+        err "No container name specified\n"
         vedv::container_command::__create_help
         return "$ERR_INVAL_ARG"
       fi
       shift
       ;;
     *)
-      if [[ -z "$image" ]]; then
-        image="$1"
-        shift
-      else
-        err "Invalid argument '${1}'\n"
-        vedv::container_command::__create_help
-        return "$ERR_INVAL_ARG"
-      fi
+      readonly image="$1"
+      break
       ;;
     esac
   done
@@ -101,12 +96,15 @@ vedv::container_command::__create() {
 vedv::container_command::__create_help() {
   cat <<-HELPMSG
 Usage:
-${__VED_CONTAINER_COMMAND_SCRIPT_NAME} container create [OPTIONS] IMAGE
+${__VED_CONTAINER_COMMAND_SCRIPT_NAME} container create [FLAGS] [OPTIONS] IMAGE
 
 Create a new container
 
+Flags:
+  -h, --help            show help
+
 Options:
-  -n, --name name         Assign a name to the container
+  -n, --name <name>     assign a name to the container
 HELPMSG
 }
 
@@ -127,30 +125,41 @@ HELPMSG
 #   0 on success, non-zero on error.
 #
 vedv::container_command::__start() {
-  if [[ $# == 0 ]]; then set -- '-h'; fi
-
   local wait_for_ssh=false
+  local -a container_names_or_ids=()
+
+  if [[ $# == 0 ]]; then set -- '-h'; fi
 
   while [[ $# -gt 0 ]]; do
     case "$1" in
+    # flags
     -h | --help)
       vedv::container_command::__start_help
       return 0
       ;;
     -w | --wait)
-      wait_for_ssh=true
+      readonly wait_for_ssh=true
       shift
       ;;
+    # arguments
     *)
-      if [[ "$wait_for_ssh" == false ]]; then
-        vedv::container_service::start_no_wait_ssh "$@"
-      else
-        vedv::container_service::start "$@"
-      fi
-      return $?
+      readonly container_names_or_ids=("$@")
+      break
       ;;
     esac
   done
+
+  if [[ ${#container_names_or_ids[@]} == 0 ]]; then
+    err "Missing argument 'CONTAINER'\n"
+    vedv::container_command::__start_help
+    return "$ERR_INVAL_ARG"
+  fi
+
+  if [[ "$wait_for_ssh" == false ]]; then
+    vedv::container_service::start_no_wait_ssh "${container_names_or_ids[@]}"
+  else
+    vedv::container_service::start "${container_names_or_ids[@]}"
+  fi
 }
 
 #
@@ -162,12 +171,13 @@ vedv::container_command::__start() {
 vedv::container_command::__start_help() {
   cat <<-HELPMSG
 Usage:
-${__VED_CONTAINER_COMMAND_SCRIPT_NAME} container start CONTAINER [CONTAINER...]
+${__VED_CONTAINER_COMMAND_SCRIPT_NAME} container start [FLAGS] CONTAINER [CONTAINER...]
 
 Start one or more stopped containers
 
 Flags:
-  -w, --wait          Wait for SSH
+  -h, --help          show help
+  -w, --wait          wait for SSH
 HELPMSG
 }
 
@@ -189,6 +199,7 @@ HELPMSG
 #
 vedv::container_command::__rm() {
   local force=false
+  local -a container_names_or_ids=()
 
   if [[ $# == 0 ]]; then set -- '-h'; fi
 
@@ -200,14 +211,22 @@ vedv::container_command::__rm() {
       ;;
     -f | --force)
       shift
-      force=true
+      readonly force=true
       ;;
     *)
-      vedv::container_service::remove "$force" "$@"
-      return $?
+      readonly container_names_or_ids=("$@")
+      break
       ;;
     esac
   done
+
+  if [[ ${#container_names_or_ids[@]} == 0 ]]; then
+    err "Missing argument 'CONTAINER'\n"
+    vedv::container_command::__rm_help
+    return "$ERR_INVAL_ARG"
+  fi
+
+  vedv::container_service::remove "$force" "${container_names_or_ids[@]}"
 }
 
 #
@@ -219,12 +238,16 @@ vedv::container_command::__rm() {
 vedv::container_command::__rm_help() {
   cat <<-HELPMSG
 Usage:
-${__VED_CONTAINER_COMMAND_SCRIPT_NAME} container rm CONTAINER [CONTAINER...]
+${__VED_CONTAINER_COMMAND_SCRIPT_NAME} container rm [FLAGS] CONTAINER [CONTAINER...]
 
 Remove one or more running containers
 
+Aliases:
+  rm, remove
+
 Flags:
-  -f, --force         Force remove
+  -h, --help          show help
+  -f, --force         force remove
 HELPMSG
 }
 
@@ -244,6 +267,8 @@ HELPMSG
 #   0 on success, non-zero on error.
 #
 vedv::container_command::__stop() {
+  local -a container_names_or_ids=()
+
   if [[ $# == 0 ]]; then set -- '-h'; fi
 
   while [[ $# -gt 0 ]]; do
@@ -253,11 +278,19 @@ vedv::container_command::__stop() {
       return 0
       ;;
     *)
-      vedv::container_service::stop "$@"
-      return $?
+      readonly container_names_or_ids=("$@")
+      break
       ;;
     esac
   done
+
+  if [[ ${#container_names_or_ids[@]} == 0 ]]; then
+    err "Missing argument 'CONTAINER'\n"
+    vedv::container_command::__stop_help
+    return "$ERR_INVAL_ARG"
+  fi
+
+  vedv::container_service::stop "${container_names_or_ids[@]}"
 }
 
 #
@@ -272,6 +305,9 @@ Usage:
 ${__VED_CONTAINER_COMMAND_SCRIPT_NAME} container stop CONTAINER [CONTAINER...]
 
 Stop one or more running containers
+
+Flags:
+  -h, --help          show help
 HELPMSG
 }
 
@@ -300,17 +336,11 @@ vedv::container_command::__list() {
       ;;
     -a | --all)
       shift
-      list_all=true
+      readonly list_all=true
       ;;
     *)
-      if [[ -z "$partial_name" ]]; then
-        partial_name="$1"
-        shift
-      else
-        err "Invalid argument: ${1}\n"
-        vedv::container_command::__list_help
-        return "$ERR_INVAL_ARG"
-      fi
+      readonly partial_name="$1"
+      break
       ;;
     esac
   done
@@ -327,15 +357,16 @@ vedv::container_command::__list() {
 vedv::container_command::__list_help() {
   cat <<-HELPMSG
 Usage:
-${__VED_CONTAINER_COMMAND_SCRIPT_NAME} docker container ls [OPTIONS] [CONTAINER PARTIAL NAME]
+${__VED_CONTAINER_COMMAND_SCRIPT_NAME} container ls [FLAGS] [CONTAINER PARTIAL NAME]
 
 List containers
 
 Aliases:
   ls, ps, list
 
-Options:
-  -a, --all        Show all containers (default shows just running)
+Flags:
+  -h, --help      show help
+  -a, --all       show all containers (default shows just running)
 HELPMSG
 }
 
@@ -355,20 +386,49 @@ HELPMSG
 #   0 on success, non-zero on error.
 #
 vedv::container_command::__connect() {
+  local user=''
+  local container_name_or_id=''
+
   if [[ $# == 0 ]]; then set -- '-h'; fi
 
   while [[ $# -gt 0 ]]; do
     case "$1" in
+    # flags
     -h | --help)
       vedv::container_command::__connect_help
       return 0
       ;;
+    -r | --root)
+      shift
+      set -- '-u' 'root' "$@"
+      ;;
+    # options
+    -u | --user)
+      shift
+      readonly user="${1:-}"
+      # validate argument
+      if [[ -z "$user" ]]; then
+        err "No user specified\n"
+        vedv::container_command::__copy_help
+        return "$ERR_INVAL_ARG"
+      fi
+      shift
+      ;;
+    # arguments
     *)
-      vedv::container_service::connect "$1"
-      return $?
+      readonly container_name_or_id="$1"
+      break
       ;;
     esac
   done
+
+  if [[ -z "$container_name_or_id" ]]; then
+    err "Missing argument 'CONTAINER'\n"
+    vedv::container_command::__connect_help
+    return "$ERR_INVAL_ARG"
+  fi
+
+  vedv::container_service::connect "$container_name_or_id" "$user"
 }
 
 #
@@ -380,9 +440,19 @@ vedv::container_command::__connect() {
 vedv::container_command::__connect_help() {
   cat <<-HELPMSG
 Usage:
-${__VED_CONTAINER_COMMAND_SCRIPT_NAME} container login|connect CONTAINER
+${__VED_CONTAINER_COMMAND_SCRIPT_NAME} container login [FLAGS] [OPTIONS] CONTAINER
 
 Login to a container
+
+Aliases:
+  login, connect
+
+Flags:
+  -h, --help          show help
+  -r, --root          login as root
+
+Options:
+  -u, --user  <user>  login as user
 HELPMSG
 }
 
@@ -410,6 +480,7 @@ vedv::container_command::__execute_cmd() {
   local user=''
   local container_name_or_id=''
   local cmd=''
+
   if [[ $# == 0 ]]; then set -- '-h'; fi
 
   while [[ $# -gt 0 ]]; do
@@ -419,7 +490,7 @@ vedv::container_command::__execute_cmd() {
       vedv::container_command::__execute_cmd_help
       return 0
       ;;
-    --root)
+    -r | --root)
       shift
       set -- '-u' 'root' "$@"
       ;;
@@ -437,13 +508,7 @@ vedv::container_command::__execute_cmd() {
       ;;
     # arguments
     *)
-      readonly container_name_or_id="${1:-}"
-
-      if [[ -z "$container_name_or_id" ]]; then
-        err "No container specified\n"
-        vedv::container_command::__execute_cmd_help
-        return "$ERR_INVAL_ARG"
-      fi
+      readonly container_name_or_id="$1"
       shift
 
       if [[ "$#" -ne 0 ]]; then
@@ -452,17 +517,21 @@ vedv::container_command::__execute_cmd() {
         # if stdin FD is not opened on a terminal its because there is input data,
         readonly cmd="$(cat -)"
       fi
-
-      if [[ -z "$cmd" ]]; then
-        err "No command specified\n"
-        vedv::container_command::__execute_cmd_help
-        return "$ERR_INVAL_ARG"
-      fi
-      # shift $#
       break
       ;;
     esac
   done
+  # validate arguments
+  if [[ -z "$container_name_or_id" ]]; then
+    err "No container specified\n"
+    vedv::container_command::__execute_cmd_help
+    return "$ERR_INVAL_ARG"
+  fi
+  if [[ -z "$cmd" ]]; then
+    err "No command specified\n"
+    vedv::container_command::__execute_cmd_help
+    return "$ERR_INVAL_ARG"
+  fi
 
   vedv::container_service::execute_cmd "$container_name_or_id" "$cmd" "$user"
 }
@@ -476,8 +545,8 @@ vedv::container_command::__execute_cmd() {
 vedv::container_command::__execute_cmd_help() {
   cat <<-HELPMSG
 Usage:
-${__VED_CONTAINER_COMMAND_SCRIPT_NAME} container exec CONTAINER COMMAND1 [COMMAND2] ...
-${__VED_CONTAINER_COMMAND_SCRIPT_NAME} container exec CONTAINER <<EOF
+${__VED_CONTAINER_COMMAND_SCRIPT_NAME} container exec [FLAGS] [OPTIONS] CONTAINER COMMAND1 [COMMAND2] ...
+${__VED_CONTAINER_COMMAND_SCRIPT_NAME} container exec [FLAGS] [OPTIONS] CONTAINER <<EOF
 COMMAND1
 [COMMAND2]
 ...
@@ -487,7 +556,7 @@ Execute a command in a container
 
 Flags:
   -h, --help          show help
-  --root              execute command as root user
+  -r, --root          execute command as root user
 
 Options:
   -u, --user <user>   execute command as specific user
@@ -530,7 +599,7 @@ vedv::container_command::__copy() {
       vedv::container_command::__copy_help
       return 0
       ;;
-    --root)
+    -r | --root)
       shift
       set -- '-u' 'root' "$@"
       ;;
@@ -548,30 +617,29 @@ vedv::container_command::__copy() {
       ;;
     # arguments
     *)
-      readonly container_name_or_id="${1:-}"
+      readonly container_name_or_id="$1"
       readonly src="${2:-}"
       readonly dest="${3:-}"
-      shift 3
-      # validate arguments
-      if [[ -z "$container_name_or_id" ]]; then
-        err "No container specified\n"
-        vedv::container_command::__copy_help
-        return "$ERR_INVAL_ARG"
-      fi
-      if [[ -z "$src" ]]; then
-        err "No source file specified\n"
-        vedv::container_command::__copy_help
-        return "$ERR_INVAL_ARG"
-      fi
-      if [[ -z "$dest" ]]; then
-        err "No dest file specified\n"
-        vedv::container_command::__copy_help
-        return "$ERR_INVAL_ARG"
-      fi
       break
       ;;
     esac
   done
+  # validate arguments
+  if [[ -z "$container_name_or_id" ]]; then
+    err "No container specified\n"
+    vedv::container_command::__copy_help
+    return "$ERR_INVAL_ARG"
+  fi
+  if [[ -z "$src" ]]; then
+    err "No source file specified\n"
+    vedv::container_command::__copy_help
+    return "$ERR_INVAL_ARG"
+  fi
+  if [[ -z "$dest" ]]; then
+    err "No dest file specified\n"
+    vedv::container_command::__copy_help
+    return "$ERR_INVAL_ARG"
+  fi
 
   vedv::container_service::copy "$container_name_or_id" "$src" "$dest" "$user"
 }
@@ -585,13 +653,16 @@ vedv::container_command::__copy() {
 vedv::container_command::__copy_help() {
   cat <<-HELPMSG
 Usage:
-${__VED_CONTAINER_COMMAND_SCRIPT_NAME} container copy CONTAINER LOCAL_SRC CONTAINER_DEST
+${__VED_CONTAINER_COMMAND_SCRIPT_NAME} container copy [FLAGS] [OPTIONS] CONTAINER LOCAL_SRC CONTAINER_DEST
 
 Copy files from local filesystem to a container
 
+Aliases:
+  cp, copy
+
 Flags:
   -h, --help          show help
-  --root              copy as root user
+  -r, --root          copy as root user
 
 Options:
   -u, --user <user>   copy as specific user
@@ -621,7 +692,7 @@ Manage containers
 Commands:
   create           Create a new container
   start            Start one or more containers
-  rm               Remove one or more containers
+  remove           Remove one or more containers
   stop             Stop one or more containers
   list             List containers
   login            Login to a container
@@ -656,7 +727,7 @@ vedv::container_command::run_cmd() {
       vedv::container_command::__stop "$@"
       return $?
       ;;
-    rm)
+    rm | remove)
       shift
       vedv::container_command::__rm "$@"
       return $?
@@ -676,7 +747,7 @@ vedv::container_command::run_cmd() {
       vedv::container_command::__execute_cmd "$@"
       return $?
       ;;
-    copy)
+    copy | cp)
       shift
       vedv::container_command::__copy "$@"
       return $?

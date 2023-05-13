@@ -14,7 +14,16 @@ vedv::container_service::remove() { echo "$@"; }
 vedv::container_service::list() { echo "include stopped containers: ${1:-false}"; }
 
 @test "vedv::container_command::__create(), with arg '-h|--help|help' should show help" {
-  local -r help_output='vedv container create [OPTIONS] IMAGE'
+  local -r help_output="Usage:
+vedv container create [FLAGS] [OPTIONS] IMAGE
+
+Create a new container
+
+Flags:
+  -h, --help            show help
+
+Options:
+  -n, --name <name>     assign a name to the container"
 
   run vedv::container_command::__create -h
 
@@ -46,16 +55,15 @@ vedv::container_service::list() { echo "include stopped containers: ${1:-false}"
   assert_output 'container created, arguments: /tmp/vedv/test/files/alpine-x86_64.ova super-llama-testunit-container-command'
 }
 
-@test "vedv::container_command::__create(), with invalid arg throw an error" {
-
-  run vedv::container_command::__create 'image_file' 'invalid_arg'
-
-  assert_failure 69
-  assert_output --partial "Invalid argument 'invalid_arg'"
-}
-
 @test "vedv::container_command::__start(), with arg '-h|--help|help' should show help" {
-  local -r help_output='vedv container start CONTAINER [CONTAINER...]'
+  local -r help_output="Usage:
+vedv container start [FLAGS] CONTAINER [CONTAINER...]
+
+Start one or more stopped containers
+
+Flags:
+  -h, --help          show help
+  -w, --wait          wait for SSH"
 
   run vedv::container_command::__start -h
 
@@ -101,7 +109,17 @@ vedv::container_service::list() { echo "include stopped containers: ${1:-false}"
 }
 
 @test "vedv::container_command::__rm(), with arg '-h|--help|help' should show help" {
-  local -r help_output='vedv container rm CONTAINER [CONTAINER...]'
+  local -r help_output="Usage:
+vedv container rm [FLAGS] CONTAINER [CONTAINER...]
+
+Remove one or more running containers
+
+Aliases:
+  rm, remove
+
+Flags:
+  -h, --help          show help
+  -f, --force         force remove"
 
   run vedv::container_command::__rm -h
 
@@ -111,7 +129,7 @@ vedv::container_service::list() { echo "include stopped containers: ${1:-false}"
   run vedv::container_command::__rm --help
 
   assert_success
-  assert_output --partial "$help_output"
+  assert_output "$help_output"
 }
 
 @test 'vedv::container_command::__rm(), should remove a container' {
@@ -124,7 +142,17 @@ vedv::container_service::list() { echo "include stopped containers: ${1:-false}"
 }
 
 @test "vedv::container_command::__list(), with arg '-h|--help|help' should show help" {
-  local -r help_output='vedv docker container ls [OPTIONS]'
+  local -r help_output="Usage:
+vedv container ls [FLAGS] [CONTAINER PARTIAL NAME]
+
+List containers
+
+Aliases:
+  ls, ps, list
+
+Flags:
+  -h, --help      show help
+  -a, --all       show all containers (default shows just running)"
 
   run vedv::container_command::__list -h
 
@@ -135,14 +163,6 @@ vedv::container_service::list() { echo "include stopped containers: ${1:-false}"
 
   assert_success
   assert_output --partial "$help_output"
-}
-
-@test "vedv::container_command::__list(), with invalid arg throw an error" {
-
-  run vedv::container_command::__list 'partial_name' 'invalid_arg'
-
-  assert_failure 69
-  assert_output --partial 'Invalid argument: invalid_arg'
 }
 
 @test 'vedv::container_command::__list(), should show the running containers' {
@@ -226,9 +246,19 @@ vedv::container_service::list() { echo "include stopped containers: ${1:-false}"
   # Assert
   assert_success
   assert_output "Usage:
-vedv container login|connect CONTAINER
+vedv container login [FLAGS] [OPTIONS] CONTAINER
 
-Login to a container"
+Login to a container
+
+Aliases:
+  login, connect
+
+Flags:
+  -h, --help          show help
+  -r, --root          login as root
+
+Options:
+  -u, --user  <user>  login as user"
 }
 
 @test "vedv::container_command::__connect() Should show help" {
@@ -242,15 +272,25 @@ Login to a container"
     # Assert
     assert_success
     assert_output "Usage:
-vedv container login|connect CONTAINER
+vedv container login [FLAGS] [OPTIONS] CONTAINER
 
-Login to a container"
+Login to a container
+
+Aliases:
+  login, connect
+
+Flags:
+  -h, --help          show help
+  -r, --root          login as root
+
+Options:
+  -u, --user  <user>  login as user"
   done
 }
 
 @test "vedv::container_command::__connect() Should login" {
   vedv::container_service::connect() {
-    assert_equal "$*" 'container1'
+    assert_equal "$*" 'container1 '
   }
   # Act
   run vedv::container_command::__connect 'container1'
@@ -269,8 +309,8 @@ Login to a container"
   # Assert
   assert_success
   assert_output "Usage:
-vedv container exec CONTAINER COMMAND1 [COMMAND2] ...
-vedv container exec CONTAINER <<EOF
+vedv container exec [FLAGS] [OPTIONS] CONTAINER COMMAND1 [COMMAND2] ...
+vedv container exec [FLAGS] [OPTIONS] CONTAINER <<EOF
 COMMAND1
 [COMMAND2]
 ...
@@ -280,10 +320,10 @@ Execute a command in a container
 
 Flags:
   -h, --help          show help
-  --root              copy as root user
+  -r, --root          execute command as root user
 
 Options:
-  -u, --user <user>   copy as specific user"
+  -u, --user <user>   execute command as specific user"
 }
 
 @test "vedv::container_command::__execute_cmd() Should show help" {
@@ -297,8 +337,8 @@ Options:
     # Assert
     assert_success
     assert_output "Usage:
-vedv container exec CONTAINER COMMAND1 [COMMAND2] ...
-vedv container exec CONTAINER <<EOF
+vedv container exec [FLAGS] [OPTIONS] CONTAINER COMMAND1 [COMMAND2] ...
+vedv container exec [FLAGS] [OPTIONS] CONTAINER <<EOF
 COMMAND1
 [COMMAND2]
 ...
@@ -308,10 +348,10 @@ Execute a command in a container
 
 Flags:
   -h, --help          show help
-  --root              copy as root user
+  -r, --root          execute command as root user
 
 Options:
-  -u, --user <user>   copy as specific user"
+  -u, --user <user>   execute command as specific user"
   done
 }
 # bats test_tags=only
@@ -337,7 +377,7 @@ Options:
   # Assert
   assert_success
   assert_output --partial "Usage:
-vedv container copy CONTAINER LOCAL_SRC CONTAINER_DEST
+vedv container copy [FLAGS] [OPTIONS] CONTAINER LOCAL_SRC CONTAINER_DEST
 
 Copy files from local filesystem to a container"
 }
@@ -353,7 +393,7 @@ Copy files from local filesystem to a container"
     # Assert
     assert_success
     assert_output --partial "Usage:
-vedv container copy CONTAINER LOCAL_SRC CONTAINER_DEST
+vedv container copy [FLAGS] [OPTIONS] CONTAINER LOCAL_SRC CONTAINER_DEST
 
 Copy files from local filesystem to a container"
   done
@@ -370,7 +410,7 @@ Copy files from local filesystem to a container"
   assert_output --partial "No user specified
 
 Usage:
-vedv container copy CONTAINER LOCAL_SRC CONTAINER_DEST
+vedv container copy [FLAGS] [OPTIONS] CONTAINER LOCAL_SRC CONTAINER_DEST
 
 Copy files from local filesystem to a container"
 }
@@ -386,7 +426,7 @@ Copy files from local filesystem to a container"
   assert_output --partial "No source file specified
 
 Usage:
-vedv container copy CONTAINER LOCAL_SRC CONTAINER_DEST
+vedv container copy [FLAGS] [OPTIONS] CONTAINER LOCAL_SRC CONTAINER_DEST
 
 Copy files from local filesystem to a container"
 }
@@ -402,7 +442,7 @@ Copy files from local filesystem to a container"
   assert_output --partial "No dest file specified
 
 Usage:
-vedv container copy CONTAINER LOCAL_SRC CONTAINER_DEST
+vedv container copy [FLAGS] [OPTIONS] CONTAINER LOCAL_SRC CONTAINER_DEST
 
 Copy files from local filesystem to a container"
 }

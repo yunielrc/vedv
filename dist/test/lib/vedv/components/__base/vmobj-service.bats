@@ -1443,7 +1443,7 @@ EOF
     echo 12345
   }
   vedv::vmobj_service::connect_by_id() {
-    assert_equal "$*" "container 12345"
+    assert_equal "$*" "container 12345 "
   }
 
   run vedv::vmobj_service::connect "$type" "$vmobj_id"

@@ -825,6 +825,7 @@ vedv::vmobj_service::execute_cmd() {
 # Arguments:
 #   type      string     type (e.g. 'container|image')
 #   vmobj_id  string     vmobj id
+#   [user]    string     user name
 #
 # Output:
 #  writes command output to the stdout
@@ -835,6 +836,7 @@ vedv::vmobj_service::execute_cmd() {
 vedv::vmobj_service::connect_by_id() {
   local -r type="$1"
   local -r vmobj_id="$2"
+  local -r user="${3:-}"
   # validate arguments
   vedv::vmobj_entity::validate_type "$type" ||
     return "$?"
@@ -845,7 +847,7 @@ vedv::vmobj_service::connect_by_id() {
 
   local -r exec_func="vedv::ssh_client::connect \"\$user\" \"\$ip\"  \"\$password\" \"\$port\""
 
-  vedv::vmobj_service::__exec_ssh_func "$type" "$vmobj_id" "$exec_func" || {
+  vedv::vmobj_service::__exec_ssh_func "$type" "$vmobj_id" "$exec_func" "$user" || {
     err "Failed to connect to ${type}: ${vmobj_id}"
     return "$ERR_VMOBJ_OPERATION"
   }
@@ -857,6 +859,7 @@ vedv::vmobj_service::connect_by_id() {
 # Arguments:
 #   type              string     type (e.g. 'container|image')
 #   vmobj_id_or_name  string     vmobj id or name
+#   [user]            string     user name
 #
 # Output:
 #  writes command output to the stdout
@@ -867,13 +870,14 @@ vedv::vmobj_service::connect_by_id() {
 vedv::vmobj_service::connect() {
   local -r type="$1"
   local -r vmobj_id_or_name="$2"
+  local -r user="${3:-}"
 
   local vmobj_id
   vmobj_id="$(vedv::vmobj_service::get_ids_from_vmobj_names_or_ids "$type" "$vmobj_id_or_name")" || {
     err "Failed to get ${type} id by name or id: ${vmobj_id_or_name}"
     return "$ERR_VMOBJ_OPERATION"
   }
-  vedv::vmobj_service::connect_by_id "$type" "$vmobj_id"
+  vedv::vmobj_service::connect_by_id "$type" "$vmobj_id" "$user"
 }
 
 #
