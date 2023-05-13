@@ -544,10 +544,10 @@ vedv::image_builder::__layer_copy() {
       shift
       set -- '-u' 'root' "$@"
       ;;
-    # parameters
+    # options
     -u | --user)
       shift
-      user="${1:-}"
+      readonly user="${1:-}"
       # validate argument
       if [[ -z "$user" ]]; then
         err "Argument 'user' no specified"
@@ -557,8 +557,8 @@ vedv::image_builder::__layer_copy() {
       ;;
     # arguments
     *)
-      src="${1:-}"
-      dest="${2:-}"
+      readonly src="${1:-}"
+      readonly dest="${2:-}"
       break
       ;;
     esac
@@ -576,7 +576,7 @@ vedv::image_builder::__layer_copy() {
   local -r exec_func="vedv::image_service::copy '${image_id}' '${src}' '${dest}' '${user}'"
 
   vedv::image_builder::__layer_execute_cmd "$image_id" "$cmd" "COPY" "$exec_func" || {
-    err "Failed to execute command '$cmd'"
+    err "Failed to execute command '${cmd}'"
     return "$ERR_IMAGE_BUILDER_OPERATION"
   }
 }
@@ -646,8 +646,8 @@ vedv::image_builder::__layer_run_calc_id() {
 #  The image must be started and running
 #
 # Arguments:
-#   image_id  string       image where the files will be copy
-#   cmd string               run command (e.g. "1 RUN echo hello")
+#   image_id  string  image where the files will be copy
+#   cmd       string  run command (e.g. "1 RUN echo hello")
 #
 # Output:
 #  Writes command_output (text) to the stdout
@@ -667,22 +667,60 @@ vedv::image_builder::__layer_run() {
     err "Argument 'cmd' is required"
     return "$ERR_INVAL_ARG"
   fi
+  shift 2
 
-  local cmd_body
-  cmd_body="$(vedv::image_vedvfile_service::get_cmd_body "$cmd")" || {
-    err "Failed to get body from command '${cmd}'"
-    return "$ERR_INVAL_ARG"
-  }
-  cmd_body="$(utils::str_encode "$cmd_body")"
-  readonly cmd_body
+  local user=''
+  local cmd_body=''
+  # extract arguments
+  local -a cmd_arr
+  IFS=' ' read -r -a cmd_arr <<<"$cmd"
+  # ...:2 skip the command id and name
+  # 1 RUN --root ls -la -> --root ls -la
+  set -- "${cmd_arr[@]:2}"
 
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+    # flags
+    --root)
+      shift
+      set -- '-u' 'root' "$@"
+      ;;
+    # options
+    -u | --user)
+      shift
+      readonly user="${1:-}"
+      # validate argument
+      if [[ -z "$user" ]]; then
+        err "Argument 'user' no specified"
+        return "$ERR_INVAL_ARG"
+      fi
+      shift
+      ;;
+    # arguments
+    *)
+      readonly cmd_body="$*"
+      break
+      ;;
+    esac
+  done
+  # validate command arguments
   if [[ -z "$cmd_body" ]]; then
-    err "Command body must not be empty"
+    err "Argument 'cmd_body' must not be empty"
     return "$ERR_INVAL_ARG"
   fi
 
-  local -r exec_func="vedv::image_service::execute_cmd '${image_id}' '${cmd_body}'"
-  vedv::image_builder::__layer_execute_cmd "$image_id" "$cmd" "RUN" "$exec_func"
+  local cmd_encoded
+  cmd_encoded="$(utils::str_encode "$cmd_body")" || {
+    err "Failed to encode command '${cmd_body}'"
+    return "$ERR_IMAGE_BUILDER_OPERATION"
+  }
+  readonly cmd_encoded
+
+  local -r exec_func="vedv::image_service::execute_cmd '${image_id}' '${cmd_encoded}' '${user}'"
+  vedv::image_builder::__layer_execute_cmd "$image_id" "$cmd" "RUN" "$exec_func" || {
+    err "Failed to execute command '${cmd}'"
+    return "$ERR_IMAGE_BUILDER_OPERATION"
+  }
 }
 
 #
@@ -745,7 +783,10 @@ vedv::image_builder::__layer_user() {
   fi
 
   local -r exec_func="vedv::image_service::set_user '${image_id}' '${user_name}'"
-  vedv::image_builder::__layer_execute_cmd "$image_id" "$cmd" "USER" "$exec_func"
+  vedv::image_builder::__layer_execute_cmd "$image_id" "$cmd" "USER" "$exec_func" || {
+    err "Failed to execute command '${cmd}'"
+    return "$ERR_IMAGE_BUILDER_OPERATION"
+  }
 }
 
 #
@@ -808,7 +849,10 @@ vedv::image_builder::__layer_workdir() {
   fi
 
   local -r exec_func="vedv::image_service::set_workdir '${image_id}' '${workdir}'"
-  vedv::image_builder::__layer_execute_cmd "$image_id" "$cmd" "WORKDIR" "$exec_func"
+  vedv::image_builder::__layer_execute_cmd "$image_id" "$cmd" "WORKDIR" "$exec_func" || {
+    err "Failed to execute command '${cmd}'"
+    return "$ERR_IMAGE_BUILDER_OPERATION"
+  }
 }
 
 #

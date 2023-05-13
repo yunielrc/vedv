@@ -581,6 +581,7 @@ vedv::image_service::restore_layer() {
 # Arguments:
 #   image_id  string     image id or name
 #   cmd       string     command to execute
+#   [user]    string     image user
 #
 # Output:
 #  writes command output to the stdout
@@ -591,11 +592,13 @@ vedv::image_service::restore_layer() {
 vedv::image_service::execute_cmd() {
   local -r image_id="$1"
   local -r cmd="$2"
+  local -r user="${3:-}"
 
   vedv::vmobj_service::execute_cmd_by_id \
     'image' \
     "$image_id" \
-    "$cmd"
+    "$cmd" \
+    "$user"
 }
 
 #

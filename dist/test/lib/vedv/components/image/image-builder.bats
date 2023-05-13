@@ -1002,17 +1002,12 @@ Failed to execute command '1 COPY dummy_source dummy_dest'"
 @test "vedv::image_builder::__layer_run() Should fail If empty 'cmd_body'" {
   # Arrange
   local -r image_id="test-image"
-  local -r cmd="1 RUN echo 'hello world'"
-  # Stubs
-  vedv::image_vedvfile_service::get_cmd_body() {
-    assert_equal "$*" "$cmd"
-    echo ""
-  }
+  local -r cmd="1 RUN "
   # Act
   run vedv::image_builder::__layer_run "$image_id" "$cmd"
   # Assert
   assert_failure
-  assert_output "Command body must not be empty"
+  assert_output "Argument 'cmd_body' must not be empty"
 }
 
 @test "vedv::image_builder::__layer_run() Should succeed With valid arguments" {
@@ -1022,10 +1017,6 @@ Failed to execute command '1 COPY dummy_source dummy_dest'"
   local -r cmd_body="echo hello"
   local -r exec_func="vedv::ssh_client::copy \"\$user\" \"\$ip\"  \"\$password\" '$cmd_body' \"\$port\""
   # Stubs
-  vedv::image_vedvfile_service::get_cmd_body() {
-    assert_equal "$*" "$cmd"
-    echo "echo hello"
-  }
   vedv::image_builder::__layer_execute_cmd() {
     assert_equal "$*" "${image_id} ${cmd} RUN ${exec_func}"
   }
@@ -2240,7 +2231,7 @@ The image 'my-image-name' was removed."
   run vedv::image_builder::__layer_user "$image_id" "$cmd"
 
   assert_failure
-  assert_output ""
+  assert_output "Failed to execute command '1 USER nalyd'"
 }
 
 @test "vedv::image_builder::__layer_user() Should succeed" {
@@ -2333,7 +2324,7 @@ The image 'my-image-name' was removed."
   run vedv::image_builder::__layer_workdir "$image_id" "$cmd"
 
   assert_failure
-  assert_output ""
+  assert_output "Failed to execute command '1 WORKDIR /home/nalyd'"
 }
 
 @test "vedv::image_builder::__layer_workdir() Should succeed" {

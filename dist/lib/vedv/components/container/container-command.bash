@@ -414,6 +414,7 @@ vedv::container_command::__execute_cmd() {
 
   while [[ $# -gt 0 ]]; do
     case "$1" in
+    # flags
     -h | --help)
       vedv::container_command::__execute_cmd_help
       return 0
@@ -422,6 +423,7 @@ vedv::container_command::__execute_cmd() {
       shift
       set -- '-u' 'root' "$@"
       ;;
+    # options
     -u | --user)
       shift
       readonly user="${1:-}"
@@ -433,6 +435,7 @@ vedv::container_command::__execute_cmd() {
       fi
       shift
       ;;
+    # arguments
     *)
       readonly container_name_or_id="${1:-}"
 
@@ -522,6 +525,7 @@ vedv::container_command::__copy() {
 
   while [[ $# -gt 0 ]]; do
     case "$1" in
+    # flags
     -h | --help)
       vedv::container_command::__copy_help
       return 0
@@ -530,6 +534,7 @@ vedv::container_command::__copy() {
       shift
       set -- '-u' 'root' "$@"
       ;;
+    # options
     -u | --user)
       shift
       readonly user="${1:-}"
@@ -541,6 +546,7 @@ vedv::container_command::__copy() {
       fi
       shift
       ;;
+    # arguments
     *)
       readonly container_name_or_id="${1:-}"
       readonly src="${2:-}"

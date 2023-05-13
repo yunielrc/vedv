@@ -3,6 +3,8 @@ FROM /tmp/vedv/test/files/alpine-x86_64.ova
 USER nalyd
 WORKDIR nalydworkdir
 COPY homefs/* .
+COPY --root rootfs /
+RUN --root id >/root-file
 RUN touch file1; ls; pwd
 
 USER root
