@@ -1132,21 +1132,55 @@ EOF
   assert_output "Invalid argument 'exec_func': it's empty"
 }
 
-@test "vedv::vmobj_service::__exec_ssh_func(), Should fail With empty user" {
+@test "vedv::vmobj_service::__exec_ssh_func(), Should fail If get_user_name fails" {
   local -r type="container"
   local -r vmobj_id=12345
   local -r exec_func="exec_func"
-  __VEDV_VMOBJ_SERVICE_SSH_USER=""
 
   vedv::vmobj_entity::get_user_name() {
     assert_equal "$*" "container 12345"
-    echo ""
+    return 1
+  }
+
+  run vedv::vmobj_service::__exec_ssh_func "$type" "$vmobj_id" "$exec_func"
+
+  assert_failure
+  assert_output "Failed to get default user for container"
+}
+
+@test "vedv::vmobj_service::__exec_ssh_func(), Should fail If user is empty" {
+  local -r type="container"
+  local -r vmobj_id=12345
+  local -r exec_func="exec_func"
+
+  vedv::vmobj_entity::get_user_name() {
+    assert_equal "$*" "container 12345"
   }
 
   run vedv::vmobj_service::__exec_ssh_func "$type" "$vmobj_id" "$exec_func"
 
   assert_failure
   assert_output "Invalid argument 'user': it's empty"
+}
+
+@test "vedv::vmobj_service::__exec_ssh_func(), Should fail If get_workdir fails" {
+  local -r type="container"
+  local -r vmobj_id=12345
+  local -r exec_func="ssh_func"
+
+  vedv::vmobj_entity::get_user_name() {
+    assert_equal "$*" "container 12345"
+    echo "vedv"
+  }
+  vedv::vmobj_entity::get_workdir() {
+    assert_equal "$*" "container 12345"
+    return 1
+  }
+
+  run vedv::vmobj_service::__exec_ssh_func "$type" "$vmobj_id" "$exec_func"
+
+  assert_failure
+  assert_output "Failed to get default workdir for container"
 }
 
 @test "vedv::vmobj_service::__exec_ssh_func(), Should fail If start_one fails" {
@@ -1157,6 +1191,9 @@ EOF
   vedv::vmobj_entity::get_user_name() {
     assert_equal "$*" "container 12345"
     echo "vedv"
+  }
+  vedv::vmobj_entity::get_workdir() {
+    assert_equal "$*" "container 12345"
   }
   vedv::vmobj_service::start_one() {
     assert_equal "$*" "container true 12345"
@@ -1177,6 +1214,9 @@ EOF
   vedv::vmobj_entity::get_user_name() {
     assert_equal "$*" "container 12345"
     echo "vedv"
+  }
+  vedv::vmobj_entity::get_workdir() {
+    assert_equal "$*" "container 12345"
   }
   vedv::vmobj_service::start_one() {
     assert_equal "$*" "container true 12345"
@@ -1200,6 +1240,9 @@ EOF
   vedv::vmobj_entity::get_user_name() {
     assert_equal "$*" "container 12345"
     echo "vedv"
+  }
+  vedv::vmobj_entity::get_workdir() {
+    assert_equal "$*" "container 12345"
   }
   vedv::vmobj_service::start_one() {
     assert_equal "$*" "container true 12345"
@@ -1228,7 +1271,9 @@ EOF
     assert_equal "$*" "container 12345"
     echo "vedv"
   }
-
+  vedv::vmobj_entity::get_workdir() {
+    assert_equal "$*" "container 12345"
+  }
   vedv::vmobj_service::start_one() {
     assert_equal "$*" "container true 12345"
   }
@@ -1326,7 +1371,7 @@ EOF
     echo 12345
   }
   vedv::vmobj_service::execute_cmd_by_id() {
-    assert_equal "$*" "container 12345 : "
+    assert_equal "$*" "container 12345 :  true"
   }
 
   run vedv::vmobj_service::execute_cmd "$type" "$vmobj_id" "$cmd" "$user"
@@ -1523,7 +1568,7 @@ EOF
     echo 12345
   }
   vedv::vmobj_service::copy_by_id() {
-    assert_equal "$*" "container 12345 src dest "
+    assert_equal "$*" "container 12345 src dest  true"
   }
 
   run vedv::vmobj_service::copy "$type" "$vmobj_id" "$src" "$dest"
@@ -1533,7 +1578,7 @@ EOF
 }
 
 # Tests for vedv::vmobj_service::set_user()
-# bats test_tags=only
+
 @test "vedv::vmobj_service::set_user() Should fail With invalid type" {
   local -r type="invalid"
   local -r vmobj_id=""
@@ -1544,7 +1589,7 @@ EOF
   assert_failure
   assert_output "Invalid type: invalid, valid types are: container|image"
 }
-# bats test_tags=only
+
 @test "vedv::vmobj_service::set_user() Should fail With empty vmobj_id" {
   local -r type="container"
   local -r vmobj_id=""
@@ -1555,7 +1600,7 @@ EOF
   assert_failure
   assert_output "Invalid argument 'vmobj_id': it's empty"
 }
-# bats test_tags=only
+
 @test "vedv::vmobj_service::set_user() Should fail With empty user_name" {
   local -r type="container"
   local -r vmobj_id=12345
@@ -1566,7 +1611,7 @@ EOF
   assert_failure
   assert_output "Invalid argument 'user_name': it's empty"
 }
-# bats test_tags=only
+
 @test "vedv::vmobj_service::set_user() Should fail If get_user_name fails" {
   local -r type="container"
   local -r vmobj_id=12345
@@ -1582,7 +1627,7 @@ EOF
   assert_failure
   assert_output "Error getting attribute user name from the container '12345'"
 }
-# bats test_tags=only
+
 @test "vedv::vmobj_service::set_user() Should succeed If the user is already set" {
   local -r type="container"
   local -r vmobj_id=12345
@@ -1598,7 +1643,7 @@ EOF
   assert_success
   assert_output ""
 }
-# bats test_tags=only
+
 @test "vedv::vmobj_service::set_user() Should fail If execute_cmd_by_id fails" {
   local -r type="container"
   local -r vmobj_id=12345
@@ -1618,7 +1663,7 @@ EOF
   assert_failure
   assert_output "Failed to set user 'user' to container: 12345"
 }
-# bats test_tags=only
+
 @test "vedv::vmobj_service::set_user() Should fail If set_user_name fails" {
   local -r type="container"
   local -r vmobj_id=12345
@@ -1629,9 +1674,9 @@ EOF
     echo "vedv"
   }
   vedv::vmobj_service::execute_cmd_by_id() {
-    assert_equal "$*" "container 12345 vedv-adduser 'user' '${__VEDV_VMOBJ_SERVICE_SSH_PASSWORD}' root"
+    assert_regex "$*" "container 12345 vedv-adduser .*user.* vedv false"
   }
-  vedv::vmobj_entity::set_user_name() {
+  vedv::vmobj_entity::__set_user_name() {
     assert_equal "$*" "container 12345 user"
     return 1
   }
@@ -1641,7 +1686,7 @@ EOF
   assert_failure
   assert_output "Error setting attribute user name 'user' to the container: 12345"
 }
-# bats test_tags=only
+
 @test "vedv::vmobj_service::set_user() Should succeed" {
   local -r type="container"
   local -r vmobj_id=12345
@@ -1652,13 +1697,131 @@ EOF
     echo "vedv"
   }
   vedv::vmobj_service::execute_cmd_by_id() {
-    assert_equal "$*" "container 12345 vedv-adduser 'user' '${__VEDV_VMOBJ_SERVICE_SSH_PASSWORD}' root"
+    assert_regex "$*" "container 12345 vedv-adduser .*user.* vedv false"
   }
-  vedv::vmobj_entity::set_user_name() {
+  vedv::vmobj_entity::__set_user_name() {
     assert_equal "$*" "container 12345 user"
   }
 
   run vedv::vmobj_service::set_user "$type" "$vmobj_id" "$user_name"
+
+  assert_success
+  assert_output ""
+}
+
+# Tests for vedv::vmobj_service::set_workdir()
+# bats test_tags=only
+@test "vedv::vmobj_service::set_workdir() Should fail With invalid type" {
+  local -r type="invalid"
+  local -r vmobj_id=""
+  local -r workdir=""
+
+  run vedv::vmobj_service::set_workdir "$type" "$vmobj_id" "$workdir"
+
+  assert_failure
+  assert_output "Invalid type: invalid, valid types are: container|image"
+}
+# bats test_tags=only
+@test "vedv::vmobj_service::set_workdir() Should fail With empty vmobj_id" {
+  local -r type="container"
+  local -r vmobj_id=""
+  local -r workdir=""
+
+  run vedv::vmobj_service::set_workdir "$type" "$vmobj_id" "$workdir"
+
+  assert_failure
+  assert_output "Invalid argument 'vmobj_id': it's empty"
+}
+# bats test_tags=only
+@test "vedv::vmobj_service::set_workdir() Should fail With empty workdir" {
+  local -r type="container"
+  local -r vmobj_id="22345"
+  local -r workdir=""
+
+  run vedv::vmobj_service::set_workdir "$type" "$vmobj_id" "$workdir"
+
+  assert_failure
+  assert_output "Invalid argument 'workdir': it's empty"
+}
+# bats test_tags=only
+@test "vedv::vmobj_service::set_workdir() Should Succeed if workdir is already set" {
+  local -r type="container"
+  local -r vmobj_id="22345"
+  local -r workdir="workdir1"
+
+  vedv::vmobj_entity::get_workdir() {
+    assert_equal "$*" "container 22345"
+    echo "workdir1"
+  }
+
+  run vedv::vmobj_service::set_workdir "$type" "$vmobj_id" "$workdir"
+
+  assert_success
+  assert_output ""
+}
+# bats test_tags=only
+@test "vedv::vmobj_service::set_workdir() Should fail If execute_cmd_by_id fails" {
+  local -r type="container"
+  local -r vmobj_id="22345"
+  local -r workdir="workdir1"
+
+  vedv::vmobj_entity::get_workdir() {
+    assert_equal "$*" "container 22345"
+    echo "workdir2"
+  }
+  vedv::vmobj_service::execute_cmd_by_id() {
+    assert_equal "$*" "container 22345 vedv-set-workdir 'workdir1' false"
+    return 1
+  }
+
+  run vedv::vmobj_service::set_workdir "$type" "$vmobj_id" "$workdir"
+
+  assert_failure
+  assert_output "Failed to set workdir 'workdir1' to container: 22345"
+}
+# bats test_tags=only
+@test "vedv::vmobj_service::set_workdir() Should fail If __set_workdir fails" {
+  local -r type="container"
+  local -r vmobj_id="22345"
+  local -r workdir="workdir1"
+
+  vedv::vmobj_entity::get_workdir() {
+    assert_equal "$*" "container 22345"
+    echo "workdir2"
+  }
+  vedv::vmobj_service::execute_cmd_by_id() {
+    assert_equal "$*" "container 22345 vedv-set-workdir 'workdir1' false"
+    echo "/home/vedv/workdir1"
+  }
+  vedv::vmobj_entity::__set_workdir() {
+    assert_equal "$*" "container 22345 /home/vedv/workdir1"
+    return 1
+  }
+
+  run vedv::vmobj_service::set_workdir "$type" "$vmobj_id" "$workdir"
+
+  assert_failure
+  assert_output "Error setting attribute workdir name 'workdir1' to the container: 22345"
+}
+# bats test_tags=only
+@test "vedv::vmobj_service::set_workdir() Should Succeed" {
+  local -r type="container"
+  local -r vmobj_id="22345"
+  local -r workdir="workdir1"
+
+  vedv::vmobj_entity::get_workdir() {
+    assert_equal "$*" "container 22345"
+    echo "workdir2"
+  }
+  vedv::vmobj_service::execute_cmd_by_id() {
+    assert_equal "$*" "container 22345 vedv-set-workdir 'workdir1' false"
+    echo "/home/vedv/workdir1"
+  }
+  vedv::vmobj_entity::__set_workdir() {
+    assert_equal "$*" "container 22345 /home/vedv/workdir1"
+  }
+
+  run vedv::vmobj_service::set_workdir "$type" "$vmobj_id" "$workdir"
 
   assert_success
   assert_output ""

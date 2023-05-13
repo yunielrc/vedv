@@ -164,10 +164,24 @@ vedv::container_service::create() {
     return "$ERR_INVAL_VALUE"
   fi
 
-  vedv::container_entity::set_user_name "$container_id" "$user_name" || {
+  vedv::container_entity::__set_user_name "$container_id" "$user_name" || {
     err "Failed to set 'user_name' for container: ${container_id}"
     return "$ERR_CONTAINER_OPERATION"
   }
+
+  local workdir
+  workdir="$(vedv::image_entity::get_workdir "$image_id")" || {
+    err "Error getting attribute 'workdir' from the image: ${image_id}"
+    return "$ERR_IMAGE_OPERATION"
+  }
+  readonly workdir
+
+  if [[ -n "$workdir" ]]; then
+    vedv::container_entity::__set_workdir "$container_id" "$workdir" || {
+      err "Failed to set 'workdir' for container: ${container_id}"
+      return "$ERR_CONTAINER_OPERATION"
+    }
+  fi
 
   echo "$container_name"
 }

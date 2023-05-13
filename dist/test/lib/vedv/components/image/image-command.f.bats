@@ -210,12 +210,19 @@ Build finished
   assert_output --regexp "
 created layer '.*' for command 'FROM'
 created layer '.*' for command 'USER'
+created layer '.*' for command 'WORKDIR'
 created layer '.*' for command 'COPY'
+created layer '.*' for command 'RUN'
 created layer '.*' for command 'USER'
+created layer '.*' for command 'WORKDIR'
 created layer '.*' for command 'RUN'
 created layer '.*' for command 'COPY'
+created layer '.*' for command 'RUN'
 created layer '.*' for command 'USER'
+created layer '.*' for command 'WORKDIR'
 created layer '.*' for command 'COPY'
+created layer '.*' for command 'RUN'
+created layer '.*' for command 'USER'
 
 Build finished
 .* image123"

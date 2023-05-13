@@ -543,7 +543,7 @@ setup_file() {
   vedv::vmobj_service::get_ssh_user() {
     echo "vedv"
   }
-  vedv::image_entity::set_user_name() {
+  vedv::image_entity::__set_user_name() {
     assert_equal "$*" "1334567890 vedv"
     return 1
   }
@@ -603,7 +603,7 @@ setup_file() {
   vedv::vmobj_service::get_ssh_user() {
     echo "vedv"
   }
-  vedv::image_entity::set_user_name() {
+  vedv::image_entity::__set_user_name() {
     assert_equal "$*" "1334567890 vedv"
   }
 
@@ -662,7 +662,7 @@ setup_file() {
   vedv::vmobj_service::get_ssh_user() {
     echo "vedv"
   }
-  vedv::image_entity::set_user_name() {
+  vedv::image_entity::__set_user_name() {
     assert_equal "$*" "1334567890 vedv"
   }
 
@@ -1405,11 +1405,16 @@ EOF
 }
 
 # Tests for vedv::image_service::copy()
-@test "vedv::image_service::copy(): NO TEST" {
+@test "vedv::image_service::copy(): DUMMY" {
   :
 }
 
 # Tests for vedv::image_service::execute_cmd()
-@test "vedv::image_service::execute_cmd(): NO TEST" {
+@test "vedv::image_service::execute_cmd(): DUMMY" {
+  :
+}
+
+# Tests for vedv::image_service::set_workdir()
+@test "vedv::image_service::set_workdir(): DUMMY" {
   :
 }

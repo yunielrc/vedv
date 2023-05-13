@@ -622,7 +622,7 @@ calc_item_id_from_array_b() { echo "$1"; }
 }
 
 # Test for utils::str_encode()
-# bats test_tags=only
+
 @test "utils::str_encode() Should succeed With empty string" {
   local -r str=""
 
@@ -631,7 +631,7 @@ calc_item_id_from_array_b() { echo "$1"; }
   assert_success
   assert_output ""
 }
-# bats test_tags=only
+
 @test "utils::str_encode() Should succeed With string without special characters" {
   local -r str="foo"
 
@@ -640,7 +640,7 @@ calc_item_id_from_array_b() { echo "$1"; }
   assert_success
   assert_output "foo"
 }
-# bats test_tags=only
+
 @test "utils::str_encode() Should succeed With string with special characters" {
   local -r str="uname -r >uname-r.txt && echo 'Hello World' >hello.txt"
 
@@ -649,7 +649,7 @@ calc_item_id_from_array_b() { echo "$1"; }
   assert_success
   assert_output "uname -r >uname-r.txt && echo @*^&Hello World@*^& >hello.txt"
 }
-# bats test_tags=only
+
 @test "utils::str_encode() Should succeed With string with special characters 2" {
   local -r str='uname -r >uname-r.txt && echo "Hello World" >hello.txt'
 
@@ -660,7 +660,7 @@ calc_item_id_from_array_b() { echo "$1"; }
 }
 
 # Test for utils::str_decode()
-# bats test_tags=only
+
 @test "utils::str_decode() Should succeed With empty string" {
   local -r str=""
 
@@ -669,7 +669,7 @@ calc_item_id_from_array_b() { echo "$1"; }
   assert_success
   assert_output ""
 }
-# bats test_tags=only
+
 @test "utils::str_decode() Should succeed With string without special characters" {
   local -r str="foo"
 
@@ -678,7 +678,7 @@ calc_item_id_from_array_b() { echo "$1"; }
   assert_success
   assert_output "foo"
 }
-# bats test_tags=only
+
 @test "utils::str_decode() Should succeed With string with special characters" {
   local -r str="uname -r >uname-r.txt && echo @*^&Hello World@*^& >hello.txt"
 
@@ -687,7 +687,7 @@ calc_item_id_from_array_b() { echo "$1"; }
   assert_success
   assert_output "uname -r >uname-r.txt && echo 'Hello World' >hello.txt"
 }
-# bats test_tags=only
+
 @test "utils::str_decode() Should succeed With string with special characters 2" {
   local -r str="uname -r >uname-r.txt && echo *!@%Hello World*!@% >hello.txt"
 
@@ -695,4 +695,46 @@ calc_item_id_from_array_b() { echo "$1"; }
 
   assert_success
   assert_output 'uname -r >uname-r.txt && echo "Hello World" >hello.txt'
+}
+
+# Tests for utils::get_file_path_on_working_dir()
+# bats test_tags=only
+@test "utils::get_file_path_on_working_dir() Should fail With empty file_ name" {
+  local -r file_name=""
+  local -r working_dir=""
+
+  run utils::get_file_path_on_working_dir "$file_name" "$working_dir"
+
+  assert_failure
+  assert_output "file_name is required"
+}
+# bats test_tags=only
+@test "utils::get_file_path_on_working_dir() Should return file_name" {
+  local -r file_name="file1"
+  local -r working_dir=""
+
+  run utils::get_file_path_on_working_dir "$file_name" "$working_dir"
+
+  assert_success
+  assert_output "file1"
+}
+# bats test_tags=only
+@test "utils::get_file_path_on_working_dir() Should return file_name with working_dir" {
+  local -r file_name="file1"
+  local -r working_dir="/home/vedv"
+
+  run utils::get_file_path_on_working_dir "$file_name" "$working_dir"
+
+  assert_success
+  assert_output "/home/vedv/file1"
+}
+# bats test_tags=only
+@test "utils::get_file_path_on_working_dir() Should return file_name 1" {
+  local -r file_name="/file1"
+  local -r working_dir="/home/vedv"
+
+  run utils::get_file_path_on_working_dir "$file_name" "$working_dir"
+
+  assert_success
+  assert_output "/file1"
 }

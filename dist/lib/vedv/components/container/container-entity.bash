@@ -20,7 +20,7 @@ fi
 
 readonly VEDV_CONTAINER_ENTITY_TYPE='container'
 # shellcheck disable=SC2034
-readonly VEDV_CONTAINER_ENTITY_VALID_ATTRIBUTES='parent_image_id|ssh_port|user_name'
+readonly VEDV_CONTAINER_ENTITY_VALID_ATTRIBUTES='parent_image_id|ssh_port|user_name|workdir'
 
 # FUNCTIONS
 
@@ -218,6 +218,13 @@ vedv::container_entity::get_user_name() {
 #
 # Set user_name value
 #
+# This function can be only used by the
+# vedv::container_service and this is the
+# responsible of creating the user and
+# update the working directory and other
+# user related properties when the user
+# name is changed.
+#
 # Arguments:
 #   container_id  string  container id
 #   user_name     string  user name
@@ -225,9 +232,49 @@ vedv::container_entity::get_user_name() {
 # Returns:
 #   0 on success, non-zero on error.
 #
-vedv::container_entity::set_user_name() {
+vedv::container_entity::__set_user_name() {
   local -r container_id="$1"
   local -r value="$2"
 
-  vedv::vmobj_entity::set_user_name "$VEDV_CONTAINER_ENTITY_TYPE" "$container_id" "$value"
+  vedv::vmobj_entity::__set_user_name "$VEDV_CONTAINER_ENTITY_TYPE" "$container_id" "$value"
+}
+
+#
+# Get workdir value
+#
+# Arguments:
+#   container_id  string  container id
+#
+# Output:
+#  Writes workdir (string) to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::container_entity::get_workdir() {
+  local -r container_id="$1"
+
+  vedv::vmobj_entity::get_workdir "$VEDV_CONTAINER_ENTITY_TYPE" "$container_id"
+}
+
+#
+# Set workdir value
+#
+# This function can be only used by the
+# vedv::container_service and this is the
+# responsible of creating the working
+# directory
+#
+# Arguments:
+#   container_id  string  container id
+#   workdir     string  user name
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::container_entity::__set_workdir() {
+  local -r container_id="$1"
+  local -r value="$2"
+
+  vedv::vmobj_entity::__set_workdir "$VEDV_CONTAINER_ENTITY_TYPE" "$container_id" "$value"
 }

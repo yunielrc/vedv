@@ -26,6 +26,9 @@ echo "%wheel ALL=(ALL) NOPASSWD: ALL" >/etc/sudoers.d/wheel-nopasswd
 chmod 0440 /etc/sudoers.d/wheel-nopasswd
 adduser "$VEDV_USER" wheel
 
+# INSTALL USERMOD
+apk add shadow
+
 # INSTALL OPENSSH
 apk add openssh
 # configure sshd
@@ -52,10 +55,12 @@ echo 'alpine' >/etc/vedv-distro
 
 # ADD VEDV STANDARD SCRIPTS
 
-# add ved-adduser script
+# add vedv-adduser script
 cat <<'EOF' >/usr/local/bin/vedv-adduser
 #!/usr/bin/env bash
-# add a user to the system
+#
+# Add a user to the system
+#
 
 set -eu
 
@@ -72,9 +77,34 @@ if id "$VED_USER" &>/dev/null; then
   exit 0
 fi
 
-adduser --disabled-password "$VED_USER"
-echo "${VED_USER}:${VED_PASS}" | chpasswd
-adduser "$VED_USER" wheel
+sudo adduser --disabled-password "$VED_USER"
+echo "${VED_USER}:${VED_PASS}" | sudo chpasswd
+sudo adduser "$VED_USER" wheel
 EOF
 
 chmod 0755 /usr/local/bin/vedv-adduser
+
+# add vedv-mkdir script
+cat <<'EOF' >/usr/local/bin/vedv-mkdir
+#!/usr/bin/env bash
+#
+# Create a directory for a user if it does not exist
+# and print the full path
+#
+
+set -eu
+
+if [[ "$#" -ne 1 ]]; then
+  echo "usage: vedv-mkdir <dir>" >&2
+  exit 1
+fi
+
+readonly _DIR="$1"
+
+if [[ ! -d "$_DIR" ]]; then
+  mkdir -p "$_DIR"
+fi
+realpath "$_DIR"
+EOF
+
+chmod 0755 /usr/local/bin/vedv-mkdir

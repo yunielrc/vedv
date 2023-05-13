@@ -407,3 +407,34 @@ utils::str_decode() {
 
   echo "$str_decoded"
 }
+
+#
+# Get file path on working directory
+#
+# Arguments:
+#   file_name   string    file name
+#   working_dir string    working directory
+#
+# Output:
+#   writes the file path (string) to stdout
+#
+utils::get_file_path_on_working_dir() {
+  local -r file_name="$1"
+  local -r working_dir="${2:-}"
+  # validate arguments
+  if [[ -z "$file_name" ]]; then
+    err "file_name is required"
+    return "$ERR_INVAL_ARG"
+  fi
+
+  if [[ -z "$working_dir" ]]; then
+    echo "$file_name"
+    return 0
+  fi
+  if [[ "${file_name:0:1}" != @('/'|'~') ]]; then
+    echo "${working_dir%/}/${file_name}"
+    return 0
+  fi
+
+  echo "$file_name"
+}

@@ -85,8 +85,8 @@ load test_helper
   :
 }
 
-# Test vedv::image_entity::set_user_name()
-@test 'vedv::image_entity::set_user_name() DUMMY' {
+# Test vedv::image_entity::__set_user_name()
+@test 'vedv::image_entity::__set_user_name() DUMMY' {
   :
 }
 
@@ -354,4 +354,14 @@ EOF
 @test "vedv::image_entity::has_containers(): NO IMPLEMENTED" {
   skip
   # TODO: implement test
+}
+
+# Test vedv::image_entity::get_workdir()
+@test 'vedv::image_entity::get_workdir() DUMMY' {
+  :
+}
+
+# Test vedv::image_entity::__set_workdir()
+@test 'vedv::image_entity::__set_workdir() DUMMY' {
+  :
 }

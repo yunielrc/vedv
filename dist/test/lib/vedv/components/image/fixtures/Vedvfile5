@@ -1,15 +1,22 @@
 FROM /tmp/vedv/test/files/alpine-x86_64.ova
 
-# That's the default user for the image and its containers
 USER nalyd
+WORKDIR nalydworkdir
 COPY homefs/* .
+RUN touch file1; ls; pwd
 
 USER root
+WORKDIR rootworkdir
 RUN apk add --no-cache \
   htop \
   bat \
   bmon
-COPY rootfs /
+COPY rootfs .
+RUN touch file2; ls; pwd
 
 USER vedv
+WORKDIR vedvworkdir
 COPY homefs/* .
+RUN touch file2; ls; pwd
+
+USER nalyd

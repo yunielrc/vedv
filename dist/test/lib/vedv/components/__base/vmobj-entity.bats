@@ -920,9 +920,9 @@ setup_file() {
   assert_output ''
 }
 
-# Test vedv::vmobj_entity::set_user_name()
+# Test vedv::vmobj_entity::__set_user_name()
 
-@test 'vedv::vmobj_entity::set_user_name() Should fail If __set_attribute fails' {
+@test 'vedv::vmobj_entity::__set_user_name() Should fail If __set_attribute fails' {
   local -r type='invalid'
   local -r vmobj_id='23456'
   local -r value=2022
@@ -932,13 +932,13 @@ setup_file() {
     return 1
   }
 
-  run vedv::vmobj_entity::set_user_name "$type" "$vmobj_id" "$value"
+  run vedv::vmobj_entity::__set_user_name "$type" "$vmobj_id" "$value"
 
   assert_failure
   assert_output ''
 }
 
-@test 'vedv::vmobj_entity::set_user_name() Should succeed' {
+@test 'vedv::vmobj_entity::__set_user_name() Should succeed' {
   local -r type='invalid'
   local -r vmobj_id='23456'
   local -r value=2022
@@ -947,7 +947,7 @@ setup_file() {
     assert_equal "$*" 'invalid 23456 user_name 2022'
   }
 
-  run vedv::vmobj_entity::set_user_name "$type" "$vmobj_id" "$value"
+  run vedv::vmobj_entity::__set_user_name "$type" "$vmobj_id" "$value"
 
   assert_success
   assert_output ''
@@ -979,6 +979,69 @@ setup_file() {
   }
 
   run vedv::vmobj_entity::get_user_name "$type" "$vmobj_id"
+
+  assert_success
+  assert_output ''
+}
+
+# Test vedv::vmobj_entity::__set_workdir()
+
+@test 'vedv::vmobj_entity::__set_workdir() Should fail If __set_attribute fails' {
+  local -r type='invalid'
+  local -r vmobj_id='23456'
+  local -r value=2022
+
+  vedv::vmobj_entity::__set_attribute() {
+    assert_equal "$*" 'invalid 23456 workdir 2022'
+    return 1
+  }
+
+  run vedv::vmobj_entity::__set_workdir "$type" "$vmobj_id" "$value"
+
+  assert_failure
+  assert_output ''
+}
+
+@test 'vedv::vmobj_entity::__set_workdir() Should succeed' {
+  local -r type='invalid'
+  local -r vmobj_id='23456'
+  local -r value=2022
+
+  vedv::vmobj_entity::__set_attribute() {
+    assert_equal "$*" 'invalid 23456 workdir 2022'
+  }
+
+  run vedv::vmobj_entity::__set_workdir "$type" "$vmobj_id" "$value"
+
+  assert_success
+  assert_output ''
+}
+
+# Test vedv::vmobj_entity::get_workdir()
+@test 'vedv::vmobj_entity::get_workdir() Should fail If __get_attribute fails' {
+  local -r type='invalid'
+  local -r vmobj_id='23456'
+
+  vedv::vmobj_entity::__get_attribute() {
+    assert_equal "$*" 'invalid 23456 workdir'
+    return 1
+  }
+
+  run vedv::vmobj_entity::get_workdir "$type" "$vmobj_id"
+
+  assert_failure
+  assert_output ''
+}
+
+@test 'vedv::vmobj_entity::get_workdir() Should succeed' {
+  local -r type='invalid'
+  local -r vmobj_id='23456'
+
+  vedv::vmobj_entity::__get_attribute() {
+    assert_equal "$*" 'invalid 23456 workdir'
+  }
+
+  run vedv::vmobj_entity::get_workdir "$type" "$vmobj_id"
 
   assert_success
   assert_output ''

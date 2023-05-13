@@ -8,7 +8,7 @@ if false; then
 fi
 
 # Variables:
-readonly VEDVFILE_SUPPORTED_COMMANDS='FROM|RUN|COPY|USER'
+readonly VEDVFILE_SUPPORTED_COMMANDS='FROM|RUN|COPY|USER|WORKDIR'
 
 #
 # Constructor

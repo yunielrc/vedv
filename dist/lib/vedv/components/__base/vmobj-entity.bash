@@ -614,6 +614,13 @@ vedv::vmobj_entity::get_ssh_port() {
 #
 # Set user name
 #
+# This function can be only used by the
+# vedv::vmobj_service and this is the
+# responsible of creating the user and
+# update the working directory and other
+# user related properties when the user
+# name is changed.
+#
 # Arguments:
 #   type       string  type (e.g. 'container|image')
 #   vmobj_id   string  vmobj id
@@ -622,7 +629,7 @@ vedv::vmobj_entity::get_ssh_port() {
 # Returns:
 #   0 on success, non-zero on error.
 #
-vedv::vmobj_entity::set_user_name() {
+vedv::vmobj_entity::__set_user_name() {
   local -r type="$1"
   local -r vmobj_id="$2"
   local -r value="$3"
@@ -655,4 +662,55 @@ vedv::vmobj_entity::get_user_name() {
     "$type" \
     "$vmobj_id" \
     'user_name'
+}
+
+#
+# Set user name
+#
+# This function can be only used by the
+# vedv::vmobj_service and this is the
+# responsible of creating the working
+# directory
+#
+# Arguments:
+#   type       string  type (e.g. 'container|image')
+#   vmobj_id   string  vmobj id
+#   workdir    string  user name
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::vmobj_entity::__set_workdir() {
+  local -r type="$1"
+  local -r vmobj_id="$2"
+  local -r value="$3"
+
+  vedv::vmobj_entity::__set_attribute \
+    "$type" \
+    "$vmobj_id" \
+    'workdir' \
+    "$value"
+}
+
+#
+# Get user name
+#
+# Arguments:
+#   type      string  type (e.g. 'container|image')
+#   vmobj_id  string  vmobj id
+#
+# Output:
+#   Writes workdir (string) to the stdout.
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::vmobj_entity::get_workdir() {
+  local -r type="$1"
+  local -r vmobj_id="$2"
+
+  vedv::vmobj_entity::__get_attribute \
+    "$type" \
+    "$vmobj_id" \
+    'workdir'
 }

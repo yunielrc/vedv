@@ -139,7 +139,7 @@ vedv::image_service::__pull_from_file() {
   if [[ -z "$user_name" ]]; then
     local -r default_user_name="$(vedv::vmobj_service::get_ssh_user)"
 
-    vedv::image_entity::set_user_name "$image_id" "$default_user_name" || {
+    vedv::image_entity::__set_user_name "$image_id" "$default_user_name" || {
       err "Error setting attribute user name '${default_user_name}' to the image '${image_id}'"
       return "$ERR_IMAGE_OPERATION"
     }
@@ -629,7 +629,7 @@ vedv::image_service::copy() {
 
 #
 # Create an user if not exits and set its name to
-# the vmobj-entity
+# the image
 #
 # Arguments:
 #   image_id   string  image id
@@ -649,6 +649,29 @@ vedv::image_service::set_user() {
     'image' \
     "$image_id" \
     "$user_name"
+}
+
+#
+# Creates and set the default workdir for the image
+#
+# Arguments:
+#   image_id  string  image id
+#   workdir   string  workdir
+#
+# Output:
+#  writes command output to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::image_service::set_workdir() {
+  local -r image_id="$1"
+  local -r workdir="$2"
+
+  vedv::vmobj_service::set_workdir \
+    'image' \
+    "$image_id" \
+    "$workdir"
 }
 
 #

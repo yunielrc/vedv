@@ -662,10 +662,11 @@ vedv::vmobj_service::list() {
 # as plain string, this function will replace them with the values
 #
 # Arguments:
-#   type       string     type (e.g. 'container|image')
-#   vmobj_id   string     vmobj id or name
-#   exec_func  string     function to execute
-#   [user]     string     vmobj user
+#   type          string     type (e.g. 'container|image')
+#   vmobj_id      string     vmobj id or name
+#   exec_func     string     function to execute
+#   [user]        string     vmobj user
+#   [use_workdir] boolean    default: true, use vmobj workdir
 #
 # Output:
 #  writes command output to the stdout
@@ -678,6 +679,7 @@ vedv::vmobj_service::__exec_ssh_func() {
   local -r vmobj_id="$2"
   local -r exec_func="$3"
   local user="${4:-}"
+  local use_workdir="${5:-true}"
 
   # validate arguments
   vedv::vmobj_entity::validate_type "$type" ||
@@ -702,6 +704,16 @@ vedv::vmobj_service::__exec_ssh_func() {
     err "Invalid argument 'user': it's empty"
     return "$ERR_INVAL_ARG"
   fi
+
+  local workdir=''
+
+  if [[ "$use_workdir" == true ]]; then
+    workdir="$(vedv::vmobj_entity::get_workdir "$type" "$vmobj_id")" || {
+      err "Failed to get default workdir for ${type}"
+      return "$ERR_VMOBJ_OPERATION"
+    }
+  fi
+  readonly workdir
 
   vedv::vmobj_service::start_one "$type" true "$vmobj_id" >/dev/null || {
     err "Failed to start ${type}: ${vmobj_id}"
@@ -730,10 +742,11 @@ vedv::vmobj_service::__exec_ssh_func() {
 # Execute cmd in a vmobj
 #
 # Arguments:
-#   type      string     type (e.g. 'container|image')
-#   vmobj_id  string     vmobj id
-#   cmd       string     command to execute
-#   [user]    string     user name
+#   type          string     type (e.g. 'container|image')
+#   vmobj_id      string     vmobj id
+#   cmd           string     command to execute
+#   [user]        string     user name
+#   [use_workdir] boolean    default: true, use vmobj workdir
 #
 # Output:
 #  writes command output to the stdout
@@ -746,6 +759,7 @@ vedv::vmobj_service::execute_cmd_by_id() {
   local -r vmobj_id="$2"
   local -r cmd="$3"
   local -r user="${4:-}"
+  local -r use_workdir="${5:-true}"
   # validate arguments
   vedv::vmobj_entity::validate_type "$type" ||
     return "$?"
@@ -759,9 +773,16 @@ vedv::vmobj_service::execute_cmd_by_id() {
     return "$ERR_INVAL_ARG"
   fi
 
-  local -r exec_func="vedv::ssh_client::run_cmd \"\$user\" \"\$ip\"  \"\$password\" '${cmd}' \"\$port\""
+  local cmd_encoded
+  cmd_encoded="$(utils::str_encode "$cmd")" || {
+    err "Failed to encode command: ${cmd}"
+    return "$ERR_VMOBJ_OPERATION"
+  }
+  readonly cmd_encoded
 
-  vedv::vmobj_service::__exec_ssh_func "$type" "$vmobj_id" "$exec_func" "$user" || {
+  local -r exec_func="vedv::ssh_client::run_cmd \"\$user\" \"\$ip\"  \"\$password\" '${cmd_encoded}' \"\$port\" \"\$workdir\""
+
+  vedv::vmobj_service::__exec_ssh_func "$type" "$vmobj_id" "$exec_func" "$user" "$use_workdir" || {
     err "Failed to execute command in ${type}: ${vmobj_id}"
     return "$ERR_VMOBJ_OPERATION"
   }
@@ -775,6 +796,7 @@ vedv::vmobj_service::execute_cmd_by_id() {
 #   vmobj_id_or_name  string     vmobj id or name
 #   cmd               string     command to execute
 #   [user]            string     user name
+#   [use_workdir]     boolean    default: true, use vmobj workdir
 #
 # Output:
 #  writes command output to the stdout
@@ -787,13 +809,14 @@ vedv::vmobj_service::execute_cmd() {
   local -r vmobj_id_or_name="$2"
   local -r cmd="$3"
   local -r user="${4:-}"
+  local -r use_workdir="${5:-true}"
 
   local vmobj_id
   vmobj_id="$(vedv::vmobj_service::get_ids_from_vmobj_names_or_ids "$type" "$vmobj_id_or_name")" || {
     err "Failed to get ${type} id by name or id: ${vmobj_id_or_name}"
     return "$ERR_VMOBJ_OPERATION"
   }
-  vedv::vmobj_service::execute_cmd_by_id "$type" "$vmobj_id" "$cmd" "$user"
+  vedv::vmobj_service::execute_cmd_by_id "$type" "$vmobj_id" "$cmd" "$user" "$use_workdir"
 }
 
 #
@@ -857,11 +880,12 @@ vedv::vmobj_service::connect() {
 # Copy files from local filesystem to a container
 #
 # Arguments:
-#   type      string     type (e.g. 'container|image')
-#   vmobj_id  string     vmobj id
-#   src       string     local source path
-#   dest      string     vmobj destination path
-#   [user]    string     user name
+#   type          string     type (e.g. 'container|image')
+#   vmobj_id      string     vmobj id
+#   src           string     local source path
+#   dest          string     vmobj destination path
+#   [user]        string     user name
+#   [use_workdir] boolean    default: true, use vmobj workdir
 #
 # Output:
 #  writes command output to the stdout
@@ -875,6 +899,7 @@ vedv::vmobj_service::copy_by_id() {
   local -r src="$3"
   local -r dest="$4"
   local -r user="${5:-}"
+  local -r use_workdir="${6:-true}"
   # validate arguments
   vedv::vmobj_entity::validate_type "$type" ||
     return "$?"
@@ -898,9 +923,9 @@ vedv::vmobj_service::copy_by_id() {
   }
   readonly vedvfileignore
 
-  local -r exec_func="vedv::ssh_client::copy \"\$user\" \"\$ip\"  \"\$password\" \"\$port\" '${src}' '${dest}' '${vedvfileignore}'"
+  local -r exec_func="vedv::ssh_client::copy \"\$user\" \"\$ip\"  \"\$password\" \"\$port\" '${src}' '${dest}' '${vedvfileignore}' \"\$workdir\""
 
-  vedv::vmobj_service::__exec_ssh_func "$type" "$vmobj_id" "$exec_func" "$user" || {
+  vedv::vmobj_service::__exec_ssh_func "$type" "$vmobj_id" "$exec_func" "$user" "$use_workdir" || {
     err "Failed to copy to ${type}: ${vmobj_id}"
     return "$ERR_VMOBJ_OPERATION"
   }
@@ -915,6 +940,7 @@ vedv::vmobj_service::copy_by_id() {
 #   src               string     local source path
 #   dest              string     vmobj destination path
 #   [user]            string     user name
+#   [use_workdir]     boolean    default: true, use vmobj workdir
 #
 # Output:
 #  writes command output to the stdout
@@ -928,6 +954,7 @@ vedv::vmobj_service::copy() {
   local -r src="$3"
   local -r dest="$4"
   local -r user="${5:-}"
+  local -r use_workdir="${6:-true}"
 
   local vmobj_id
   vmobj_id="$(vedv::vmobj_service::get_ids_from_vmobj_names_or_ids "$type" "$vmobj_id_or_name")" || {
@@ -939,7 +966,8 @@ vedv::vmobj_service::copy() {
     "$vmobj_id" \
     "$src" \
     "$dest" \
-    "$user"
+    "$user" \
+    "$use_workdir"
 }
 
 #
@@ -986,15 +1014,74 @@ vedv::vmobj_service::set_user() {
   fi
 
   # create user if it doesn't exist
-  local -r cmd="vedv-adduser '${user_name}' '${__VEDV_VMOBJ_SERVICE_SSH_PASSWORD}'"
+  local cmd="vedv-adduser '${user_name}' '${__VEDV_VMOBJ_SERVICE_SSH_PASSWORD}'"
+  cmd="$(utils::str_encode "$cmd")"
+  readonly cmd
 
-  vedv::vmobj_service::execute_cmd_by_id "$type" "$vmobj_id" "$cmd" 'root' &>/dev/null || {
+  vedv::vmobj_service::execute_cmd_by_id "$type" "$vmobj_id" "$cmd" "${__VEDV_VMOBJ_SERVICE_SSH_USER}" 'false' &>/dev/null || {
     err "Failed to set user '${user_name}' to ${type}: ${vmobj_id}"
     return "$ERR_VMOBJ_OPERATION"
   }
 
-  vedv::vmobj_entity::set_user_name "$type" "$vmobj_id" "$user_name" || {
+  vedv::vmobj_entity::__set_user_name "$type" "$vmobj_id" "$user_name" || {
     err "Error setting attribute user name '${user_name}' to the ${type}: ${vmobj_id}"
+    return "$ERR_VMOBJ_OPERATION"
+  }
+}
+
+#
+# Creates and set the default workdir for the vmobj_service
+#
+# Arguments:
+#   type      string     type (e.g. 'container|image')
+#   vmobj_id  string     vmobj id
+#   workdir   string     workdir
+#
+# Output:
+#  writes command output to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::vmobj_service::set_workdir() {
+  local -r type="$1"
+  local -r vmobj_id="$2"
+  local -r workdir="$3"
+  # validate arguments
+  vedv::vmobj_entity::validate_type "$type" ||
+    return "$?"
+
+  if [[ -z "$vmobj_id" ]]; then
+    err "Invalid argument 'vmobj_id': it's empty"
+    return "$ERR_INVAL_ARG"
+  fi
+  if [[ -z "$workdir" ]]; then
+    err "Invalid argument 'workdir': it's empty"
+    return "$ERR_INVAL_ARG"
+  fi
+
+  local cur_workdir
+  cur_workdir="$(vedv::vmobj_entity::get_workdir "$type" "$vmobj_id")" || {
+    err "Error getting attribute workdir name from the ${type} '${vmobj_id}'"
+    return "$ERR_VMOBJ_OPERATION"
+  }
+  readonly cur_workdir
+
+  if [[ "$cur_workdir" == "$workdir" ]]; then
+    return 0
+  fi
+
+  local -r cmd="vedv-mkdir '${workdir}'"
+
+  local workdir_full
+  workdir_full="$(vedv::vmobj_service::execute_cmd_by_id "$type" "$vmobj_id" "$cmd" "" 'false' 2>/dev/null)" || {
+    err "Failed to set workdir '${workdir}' to ${type}: ${vmobj_id}"
+    return "$ERR_VMOBJ_OPERATION"
+  }
+  readonly workdir_full
+
+  vedv::vmobj_entity::__set_workdir "$type" "$vmobj_id" "$workdir_full" || {
+    err "Error setting attribute workdir name '${workdir}' to the ${type}: ${vmobj_id}"
     return "$ERR_VMOBJ_OPERATION"
   }
 }

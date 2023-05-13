@@ -24,7 +24,7 @@ fi
 
 readonly VEDV_IMAGE_ENTITY_TYPE='image'
 # shellcheck disable=SC2034
-readonly VEDV_IMAGE_ENTITY_VALID_ATTRIBUTES='image_cache|ova_file_sum|ssh_port|user_name'
+readonly VEDV_IMAGE_ENTITY_VALID_ATTRIBUTES='image_cache|ova_file_sum|ssh_port|user_name|workdir'
 
 # FUNCTIONS
 
@@ -291,6 +291,13 @@ vedv::image_entity::get_user_name() {
 #
 # Set user_name value
 #
+# This function can be only used by the
+# vedv::image_service and this is the
+# responsible of creating the user and
+# update the working directory and other
+# user related properties when the user
+# name is changed.
+#
 # Arguments:
 #   image_id  string  image id
 #   user_name string  ssh port
@@ -298,11 +305,11 @@ vedv::image_entity::get_user_name() {
 # Returns:
 #   0 on success, non-zero on error.
 #
-vedv::image_entity::set_user_name() {
+vedv::image_entity::__set_user_name() {
   local -r image_id="$1"
   local -r value="$2"
 
-  vedv::vmobj_entity::set_user_name "$VEDV_IMAGE_ENTITY_TYPE" "$image_id" "$value"
+  vedv::vmobj_entity::__set_user_name "$VEDV_IMAGE_ENTITY_TYPE" "$image_id" "$value"
 }
 
 #
@@ -501,4 +508,44 @@ vedv::image_entity::get_last_layer_id() {
   fi
 
   echo "${last_layer_id[-1]}"
+}
+
+#
+# Get workdir value
+#
+# Arguments:
+#   image_id  string  image id
+#
+# Output:
+#  Writes workdir (string) to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::image_entity::get_workdir() {
+  local -r image_id="$1"
+
+  vedv::vmobj_entity::get_workdir "$VEDV_IMAGE_ENTITY_TYPE" "$image_id"
+}
+
+#
+# Set workdir value
+#
+# This function can be only used by the
+# vedv::image_service and this is the
+# responsible of creating the working
+# directory
+#
+# Arguments:
+#   image_id  string  image id
+#   workdir     string  user name
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::image_entity::__set_workdir() {
+  local -r image_id="$1"
+  local -r value="$2"
+
+  vedv::vmobj_entity::__set_workdir "$VEDV_IMAGE_ENTITY_TYPE" "$image_id" "$value"
 }

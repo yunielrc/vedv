@@ -1,12 +1,22 @@
 #
+# ssh client
+#
+
+# FOR CODE COMPLETION
+if false; then
+  . './utils.bash'
+fi
+
+#
 # Run commands inside vm
 #
 # Arguments:
-#   user          virtual machine ip
-#   ip            ip
-#   password      password
-#   cmd           command
-#   port          ssh port
+#   user      string  user
+#   ip        string  ip
+#   password  string  password
+#   cmd       string  command
+#   port      int     ssh port
+#   workdir   string  workdir
 #
 # Output:
 #  Writes command output to the stdout
@@ -20,6 +30,7 @@ vedv::ssh_client::run_cmd() {
   local -r password="$3"
   local cmd="$4"
   local -ri port=${5:-22}
+  local -r workdir="${6:-}"
 
   if [[ -z "$user" ]]; then
     err "Argument 'user' must not be empty"
@@ -47,6 +58,13 @@ vedv::ssh_client::run_cmd() {
   cmd="$(utils::str_decode "$cmd")"
   readonly cmd
 
+  local set_workdir_cmd=''
+
+  if [[ -n "$workdir" ]]; then
+    set_workdir_cmd="cd '${workdir}' || exit 1"
+  fi
+  readonly set_workdir_cmd
+
   {
     sshpass -p "$password" \
       ssh -T -o 'ConnectTimeout=1' \
@@ -56,6 +74,7 @@ vedv::ssh_client::run_cmd() {
       -o 'LogLevel=ERROR' \
       -p "$port" \
       "${user}@${ip}" <<SSHEOF
+         ${set_workdir_cmd}
          eval "$cmd"
 SSHEOF
   } || {
@@ -70,12 +89,14 @@ SSHEOF
 # Copy files to a vm
 #
 # Arguments:
-#   user          virtual machine ip
-#   ip            ip
-#   password      password
-#   port          ssh port
-#   source        source file
-#   dest          destination file
+#   user              string  user
+#   ip                string  ip
+#   password          string  password
+#   port              int     ssh port
+#   source            string  source file
+#   dest              string  destination file
+#   exclude_file_path string  exclude file path
+#   workdir           string  workdir
 #
 # Output:
 #  Writes command output to the stdout
@@ -91,6 +112,7 @@ vedv::ssh_client::copy() {
   local -r source="$5"
   local -r dest="$6"
   local -r exclude_file_path="${7:-}"
+  local -r workdir="${8:-}"
 
   if [[ -z "$user" ]]; then
     err "Argument 'user' must not be empty"
@@ -120,12 +142,16 @@ vedv::ssh_client::copy() {
     return "$ERR_INVAL_ARG"
   fi
 
+  local _dest
+  _dest="$(utils::get_file_path_on_working_dir "$dest" "$workdir")"
+  readonly _dest
+
   {
     # shellcheck disable=SC2086
     IFS='' rsync -az --no-owner --no-group \
       --exclude-from="$exclude_file_path" \
       -e "sshpass -p ${password} ssh -o 'ConnectTimeout=1' -o 'UserKnownHostsFile=/dev/null'  -o 'PubkeyAuthentication=no' -o 'StrictHostKeyChecking=no' -o 'LogLevel=ERROR' -p ${port}" \
-      $source "${user}@${ip}:${dest}"
+      $source "${user}@${ip}:${_dest}"
   } || {
     err "Error on '${user}@${ip}', rsync exit code: $?"
     return "$ERR_SSH_OPERATION"
@@ -137,9 +163,12 @@ vedv::ssh_client::copy() {
 # Wait for ssh service to be available
 #
 # Arguments:
-#   ip  string        ip
-#   port  int         ssh port
+#   ip        string  ip
+#   port      int     ssh port
 #   [timeout] int     timeout in seconds (default: 25)
+#
+# Output:
+#  Writes error message to the stderr
 #
 # Returns:
 #   0 on success, non-zero on error.
@@ -190,10 +219,10 @@ vedv::ssh_client::wait_for_ssh_service() {
 # Connecto to a vm
 #
 # Arguments:
-#   user          virtual machine ip
-#   ip            ip
-#   password      password
-#   port          ssh port
+#   user      string  user name
+#   ip        string  ip
+#   password  string  password
+#   port      int     ssh port
 #
 # Output:
 #  Writes command output to the stdout

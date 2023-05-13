@@ -703,7 +703,7 @@ vedv::image_builder::__layer_user_calc_id() {
 }
 
 #
-# Creates and set de default user for the image
+# Creates and set the default user for the image
 #
 # Preconditions:
 #  The image must be started and running
@@ -721,7 +721,7 @@ vedv::image_builder::__layer_user_calc_id() {
 vedv::image_builder::__layer_user() {
   local -r image_id="$1"
   local -r cmd="$2"
-  shift 2
+
   # validate arguments
   if [[ -z "$image_id" ]]; then
     err "Argument 'image_id' is required"
@@ -732,9 +732,6 @@ vedv::image_builder::__layer_user() {
     return "$ERR_INVAL_ARG"
   fi
 
-  local -a cmd_arr
-  IFS=' ' read -r -a cmd_arr <<<"$cmd"
-  # 1 USER nalyd -> nalyd
   local user_name
   user_name="$(vedv::image_vedvfile_service::get_cmd_body "$cmd")" || {
     err "Failed to get user name from command '${cmd}'"
@@ -749,6 +746,69 @@ vedv::image_builder::__layer_user() {
 
   local -r exec_func="vedv::image_service::set_user '${image_id}' '${user_name}'"
   vedv::image_builder::__layer_execute_cmd "$image_id" "$cmd" "USER" "$exec_func"
+}
+
+#
+# Calculates the layer id for the workdir command
+#
+# Arguments:
+#   cmd string  workdir command (e.g. "1 workdir nalyd")
+#
+# Output:
+#  Writes layer_id (string) to the stdout
+#
+# Returns:
+#  0 on success, non-zero on error.
+#
+vedv::image_builder::__layer_workdir_calc_id() {
+  local -r cmd="$1"
+  vedv::image_builder::__simple_layer_command_calc_id "$cmd" "WORKDIR"
+}
+
+#
+# Creates and set the default workdir for the image
+#
+# Preconditions:
+#  The image must be started and running
+#
+# Arguments:
+#   image_id  string  image where the workdir will be set
+#   cmd       string  workdir command (e.g. "1 workdir nalyd")
+#
+# Output:
+#  Writes command_output (text) to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::image_builder::__layer_workdir() {
+  local -r image_id="$1"
+  local -r cmd="$2"
+
+  # validate arguments
+  if [[ -z "$image_id" ]]; then
+    err "Argument 'image_id' is required"
+    return "$ERR_INVAL_ARG"
+  fi
+  if [[ -z "$cmd" ]]; then
+    err "Argument 'cmd' is required"
+    return "$ERR_INVAL_ARG"
+  fi
+
+  local workdir
+  workdir="$(vedv::image_vedvfile_service::get_cmd_body "$cmd")" || {
+    err "Failed to get workdir from command '${cmd}'"
+    return "$ERR_INVAL_ARG"
+  }
+  readonly workdir
+
+  if [[ -z "$workdir" ]]; then
+    err "Argument 'workdir' must not be empty"
+    return "$ERR_INVAL_ARG"
+  fi
+
+  local -r exec_func="vedv::image_service::set_workdir '${image_id}' '${workdir}'"
+  vedv::image_builder::__layer_execute_cmd "$image_id" "$cmd" "WORKDIR" "$exec_func"
 }
 
 #

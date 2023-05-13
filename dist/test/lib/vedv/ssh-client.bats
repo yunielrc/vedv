@@ -77,7 +77,26 @@ teardown_file() {
   assert_success
   # assert_output ''
 }
+# bats test_tags=only
+@test "vedv::ssh_client::run_cmd() Should success With workdir" {
+  local -r user="$TEST_SSH_USER"
+  local -r ip="$TEST_SSH_IP"
+  local -r password="$TEST_SSH_USER"
+  local -r cmd="ls -1"
+  local -r port="$TEST_SSH_PORT"
+  local -r workdir="/home/${user}/workdir"
 
+  ssh_run_cmd mkdir "$workdir"
+  ssh_run_cmd touch "${workdir}/test_file"
+
+  run vedv::ssh_client::run_cmd "$user" "$ip" "$password" \
+    "$cmd" "$port" "$workdir"
+
+  assert_success
+  assert_output 'test_file'
+}
+
+# Tests for vedv::ssh_client::wait_for_ssh_service()
 @test "vedv::ssh_client::wait_for_ssh_service() Should fail With invalid IP argument" {
   utils::valid_ip() { false; }
   run vedv::ssh_client::wait_for_ssh_service "not_an_ip" 22
@@ -167,7 +186,6 @@ teardown_file() {
   assert_output --partial "Error on 'user@192.168.0.1', rsync exit code:"
 }
 
-# bats test_tags=only
 @test "vedv::ssh_client::copy(), Should success With valid arguments" {
   local -r user="$TEST_SSH_USER"
   local -r ip="$TEST_SSH_IP"
@@ -190,8 +208,35 @@ teardown_file() {
   assert_output "line1"
 }
 
-# Tests for vedv::ssh_client::connect()
 # bats test_tags=only
+@test "vedv::ssh_client::copy(), Should copy to /home/vedv/workdir" {
+  local -r user="$TEST_SSH_USER"
+  local -r ip="$TEST_SSH_IP"
+  local -r password="$TEST_SSH_USER"
+  local -r port="$TEST_SSH_PORT"
+  local -r source="$(mktemp)"
+  # shellcheck disable=SC2088
+  local -r dest="file_with_content"
+  local -r exclude_file_path=''
+  local -r workdir='/home/vedv/workdir'
+
+  echo "line1" >"$source"
+
+  run ssh_run_cmd mkdir /home/vedv/workdir
+
+  run vedv::ssh_client::copy "$user" "$ip" "$password" "$port" "$source" "$dest" "$exclude_file_path" "$workdir"
+
+  assert_success
+  assert_output ""
+
+  run ssh_run_cmd grep "line1" "/home/vedv/workdir/${dest}"
+
+  assert_success
+  assert_output "line1"
+}
+
+# Tests for vedv::ssh_client::connect()
+
 @test "vedv::ssh_client::connect(), Should connect" {
   local -r user="$TEST_SSH_USER"
   local -r ip="$TEST_SSH_IP"

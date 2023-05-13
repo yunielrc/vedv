@@ -2174,7 +2174,7 @@ The image 'my-image-name' was removed."
 }
 
 # Tests for vedv::image_builder::__layer_user()
-# bats test_tags=only
+
 @test "vedv::image_builder::__layer_user() Should fail With empty image_id" {
   local -r image_id=""
   local -r cmd=""
@@ -2184,7 +2184,7 @@ The image 'my-image-name' was removed."
   assert_failure
   assert_output "Argument 'image_id' is required"
 }
-# bats test_tags=only
+
 @test "vedv::image_builder::__layer_user() Should fail With empty cmd" {
   local -r image_id="12345"
   local -r cmd=
@@ -2194,7 +2194,7 @@ The image 'my-image-name' was removed."
   assert_failure
   assert_output "Argument 'cmd' is required"
 }
-# bats test_tags=only
+
 @test "vedv::image_builder::__layer_user() Should fail If get_cmd_body fails" {
   local -r image_id="12345"
   local -r cmd="1 USER nalyd"
@@ -2209,7 +2209,7 @@ The image 'my-image-name' was removed."
   assert_failure
   assert_output "Failed to get user name from command '1 USER nalyd'"
 }
-# bats test_tags=only
+
 @test "vedv::image_builder::__layer_user() Should fail If user_name is empty" {
   local -r image_id="12345"
   local -r cmd="1 USER"
@@ -2223,7 +2223,7 @@ The image 'my-image-name' was removed."
   assert_failure
   assert_output "Argument 'user_name' must not be empty"
 }
-# bats test_tags=only
+
 @test "vedv::image_builder::__layer_user() Should fail If __layer_execute_cmd fails" {
   local -r image_id="12345"
   local -r cmd="1 USER nalyd"
@@ -2242,7 +2242,7 @@ The image 'my-image-name' was removed."
   assert_failure
   assert_output ""
 }
-# bats test_tags=only
+
 @test "vedv::image_builder::__layer_user() Should succeed" {
   local -r image_id="12345"
   local -r cmd="1 USER nalyd"
@@ -2256,6 +2256,99 @@ The image 'my-image-name' was removed."
   }
 
   run vedv::image_builder::__layer_user "$image_id" "$cmd"
+
+  assert_success
+  assert_output ""
+}
+
+# Tests for vedv::image_builder::__layer_workdir_calc_id()
+@test "vedv::image_builder::__layer_workdir_calc_id(): DUMMY" {
+  :
+}
+
+# Tests for vedv::image_builder::__layer_workdir()
+
+@test "vedv::image_builder::__layer_workdir() Should fail With empty image_id" {
+  local -r image_id=""
+  local -r cmd=""
+
+  run vedv::image_builder::__layer_workdir "$image_id" "$cmd"
+
+  assert_failure
+  assert_output "Argument 'image_id' is required"
+}
+
+@test "vedv::image_builder::__layer_workdir() Should fail With empty cmd" {
+  local -r image_id="12345"
+  local -r cmd=
+
+  run vedv::image_builder::__layer_workdir "$image_id" "$cmd"
+
+  assert_failure
+  assert_output "Argument 'cmd' is required"
+}
+
+@test "vedv::image_builder::__layer_workdir() Should fail If get_cmd_body fails" {
+  local -r image_id="12345"
+  local -r cmd="1 WORKDIR /home/nalyd"
+
+  vedv::image_vedvfile_service::get_cmd_body() {
+    assert_equal "$*" "1 WORKDIR /home/nalyd"
+    return 1
+  }
+
+  run vedv::image_builder::__layer_workdir "$image_id" "$cmd"
+
+  assert_failure
+  assert_output "Failed to get workdir from command '1 WORKDIR /home/nalyd'"
+}
+
+@test "vedv::image_builder::__layer_workdir() Should fail If workdir is empty" {
+  local -r image_id="12345"
+  local -r cmd="1 WORKDIR"
+
+  vedv::image_vedvfile_service::get_cmd_body() {
+    assert_equal "$*" "1 WORKDIR"
+  }
+
+  run vedv::image_builder::__layer_workdir "$image_id" "$cmd"
+
+  assert_failure
+  assert_output "Argument 'workdir' must not be empty"
+}
+
+@test "vedv::image_builder::__layer_workdir() Should fail If __layer_execute_cmd fails" {
+  local -r image_id="12345"
+  local -r cmd="1 WORKDIR /home/nalyd"
+
+  vedv::image_vedvfile_service::get_cmd_body() {
+    assert_equal "$*" "1 WORKDIR /home/nalyd"
+    echo "/home/nalyd"
+  }
+  vedv::image_builder::__layer_execute_cmd() {
+    assert_equal "$*" "12345 1 WORKDIR /home/nalyd WORKDIR vedv::image_service::set_workdir '12345' '/home/nalyd'"
+    return 1
+  }
+
+  run vedv::image_builder::__layer_workdir "$image_id" "$cmd"
+
+  assert_failure
+  assert_output ""
+}
+
+@test "vedv::image_builder::__layer_workdir() Should succeed" {
+  local -r image_id="12345"
+  local -r cmd="1 WORKDIR /home/nalyd"
+
+  vedv::image_vedvfile_service::get_cmd_body() {
+    assert_equal "$*" "1 WORKDIR /home/nalyd"
+    echo "/home/nalyd"
+  }
+  vedv::image_builder::__layer_execute_cmd() {
+    assert_equal "$*" "12345 1 WORKDIR /home/nalyd WORKDIR vedv::image_service::set_workdir '12345' '/home/nalyd'"
+  }
+
+  run vedv::image_builder::__layer_workdir "$image_id" "$cmd"
 
   assert_success
   assert_output ""
