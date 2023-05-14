@@ -647,7 +647,7 @@ calc_item_id_from_array_b() { echo "$1"; }
   run utils::str_encode "$str"
 
   assert_success
-  assert_output "uname -r >uname-r.txt && echo @*^&Hello World@*^& >hello.txt"
+  assert_output "uname -r >uname-r.txt && echo ;-@^&;Hello World;-@^&; >hello.txt"
 }
 
 @test "utils::str_encode() Should succeed With string with special characters 2" {
@@ -656,7 +656,7 @@ calc_item_id_from_array_b() { echo "$1"; }
   run utils::str_encode "$str"
 
   assert_success
-  assert_output "uname -r >uname-r.txt && echo *!@%Hello World*!@% >hello.txt"
+  assert_output "uname -r >uname-r.txt && echo ;+@!%;Hello World;+@!%; >hello.txt"
 }
 
 # Test for utils::str_decode()
@@ -680,7 +680,7 @@ calc_item_id_from_array_b() { echo "$1"; }
 }
 
 @test "utils::str_decode() Should succeed With string with special characters" {
-  local -r str="uname -r >uname-r.txt && echo @*^&Hello World@*^& >hello.txt"
+  local -r str="uname -r >uname-r.txt && echo ;-@^&;Hello World;-@^&; >hello.txt"
 
   run utils::str_decode "$str"
 
@@ -689,12 +689,12 @@ calc_item_id_from_array_b() { echo "$1"; }
 }
 
 @test "utils::str_decode() Should succeed With string with special characters 2" {
-  local -r str="uname -r >uname-r.txt && echo *!@%Hello World*!@% >hello.txt"
+  local -r str="uname -r >uname-r.txt && echo ;-@^&;Hello World;-@^&; >hello.txt"
 
   run utils::str_decode "$str"
 
   assert_success
-  assert_output 'uname -r >uname-r.txt && echo "Hello World" >hello.txt'
+  assert_output "uname -r >uname-r.txt && echo 'Hello World' >hello.txt"
 }
 
 # Tests for utils::get_file_path_on_working_dir()

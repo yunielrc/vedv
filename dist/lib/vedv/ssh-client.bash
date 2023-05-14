@@ -75,7 +75,7 @@ vedv::ssh_client::run_cmd() {
       -p "$port" \
       "${user}@${ip}" <<SSHEOF
          ${set_workdir_cmd}
-         eval "$cmd"
+         ${cmd}
 SSHEOF
   } || {
     err "Error on '${user}@${ip}', exit code: $?"
