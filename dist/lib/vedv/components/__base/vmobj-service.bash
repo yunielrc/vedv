@@ -927,7 +927,21 @@ vedv::vmobj_service::copy_by_id() {
   }
   readonly vedvfileignore
 
-  local -r exec_func="vedv::ssh_client::copy \"\$user\" \"\$ip\"  \"\$password\" \"\$port\" '${src}' '${dest}' '${vedvfileignore}' \"\$workdir\""
+  local src_encoded
+  src_encoded="$(utils::str_encode "$src")" || {
+    err "Failed to encode command '${src}'"
+    return "$ERR_IMAGE_BUILDER_OPERATION"
+  }
+  readonly src_encoded
+
+  local dest_encoded
+  dest_encoded="$(utils::str_encode "$dest")" || {
+    err "Failed to encode command '${dest}'"
+    return "$ERR_IMAGE_BUILDER_OPERATION"
+  }
+  readonly dest_encoded
+
+  local -r exec_func="vedv::ssh_client::copy \"\$user\" \"\$ip\"  \"\$password\" \"\$port\" '${src_encoded}' '${dest_encoded}' '${vedvfileignore}' \"\$workdir\""
 
   vedv::vmobj_service::__exec_ssh_func "$type" "$vmobj_id" "$exec_func" "$user" "$use_workdir" || {
     err "Failed to copy to ${type}: ${vmobj_id}"

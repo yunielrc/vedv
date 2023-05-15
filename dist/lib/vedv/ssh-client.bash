@@ -28,7 +28,7 @@ vedv::ssh_client::run_cmd() {
   local -r user="$1"
   local -r ip="$2"
   local -r password="$3"
-  local cmd="$4"
+  local -r cmd="$4"
   local -ri port=${5:-22}
   local -r workdir="${6:-}"
 
@@ -55,8 +55,11 @@ vedv::ssh_client::run_cmd() {
     err "Argument 'cmd' must not be empty"
     return "$ERR_INVAL_ARG"
   fi
-  cmd="$(utils::str_decode "$cmd")"
   readonly cmd
+
+  local decoded_cmd
+  decoded_cmd="$(utils::str_decode "$cmd")"
+  readonly decoded_cmd
 
   local set_workdir_cmd=''
 
@@ -75,7 +78,7 @@ vedv::ssh_client::run_cmd() {
       -p "$port" \
       "${user}@${ip}" <<SSHEOF
          ${set_workdir_cmd}
-         ${cmd}
+         ${decoded_cmd}
 SSHEOF
   } || {
     err "Error on '${user}@${ip}', exit code: $?"
@@ -146,12 +149,21 @@ vedv::ssh_client::copy() {
   _dest="$(utils::get_file_path_on_working_dir "$dest" "$workdir")"
   readonly _dest
 
+  local decoded_source
+  decoded_source="$(utils::str_decode "$source")"
+  readonly decoded_source
+
+  local decoded_dest
+  decoded_dest="$(utils::str_decode "$_dest")"
+  readonly decoded_dest
+
   {
+    # with eval and quoting decoded_source its posible to copy files with spaces and wildcards
     # shellcheck disable=SC2086
-    IFS='' rsync -az --no-owner --no-group \
-      --exclude-from="$exclude_file_path" \
-      -e "sshpass -p ${password} ssh -o 'ConnectTimeout=1' -o 'UserKnownHostsFile=/dev/null'  -o 'PubkeyAuthentication=no' -o 'StrictHostKeyChecking=no' -o 'LogLevel=ERROR' -p ${port}" \
-      $source "${user}@${ip}:${_dest}"
+    IFS='' eval rsync -az --no-owner --no-group \
+      --exclude-from="'${exclude_file_path}'" \
+      -e "'sshpass -p ${password} ssh -o ConnectTimeout=1 -o UserKnownHostsFile=/dev/null  -o PubkeyAuthentication=no -o StrictHostKeyChecking=no -o LogLevel=ERROR -p ${port}'" \
+      "$decoded_source" "${user}@${ip}:${decoded_dest}"
   } || {
     err "Error on '${user}@${ip}', rsync exit code: $?"
     return "$ERR_SSH_OPERATION"

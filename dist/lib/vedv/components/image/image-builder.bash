@@ -427,13 +427,14 @@ vedv::image_builder::__layer_copy_calc_id() {
   crc_sum_cmd="$(utils::crc_sum <<<"$cmd")"
   readonly crc_sum_cmd
 
-  local _source=''
   # extract arguments
   local -a cmd_arr
   IFS=' ' read -r -a cmd_arr <<<"$cmd"
   # ...:2 skip the command id and name
-  # 1 COPY --root source/ dest/ -> --root source/ dest/
-  set -- "${cmd_arr[@]:2}"
+  # 1 COPY --root 'file space' ./file* -> --root 'file space' ./file*
+  set -- "${cmd_arr[@]:2}" # by this way it keeps quotes (" and ')
+
+  local src=''
 
   while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -450,20 +451,39 @@ vedv::image_builder::__layer_copy_calc_id() {
       ;;
     # arguments
     *)
-      _source="${1:-}"
+      # cmd_files="'file space' ./file*"
+      local -r cmd_files="$*"
+      # when replacing quotes (" and ') with encode2 whe can know if the argument
+      # has quotes or not because these are not stripped by the shell on argument
+      # evaluation with: eval set -- "$cmd_files_encoded2", therefore we can decode the
+      # argument and put the quotes back, avoiding word splitting when the
+      # argument has spaces and the user wrote the quotes.
+      # cmd_files_encoded2="'3c5d99d4c5file space'3c5d99d4c5 ./file*"
+      local cmd_files_encoded2
+      cmd_files_encoded2="$(utils::str_encode2 "$cmd_files")"
+      readonly cmd_files_encoded2
+      # this avoid ./file* to be expanded by the shell at this point, e.g.: ./file1 ./file2 ...
+      set -o noglob
+      eval set -- "$cmd_files_encoded2"
+      set +o noglob
+      # encoded_src="3c5d99d4c5file space3c5d99d4c5"
+      local -r encoded_src="$1"
+      # src="'file space'"
+      src="$(utils::str_decode "$encoded_src")"
+      readonly src
       break
       ;;
     esac
   done
 
-  if [[ -z "$_source" ]]; then
-    err "_source' must not be empty"
+  if [[ -z "$src" ]]; then
+    err "'src' must not be empty"
     return "$ERR_INVAL_VALUE"
   fi
 
   local crc_sum_source
-  crc_sum_source="$(utils::crc_file_sum "$_source")" || {
-    err "Failed getting 'crc_sum_source' for _source: '$_source'"
+  crc_sum_source="$(utils::crc_file_sum "$src")" || {
+    err "Failed getting 'crc_sum_source' for src: '${src}'"
     return "$ERR_IMAGE_BUILDER_OPERATION"
   }
   readonly crc_sum_source
@@ -527,15 +547,16 @@ vedv::image_builder::__layer_copy() {
     return "$ERR_INVAL_ARG"
   fi
 
-  local src=''
-  local dest=''
-  local user=''
   # extract arguments
   local -a cmd_arr
   IFS=' ' read -r -a cmd_arr <<<"$cmd"
   # ...:2 skip the command id and name
-  # 1 COPY --root source/ dest/ -> --root source/ dest/
-  set -- "${cmd_arr[@]:2}"
+  # 1 COPY --root 'file space' ./file* -> --root 'file space' ./file*
+  set -- "${cmd_arr[@]:2}" # by this way it keeps quotes (" and ')
+
+  local user=''
+  local encoded_src=''
+  local encoded_dest=''
 
   while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -557,23 +578,36 @@ vedv::image_builder::__layer_copy() {
       ;;
     # arguments
     *)
-      readonly src="${1:-}"
-      readonly dest="${2:-}"
+      # cmd_files="'file space' ./file*"
+      local -r cmd_files="$*"
+
+      # replacing quotes (" and ') allow passing the argument as a string
+      # avoiding the shell to split it on every evaluation (with eval)
+      # cmd_files_encoded2="'3c5d99d4c5file space'3c5d99d4c5 ./file*"
+      local -r cmd_files_encoded2="$(utils::str_encode2 "$cmd_files")"
+      # this avoid ./file* to be expanded by the shell at this point, e.g.: ./file1 ./file2 ...
+      set -o noglob
+      eval set -- "$cmd_files_encoded2"
+      set +o noglob
+      # encoded_src="3c5d99d4c5file space3c5d99d4c5"
+      readonly encoded_src="$1"
+      # encoded_dest="./file*"
+      readonly encoded_dest="${2:-}"
       break
       ;;
     esac
   done
   # validate command arguments
-  if [[ -z "$src" ]]; then
+  if [[ -z "$encoded_src" ]]; then
     err "Argument 'src' must not be empty"
     return "$ERR_INVAL_ARG"
   fi
-  if [[ -z "$dest" ]]; then
+  if [[ -z "$encoded_dest" ]]; then
     err "Argument 'dest' must not be empty"
     return "$ERR_INVAL_ARG"
   fi
 
-  local -r exec_func="vedv::image_service::copy '${image_id}' '${src}' '${dest}' '${user}'"
+  local -r exec_func="vedv::image_service::copy '${image_id}' '${encoded_src}' '${encoded_dest}' '${user}'"
 
   vedv::image_builder::__layer_execute_cmd "$image_id" "$cmd" "COPY" "$exec_func" || {
     err "Failed to execute command '${cmd}'"
@@ -669,14 +703,15 @@ vedv::image_builder::__layer_run() {
   fi
   shift 2
 
-  local user=''
-  local cmd_body=''
   # extract arguments
   local -a cmd_arr
   IFS=' ' read -r -a cmd_arr <<<"$cmd"
   # ...:2 skip the command id and name
   # 1 RUN --root ls -la -> --root ls -la
-  set -- "${cmd_arr[@]:2}"
+  set -- "${cmd_arr[@]:2}" # by this way it keeps quotes (" and ')
+
+  local user=''
+  local exec_cmd=''
 
   while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -698,25 +733,28 @@ vedv::image_builder::__layer_run() {
       ;;
     # arguments
     *)
-      readonly cmd_body="$*"
+      # ls -la
+      readonly exec_cmd="$*"
       break
       ;;
     esac
   done
   # validate command arguments
-  if [[ -z "$cmd_body" ]]; then
+  if [[ -z "$exec_cmd" ]]; then
     err "Argument 'cmd_body' must not be empty"
     return "$ERR_INVAL_ARG"
   fi
 
-  local cmd_encoded
-  cmd_encoded="$(utils::str_encode "$cmd_body")" || {
-    err "Failed to encode command '${cmd_body}'"
+  # replacing quotes (" and ') allow passing the command as a string (single argument)
+  # avoiding the shell to split it on every evaluation (with eval)
+  local exec_cmd_encoded
+  exec_cmd_encoded="$(utils::str_encode "$exec_cmd")" || {
+    err "Failed to encode command '${exec_cmd}'"
     return "$ERR_IMAGE_BUILDER_OPERATION"
   }
-  readonly cmd_encoded
+  readonly exec_cmd_encoded
 
-  local -r exec_func="vedv::image_service::execute_cmd '${image_id}' '${cmd_encoded}' '${user}'"
+  local -r exec_func="vedv::image_service::execute_cmd '${image_id}' '${exec_cmd_encoded}' '${user}'"
   vedv::image_builder::__layer_execute_cmd "$image_id" "$cmd" "RUN" "$exec_func" || {
     err "Failed to execute command '${cmd}'"
     return "$ERR_IMAGE_BUILDER_OPERATION"

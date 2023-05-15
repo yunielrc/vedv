@@ -793,7 +793,7 @@ Failed to execute command '1 COPY dummy_source dummy_dest'"
   run vedv::image_builder::__layer_copy_calc_id "$cmd"
   # Assert
   assert_failure
-  assert_output "_source' must not be empty"
+  assert_output "'src' must not be empty"
 }
 
 @test "vedv::image_builder::__layer_copy_calc_id(), Should write copy layer id to stdout" {
