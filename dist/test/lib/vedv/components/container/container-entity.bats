@@ -47,16 +47,6 @@ load test_helper
   :
 }
 
-# Test vedv::container_entity::get_user_name()
-@test 'vedv::container_entity::get_user_name() DUMMY' {
-  :
-}
-
-# Test vedv::container_entity::__set_user_name()
-@test 'vedv::container_entity::__set_user_name() DUMMY' {
-  :
-}
-
 # Test vedv::container_entity::get_workdir()
 @test 'vedv::container_entity::get_workdir() DUMMY' {
   :

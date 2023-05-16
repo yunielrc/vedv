@@ -152,23 +152,6 @@ vedv::container_service::create() {
     return "$ERR_CONTAINER_OPERATION"
   }
 
-  local user_name
-  user_name="$(vedv::image_entity::get_user_name "$image_id")" || {
-    err "Error getting attribute 'user_name' from the image: ${image_id}"
-    return "$ERR_IMAGE_OPERATION"
-  }
-  readonly user_name
-
-  if [[ -z "$user_name" ]]; then
-    err "Attribute 'user_name' is empty for the image '${image_id}'"
-    return "$ERR_INVAL_VALUE"
-  fi
-
-  vedv::container_entity::__set_user_name "$container_id" "$user_name" || {
-    err "Failed to set 'user_name' for container: ${container_id}"
-    return "$ERR_CONTAINER_OPERATION"
-  }
-
   local workdir
   workdir="$(vedv::image_entity::get_workdir "$image_id")" || {
     err "Error getting attribute 'workdir' from the image: ${image_id}"

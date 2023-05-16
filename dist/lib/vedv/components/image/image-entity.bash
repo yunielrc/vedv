@@ -24,7 +24,7 @@ fi
 
 readonly VEDV_IMAGE_ENTITY_TYPE='image'
 # shellcheck disable=SC2034
-readonly VEDV_IMAGE_ENTITY_VALID_ATTRIBUTES='image_cache|ova_file_sum|ssh_port|user_name|workdir'
+readonly VEDV_IMAGE_ENTITY_VALID_ATTRIBUTES='image_cache|ova_file_sum|ssh_port|workdir'
 
 # FUNCTIONS
 
@@ -269,47 +269,6 @@ vedv::image_entity::set_ssh_port() {
   local -r value="$2"
 
   vedv::vmobj_entity::set_ssh_port "$VEDV_IMAGE_ENTITY_TYPE" "$image_id" "$value"
-}
-
-#
-# Get user_name value
-#
-# Arguments:
-#   image_id  string  image id
-#
-# Output:
-#  Writes user_name (string) to the stdout
-#
-# Returns:
-#   0 on success, non-zero on error.
-#
-vedv::image_entity::get_user_name() {
-  local -r image_id="$1"
-  vedv::vmobj_entity::get_user_name "$VEDV_IMAGE_ENTITY_TYPE" "$image_id"
-}
-
-#
-# Set user_name value
-#
-# This function can be only used by the
-# vedv::image_service and this is the
-# responsible of creating the user and
-# update the working directory and other
-# user related properties when the user
-# name is changed.
-#
-# Arguments:
-#   image_id  string  image id
-#   user_name string  ssh port
-#
-# Returns:
-#   0 on success, non-zero on error.
-#
-vedv::image_entity::__set_user_name() {
-  local -r image_id="$1"
-  local -r value="$2"
-
-  vedv::vmobj_entity::__set_user_name "$VEDV_IMAGE_ENTITY_TYPE" "$image_id" "$value"
 }
 
 #

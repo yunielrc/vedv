@@ -80,16 +80,6 @@ load test_helper
   :
 }
 
-# Test vedv::image_entity::get_user_name()
-@test 'vedv::image_entity::get_user_name() DUMMY' {
-  :
-}
-
-# Test vedv::image_entity::__set_user_name()
-@test 'vedv::image_entity::__set_user_name() DUMMY' {
-  :
-}
-
 # Test vedv::image_entity::__get_snapshots_names() function
 @test "vedv::image_entity::__get_snapshots_names() Should fail When 'image_id' is empty" {
   # Arrange

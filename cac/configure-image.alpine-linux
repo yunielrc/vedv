@@ -4,8 +4,20 @@
 
 set -eu
 
+# CONSTANTS
+readonly __VEDV_CONFIG_DIR='/etc/vedv-guest'
+
+# ENVIRONMENT
 readonly VEDV_USER="${VEDV_USER:-vedv}"
 readonly VEDV_PASS="${VEDV_PASS:-vedv}"
+
+# SETUP VEDV CONFIG
+mkdir -p "${__VEDV_CONFIG_DIR}/layer"
+# define linux distro
+echo 'alpine' >"${__VEDV_CONFIG_DIR}/distro"
+chmod 0444 "${__VEDV_CONFIG_DIR}/distro"
+# define default user
+echo "$VEDV_USER" >"${__VEDV_CONFIG_DIR}/layer/user"
 
 # ADD USER
 adduser --disabled-password "$VEDV_USER"
@@ -50,9 +62,6 @@ service rsyncd start
 # INSTALL BASH
 apk add bash
 
-# DEFINE LINUX DISTRO
-echo 'alpine' >/etc/vedv-distro
-
 # ADD VEDV STANDARD SCRIPTS
 
 # add vedv-adduser script
@@ -69,17 +78,17 @@ if [[ "$#" -ne 2 ]]; then
   exit 1
 fi
 
-readonly VED_USER="$1"
-readonly VED_PASS="$2"
+readonly VEDV_USER="$1"
+readonly VEDV_PASS="$2"
 
-if id "$VED_USER" &>/dev/null; then
-  echo "user '${VED_USER}' already exists"
+if id "$VEDV_USER" &>/dev/null; then
+  echo "user '${VEDV_USER}' already exists"
   exit 0
 fi
 
-sudo adduser --disabled-password "$VED_USER"
-echo "${VED_USER}:${VED_PASS}" | sudo chpasswd
-sudo adduser "$VED_USER" wheel
+adduser --disabled-password "$VEDV_USER"
+echo "${VEDV_USER}:${VEDV_PASS}" | chpasswd
+adduser "$VEDV_USER" wheel
 EOF
 
 chmod 0755 /usr/local/bin/vedv-adduser
@@ -108,3 +117,44 @@ realpath "$_DIR"
 EOF
 
 chmod 0755 /usr/local/bin/vedv-mkdir
+
+# add vedv-setuser script
+cat <<EOF >/usr/local/bin/vedv-setuser
+#!/usr/bin/env bash
+#
+# Set default vedv user
+#
+
+set -eu
+
+if [[ "\$#" -ne 1 ]]; then
+  echo "usage: vedv-setuser <username>" >&2
+  exit 1
+fi
+
+readonly VEDV_USER="\$1"
+
+if ! id "\$VEDV_USER" &>/dev/null; then
+  echo "user '\${VEDV_USER}' does not exist" >&2
+  exit 1
+fi
+
+echo "\$VEDV_USER" >"${__VEDV_CONFIG_DIR}/layer/user"
+EOF
+
+chmod 0755 /usr/local/bin/vedv-setuser
+
+# add vedv-getuser script
+cat <<EOF >/usr/local/bin/vedv-getuser
+#!/usr/bin/env bash
+#
+# Get default vedv user
+#
+
+set -eu
+
+
+cat "${__VEDV_CONFIG_DIR}/layer/user"
+EOF
+
+chmod 0755 /usr/local/bin/vedv-getuser

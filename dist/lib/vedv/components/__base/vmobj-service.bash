@@ -693,7 +693,7 @@ vedv::vmobj_service::__exec_ssh_func() {
     return "$ERR_INVAL_ARG"
   fi
   if [[ -z "$user" ]]; then
-    user="$(vedv::vmobj_entity::get_user_name "$type" "$vmobj_id")" || {
+    user="$(vedv::vmobj_service::get_user "$type" "$vmobj_id")" || {
       err "Failed to get default user for ${type}"
       return "$ERR_VMOBJ_OPERATION"
     }
@@ -989,8 +989,7 @@ vedv::vmobj_service::copy() {
 }
 
 #
-# Create an user if not exits and set its name to
-# the vmobj-entity
+# Create an user if it doesn't exist and set it as default vedv user
 #
 # Arguments:
 #   type       string     type (e.g. 'container|image')
@@ -1021,7 +1020,7 @@ vedv::vmobj_service::set_user() {
   fi
 
   local cur_user_name
-  cur_user_name="$(vedv::vmobj_entity::get_user_name "$type" "$vmobj_id")" || {
+  cur_user_name="$(vedv::vmobj_service::get_user "$type" "$vmobj_id")" || {
     err "Error getting attribute user name from the ${type} '${vmobj_id}'"
     return "$ERR_VMOBJ_OPERATION"
   }
@@ -1032,17 +1031,45 @@ vedv::vmobj_service::set_user() {
   fi
 
   # create user if it doesn't exist
-  local cmd="vedv-adduser '${user_name}' '${__VEDV_VMOBJ_SERVICE_SSH_PASSWORD}'"
+  local cmd="vedv-adduser '${user_name}' '${__VEDV_VMOBJ_SERVICE_SSH_PASSWORD}' && vedv-setuser '${user_name}'"
   cmd="$(utils::str_encode "$cmd")"
   readonly cmd
 
-  vedv::vmobj_service::execute_cmd_by_id "$type" "$vmobj_id" "$cmd" "${__VEDV_VMOBJ_SERVICE_SSH_USER}" 'false' &>/dev/null || {
+  vedv::vmobj_service::execute_cmd_by_id "$type" "$vmobj_id" "$cmd" 'root' 'false' &>/dev/null || {
     err "Failed to set user '${user_name}' to ${type}: ${vmobj_id}"
     return "$ERR_VMOBJ_OPERATION"
   }
+}
 
-  vedv::vmobj_entity::__set_user_name "$type" "$vmobj_id" "$user_name" || {
-    err "Error setting attribute user name '${user_name}' to the ${type}: ${vmobj_id}"
+#
+# Get default vedv user
+#
+# Arguments:
+#   type       string     type (e.g. 'container|image')
+#   vmobj_id   string     vmobj id
+#
+# Output:
+#  writes command output to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::vmobj_service::get_user() {
+  local -r type="$1"
+  local -r vmobj_id="$2"
+  # validate arguments
+  vedv::vmobj_entity::validate_type "$type" ||
+    return "$?"
+
+  if [[ -z "$vmobj_id" ]]; then
+    err "Invalid argument 'vmobj_id': it's empty"
+    return "$ERR_INVAL_ARG"
+  fi
+
+  local -r cmd='vedv-getuser'
+
+  vedv::vmobj_service::execute_cmd_by_id "$type" "$vmobj_id" "$cmd" 'root' 'false' || {
+    err "Failed to get user of ${type}: ${vmobj_id}"
     return "$ERR_VMOBJ_OPERATION"
   }
 }

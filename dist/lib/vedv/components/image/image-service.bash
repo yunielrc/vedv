@@ -129,22 +129,6 @@ vedv::image_service::__pull_from_file() {
     return "$ERR_IMAGE_OPERATION"
   }
 
-  local user_name
-  user_name="$(vedv::image_entity::get_user_name "$image_id")" || {
-    err "Error getting attribute user name from the image '${image_id}'"
-    return "$ERR_IMAGE_OPERATION"
-  }
-  readonly user_name
-
-  if [[ -z "$user_name" ]]; then
-    local -r default_user_name="$(vedv::vmobj_service::get_ssh_user)"
-
-    vedv::image_entity::__set_user_name "$image_id" "$default_user_name" || {
-      err "Error setting attribute user name '${default_user_name}' to the image '${image_id}'"
-      return "$ERR_IMAGE_OPERATION"
-    }
-  fi
-
   if [[ "$return_image_id" != true ]]; then
     echo "$image_name"
   else
