@@ -185,7 +185,7 @@ Options:
     assert_output --partial "Missing argument for option '${arg}'"
   done
 }
-
+# bats test_tags=only
 @test "vedv image build, Should build the image" {
   cd "${BATS_TEST_DIRNAME}/fixtures/vedvfiles"
 

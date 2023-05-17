@@ -345,13 +345,3 @@ EOF
   skip
   # TODO: implement test
 }
-
-# Test vedv::image_entity::get_workdir()
-@test 'vedv::image_entity::get_workdir() DUMMY' {
-  :
-}
-
-# Test vedv::image_entity::__set_workdir()
-@test 'vedv::image_entity::__set_workdir() DUMMY' {
-  :
-}

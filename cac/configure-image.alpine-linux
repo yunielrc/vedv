@@ -16,12 +16,14 @@ mkdir -p "${__VEDV_CONFIG_DIR}/layer"
 # define linux distro
 echo 'alpine' >"${__VEDV_CONFIG_DIR}/distro"
 chmod 0444 "${__VEDV_CONFIG_DIR}/distro"
-# define default user
-echo "$VEDV_USER" >"${__VEDV_CONFIG_DIR}/layer/user"
 
 # ADD USER
 adduser --disabled-password "$VEDV_USER"
 echo "${VEDV_USER}:${VEDV_PASS}" | chpasswd
+# define default user
+echo "$VEDV_USER" >"${__VEDV_CONFIG_DIR}/layer/user"
+# define default workdir
+eval echo ~"$VEDV_USER" >"${__VEDV_CONFIG_DIR}/layer/workdir"
 
 # CHANGE ROOT PASSWORD
 echo "root:${VEDV_PASS}" | chpasswd
@@ -93,31 +95,6 @@ EOF
 
 chmod 0755 /usr/local/bin/vedv-adduser
 
-# add vedv-mkdir script
-cat <<'EOF' >/usr/local/bin/vedv-mkdir
-#!/usr/bin/env bash
-#
-# Create a directory for a user if it does not exist
-# and print the full path
-#
-
-set -eu
-
-if [[ "$#" -ne 1 ]]; then
-  echo "usage: vedv-mkdir <dir>" >&2
-  exit 1
-fi
-
-readonly _DIR="$1"
-
-if [[ ! -d "$_DIR" ]]; then
-  mkdir -p "$_DIR"
-fi
-realpath "$_DIR"
-EOF
-
-chmod 0755 /usr/local/bin/vedv-mkdir
-
 # add vedv-setuser script
 cat <<EOF >/usr/local/bin/vedv-setuser
 #!/usr/bin/env bash
@@ -158,3 +135,57 @@ cat "${__VEDV_CONFIG_DIR}/layer/user"
 EOF
 
 chmod 0755 /usr/local/bin/vedv-getuser
+
+# add vedv-setworkdir script
+cat <<EOF >/usr/local/bin/vedv-setworkdir
+#!/usr/bin/env bash
+#
+# Set workdir
+#
+
+set -eu
+
+if [[ "\$#" -ne 2 ]]; then
+  echo "usage: vedv-setworkdir <workdir> <owner>" >&2
+  exit 1
+fi
+
+readonly VEDV_WORKDIR="\$1"
+readonly VEDV_OWNER="\$2"
+
+if ! id "\$VEDV_OWNER" &>/dev/null; then
+  echo "user '\${VEDV_OWNER}' does not exist" >&2
+  exit 1
+fi
+
+readonly VEDV_OWNER_HOME="\$(eval echo ~"\$VEDV_OWNER")"
+cd "\$VEDV_OWNER_HOME" || exit 1
+
+if [[ ! -d "\$VEDV_WORKDIR" ]]; then
+  mkdir -p "\$VEDV_WORKDIR"
+fi
+chown -R "\${VEDV_OWNER}:\${VEDV_OWNER}" "\$VEDV_WORKDIR"
+
+readonly FULL_VEDV_WORKDIR="\$(realpath "\$VEDV_WORKDIR")"
+
+echo "\$FULL_VEDV_WORKDIR" >"${__VEDV_CONFIG_DIR}/layer/workdir"
+
+echo "\$FULL_VEDV_WORKDIR"
+EOF
+
+chmod 0755 /usr/local/bin/vedv-setworkdir
+
+# add vedv-getworkdir script
+cat <<EOF >/usr/local/bin/vedv-getworkdir
+#!/usr/bin/env bash
+#
+# Get workdir
+#
+
+set -eu
+
+
+cat "${__VEDV_CONFIG_DIR}/layer/workdir"
+EOF
+
+chmod 0755 /usr/local/bin/vedv-getworkdir

@@ -708,7 +708,7 @@ vedv::vmobj_service::__exec_ssh_func() {
   local workdir=''
 
   if [[ "$use_workdir" == true ]]; then
-    workdir="$(vedv::vmobj_entity::get_workdir "$type" "$vmobj_id")" || {
+    workdir="$(vedv::vmobj_service::get_workdir "$type" "$vmobj_id")" || {
       err "Failed to get default workdir for ${type}"
       return "$ERR_VMOBJ_OPERATION"
     }
@@ -1029,7 +1029,6 @@ vedv::vmobj_service::set_user() {
   if [[ "$cur_user_name" == "$user_name" ]]; then
     return 0
   fi
-
   # create user if it doesn't exist
   local cmd="vedv-adduser '${user_name}' '${__VEDV_VMOBJ_SERVICE_SSH_PASSWORD}' && vedv-setuser '${user_name}'"
   cmd="$(utils::str_encode "$cmd")"
@@ -1057,14 +1056,6 @@ vedv::vmobj_service::set_user() {
 vedv::vmobj_service::get_user() {
   local -r type="$1"
   local -r vmobj_id="$2"
-  # validate arguments
-  vedv::vmobj_entity::validate_type "$type" ||
-    return "$?"
-
-  if [[ -z "$vmobj_id" ]]; then
-    err "Invalid argument 'vmobj_id': it's empty"
-    return "$ERR_INVAL_ARG"
-  fi
 
   local -r cmd='vedv-getuser'
 
@@ -1106,7 +1097,7 @@ vedv::vmobj_service::set_workdir() {
   fi
 
   local cur_workdir
-  cur_workdir="$(vedv::vmobj_entity::get_workdir "$type" "$vmobj_id")" || {
+  cur_workdir="$(vedv::vmobj_service::get_workdir "$type" "$vmobj_id")" || {
     err "Error getting attribute workdir name from the ${type} '${vmobj_id}'"
     return "$ERR_VMOBJ_OPERATION"
   }
@@ -1116,17 +1107,42 @@ vedv::vmobj_service::set_workdir() {
     return 0
   fi
 
-  local -r cmd="vedv-mkdir '${workdir}'"
+  local user_name
+  user_name="$(vedv::vmobj_service::get_user "$type" "$vmobj_id")" || {
+    err "Error getting attribute user name from the ${type} '${vmobj_id}'"
+    return "$ERR_VMOBJ_OPERATION"
+  }
+  readonly user_name
 
-  local workdir_full
-  workdir_full="$(vedv::vmobj_service::execute_cmd_by_id "$type" "$vmobj_id" "$cmd" "" 'false' 2>/dev/null)" || {
+  local -r cmd="vedv-setworkdir '${workdir}' '${user_name}'"
+
+  vedv::vmobj_service::execute_cmd_by_id "$type" "$vmobj_id" "$cmd" 'root' 'false' || {
     err "Failed to set workdir '${workdir}' to ${type}: ${vmobj_id}"
     return "$ERR_VMOBJ_OPERATION"
   }
-  readonly workdir_full
+}
 
-  vedv::vmobj_entity::__set_workdir "$type" "$vmobj_id" "$workdir_full" || {
-    err "Error setting attribute workdir name '${workdir}' to the ${type}: ${vmobj_id}"
+#
+# Get workdir
+#
+# Arguments:
+#   type       string     type (e.g. 'container|image')
+#   vmobj_id   string     vmobj id
+#
+# Output:
+#  writes command output to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::vmobj_service::get_workdir() {
+  local -r type="$1"
+  local -r vmobj_id="$2"
+
+  local -r cmd='vedv-getworkdir'
+
+  vedv::vmobj_service::execute_cmd_by_id "$type" "$vmobj_id" "$cmd" 'root' 'false' || {
+    err "Failed to get user of ${type}: ${vmobj_id}"
     return "$ERR_VMOBJ_OPERATION"
   }
 }

@@ -886,7 +886,7 @@ vedv::image_builder::__layer_workdir() {
     return "$ERR_INVAL_ARG"
   fi
 
-  local -r exec_func="vedv::image_service::set_workdir '${image_id}' '${workdir}'"
+  local -r exec_func="vedv::image_service::set_workdir '${image_id}' '${workdir}' >/dev/null"
   vedv::image_builder::__layer_execute_cmd "$image_id" "$cmd" "WORKDIR" "$exec_func" || {
     err "Failed to execute command '${cmd}'"
     return "$ERR_IMAGE_BUILDER_OPERATION"
