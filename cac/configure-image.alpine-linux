@@ -117,6 +117,8 @@ if ! id "\$VEDV_USER" &>/dev/null; then
 fi
 
 echo "\$VEDV_USER" >"${__VEDV_CONFIG_DIR}/layer/user"
+
+chown -R "\${VEDV_USER}:\${VEDV_USER}" "\$(vedv-getworkdir)"
 EOF
 
 chmod 0755 /usr/local/bin/vedv-setuser
