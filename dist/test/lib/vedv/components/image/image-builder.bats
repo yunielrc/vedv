@@ -2186,28 +2186,9 @@ The image 'my-image-name' was removed."
   assert_output "Argument 'cmd' is required"
 }
 
-@test "vedv::image_builder::__layer_user() Should fail If get_cmd_body fails" {
-  local -r image_id="12345"
-  local -r cmd="1 USER nalyd"
-
-  vedv::image_vedvfile_service::get_cmd_body() {
-    assert_equal "$*" "1 USER nalyd"
-    return 1
-  }
-
-  run vedv::image_builder::__layer_user "$image_id" "$cmd"
-
-  assert_failure
-  assert_output "Failed to get user name from command '1 USER nalyd'"
-}
-
 @test "vedv::image_builder::__layer_user() Should fail If user_name is empty" {
   local -r image_id="12345"
   local -r cmd="1 USER"
-
-  vedv::image_vedvfile_service::get_cmd_body() {
-    assert_equal "$*" "1 USER"
-  }
 
   run vedv::image_builder::__layer_user "$image_id" "$cmd"
 
@@ -2219,10 +2200,6 @@ The image 'my-image-name' was removed."
   local -r image_id="12345"
   local -r cmd="1 USER nalyd"
 
-  vedv::image_vedvfile_service::get_cmd_body() {
-    assert_equal "$*" "1 USER nalyd"
-    echo "nalyd"
-  }
   vedv::image_builder::__layer_execute_cmd() {
     assert_equal "$*" "12345 1 USER nalyd USER vedv::image_service::set_user '12345' 'nalyd'"
     return 1
@@ -2238,10 +2215,6 @@ The image 'my-image-name' was removed."
   local -r image_id="12345"
   local -r cmd="1 USER nalyd"
 
-  vedv::image_vedvfile_service::get_cmd_body() {
-    assert_equal "$*" "1 USER nalyd"
-    echo "nalyd"
-  }
   vedv::image_builder::__layer_execute_cmd() {
     assert_equal "$*" "12345 1 USER nalyd USER vedv::image_service::set_user '12345' 'nalyd'"
   }

@@ -478,7 +478,7 @@ utils::get_file_path_on_working_dir() {
 # Escape quotes in a string
 #
 # Arguments:
-#   str   string    string to encode
+#   str   string    string to scape
 #
 # Output:
 #   writes the encoded string to stdout

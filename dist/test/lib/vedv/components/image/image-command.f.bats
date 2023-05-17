@@ -223,6 +223,7 @@ created layer '.*' for command 'WORKDIR'
 created layer '.*' for command 'COPY'
 created layer '.*' for command 'RUN'
 created layer '.*' for command 'USER'
+created layer '.*' for command 'ENV'
 
 Build finished
 .* image123"

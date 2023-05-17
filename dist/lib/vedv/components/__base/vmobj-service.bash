@@ -1031,8 +1031,6 @@ vedv::vmobj_service::set_user() {
   fi
   # create user if it doesn't exist
   local cmd="vedv-adduser '${user_name}' '${__VEDV_VMOBJ_SERVICE_SSH_PASSWORD}' && vedv-setuser '${user_name}'"
-  cmd="$(utils::str_encode "$cmd")"
-  readonly cmd
 
   vedv::vmobj_service::execute_cmd_by_id "$type" "$vmobj_id" "$cmd" 'root' 'false' &>/dev/null || {
     err "Failed to set user '${user_name}' to ${type}: ${vmobj_id}"

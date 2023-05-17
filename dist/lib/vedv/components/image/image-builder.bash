@@ -797,6 +797,7 @@ vedv::image_builder::__layer_user_calc_id() {
 vedv::image_builder::__layer_user() {
   local -r image_id="$1"
   local -r cmd="$2"
+  shift 2
 
   # validate arguments
   if [[ -z "$image_id" ]]; then
@@ -807,13 +808,10 @@ vedv::image_builder::__layer_user() {
     err "Argument 'cmd' is required"
     return "$ERR_INVAL_ARG"
   fi
+  # cmd: "1 USER nalyd"
+  eval set -- "$cmd"
 
-  local user_name
-  user_name="$(vedv::image_vedvfile_service::get_cmd_body "$cmd")" || {
-    err "Failed to get user name from command '${cmd}'"
-    return "$ERR_INVAL_ARG"
-  }
-  readonly user_name
+  local -r user_name="${3:-}"
 
   if [[ -z "$user_name" ]]; then
     err "Argument 'user_name' must not be empty"
