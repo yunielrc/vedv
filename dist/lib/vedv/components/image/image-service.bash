@@ -662,6 +662,28 @@ vedv::image_service::set_workdir() {
 }
 
 #
+# Add environment variable to vmobj filesystem
+#
+# Arguments:
+#   image_id  string  image id
+#   env_var   string  env var (e.g. NAME=nalyd)
+#
+# Output:
+#  writes command output to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+vedv::image_service::add_environment_var() {
+  local -r image_id="$1"
+  local -r env_var="$2"
+
+  vedv::vmobj_service::add_environment_var \
+    'image' \
+    "$image_id" \
+    "$env_var"
+}
+
+#
 # Build an image from a Vedvfile,
 #
 # Arguments:

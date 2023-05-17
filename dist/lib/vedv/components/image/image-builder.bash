@@ -894,6 +894,80 @@ vedv::image_builder::__layer_workdir() {
 }
 
 #
+# Calculates the layer id for the env command
+#
+# Arguments:
+#   cmd string  env command (e.g. "1 ENV NAME=nalyd")
+#
+# Output:
+#  Writes layer_id (string) to the stdout
+#
+# Returns:
+#  0 on success, non-zero on error.
+#
+vedv::image_builder::__layer_env_calc_id() {
+  local -r cmd="$1"
+  vedv::image_builder::__simple_layer_command_calc_id "$cmd" "ENV"
+}
+
+#
+# Creates and set the default env for the image
+#
+# Preconditions:
+#  The image must be started and running
+#
+# Arguments:
+#   image_id  string  image where the env will be set
+#   cmd       string  env command (e.g. "1 ENV NAME=nalyd")
+#
+# Output:
+#  Writes command_output (text) to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::image_builder::__layer_env() {
+  local -r image_id="$1"
+  local -r cmd="$2"
+
+  if [[ -z "$image_id" ]]; then
+    err "Argument 'image_id' is required"
+    return "$ERR_INVAL_ARG"
+  fi
+  if [[ -z "$cmd" ]]; then
+    err "Argument 'cmd' is required"
+    return "$ERR_INVAL_ARG"
+  fi
+
+  local env
+  env="$(vedv::image_vedvfile_service::get_cmd_body "$cmd")" || {
+    err "Failed to get env from command '${cmd}'"
+    return "$ERR_INVAL_ARG"
+  }
+  readonly env
+
+  if [[ -z "$env" ]]; then
+    err "Argument 'env' must not be empty"
+    return "$ERR_INVAL_ARG"
+  fi
+
+  local -r env_escaped="$(utils::str_escape "$env")"
+
+  local env_encoded
+  env_encoded="$(utils::str_encode "$env_escaped")" || {
+    err "Failed to encode command '${env_escaped}'"
+    return "$ERR_IMAGE_BUILDER_OPERATION"
+  }
+  readonly env_encoded
+
+  local -r exec_func="vedv::image_service::add_environment_var '${image_id}' '${env_encoded}' >/dev/null"
+  vedv::image_builder::__layer_execute_cmd "$image_id" "$cmd" "ENV" "$exec_func" || {
+    err "Failed to execute command '${cmd}'"
+    return "$ERR_IMAGE_BUILDER_OPERATION"
+  }
+}
+
+#
 # Delete invalid layers
 #
 # Arguments:

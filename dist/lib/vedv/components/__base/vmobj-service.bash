@@ -1146,3 +1146,42 @@ vedv::vmobj_service::get_workdir() {
     return "$ERR_VMOBJ_OPERATION"
   }
 }
+
+#
+# Add environment variable to vmobj filesystem
+#
+# Arguments:
+#   type      string     type (e.g. 'container|image')
+#   vmobj_id  string     vmobj id
+#   env_var   string     env_var (e.g. NAME=nalyd)
+#
+# Output:
+#  writes command output to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::vmobj_service::add_environment_var() {
+  local -r type="$1"
+  local -r vmobj_id="$2"
+  local -r env_var="$3"
+  # validate arguments
+  vedv::vmobj_entity::validate_type "$type" ||
+    return "$?"
+
+  if [[ -z "$vmobj_id" ]]; then
+    err "Invalid argument 'vmobj_id': it's empty"
+    return "$ERR_INVAL_ARG"
+  fi
+  if [[ -z "$env_var" ]]; then
+    err "Invalid argument 'env_var': it's empty"
+    return "$ERR_INVAL_ARG"
+  fi
+
+  local -r cmd="vedv-addenv_var $'${env_var}'"
+
+  vedv::vmobj_service::execute_cmd_by_id "$type" "$vmobj_id" "$cmd" 'root' 'false' || {
+    err "Failed to add environment variable '${env_var}' to ${type}: ${vmobj_id}"
+    return "$ERR_VMOBJ_OPERATION"
+  }
+}

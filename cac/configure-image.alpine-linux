@@ -16,6 +16,10 @@ mkdir -p "${__VEDV_CONFIG_DIR}/layer"
 # define linux distro
 echo 'alpine' >"${__VEDV_CONFIG_DIR}/distro"
 chmod 0444 "${__VEDV_CONFIG_DIR}/distro"
+# create environment file
+touch "${__VEDV_CONFIG_DIR}/layer/env"
+# link /etc/profile.d/vedv-env.sh to vedv environment file
+ln -sf "${__VEDV_CONFIG_DIR}/layer/env" /etc/profile.d/vedv-env.sh
 
 # ADD USER
 adduser --disabled-password "$VEDV_USER"
@@ -191,3 +195,33 @@ cat "${__VEDV_CONFIG_DIR}/layer/workdir"
 EOF
 
 chmod 0755 /usr/local/bin/vedv-getworkdir
+
+# add the environment variable NAME=nalyd to all users
+cat <<EOF >/usr/local/bin/vedv-addenv_var
+#!/usr/bin/env bash
+#
+# Add an environment variable to all users
+#
+
+set -eu
+
+if [[ "\$#" -ne 1 ]]; then
+  echo "usage: vedv-addenv_var <NAME=value>" >&2
+  exit 1
+fi
+
+readonly VEDV_ENV_VAR="\$1"
+
+readonly sh_var_regex='^[a-zA-Z_][a-zA-Z0-9_]*=[^=].+$'
+
+if [[ ! "\$VEDV_ENV_VAR" =~ \$sh_var_regex ]]; then
+  echo "env_var it's not a valid sh variable" >&2
+  exit 1
+fi
+
+echo "\$VEDV_ENV_VAR" >>"${__VEDV_CONFIG_DIR}/layer/env"
+EOF
+
+chmod 0755 /usr/local/bin/vedv-addenv_var
+
+echo '>> DONE!'

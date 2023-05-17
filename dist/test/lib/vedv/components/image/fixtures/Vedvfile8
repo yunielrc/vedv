@@ -1,0 +1,7 @@
+# lang: dockerfile
+FROM /tmp/vedv/test/files/alpine-x86_64.ova
+ENV FOO=/bar
+ENV NAME=VALUE
+WORKDIR ${FOO}   # WORKDIR /bar
+COPY . $FOO      # ADD . /bar
+COPY \$FOO /quux # COPY $FOO /quux

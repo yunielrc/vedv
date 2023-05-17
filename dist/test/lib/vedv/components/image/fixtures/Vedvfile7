@@ -1,0 +1,10 @@
+# lang: dockerfile
+FROM /tmp/vedv/test/files/alpine-x86_64.ova
+ENV NAME6='dylan \"roque'
+ENV NAME7="dylan \'roque"
+ENV FOO=/bar
+ENV NAME1=nalyd
+ENV NAME2='dylan roque'
+ENV NAME3="dylan roque"
+ENV NAME4="dylan 'roque"
+ENV NAME5='dylan "roque'

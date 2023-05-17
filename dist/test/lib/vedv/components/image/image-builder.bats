@@ -2317,7 +2317,7 @@ The image 'my-image-name' was removed."
     echo "/home/nalyd"
   }
   vedv::image_builder::__layer_execute_cmd() {
-    assert_equal "$*" "12345 1 WORKDIR /home/nalyd WORKDIR vedv::image_service::set_workdir '12345' '/home/nalyd'"
+    assert_equal "$*" "12345 1 WORKDIR /home/nalyd WORKDIR vedv::image_service::set_workdir '12345' '/home/nalyd' >/dev/null"
     return 1
   }
 
@@ -2336,10 +2336,130 @@ The image 'my-image-name' was removed."
     echo "/home/nalyd"
   }
   vedv::image_builder::__layer_execute_cmd() {
-    assert_equal "$*" "12345 1 WORKDIR /home/nalyd WORKDIR vedv::image_service::set_workdir '12345' '/home/nalyd'"
+    assert_equal "$*" "12345 1 WORKDIR /home/nalyd WORKDIR vedv::image_service::set_workdir '12345' '/home/nalyd' >/dev/null"
   }
 
   run vedv::image_builder::__layer_workdir "$image_id" "$cmd"
+
+  assert_success
+  assert_output ""
+}
+
+# Tests for vedv::image_builder::__layer_env_calc_id()
+@test "vedv::image_builder::__layer_env_calc_id(): DUMMY" {
+  :
+}
+
+# Tests for vedv::image_builder::__layer_env()
+# bats test_tags=only
+@test "vedv::image_builder::__layer_env() Should fail With empty image_id" {
+  local -r image_id=""
+  local -r cmd=""
+
+  run vedv::image_builder::__layer_env "$image_id" "$cmd"
+
+  assert_failure
+  assert_output "Argument 'image_id' is required"
+}
+# bats test_tags=only
+@test "vedv::image_builder::__layer_env() Should fail With empty cmd" {
+  local -r image_id="12345"
+  local -r cmd=""
+
+  run vedv::image_builder::__layer_env "$image_id" "$cmd"
+
+  assert_failure
+  assert_output "Argument 'cmd' is required"
+}
+# bats test_tags=only
+@test "vedv::image_builder::__layer_env() Should fail If get_cmd_body fails" {
+  local -r image_id="12345"
+  local -r cmd="1 ENV TEST=123"
+
+  vedv::image_vedvfile_service::get_cmd_body() {
+    assert_equal "$*" "1 ENV TEST=123"
+    return 1
+  }
+
+  run vedv::image_builder::__layer_env "$image_id" "$cmd"
+
+  assert_failure
+  assert_output "Failed to get env from command '1 ENV TEST=123'"
+}
+# bats test_tags=only
+@test "vedv::image_builder::__layer_env() Should fail If env is empty" {
+  local -r image_id="12345"
+  local -r cmd="1 ENV"
+
+  vedv::image_vedvfile_service::get_cmd_body() {
+    assert_equal "$*" "1 ENV"
+  }
+
+  run vedv::image_builder::__layer_env "$image_id" "$cmd"
+
+  assert_failure
+  assert_output "Argument 'env' must not be empty"
+}
+# bats test_tags=only
+@test "vedv::image_builder::__layer_env() Should fail If str_encode fails" {
+  local -r image_id="12345"
+  local -r cmd="1 ENV TEST=123"
+
+  vedv::image_vedvfile_service::get_cmd_body() {
+    assert_equal "$*" "1 ENV TEST=123"
+    echo "TEST=123"
+  }
+  utils::str_encode() {
+    assert_equal "$*" "TEST=123"
+    return 1
+  }
+
+  run vedv::image_builder::__layer_env "$image_id" "$cmd"
+
+  assert_failure
+  assert_output "Failed to encode command 'TEST=123'"
+}
+# bats test_tags=only
+@test "vedv::image_builder::__layer_env() Should fail If __layer_execute_cmd fails" {
+  local -r image_id="12345"
+  local -r cmd="1 ENV TEST=123"
+
+  vedv::image_vedvfile_service::get_cmd_body() {
+    assert_equal "$*" "1 ENV TEST=123"
+    echo "TEST=123"
+  }
+  utils::str_encode() {
+    assert_equal "$*" "TEST=123"
+    echo "TEST=123"
+  }
+  vedv::image_builder::__layer_execute_cmd() {
+    assert_equal "$*" "12345 1 ENV TEST=123 ENV vedv::image_service::add_environment_var '12345' 'TEST=123' >/dev/null"
+    return 1
+  }
+
+  run vedv::image_builder::__layer_env "$image_id" "$cmd"
+
+  assert_failure
+  assert_output "Failed to execute command '1 ENV TEST=123'"
+}
+# bats test_tags=only
+@test "vedv::image_builder::__layer_env() Should succeed" {
+  local -r image_id="12345"
+  local -r cmd="1 ENV TEST=123"
+
+  vedv::image_vedvfile_service::get_cmd_body() {
+    assert_equal "$*" "1 ENV TEST=123"
+    echo "TEST=123"
+  }
+  utils::str_encode() {
+    assert_equal "$*" "TEST=123"
+    echo "TEST=123"
+  }
+  vedv::image_builder::__layer_execute_cmd() {
+    assert_equal "$*" "12345 1 ENV TEST=123 ENV vedv::image_service::add_environment_var '12345' 'TEST=123' >/dev/null"
+  }
+
+  run vedv::image_builder::__layer_env "$image_id" "$cmd"
 
   assert_success
   assert_output ""

@@ -473,3 +473,25 @@ utils::get_file_path_on_working_dir() {
 
   echo "$file_name"
 }
+
+#
+# Escape quotes in a string
+#
+# Arguments:
+#   str   string    string to encode
+#
+# Output:
+#   writes the encoded string to stdout
+#
+utils::str_escape() {
+  local -r str="$1"
+
+  # escape \
+  str_escaped="${str//\\/\\\\}"
+  # escape single quotes
+  local str_escaped="${str_escaped//\'/\\\'}"
+  # escape double quotes
+  str_escaped="${str_escaped//\"/\\\"}"
+
+  echo "$str_escaped"
+}

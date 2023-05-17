@@ -1802,7 +1802,7 @@ EOF
 }
 
 # Tests for vedv::vmobj_service::get_user()
-# bats test_tags=only
+
 @test "vedv::vmobj_service::get_user() Should fail If execute_cmd_by_id fails" {
   local -r type="image"
   local -r vmobj_id="22345"
@@ -1817,7 +1817,7 @@ EOF
   assert_failure
   assert_output "Failed to get user of image: 22345"
 }
-# bats test_tags=only
+
 @test "vedv::vmobj_service::get_user() Should succeed" {
   local -r type="image"
   local -r vmobj_id="22345"
@@ -1833,7 +1833,7 @@ EOF
 }
 
 # Tests for vedv::vmobj_service::get_workdir()
-# bats test_tags=only
+
 @test "vedv::vmobj_service::get_workdir() Should fail If execute_cmd_by_id fails" {
   local -r type="image"
   local -r vmobj_id="22345"
@@ -1848,7 +1848,7 @@ EOF
   assert_failure
   assert_output "Failed to get user of image: 22345"
 }
-# bats test_tags=only
+
 @test "vedv::vmobj_service::get_workdir() Should succeed" {
   local -r type="image"
   local -r vmobj_id="22345"
@@ -1858,6 +1858,72 @@ EOF
   }
 
   run vedv::vmobj_service::get_workdir "$type" "$vmobj_id"
+
+  assert_success
+  assert_output ""
+}
+
+# Tests for vedv::vmobj_service::add_environment_var()
+# bats test_tags=only
+@test "vedv::vmobj_service::add_environment_var() Should fail With empty type" {
+  local -r type=""
+  local -r vmobj_id="22345"
+  local -r env_var="env_var1"
+
+  run vedv::vmobj_service::add_environment_var "$type" "$vmobj_id" "$env_var"
+
+  assert_failure
+  assert_output "Argument 'type' must not be empty"
+}
+# bats test_tags=only
+@test "vedv::vmobj_service::add_environment_var() Should fail With empty vmobj_id" {
+  local -r type="container"
+  local -r vmobj_id=""
+  local -r env_var="env_var1"
+
+  run vedv::vmobj_service::add_environment_var "$type" "$vmobj_id" "$env_var"
+
+  assert_failure
+  assert_output "Invalid argument 'vmobj_id': it's empty"
+}
+# bats test_tags=only
+@test "vedv::vmobj_service::add_environment_var() Should fail With empty env_var" {
+  local -r type="container"
+  local -r vmobj_id="22345"
+  local -r env_var=""
+
+  run vedv::vmobj_service::add_environment_var "$type" "$vmobj_id" "$env_var"
+
+  assert_failure
+  assert_output "Invalid argument 'env_var': it's empty"
+}
+# bats test_tags=only
+@test "vedv::vmobj_service::add_environment_var() Should fail If execute_cmd_by_id fails" {
+  local -r type="container"
+  local -r vmobj_id="22345"
+  local -r env_var="env_var1"
+
+  vedv::vmobj_service::execute_cmd_by_id() {
+    assert_equal "$*" "container 22345 vedv-addenv_var $'env_var1' root false"
+    return 1
+  }
+
+  run vedv::vmobj_service::add_environment_var "$type" "$vmobj_id" "$env_var"
+
+  assert_failure
+  assert_output "Failed to add environment variable 'env_var1' to container: 22345"
+}
+# bats test_tags=only
+@test "vedv::vmobj_service::add_environment_var() Should succeed" {
+  local -r type="container"
+  local -r vmobj_id="22345"
+  local -r env_var="env_var1"
+
+  vedv::vmobj_service::execute_cmd_by_id() {
+    assert_equal "$*" "container 22345 vedv-addenv_var $'env_var1' root false"
+  }
+
+  run vedv::vmobj_service::add_environment_var "$type" "$vmobj_id" "$env_var"
 
   assert_success
   assert_output ""

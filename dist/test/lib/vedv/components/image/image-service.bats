@@ -1286,3 +1286,8 @@ EOF
 @test "vedv::image_service::set_workdir(): DUMMY" {
   :
 }
+
+# Tests for vedv::image_service::add_environment_var()
+@test "vedv::image_service::add_environment_var(): DUMMY" {
+  :
+}

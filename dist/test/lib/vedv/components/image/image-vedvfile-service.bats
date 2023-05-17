@@ -29,7 +29,7 @@ setup_file() {
   run vedv::image_vedvfile_service::__are_supported_commands "$commands"
 
   assert_failure 1
-  assert_output "Command 'INVALID command' isn't supported, valid commands are: FROM|RUN|COPY|USER|WORKDIR"
+  assert_output "Command 'INVALID command' isn't supported, valid commands are: FROM|RUN|COPY|USER|WORKDIR|ENV"
 }
 
 @test "vedv::image_vedvfile_service::__are_supported_commands() Should succeed With valid command" {
@@ -121,7 +121,7 @@ EOF
   run vedv::image_vedvfile_service::get_cmd_name "echo Hello"
 
   assert_failure
-  assert_output "Command 'echo Hello' isn't supported, valid commands are: FROM|RUN|COPY|USER|WORKDIR"
+  assert_output "Command 'echo Hello' isn't supported, valid commands are: FROM|RUN|COPY|USER|WORKDIR|ENV"
 }
 # bats test_tags=only
 @test "vedv::image_vedvfile_service::get_cmd_name() Should succeed With valid input" {
