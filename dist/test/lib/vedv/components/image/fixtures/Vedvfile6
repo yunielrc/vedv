@@ -1,4 +1,4 @@
 FROM /tmp/vedv/test/files/alpine-x86_64.ova
 
 RUN --user vedv echo "Hello world!" >"hello world"
-COPY --user vedv 'homefs/'* "file spaced"
+COPY --user vedv 'homefs/' "file spaced"

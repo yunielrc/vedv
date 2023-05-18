@@ -427,12 +427,14 @@ vedv::image_builder::__layer_copy_calc_id() {
   crc_sum_cmd="$(utils::crc_sum <<<"$cmd")"
   readonly crc_sum_cmd
 
-  # extract arguments
-  local -a cmd_arr
-  IFS=' ' read -r -a cmd_arr <<<"$cmd"
-  # ...:2 skip the command id and name
-  # 1 COPY --root 'file space' ./file* -> --root 'file space' ./file*
-  set -- "${cmd_arr[@]:2}" # by this way it keeps quotes (" and ')
+  # 1 COPY --root 'file space' ./file*
+  eval set -- "$cmd"
+
+  if [[ "$#" -lt 4 ]]; then
+    err "Invalid number of arguments, expected at least 4, got $#"
+    return "$ERR_INVAL_ARG"
+  fi
+  shift 2 # skip command id and name
 
   local src=''
 
@@ -451,26 +453,7 @@ vedv::image_builder::__layer_copy_calc_id() {
       ;;
     # arguments
     *)
-      # cmd_files="'file space' ./file*"
-      local -r cmd_files="$*"
-      # when replacing quotes (" and ') with encode2 whe can know if the argument
-      # has quotes or not because these are not stripped by the shell on argument
-      # evaluation with: eval set -- "$cmd_files_encoded2", therefore we can decode the
-      # argument and put the quotes back, avoiding word splitting when the
-      # argument has spaces and the user wrote the quotes.
-      # cmd_files_encoded2="'3c5d99d4c5file space'3c5d99d4c5 ./file*"
-      local cmd_files_encoded2
-      cmd_files_encoded2="$(utils::str_encode2 "$cmd_files")"
-      readonly cmd_files_encoded2
-      # this avoid ./file* to be expanded by the shell at this point, e.g.: ./file1 ./file2 ...
-      set -o noglob
-      eval set -- "$cmd_files_encoded2"
-      set +o noglob
-      # encoded_src="3c5d99d4c5file space3c5d99d4c5"
-      local -r encoded_src="$1"
-      # src="'file space'"
-      src="$(utils::str_decode "$encoded_src")"
-      readonly src
+      readonly src="$1"
       break
       ;;
     esac
@@ -536,7 +519,6 @@ vedv::image_builder::__layer_copy_calc_id() {
 vedv::image_builder::__layer_copy() {
   local -r image_id="$1"
   local -r cmd="$2"
-  shift 2
   # validate arguments
   if [[ -z "$image_id" ]]; then
     err "Argument 'image_id' is required"
@@ -546,17 +528,18 @@ vedv::image_builder::__layer_copy() {
     err "Argument 'cmd' is required"
     return "$ERR_INVAL_ARG"
   fi
+  # 1 COPY --root 'file space' ./file*
+  eval set -- "$cmd"
 
-  # extract arguments
-  local -a cmd_arr
-  IFS=' ' read -r -a cmd_arr <<<"$cmd"
-  # ...:2 skip the command id and name
-  # 1 COPY --root 'file space' ./file* -> --root 'file space' ./file*
-  set -- "${cmd_arr[@]:2}" # by this way it keeps quotes (" and ')
+  if [[ "$#" -lt 4 ]]; then
+    err "Invalid number of arguments, expected at least 4, got $#"
+    return "$ERR_INVAL_ARG"
+  fi
+  shift 2 # skip command id and name
 
   local user=''
-  local encoded_src=''
-  local encoded_dest=''
+  local src=''
+  local dest=''
 
   while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -578,36 +561,23 @@ vedv::image_builder::__layer_copy() {
       ;;
     # arguments
     *)
-      # cmd_files="'file space' ./file*"
-      local -r cmd_files="$*"
-
-      # replacing quotes (" and ') allow passing the argument as a string
-      # avoiding the shell to split it on every evaluation (with eval)
-      # cmd_files_encoded2="'3c5d99d4c5file space'3c5d99d4c5 ./file*"
-      local -r cmd_files_encoded2="$(utils::str_encode2 "$cmd_files")"
-      # this avoid ./file* to be expanded by the shell at this point, e.g.: ./file1 ./file2 ...
-      set -o noglob
-      eval set -- "$cmd_files_encoded2"
-      set +o noglob
-      # encoded_src="3c5d99d4c5file space3c5d99d4c5"
-      readonly encoded_src="$1"
-      # encoded_dest="./file*"
-      readonly encoded_dest="${2:-}"
+      readonly src="$1"
+      readonly dest="${2:-}"
       break
       ;;
     esac
   done
   # validate command arguments
-  if [[ -z "$encoded_src" ]]; then
+  if [[ -z "$src" ]]; then
     err "Argument 'src' must not be empty"
     return "$ERR_INVAL_ARG"
   fi
-  if [[ -z "$encoded_dest" ]]; then
+  if [[ -z "$dest" ]]; then
     err "Argument 'dest' must not be empty"
     return "$ERR_INVAL_ARG"
   fi
 
-  local -r exec_func="vedv::image_service::copy '${image_id}' '${encoded_src}' '${encoded_dest}' '${user}'"
+  local -r exec_func="vedv::image_service::copy '${image_id}' '${src}' '${dest}' '${user}'"
 
   vedv::image_builder::__layer_execute_cmd "$image_id" "$cmd" "COPY" "$exec_func" || {
     err "Failed to execute command '${cmd}'"
@@ -797,8 +767,6 @@ vedv::image_builder::__layer_user_calc_id() {
 vedv::image_builder::__layer_user() {
   local -r image_id="$1"
   local -r cmd="$2"
-  shift 2
-
   # validate arguments
   if [[ -z "$image_id" ]]; then
     err "Argument 'image_id' is required"
@@ -811,7 +779,13 @@ vedv::image_builder::__layer_user() {
   # cmd: "1 USER nalyd"
   eval set -- "$cmd"
 
-  local -r user_name="${3:-}"
+  if [[ $# -ne 3 ]]; then
+    err "Invalid number of arguments, expected 3, got $#"
+    return "$ERR_INVAL_ARG"
+  fi
+  shift 2 # skip command id and name
+
+  local -r user_name="${1:-}"
 
   if [[ -z "$user_name" ]]; then
     err "Argument 'user_name' must not be empty"
@@ -873,7 +847,13 @@ vedv::image_builder::__layer_workdir() {
   # cmd: "1 WORDIR /home/nalyd"
   eval set -- "$cmd"
 
-  local -r workdir="${3:-}"
+  if [[ $# -ne 3 ]]; then
+    err "Invalid number of arguments, expected 3, got $#"
+    return "$ERR_INVAL_ARG"
+  fi
+  shift 2 # skip command id and name
+
+  local -r workdir="${1:-}"
 
   if [[ -z "$workdir" ]]; then
     err "Argument 'workdir' must not be empty"

@@ -145,25 +145,17 @@ vedv::ssh_client::copy() {
     return "$ERR_INVAL_ARG"
   fi
 
-  local _dest
-  _dest="$(utils::get_file_path_on_working_dir "$dest" "$workdir")"
-  readonly _dest
-
-  local decoded_source
-  decoded_source="$(utils::str_decode "$source")"
-  readonly decoded_source
-
-  local decoded_dest
-  decoded_dest="$(utils::str_decode "$_dest")"
-  readonly decoded_dest
+  local dest_wd
+  dest_wd="$(utils::get_file_path_on_working_dir "$dest" "$workdir")"
+  readonly dest_wd
 
   {
     # with eval and quoting decoded_source its posible to copy files with spaces and wildcards
     # shellcheck disable=SC2086
-    IFS='' eval rsync -az --no-owner --no-group \
-      --exclude-from="'${exclude_file_path}'" \
-      -e "'sshpass -p ${password} ssh -o ConnectTimeout=1 -o UserKnownHostsFile=/dev/null  -o PubkeyAuthentication=no -o StrictHostKeyChecking=no -o LogLevel=ERROR -p ${port}'" \
-      "$decoded_source" "${user}@${ip}:${decoded_dest}"
+    IFS='' rsync -az --no-owner --no-group \
+      --exclude-from="${exclude_file_path}" \
+      -e "sshpass -p ${password} ssh -o ConnectTimeout=1 -o UserKnownHostsFile=/dev/null  -o PubkeyAuthentication=no -o StrictHostKeyChecking=no -o LogLevel=ERROR -p ${port}" \
+      "$source" "${user}@${ip}:${dest_wd}"
   } || {
     err "Error on '${user}@${ip}', rsync exit code: $?"
     return "$ERR_SSH_OPERATION"

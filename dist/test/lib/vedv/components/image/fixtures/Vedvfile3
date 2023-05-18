@@ -5,7 +5,7 @@ RUN apk add --no-cache \
   bat \
   bmon
 
-COPY homefs/* /home/vedv/
+COPY homefs/ /home/vedv/
 
 COPY home.config /home/vedv/
 

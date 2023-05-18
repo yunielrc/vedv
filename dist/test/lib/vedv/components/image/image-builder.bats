@@ -793,7 +793,7 @@ Failed to execute command '1 COPY dummy_source dummy_dest'"
   run vedv::image_builder::__layer_copy_calc_id "$cmd"
   # Assert
   assert_failure
-  assert_output "'src' must not be empty"
+  assert_output "Invalid number of arguments, expected at least 4, got 3"
 }
 
 @test "vedv::image_builder::__layer_copy_calc_id(), Should write copy layer id to stdout" {
@@ -853,7 +853,7 @@ Failed to execute command '1 COPY dummy_source dummy_dest'"
   run vedv::image_builder::__layer_copy "$image_id" "$cmd"
   # Assert
   assert_failure
-  assert_output "Argument 'user' no specified"
+  assert_output "Invalid number of arguments, expected at least 4, got 3"
 }
 
 @test "vedv::image_builder::__layer_copy(), Should fail If _source is empty" {
@@ -2193,7 +2193,7 @@ The image 'my-image-name' was removed."
   run vedv::image_builder::__layer_user "$image_id" "$cmd"
 
   assert_failure
-  assert_output "Argument 'user_name' must not be empty"
+  assert_output "Invalid number of arguments, expected 3, got 2"
 }
 
 @test "vedv::image_builder::__layer_user() Should fail If __layer_execute_cmd fails" {
@@ -2259,7 +2259,7 @@ The image 'my-image-name' was removed."
   run vedv::image_builder::__layer_workdir "$image_id" "$cmd"
 
   assert_failure
-  assert_output "Argument 'workdir' must not be empty"
+  assert_output "Invalid number of arguments, expected 3, got 2"
 }
 
 @test "vedv::image_builder::__layer_workdir() Should fail If __layer_execute_cmd fails" {
