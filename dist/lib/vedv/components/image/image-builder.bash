@@ -426,7 +426,9 @@ vedv::image_builder::__layer_copy_calc_id() {
   local crc_sum_cmd
   crc_sum_cmd="$(utils::crc_sum <<<"$cmd")"
   readonly crc_sum_cmd
-
+  # This works like shell on the terminal, it split the string on spaces
+  # ignoring those inside quotes, then it removes the quotes and finally
+  # it set the arguments to the positional parameters ($1, $2, $3, ...)
   # 1 COPY --root 'file space' ./file*
   eval set -- "$cmd"
 
@@ -444,7 +446,7 @@ vedv::image_builder::__layer_copy_calc_id() {
     --root)
       shift
       ;;
-    # parameters
+    # options
     -u | --user)
       shift
       if [[ -n "${1:-}" ]]; then
@@ -528,6 +530,9 @@ vedv::image_builder::__layer_copy() {
     err "Argument 'cmd' is required"
     return "$ERR_INVAL_ARG"
   fi
+  # This works like shell on the terminal, it split the string on spaces
+  # ignoring those inside quotes, then it removes the quotes and finally
+  # it set the arguments to the positional parameters ($1, $2, $3, ...)
   # 1 COPY --root 'file space' ./file*
   eval set -- "$cmd"
 
@@ -672,8 +677,9 @@ vedv::image_builder::__layer_run() {
     return "$ERR_INVAL_ARG"
   fi
   shift 2
-
-  # extract arguments
+  # In this case we need to keep the quotes, so by this way we split
+  # the command by spaces including those inside quotes, but the quotes
+  # are not removed.
   local -a cmd_arr
   IFS=' ' read -r -a cmd_arr <<<"$cmd"
   # ...:2 skip the command id and name
@@ -693,7 +699,8 @@ vedv::image_builder::__layer_run() {
     # options
     -u | --user)
       shift
-      readonly user="${1:-}"
+      user="$(str_rm_quotes "$1")"
+      readonly user
       # validate argument
       if [[ -z "$user" ]]; then
         err "Argument 'user' no specified"
@@ -776,6 +783,9 @@ vedv::image_builder::__layer_user() {
     err "Argument 'cmd' is required"
     return "$ERR_INVAL_ARG"
   fi
+  # This works like shell on the terminal, it split the string on spaces
+  # ignoring those inside quotes, then it removes the quotes and finally
+  # it set the arguments to the positional parameters ($1, $2, $3, ...)
   # cmd: "1 USER nalyd"
   eval set -- "$cmd"
 
@@ -844,6 +854,9 @@ vedv::image_builder::__layer_workdir() {
     err "Argument 'cmd' is required"
     return "$ERR_INVAL_ARG"
   fi
+  # This works like shell on the terminal, it split the string on spaces
+  # ignoring those inside quotes, then it removes the quotes and finally
+  # it set the arguments to the positional parameters ($1, $2, $3, ...)
   # cmd: "1 WORDIR /home/nalyd"
   eval set -- "$cmd"
 

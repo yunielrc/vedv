@@ -495,3 +495,36 @@ utils::str_escape() {
 
   echo "$str_escaped"
 }
+
+#
+# Remove quotes in a string
+#
+# Arguments:
+#   str   string    string to remove quotes
+#
+# Output:
+#   writes the encoded string to stdout
+#
+utils::str_remove_quotes() {
+  local -r str="$1"
+
+  # remove single quotes
+  local str_no_quotes="${str//\'/}"
+  # remove double quotes
+  str_no_quotes="${str_no_quotes//\"/}"
+
+  echo "$str_no_quotes"
+}
+
+#
+# Alias for utils::str_remove_quotes()
+#
+# Remove quotes in a string
+#
+# Arguments:
+#   str   string    string to remove quotes
+#
+# Output:
+#   writes the encoded string to stdout
+#
+str_rm_quotes() { utils::str_remove_quotes "$@"; }

@@ -766,3 +766,31 @@ calc_item_id_from_array_b() { echo "$1"; }
   assert_success
   assert_output "uname -r >\\\"uname-r.txt\\\" && echo \'Hello World\' >hello.txt"
 }
+
+# Tests for utils::str_remove_quotes()
+@test "utils::str_remove_quotes() Should succeed With empty string" {
+  local -r str=""
+
+  run utils::str_remove_quotes "$str"
+
+  assert_success
+  assert_output ""
+}
+
+@test "utils::str_remove_quotes() Should succeed With string without quotes" {
+  local -r str="foo"
+
+  run utils::str_remove_quotes "$str"
+
+  assert_success
+  assert_output "foo"
+}
+
+@test "utils::str_remove_quotes() Should succeed With string with quotes" {
+  local -r str=$'uname -r >"uname-r.txt" && echo \'Hello World\' >hello.txt'
+
+  run utils::str_remove_quotes "$str"
+
+  assert_success
+  assert_output "uname -r >uname-r.txt && echo Hello World >hello.txt"
+}

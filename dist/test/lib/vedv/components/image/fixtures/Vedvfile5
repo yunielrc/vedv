@@ -19,7 +19,4 @@ RUN touch file2; ls; pwd
 USER vedv
 WORKDIR vedvworkdir
 COPY homefs/ .
-RUN touch file2; ls; pwd
-
-USER nalyd
-ENV NAME=Nalyd
+RUN --user "root" touch file2; ls; pwd
