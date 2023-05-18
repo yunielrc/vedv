@@ -861,7 +861,6 @@ vedv::image_builder::__layer_workdir_calc_id() {
 vedv::image_builder::__layer_workdir() {
   local -r image_id="$1"
   local -r cmd="$2"
-
   # validate arguments
   if [[ -z "$image_id" ]]; then
     err "Argument 'image_id' is required"
@@ -871,13 +870,10 @@ vedv::image_builder::__layer_workdir() {
     err "Argument 'cmd' is required"
     return "$ERR_INVAL_ARG"
   fi
+  # cmd: "1 WORDIR /home/nalyd"
+  eval set -- "$cmd"
 
-  local workdir
-  workdir="$(vedv::image_vedvfile_service::get_cmd_body "$cmd")" || {
-    err "Failed to get workdir from command '${cmd}'"
-    return "$ERR_INVAL_ARG"
-  }
-  readonly workdir
+  local -r workdir="${3:-}"
 
   if [[ -z "$workdir" ]]; then
     err "Argument 'workdir' must not be empty"
@@ -1227,6 +1223,7 @@ vedv::image_builder::__build() {
       err "Failed to create layer for command '${cmd}'"
       return "$ERR_IMAGE_BUILDER_OPERATION"
     }
+
     echo "created layer '${layer_id}' for command '${cmd_name}'"
   done <<<"$cmds_to_run"
 

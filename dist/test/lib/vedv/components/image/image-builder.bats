@@ -2252,28 +2252,9 @@ The image 'my-image-name' was removed."
   assert_output "Argument 'cmd' is required"
 }
 
-@test "vedv::image_builder::__layer_workdir() Should fail If get_cmd_body fails" {
-  local -r image_id="12345"
-  local -r cmd="1 WORKDIR /home/nalyd"
-
-  vedv::image_vedvfile_service::get_cmd_body() {
-    assert_equal "$*" "1 WORKDIR /home/nalyd"
-    return 1
-  }
-
-  run vedv::image_builder::__layer_workdir "$image_id" "$cmd"
-
-  assert_failure
-  assert_output "Failed to get workdir from command '1 WORKDIR /home/nalyd'"
-}
-
 @test "vedv::image_builder::__layer_workdir() Should fail If workdir is empty" {
   local -r image_id="12345"
   local -r cmd="1 WORKDIR"
-
-  vedv::image_vedvfile_service::get_cmd_body() {
-    assert_equal "$*" "1 WORKDIR"
-  }
 
   run vedv::image_builder::__layer_workdir "$image_id" "$cmd"
 
@@ -2285,10 +2266,6 @@ The image 'my-image-name' was removed."
   local -r image_id="12345"
   local -r cmd="1 WORKDIR /home/nalyd"
 
-  vedv::image_vedvfile_service::get_cmd_body() {
-    assert_equal "$*" "1 WORKDIR /home/nalyd"
-    echo "/home/nalyd"
-  }
   vedv::image_builder::__layer_execute_cmd() {
     assert_equal "$*" "12345 1 WORKDIR /home/nalyd WORKDIR vedv::image_service::set_workdir '12345' '/home/nalyd' >/dev/null"
     return 1
@@ -2304,10 +2281,6 @@ The image 'my-image-name' was removed."
   local -r image_id="12345"
   local -r cmd="1 WORKDIR /home/nalyd"
 
-  vedv::image_vedvfile_service::get_cmd_body() {
-    assert_equal "$*" "1 WORKDIR /home/nalyd"
-    echo "/home/nalyd"
-  }
   vedv::image_builder::__layer_execute_cmd() {
     assert_equal "$*" "12345 1 WORKDIR /home/nalyd WORKDIR vedv::image_service::set_workdir '12345' '/home/nalyd' >/dev/null"
   }

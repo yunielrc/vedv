@@ -1,7 +1,15 @@
 # lang: dockerfile
 FROM /tmp/vedv/test/files/alpine-x86_64.ova
-ENV FOO=/bar
-ENV NAME=VALUE
-WORKDIR ${FOO}   # WORKDIR /bar
-COPY . $FOO      # ADD . /bar
-COPY \$FOO /quux # COPY $FOO /quux
+
+# WORKDIR myworkdir
+# COPY homefs .
+# RUN echo hello >hello0
+WORKDIR 'my work dir2'
+COPY homefs .
+RUN echo hello >hello1
+WORKDIR '/my work dir3'
+COPY rootfs .
+RUN echo hello >hello2
+WORKDIR '/files/my work dir4'
+COPY rootfs .
+RUN echo hello >hello3
