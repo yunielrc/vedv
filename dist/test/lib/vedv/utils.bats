@@ -739,29 +739,29 @@ calc_item_id_from_array_b() { echo "$1"; }
   assert_output "/file1"
 }
 
-# Tests for utils::str_escape()
-@test "utils::str_escape() Should succeed With empty string" {
+# Tests for utils::str_escape_quotes()
+@test "utils::str_escape_quotes() Should succeed With empty string" {
   local -r str=""
 
-  run utils::str_escape "$str"
+  run utils::str_escape_quotes "$str"
 
   assert_success
   assert_output ""
 }
 
-@test "utils::str_escape() Should succeed With string without special characters" {
+@test "utils::str_escape_quotes() Should succeed With string without special characters" {
   local -r str="foo"
 
-  run utils::str_escape "$str"
+  run utils::str_escape_quotes "$str"
 
   assert_success
   assert_output "foo"
 }
 
-@test "utils::str_escape() Should succeed With string with special characters" {
+@test "utils::str_escape_quotes() Should succeed With string with special characters" {
   local -r str=$'uname -r >"uname-r.txt" && echo \'Hello World\' >hello.txt'
 
-  run utils::str_escape "$str"
+  run utils::str_escape_quotes "$str"
 
   assert_success
   assert_output "uname -r >\\\"uname-r.txt\\\" && echo \'Hello World\' >hello.txt"

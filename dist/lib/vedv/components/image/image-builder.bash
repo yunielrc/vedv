@@ -938,7 +938,7 @@ vedv::image_builder::__layer_env() {
     return "$ERR_INVAL_ARG"
   fi
 
-  local -r env_escaped="$(utils::str_escape "$env")"
+  local -r env_escaped="$(utils::str_escape_quotes "$env")"
 
   local env_encoded
   env_encoded="$(utils::str_encode "$env_escaped")" || {
@@ -1067,7 +1067,6 @@ vedv::image_builder::__delete_invalid_layers() {
 vedv::image_builder::__build() {
   local -r vedvfile="$1"
   local image_name="${2:-}"
-
   # validate arguments
   if [[ -z "$vedvfile" ]]; then
     err "Argument 'vedvfile' is required"

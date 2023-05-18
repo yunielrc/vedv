@@ -483,7 +483,7 @@ utils::get_file_path_on_working_dir() {
 # Output:
 #   writes the encoded string to stdout
 #
-utils::str_escape() {
+utils::str_escape_quotes() {
   local -r str="$1"
 
   # escape \
