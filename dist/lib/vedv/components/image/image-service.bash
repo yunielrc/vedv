@@ -423,22 +423,15 @@ vedv::image_service::child_containers_remove_all() {
   fi
 
   local -a container_ids_arr
-  readarray -t container_ids_arr <<<"$container_ids"
+  IFS=' ' read -r -a container_ids_arr <<<"$container_ids"
   readonly container_ids_arr
 
-  local failed_rm_containers=''
-
   for container_id in "${container_ids_arr[@]}"; do
-    vedv::container_service::remove_one "$container_id" true &>/dev/null || {
-      failed_rm_containers+="${container_id} "
-    }
+    if ! vedv::container_service::remove_one "$container_id" 'true' &>/dev/null; then
+      err "Failed to remove container: ${container_id}"
+      return "$ERR_IMAGE_OPERATION"
+    fi
   done
-  readonly failed_rm_containers
-
-  if [[ -n "$failed_rm_containers" ]]; then
-    err "Failed to remove containers: ${failed_rm_containers}"
-    return "$ERR_IMAGE_OPERATION"
-  fi
 
   return 0
 }
@@ -707,8 +700,9 @@ vedv::image_service::get_environment_vars() {
 # Build an image from a Vedvfile,
 #
 # Arguments:
-#   vedvfile string       Vedvfile full path
-#   [image_name] string   name of the image
+#   vedvfile      string  Vedvfile full path
+#   [image_name]  string  name of the image
+#   [force]       bool    force the build, removing child containers if the image has
 #
 # Output:
 #   writes process result

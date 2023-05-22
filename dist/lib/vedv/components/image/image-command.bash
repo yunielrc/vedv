@@ -227,6 +227,7 @@ HELPMSG
 #
 # Flags:
 #   [-h | --help]       show help
+#   [--force]           force the build removing the image containers
 #
 # Options:
 #   [-n | --name | -t]  image name
@@ -242,41 +243,44 @@ HELPMSG
 #
 vedv::image_command::__build() {
   local image_name=''
-  local vedvfile=''
+  local force=false
+  local vedvfile='Vedvfile'
 
   while [[ $# -gt 0 ]]; do
-    local arg="$1"
 
-    case "$arg" in
+    case "$1" in
     -h | --help)
       vedv::image_command::__build_help
       return 0
       ;;
-    -n | --name | -t)
-      shift
-      image_name="${1:-}"
-      # validate argument
-      if [[ -z "$image_name" ]]; then
-        err "Missing argument for option '${arg}'"
-        vedv::image_command::__build_help
-        return "$ERR_INVAL_ARG"
-      fi
+    --force)
+      readonly force=true
       shift
       ;;
-    *)
-      if [[ -z "$vedvfile" ]]; then
-        vedvfile="$1"
-        shift
-      else
-        err "Invalid parameter: ${1}\n"
+    -n | --name | -t)
+      image_name="${2:-}"
+      # validate argument
+      if [[ -z "$image_name" ]]; then
+        err "No image name specified\n"
         vedv::image_command::__build_help
         return "$ERR_INVAL_ARG"
       fi
+      shift 2
+      ;;
+    *)
+      readonly vedvfile="${1:-}"
+      break
       ;;
     esac
   done
 
-  vedv::image_service::build "${vedvfile:-Vedvfile}" "$image_name"
+  if [[ -z "$vedvfile" ]]; then
+    err "Missing argument 'VEDVFILE'\n"
+    vedv::image_command::__build_help
+    return "$ERR_INVAL_ARG"
+  fi
+
+  vedv::image_service::build "$vedvfile" "$image_name" "$force"
 }
 
 #
@@ -291,6 +295,10 @@ Usage:
 ${__VED_IMAGE_COMMAND_SCRIPT_NAME} image build [OPTIONS] [PATH]
 
 Build an image from a Vedvfile
+
+Flags:
+  -h, --help       show the help
+  --force          force the build removing the image containers
 
 Options:
   -n, --name, -t   image name

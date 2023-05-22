@@ -168,40 +168,32 @@ Build an image from a Vedvfile"
   assert_output --partial "$expected_output"
 }
 
-@test "vedv::image_command::__build() fails with invalid parameter" {
-  # Act
-  run vedv::image_command::__build "foo" "bar"
-  # Assert
-  assert_failure "$ERR_INVAL_ARG"
-  assert_output --partial 'Invalid parameter: bar'
-}
-
 @test "vedv::image_command::__build() builds an image from custom Vedvfile" {
   # Arrange
   local custom_vedvfile="MyVedvfile"
   # Stub
   vedv::image_service::build() {
-    assert_regex "$*" '^MyVedvfile\s*$'
+    assert_regex "$*" '^MyVedvfile  false\s*$'
     echo "${FUNCNAME[0]} $*"
   }
   # Act
   run vedv::image_command::__build "$custom_vedvfile"
   # Assert
   assert_success
-  assert_output --regexp '^vedv::image_service::build MyVedvfile\s*$'
+  assert_output --regexp '^vedv::image_service::build MyVedvfile  false\s*$'
 }
 
 @test "vedv::image_command::__build() builds an image from default Vedvfile" {
   # Stub
   vedv::image_service::build() {
-    assert_regex "$*" 'Vedvfile\s*'
+    assert_regex "$*" 'Vedvfile  false\s*'
     echo "${FUNCNAME[0]} $*"
   }
   # Act
   run vedv::image_command::__build
   # Assert
   assert_success
-  assert_output --regexp '^vedv::image_service::build Vedvfile\s*$'
+  assert_output --regexp '^vedv::image_service::build Vedvfile  false\s*$'
 }
 
 @test "vedv::image_command::__build() Should fails if -n argument is provided without image name" {
@@ -217,7 +209,7 @@ Build an image from a Vedvfile"
     run vedv::image_command::__build "$arg"
     # Assert
     assert_failure
-    assert_output --partial "Missing argument for option '${arg}'"
+    assert_output --partial "No image name specified"
   done
 }
 
@@ -228,7 +220,7 @@ Build an image from a Vedvfile"
   local custom_vedvfile="MyVedvfile"
   # Stub
   vedv::image_service::build() {
-    assert_regex "$*" '^MyVedvfile my-image\s*$'
+    assert_regex "$*" '^MyVedvfile my-image\s* false$'
     echo "${FUNCNAME[0]} $*"
   }
   for arg in '-n' '--name' '-t'; do
@@ -236,7 +228,7 @@ Build an image from a Vedvfile"
     run vedv::image_command::__build "$arg" "$custom_image_name" "$custom_vedvfile"
     # Assert
     assert_success
-    assert_output 'vedv::image_service::build MyVedvfile my-image'
+    assert_output 'vedv::image_service::build MyVedvfile my-image false'
   done
 }
 

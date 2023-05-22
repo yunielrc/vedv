@@ -151,9 +151,10 @@
       "args": [
         "image",
         "build",
-        "-t",
+        "--force",
+        "-n",
         "image1",
-        "Vedvfile11"
+        "Vedvfile"
       ]
     }
   ]

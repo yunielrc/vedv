@@ -929,23 +929,16 @@ EOF
   # Stubs
   vedv::image_entity::get_child_containers_ids() {
     assert_equal "$1" "$image_id"
-    cat <<EOF
-12345
-12346
-12347
-EOF
-    return 0
+    echo '12345 12346 12347'
   }
   vedv::container_service::remove_one() {
-    if [[ ! "$1" =~ ^1234[567]$ ]]; then return 1; fi
     if [[ "$1" == 12346 ]]; then return 1; fi
-    return 0
   }
   # Act
   run vedv::image_service::child_containers_remove_all "$image_id"
   # Assert
-  assert_failure "$ERR_IMAGE_OPERATION"
-  assert_output --partial "Failed to remove containers: 12346"
+  assert_failure
+  assert_output "Failed to remove container: 12346"
 }
 
 @test "vedv::image_service::child_containers_remove_all() Should removes all child containers" {

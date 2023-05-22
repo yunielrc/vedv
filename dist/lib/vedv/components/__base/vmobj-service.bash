@@ -715,7 +715,7 @@ vedv::vmobj_service::__exec_ssh_func() {
   fi
   readonly workdir
 
-  vedv::vmobj_service::start_one "$type" true "$vmobj_id" >/dev/null || {
+  vedv::vmobj_service::start_one "$type" 'true' "$vmobj_id" >/dev/null || {
     err "Failed to start ${type}: ${vmobj_id}"
     return "$ERR_VMOBJ_OPERATION"
   }

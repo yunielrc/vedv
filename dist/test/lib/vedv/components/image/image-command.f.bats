@@ -170,6 +170,10 @@ vedv image build [OPTIONS] [PATH]
 
 Build an image from a Vedvfile
 
+Flags:
+  -h, --help       show the help
+  --force          force the build removing the image containers
+
 Options:
   -n, --name, -t   image name"
   done
@@ -182,7 +186,7 @@ Options:
     run vedv image build "$arg"
     # Assert
     assert_failure
-    assert_output --partial "Missing argument for option '${arg}'"
+    assert_output --partial "No image name specified"
   done
 }
 

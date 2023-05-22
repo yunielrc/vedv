@@ -2108,6 +2108,9 @@ Failed to stop image 'my-image-name'"
 @test 'vedv::image_builder::build() with non existing vedvfile should return an error' {
   local -r vedvfile='vedfile-1234454343-abc'
 
+  vedv::image_entity::has_containers() {
+    echo false
+  }
   run vedv::image_builder::build "$vedvfile"
 
   assert_failure
@@ -2117,6 +2120,9 @@ Failed to stop image 'my-image-name'"
 @test 'vedv::image_builder::build() Should fail if image_name generation fails' {
   local -r vedvfile='dist/test/lib/vedv/components/image/fixtures/Vedvfile'
 
+  vedv::image_entity::has_containers() {
+    echo false
+  }
   petname() { false; }
 
   run vedv::image_builder::build "$vedvfile"
@@ -2129,6 +2135,9 @@ Failed to stop image 'my-image-name'"
   local -r vedvfile='dist/test/lib/vedv/components/image/fixtures/Vedvfile'
   local -r image_name=''
 
+  vedv::image_entity::has_containers() {
+    echo false
+  }
   petname() {
     echo 'my-image-name'
   }
@@ -2151,6 +2160,9 @@ Failed to get image id for image 'my-image-name'"
   local -r vedvfile='dist/test/lib/vedv/components/image/fixtures/Vedvfile'
   local -r image_name=''
 
+  vedv::image_entity::has_containers() {
+    echo false
+  }
   petname() {
     echo 'my-image-name'
   }
@@ -2179,6 +2191,9 @@ You must stop and remove it."
   local -r vedvfile='dist/test/lib/vedv/components/image/fixtures/Vedvfile'
   local -r image_name=''
 
+  vedv::image_entity::has_containers() {
+    echo false
+  }
   petname() {
     echo 'my-image-name'
   }
@@ -2210,6 +2225,9 @@ You must remove it."
   local -r vedvfile='dist/test/lib/vedv/components/image/fixtures/Vedvfile'
   local -r image_name=''
 
+  vedv::image_entity::has_containers() {
+    echo false
+  }
   petname() {
     echo 'my-image-name'
   }
@@ -2239,6 +2257,9 @@ The image 'my-image-name' was removed."
   local -r vedvfile='dist/test/lib/vedv/components/image/fixtures/Vedvfile'
   local -r image_name='my-image-name'
 
+  vedv::image_entity::has_containers() {
+    echo false
+  }
   petname() {
     assert_equal "" "INVALID_CALL"
   }

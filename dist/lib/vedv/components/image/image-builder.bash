@@ -1071,8 +1071,8 @@ vedv::image_builder::__layer_env() {
 # Delete invalid layers
 #
 # Arguments:
-#   image_id  string       image where the files will be copy
-#   cmds  text             text with commands (e.g. "1 FROM hello-world")
+#   image_id                string  image where the files will be copy
+#   cmds                    text    text with commands (e.g. "1 FROM hello-world")
 #
 # Output:
 #  Writes first_invalid_cmd_pos (int) to the stdout,
@@ -1397,8 +1397,9 @@ vedv::image_builder::__build() {
 # Build image from Vedvfile
 #
 # Arguments:
-#   vedvfile  string       path to Vedvfile
-#   image_name  string     name of the image
+#   vedvfile      string  path to Vedvfile
+#   [image_name]  string  name of the image
+#   [force]       bool    force the build removing the image containers
 #
 # Output:
 #  Writes image_id (string) image_name (string) and build proccess #  output to the stdout
@@ -1409,34 +1410,27 @@ vedv::image_builder::__build() {
 vedv::image_builder::build() {
   local -r vedvfile="$1"
   local image_name="${2:-}"
+  local -r force="${3:-false}"
   # validate arguments
   if [[ -z "$vedvfile" ]]; then
     err "Argument 'vedvfile' is required"
     return "$ERR_INVAL_ARG"
   fi
-
   if [[ ! -f "$vedvfile" ]]; then
     err "File '${vedvfile}' does not exist"
     return "$ERR_NOT_FOUND"
   fi
 
-  if [[ -z "$image_name" ]]; then
-    image_name="$(petname)" || {
-      err 'Failed to generate a random name for the image'
-      return "$ERR_IMAGE_BUILDER_OPERATION"
-    }
-  fi
-
-  local image_id
+  local image_id=''
 
   ___set_image_id_64695() {
-    image_id="$(vedv::image_entity::get_id_by_image_name "$image_name")" || {
+    image_id="$(vedv::image_entity::get_id_by_image_name "$image_name")" 2>/dev/null || {
       if [[ $? != "$ERR_NOT_FOUND" ]]; then
         err "Failed to get image id for image '${image_name}'"
         return "$ERR_IMAGE_BUILDER_OPERATION"
       fi
     }
-    readonly image_id
+    # readonly image_id
   }
 
   ___stop_vm_64695() {
@@ -1447,6 +1441,32 @@ vedv::image_builder::build() {
       }
     fi
   }
+  # if the image has containers the force flag must be used to
+  # run the build removing the containers, otherwise it will fail
+  if [[ "$force" == false && -n "$image_name" ]]; then
+    ___set_image_id_64695
+
+    if [[ -n "$image_id" ]]; then
+      local has_containers
+      has_containers="$(vedv::image_entity::has_containers "$image_id")" || {
+        err "Failed to check if image '${image_name}' has containers"
+        return "$ERR_IMAGE_BUILDER_OPERATION"
+      }
+      readonly has_containers
+
+      if [[ "$has_containers" == true ]]; then
+        err "The image '${image_name}' has containers, you can force the build but the containers will be removed."
+        return "$ERR_IMAGE_BUILDER_OPERATION"
+      fi
+    fi
+  fi
+
+  if [[ -z "$image_name" ]]; then
+    image_name="$(petname)" || {
+      err 'Failed to generate a random name for the image'
+      return "$ERR_IMAGE_BUILDER_OPERATION"
+    }
+  fi
 
   vedv::image_builder::__build "$vedvfile" "$image_name" || {
     err "The build proccess has failed."
