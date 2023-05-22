@@ -1,6 +1,7 @@
+# shellcheck disable=SC2016
 load test_helper
 
-@test 'fix_var_names(): Should succeed' {
+@test "fix_var_names(): Should succeed" {
   local -r vars='name="manjaro-gnome-x64-full-clean"
 Encryption:     disabled
 groups="/"
@@ -793,4 +794,68 @@ calc_item_id_from_array_b() { echo "$1"; }
 
   assert_success
   assert_output "uname -r >uname-r.txt && echo Hello World >hello.txt"
+}
+
+# Tests for utils::str_encode_vars()
+@test "utils::str_encode_vars() Should succeed With empty string" {
+  local -r str=""
+
+  run utils::str_encode_vars "$str"
+
+  assert_success
+  assert_output ""
+}
+
+@test "utils::str_encode_vars() Should succeed With string without special characters" {
+  local -r str="foo"
+
+  run utils::str_encode_vars "$str"
+
+  assert_success
+  assert_output "foo"
+}
+
+@test "utils::str_encode_vars() Should succeed With string with special characters" {
+  local -r str='2 RUN echo $NAME
+3 COPY . \$HOME
+4 RUN ls -l ${HOME}'
+
+  run utils::str_encode_vars "$str"
+
+  assert_success
+  assert_output '2 RUN echo $var_9f57a558b3_NAME
+3 COPY . escvar_fc064fcc7e_HOME
+4 RUN ls -l ${var_9f57a558b3_HOME}'
+}
+
+# Tests for utils::str_decode_vars()
+@test "utils::str_decode_vars() Should succeed With empty string" {
+  local -r str=""
+
+  run utils::str_decode_vars "$str"
+
+  assert_success
+  assert_output ""
+}
+
+@test "utils::str_decode_vars() Should succeed With string without special characters" {
+  local -r str="foo"
+
+  run utils::str_decode_vars "$str"
+
+  assert_success
+  assert_output "foo"
+}
+
+@test "utils::str_decode_vars() Should succeed With string with special characters" {
+  local -r str='2 RUN echo $var_9f57a558b3_NAME
+3 COPY . escvar_fc064fcc7e_HOME
+4 RUN ls -l ${var_9f57a558b3_HOME}'
+
+  run utils::str_decode_vars "$str"
+
+  assert_success
+  assert_output '2 RUN echo $NAME
+3 COPY . \$HOME
+4 RUN ls -l ${HOME}'
 }

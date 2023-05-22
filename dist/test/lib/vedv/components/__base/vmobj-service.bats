@@ -1928,3 +1928,9 @@ EOF
   assert_success
   assert_output ""
 }
+
+# Tests for vedv::vmobj_service::get_environment_var()
+# bats test_tags=only
+@test "vedv::vmobj_service::get_environment_var() DUMMY" {
+  :
+}

@@ -59,6 +59,8 @@ vedv::ssh_client::run_cmd() {
 
   local decoded_cmd
   decoded_cmd="$(utils::str_decode "$cmd")"
+  decoded_cmd="$(utils::str_decode_vars "$decoded_cmd")"
+  decoded_cmd="${decoded_cmd//\\\$/\$}"
   readonly decoded_cmd
 
   local set_workdir_cmd=''

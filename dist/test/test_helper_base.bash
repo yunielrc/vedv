@@ -29,9 +29,9 @@ if [[ ! -f "$TEST_OVA_FILE" ]]; then
       mkdir -p "${TEST_OVA_FILE%/*}"
 
     cd "${TEST_OVA_FILE%/*}" || exit
-    wget -O "${TEST_OVA_FILE##*/}" "https://onedrive.live.com/download?cid=DBA0B75F07574EAA&resid=DBA0B75F07574EAA%21189&authkey=AHiqfraxXgBlCJk"
+    wget -O "${TEST_OVA_FILE##*/}" "https://onedrive.live.com/download?cid=DBA0B75F07574EAA&resid=DBA0B75F07574EAA%21192&authkey=AMU0jXbzhkbB53c"
 
-    wget -O "${TEST_OVA_FILE##*/}.sha256" "https://onedrive.live.com/download?cid=DBA0B75F07574EAA&resid=DBA0B75F07574EAA%21187&authkey=APjaGWMh6IJ0ts8"
+    wget -O "${TEST_OVA_FILE##*/}.sha256" "https://onedrive.live.com/download?cid=DBA0B75F07574EAA&resid=DBA0B75F07574EAA%21190&authkey=APUra4YvUkr0gOY"
 
     sha256sum -c "${TEST_OVA_FILE##*/}.sha256"
   )

@@ -684,6 +684,26 @@ vedv::image_service::add_environment_var() {
 }
 
 #
+# Get environment variables from image filesystem
+#
+# Arguments:
+#   image_id  string     image id
+#
+# Output:
+#  writes environment variables (text) to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::image_service::get_environment_vars() {
+  local -r image_id="$1"
+
+  vedv::vmobj_service::get_environment_vars \
+    'image' \
+    "$image_id"
+}
+
+#
 # Build an image from a Vedvfile,
 #
 # Arguments:

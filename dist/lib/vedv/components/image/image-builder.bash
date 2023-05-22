@@ -13,6 +13,9 @@ if false; then
   . './image-vedvfile-service.bash'
 fi
 
+# CONSTANTS
+readonly __VEDV_IMAGE_BUILDER_ENV_VARS_FILE="$(mktemp)"
+
 #
 # Constructor
 #
@@ -52,7 +55,11 @@ vedv::image_builder::__create_layer() {
     err "Argument 'cmd' is required"
     return "$ERR_INVAL_ARG"
   fi
-
+  # do not allow $ in the command
+  if [[ "$cmd" == *"$UTILS_ENCODED_VAR_PREFIX"* ]]; then
+    err 'Invalid command, it must not contain: $'
+    return "$ERR_INVAL_ARG"
+  fi
   local cmd_name
   cmd_name="$(vedv::image_vedvfile_service::get_cmd_name "$cmd")" || {
     err "Failed to get cmd name from cmd: '$cmd'"
@@ -111,6 +118,11 @@ vedv::image_builder::__calc_command_layer_id() {
   # validate arguments
   if [[ -z "$cmd" ]]; then
     err "Argument 'cmd' is required"
+    return "$ERR_INVAL_ARG"
+  fi
+  # do not allow escaped $ or $ in the command
+  if [[ "$cmd" == *"$UTILS_ENCODED_VAR_PREFIX"* ]]; then
+    err 'Invalid command, it must not contain: \$ or $'
     return "$ERR_INVAL_ARG"
   fi
 
@@ -172,6 +184,11 @@ vedv::image_builder::__layer_execute_cmd() {
   fi
   if [[ -z "$cmd" ]]; then
     err "Argument 'cmd' is required"
+    return "$ERR_INVAL_ARG"
+  fi
+  # do not allow escaped $ or $ in the command
+  if [[ "$cmd" == *"$UTILS_ENCODED_VAR_PREFIX"* ]]; then
+    err 'Invalid command, it must not contain: $'
     return "$ERR_INVAL_ARG"
   fi
   if [[ -z "$caller_command" ]]; then
@@ -254,6 +271,11 @@ vedv::image_builder::__layer_from() {
     err "Argument 'image_name' is required"
     return "$ERR_INVAL_ARG"
   fi
+  # do not allow escaped $ or $ in the command
+  if [[ "$image" == *"$UTILS_ENCODED_ESCVAR_PREFIX"* || "$image" == *"$UTILS_ENCODED_VAR_PREFIX"* ]]; then
+    err 'Invalid command, it must not contain: \$ or $'
+    return "$ERR_INVAL_ARG"
+  fi
 
   local image_id
   image_id="$(vedv::image_service::pull "$image" "$image_name" true)" || {
@@ -298,6 +320,11 @@ vedv::image_builder::__layer_from_calc_id() {
   # validate arguments
   if [[ -z "$cmd" ]]; then
     err "Argument 'cmd' is required"
+    return "$ERR_INVAL_ARG"
+  fi
+  # do not allow escaped $ or $ in the command
+  if [[ "$cmd" == *"$UTILS_ENCODED_ESCVAR_PREFIX"* || "$cmd" == *"$UTILS_ENCODED_VAR_PREFIX"* ]]; then
+    err 'Invalid command, it must not contain: \$ or $'
     return "$ERR_INVAL_ARG"
   fi
 
@@ -410,6 +437,11 @@ vedv::image_builder::__layer_copy_calc_id() {
     err "Argument 'cmd' is required"
     return "$ERR_INVAL_ARG"
   fi
+  # do not allow escaped $ or $ in the command
+  if [[ "$cmd" == *"$UTILS_ENCODED_ESCVAR_PREFIX"* || "$cmd" == *"$UTILS_ENCODED_VAR_PREFIX"* ]]; then
+    err 'Invalid command, it must not contain: \$ or $'
+    return "$ERR_INVAL_ARG"
+  fi
 
   local cmd_name
   cmd_name="$(vedv::image_vedvfile_service::get_cmd_name "$cmd")" || {
@@ -430,6 +462,9 @@ vedv::image_builder::__layer_copy_calc_id() {
   # ignoring those inside quotes, then it removes the quotes and finally
   # it set the arguments to the positional parameters ($1, $2, $3, ...)
   # 1 COPY --root 'file space' ./file*
+  #
+  # also eval do variable substitution
+  #
   eval set -- "$cmd"
 
   if [[ "$#" -lt 4 ]]; then
@@ -530,9 +565,17 @@ vedv::image_builder::__layer_copy() {
     err "Argument 'cmd' is required"
     return "$ERR_INVAL_ARG"
   fi
+  # do not allow escaped $ or $ in the command
+  if [[ "$cmd" == *"$UTILS_ENCODED_ESCVAR_PREFIX"* || "$cmd" == *"$UTILS_ENCODED_VAR_PREFIX"* ]]; then
+    err 'Invalid command, it must not contain: \$ or $'
+    return "$ERR_INVAL_ARG"
+  fi
   # This works like shell on the terminal, it split the string on spaces
   # ignoring those inside quotes, then it removes the quotes and finally
   # it set the arguments to the positional parameters ($1, $2, $3, ...)
+  #
+  # also eval do variable substitution
+  #
   # 1 COPY --root 'file space' ./file*
   eval set -- "$cmd"
 
@@ -615,6 +658,11 @@ vedv::image_builder::__simple_layer_command_calc_id() {
     err "Argument 'command_name' is required"
     return "$ERR_INVAL_ARG"
   fi
+  # do not allow $ in the command
+  if [[ "$cmd" == *"$UTILS_ENCODED_VAR_PREFIX"* ]]; then
+    err 'Invalid command, it must not contain: $'
+    return "$ERR_INVAL_ARG"
+  fi
 
   local cmd_name
   cmd_name="$(vedv::image_vedvfile_service::get_cmd_name "$cmd")" || {
@@ -649,6 +697,44 @@ vedv::image_builder::__layer_run_calc_id() {
 }
 
 #
+# Expand command parameters
+#
+# Arguments:
+#   cmd string  command (e.g. "1 RUN echo hello")
+#
+# Output:
+#  Writes evaluated_cmd (text) to the stdout
+#
+# Returns:
+#  0 on success, non-zero on error.
+#
+vedv::image_builder::__expand_cmd_parameters() {
+  local -r cmd="$1"
+  # validate arguments
+  if [[ -z "$cmd" ]]; then
+    err "Argument 'cmd' is required"
+    return "$ERR_INVAL_ARG"
+  fi
+
+  local escaped_cmd
+  escaped_cmd="$(utils::str_escape_double_quotes "$cmd")" || {
+    err "Failed to escape command '${cmd}'"
+    return "$ERR_IMAGE_BUILDER_OPERATION"
+  }
+  readonly escaped_cmd
+
+  . "$__VEDV_IMAGE_BUILDER_ENV_VARS_FILE"
+
+  local evaluated_cmd
+  evaluated_cmd="$(eval "echo \"${escaped_cmd}\"")" || {
+    err "Failed to evaluate command '${cmd}'"
+    return "$ERR_IMAGE_BUILDER_OPERATION"
+  }
+
+  echo "$evaluated_cmd"
+}
+
+#
 # Run commands inside the image
 #
 # Preconditions:
@@ -676,7 +762,11 @@ vedv::image_builder::__layer_run() {
     err "Argument 'cmd' is required"
     return "$ERR_INVAL_ARG"
   fi
-  shift 2
+  # do not allow $ in the command
+  if [[ "$cmd" == *"$UTILS_ENCODED_VAR_PREFIX"* ]]; then
+    err 'Invalid command, it must not contain: $'
+    return "$ERR_INVAL_ARG"
+  fi
   # In this case we need to keep the quotes, so by this way we split
   # the command by spaces including those inside quotes, but the quotes
   # are not removed.
@@ -685,7 +775,6 @@ vedv::image_builder::__layer_run() {
   # ...:2 skip the command id and name
   # 1 RUN --root ls -la -> --root ls -la
   set -- "${cmd_arr[@]:2}" # by this way it keeps quotes (" and ')
-
   local user=''
   local exec_cmd=''
 
@@ -721,7 +810,6 @@ vedv::image_builder::__layer_run() {
     err "Argument 'cmd_body' must not be empty"
     return "$ERR_INVAL_ARG"
   fi
-
   # replacing quotes (" and ') allow passing the command as a string (single argument)
   # avoiding the shell to split it on every evaluation (with eval)
   local exec_cmd_encoded
@@ -732,6 +820,7 @@ vedv::image_builder::__layer_run() {
   readonly exec_cmd_encoded
 
   local -r exec_func="vedv::image_service::execute_cmd '${image_id}' '${exec_cmd_encoded}' '${user}'"
+
   vedv::image_builder::__layer_execute_cmd "$image_id" "$cmd" "RUN" "$exec_func" || {
     err "Failed to execute command '${cmd}'"
     return "$ERR_IMAGE_BUILDER_OPERATION"
@@ -783,10 +872,18 @@ vedv::image_builder::__layer_user() {
     err "Argument 'cmd' is required"
     return "$ERR_INVAL_ARG"
   fi
+  # do not allow escaped $ or $ in the command
+  if [[ "$cmd" == *"$UTILS_ENCODED_ESCVAR_PREFIX"* || "$cmd" == *"$UTILS_ENCODED_VAR_PREFIX"* ]]; then
+    err 'Invalid command, it must not contain: \$ or $'
+    return "$ERR_INVAL_ARG"
+  fi
   # This works like shell on the terminal, it split the string on spaces
   # ignoring those inside quotes, then it removes the quotes and finally
   # it set the arguments to the positional parameters ($1, $2, $3, ...)
   # cmd: "1 USER nalyd"
+  #
+  # also eval do variable substitution
+  #
   eval set -- "$cmd"
 
   if [[ $# -ne 3 ]]; then
@@ -854,10 +951,18 @@ vedv::image_builder::__layer_workdir() {
     err "Argument 'cmd' is required"
     return "$ERR_INVAL_ARG"
   fi
+  # do not allow escaped $ or $ in the command
+  if [[ "$cmd" == *"$UTILS_ENCODED_ESCVAR_PREFIX"* || "$cmd" == *"$UTILS_ENCODED_VAR_PREFIX"* ]]; then
+    err 'Invalid command, it must not contain: \$ or $'
+    return "$ERR_INVAL_ARG"
+  fi
   # This works like shell on the terminal, it split the string on spaces
   # ignoring those inside quotes, then it removes the quotes and finally
   # it set the arguments to the positional parameters ($1, $2, $3, ...)
   # cmd: "1 WORDIR /home/nalyd"
+  #
+  # also eval do variable substitution
+  #
   eval set -- "$cmd"
 
   if [[ $# -ne 3 ]]; then
@@ -925,6 +1030,11 @@ vedv::image_builder::__layer_env() {
     err "Argument 'cmd' is required"
     return "$ERR_INVAL_ARG"
   fi
+  # do not allow escaped $ or $ in the command
+  if [[ "$cmd" == *"$UTILS_ENCODED_ESCVAR_PREFIX"* || "$cmd" == *"$UTILS_ENCODED_VAR_PREFIX"* ]]; then
+    err 'Invalid command, it must not contain: \$ or $'
+    return "$ERR_INVAL_ARG"
+  fi
 
   local env
   env="$(vedv::image_vedvfile_service::get_cmd_body "$cmd")" || {
@@ -937,6 +1047,9 @@ vedv::image_builder::__layer_env() {
     err "Argument 'env' must not be empty"
     return "$ERR_INVAL_ARG"
   fi
+  # export environment variable with the prefix 'vedv_'
+  # to avoid conflicts with other environment variables
+  echo "local -r ${UTILS_ENCODED_VAR_PREFIX}${env}" >>"$__VEDV_IMAGE_BUILDER_ENV_VARS_FILE"
 
   local -r env_escaped="$(utils::str_escape_quotes "$env")"
 
@@ -947,7 +1060,7 @@ vedv::image_builder::__layer_env() {
   }
   readonly env_encoded
 
-  local -r exec_func="vedv::image_service::add_environment_var '${image_id}' '${env_encoded}' >/dev/null"
+  local -r exec_func="vedv::image_service::add_environment_var '${image_id}' '${env_encoded}'"
   vedv::image_builder::__layer_execute_cmd "$image_id" "$cmd" "ENV" "$exec_func" || {
     err "Failed to execute command '${cmd}'"
     return "$ERR_IMAGE_BUILDER_OPERATION"
@@ -999,9 +1112,26 @@ vedv::image_builder::__delete_invalid_layers() {
   # shellcheck disable=SC2034
   readonly arr_cmds
 
+  # The function ...::__expand_cmd_parameters() needs
+  # the environment variables to be in the file
+  # __VEDV_IMAGE_BUILDER_ENV_VARS_FILE to work properly.
+  vedv::image_builder::__save_environment_vars_to_local_file "$image_id" || {
+    err "Failed to save environment variables for image '${image_id}' on the local file"
+    return "$ERR_IMAGE_BUILDER_OPERATION"
+  }
+
   __calc_item_id_from_arr_cmds() {
     # shellcheck disable=SC2317
-    vedv::image_builder::__calc_command_layer_id "$1"
+    local -r cmd="$1"
+    # shellcheck disable=SC2317
+    local evaluated_cmd
+    # shellcheck disable=SC2317
+    evaluated_cmd="$(vedv::image_builder::__expand_cmd_parameters "$cmd")" || {
+      err "Failed to evaluate command '${cmd}'"
+      return "$ERR_IMAGE_BUILDER_OPERATION"
+    }
+    # shellcheck disable=SC2317
+    vedv::image_builder::__calc_command_layer_id "$evaluated_cmd"
   }
   # shellcheck disable=SC2317
   __calc_item_id_from_arr_layer_ids() { echo "$1"; }
@@ -1051,6 +1181,26 @@ vedv::image_builder::__delete_invalid_layers() {
   return 0
 }
 
+vedv::image_builder::__save_environment_vars_to_local_file() {
+  local -r image_id="$1"
+  # validate arguments
+  if [[ -z "$image_id" ]]; then
+    err "Argument 'image_id' is required"
+    return "$ERR_INVAL_ARG"
+  fi
+  # create a new temporary file to store the environment variables for the substitution
+  local env_vars
+  env_vars="$(vedv::image_service::get_environment_vars "$image_id")" || {
+    err "Failed to get environment variables for image '${image_id}'"
+    return "$ERR_IMAGE_BUILDER_OPERATION"
+  }
+  # add 'local -r' prefix to each environment variable in env_vars text
+  env_vars="$(sed -e '/^[[:space:]]*$/d' -e 's/^[[:space:]]*//' -e "s/^/local -r ${UTILS_ENCODED_VAR_PREFIX}/" <<<"$env_vars")"
+  readonly env_vars
+
+  echo "$env_vars" >"$__VEDV_IMAGE_BUILDER_ENV_VARS_FILE"
+}
+
 #
 # Build image from Vedvfile
 #
@@ -1089,14 +1239,20 @@ vedv::image_builder::__build() {
     err "Failed to get commands from Vedvfile '${vedvfile}'"
     return "$ERR_VEDV_FILE"
   }
+  # prepare commands for env and arg variable substitution. e.g.
+  # _PREFIX_ can be any ramdom string characters like '01b9622e23'
+  # _ENCODED_ can be any ramdom string characters like '8027d5b963'
+  #
+  # 2 RUN echo $NAME -> 1 RUN echo $_PREFIX_NAME
+  # 3 COPY . \$HOME -> 1 COPY . _ENCODED_HOME
+  commands="$(utils::str_encode_vars "$commands")" || {
+    err "Failed to prepare commands from Vedvfile '${vedvfile}'"
+    return "$ERR_VEDV_FILE"
+  }
   readonly commands
 
   local -r from_cmd="$(echo "$commands" | head -n 1)"
-  # TODO: remove validation, vedv::image_vedvfile_service::get_commands did it already
-  if [[ ! "$from_cmd" =~ ^1[[:space:]]+FROM[[:space:]]+ ]]; then
-    err 'There is no FROM command'
-    return "$ERR_VEDV_FILE"
-  fi
+
   local image_id
   image_id="$(vedv::image_entity::get_id_by_image_name "$image_name")" || {
     if [[ $? != "$ERR_NOT_FOUND" ]]; then
@@ -1202,17 +1358,31 @@ vedv::image_builder::__build() {
       return "$ERR_IMAGE_BUILDER_OPERATION"
     }
   }
+  # The function ...::__expand_cmd_parameters() needs
+  # the environment variables to be in the file
+  # __VEDV_IMAGE_BUILDER_ENV_VARS_FILE to work properly.
+
+  # if any layer was deleted, we need to load only the
+  # environment variables for the current layers.
+  vedv::image_builder::__save_environment_vars_to_local_file "$image_id" || {
+    err "Failed to save environment variables for image '${image_id}'"
+    return "$ERR_IMAGE_BUILDER_OPERATION"
+  }
 
   while IFS= read -r cmd; do
-    local layer_id cmd_name
+    local layer_id cmd_name evaluated_cmd
     cmd_name="$(vedv::image_vedvfile_service::get_cmd_name "$cmd")" || {
-      __stop_vm
       err "Failed to get command name from command '${cmd}'"
       return "$ERR_VEDV_FILE"
     }
-    layer_id="$(vedv::image_builder::__layer_"${cmd_name,,}" "$image_id" "$cmd")" || {
-      __stop_vm
-      err "Failed to create layer for command '${cmd}'"
+
+    evaluated_cmd="$(vedv::image_builder::__expand_cmd_parameters "$cmd")" || {
+      err "Failed to evaluate command '${cmd}'"
+      return "$ERR_IMAGE_BUILDER_OPERATION"
+    }
+
+    layer_id="$(vedv::image_builder::__layer_"${cmd_name,,}" "$image_id" "$evaluated_cmd")" || {
+      err "Failed to create layer for command '${evaluated_cmd}'"
       return "$ERR_IMAGE_BUILDER_OPERATION"
     }
 

@@ -129,13 +129,10 @@ chmod 0755 /usr/local/bin/vedv-setuser
 
 # add vedv-getuser script
 cat <<EOF >/usr/local/bin/vedv-getuser
-#!/usr/bin/env bash
+#!/usr/bin/env sh
 #
 # Get default vedv user
 #
-
-set -eu
-
 
 cat "${__VEDV_CONFIG_DIR}/layer/user"
 EOF
@@ -183,13 +180,10 @@ chmod 0755 /usr/local/bin/vedv-setworkdir
 
 # add vedv-getworkdir script
 cat <<EOF >/usr/local/bin/vedv-getworkdir
-#!/usr/bin/env bash
+#!/usr/bin/env sh
 #
 # Get workdir
 #
-
-set -eu
-
 
 cat "${__VEDV_CONFIG_DIR}/layer/workdir"
 EOF
@@ -223,5 +217,17 @@ echo "\$VEDV_ENV_VAR" >>"${__VEDV_CONFIG_DIR}/layer/env"
 EOF
 
 chmod 0755 /usr/local/bin/vedv-addenv_var
+
+# get the environment variables
+cat <<EOF >/usr/local/bin/vedv-getenv_vars
+#!/usr/bin/env sh
+#
+# Get the environment variables
+#
+
+cat "${__VEDV_CONFIG_DIR}/layer/env"
+EOF
+
+chmod 0755 /usr/local/bin/vedv-getenv_vars
 
 echo '>> DONE!'

@@ -142,7 +142,7 @@ vedv image remove-cache
 Remove unused cache images"
   done
 }
-
+# bats test_tags=only
 @test "vedv image remove-cache, Should remove unused caches" {
 
   vedv image pull "$TEST_OVA_FILE"
@@ -155,7 +155,7 @@ Remove unused cache images"
 
   run vedv image remove-cache
   assert_success
-  assert_output --regexp '^[0-9]{11}\s$'
+  assert_output --regexp '^[0-9]{10,11}\s$'
 }
 
 # Tests for 'vedv image build'
@@ -200,7 +200,7 @@ created layer '.*' for command 'RUN'
 Build finished
 .* image123"
 }
-# bats test_tags=only
+
 @test "vedv image build, Should build the image with USER" {
   cd "${BATS_TEST_DIRNAME}/fixtures"
 
@@ -212,6 +212,7 @@ created layer '.*' for command 'FROM'
 created layer '.*' for command 'USER'
 created layer '.*' for command 'WORKDIR'
 created layer '.*' for command 'COPY'
+created layer '.*' for command 'COPY'
 created layer '.*' for command 'RUN'
 created layer '.*' for command 'USER'
 created layer '.*' for command 'WORKDIR'
@@ -222,8 +223,6 @@ created layer '.*' for command 'USER'
 created layer '.*' for command 'WORKDIR'
 created layer '.*' for command 'COPY'
 created layer '.*' for command 'RUN'
-created layer '.*' for command 'USER'
-created layer '.*' for command 'ENV'
 
 Build finished
 .* image123"

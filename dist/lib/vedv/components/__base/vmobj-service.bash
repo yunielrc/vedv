@@ -1169,3 +1169,28 @@ vedv::vmobj_service::add_environment_var() {
     return "$ERR_VMOBJ_OPERATION"
   }
 }
+
+#
+# Get environment variables from vmobj filesystem
+#
+# Arguments:
+#   type      string     type (e.g. 'container|image')
+#   vmobj_id  string     vmobj id
+#
+# Output:
+#  writes environment variables (text) to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::vmobj_service::get_environment_vars() {
+  local -r type="$1"
+  local -r vmobj_id="$2"
+
+  local -r cmd='vedv-getenv_vars'
+
+  vedv::vmobj_service::execute_cmd_by_id "$type" "$vmobj_id" "$cmd" 'root' 'false' || {
+    err "Failed to get environment variables of ${type}: ${vmobj_id}"
+    return "$ERR_VMOBJ_OPERATION"
+  }
+}

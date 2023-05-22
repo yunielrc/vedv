@@ -1,4 +1,4 @@
-# shellcheck disable=SC2317,SC2034,SC2031,SC2030
+# shellcheck disable=SC2317,SC2034,SC2031,SC2030,SC2016
 load test_helper
 
 @test 'vedv::image_builder::constructor() Should succeed' {
@@ -1084,6 +1084,30 @@ Failed to execute command '1 COPY dummy_source dummy_dest'"
   assert_output "Failed to get layers ids for image 'image_id'"
 }
 
+@test "vedv::image_builder::__delete_invalid_layers() Should fail If __save_environment_vars_to_local_file fails" {
+  # Arrange
+  local -r image_id="image_id"
+  local -r cmds="1 RUN echo hello"
+  # Stubs
+  vedv::image_service::child_containers_remove_all() {
+    assert_equal "$*" "$image_id"
+    return 0
+  }
+  vedv::image_entity::get_layers_ids() {
+    assert_equal "$*" "$image_id"
+    echo "1 2 3"
+  }
+  vedv::image_builder::__save_environment_vars_to_local_file() {
+    assert_equal "$*" "$image_id"
+    return 1
+  }
+  # Act
+  run vedv::image_builder::__delete_invalid_layers "$image_id" "$cmds"
+  # Assert
+  assert_failure "$ERR_IMAGE_BUILDER_OPERATION"
+  assert_output "Failed to save environment variables for image 'image_id' on the local file"
+}
+
 @test "vedv::image_builder::__delete_invalid_layers() Should fails If get first invalid positions fails" {
   # Arrange
   local -r image_id="image_id"
@@ -1100,6 +1124,9 @@ Failed to execute command '1 COPY dummy_source dummy_dest'"
   vedv::image_entity::get_layers_ids() {
     assert_equal "$*" "$image_id"
     echo "1 2 3"
+  }
+  vedv::image_builder::__save_environment_vars_to_local_file() {
+    assert_equal "$*" "$image_id"
   }
   utils::get_first_invalid_positions_between_two_arrays() {
     assert_equal "$*" "arr_cmds __calc_item_id_from_arr_cmds layers_ids __calc_item_id_from_arr_layer_ids"
@@ -1129,6 +1156,9 @@ Failed to execute command '1 COPY dummy_source dummy_dest'"
     assert_equal "$*" "$image_id"
     echo "1 2 3"
   }
+  vedv::image_builder::__save_environment_vars_to_local_file() {
+    assert_equal "$*" "$image_id"
+  }
   utils::get_first_invalid_positions_between_two_arrays() {
     assert_equal "$*" "arr_cmds __calc_item_id_from_arr_cmds layers_ids __calc_item_id_from_arr_layer_ids"
     echo '0|-1'
@@ -1156,6 +1186,9 @@ Failed to execute command '1 COPY dummy_source dummy_dest'"
   vedv::image_entity::get_layers_ids() {
     assert_equal "$*" "$image_id"
     echo "321 322 323"
+  }
+  vedv::image_builder::__save_environment_vars_to_local_file() {
+    assert_equal "$*" "$image_id"
   }
   utils::get_first_invalid_positions_between_two_arrays() {
     assert_equal "$*" "arr_cmds __calc_item_id_from_arr_cmds layers_ids __calc_item_id_from_arr_layer_ids"
@@ -1188,6 +1221,9 @@ Failed to execute command '1 COPY dummy_source dummy_dest'"
   vedv::image_entity::get_layers_ids() {
     assert_equal "$*" "$image_id"
     echo "321 322 323"
+  }
+  vedv::image_builder::__save_environment_vars_to_local_file() {
+    assert_equal "$*" "$image_id"
   }
   utils::get_first_invalid_positions_between_two_arrays() {
     assert_equal "$*" "arr_cmds __calc_item_id_from_arr_cmds layers_ids __calc_item_id_from_arr_layer_ids"
@@ -1224,6 +1260,9 @@ Failed to execute command '1 COPY dummy_source dummy_dest'"
     assert_equal "$*" "$image_id"
     echo "321 322 323"
   }
+  vedv::image_builder::__save_environment_vars_to_local_file() {
+    assert_equal "$*" "$image_id"
+  }
   utils::get_first_invalid_positions_between_two_arrays() {
     assert_equal "$*" "arr_cmds __calc_item_id_from_arr_cmds layers_ids __calc_item_id_from_arr_layer_ids"
     echo '-1|1'
@@ -1242,7 +1281,6 @@ Failed to execute command '1 COPY dummy_source dummy_dest'"
 }
 
 # Test vedv::image_builder::__build()
-
 @test "vedv::image_builder::__build() should fail with empty 'vedvfile' argument" {
   # Arrange
   local -r vedvfile=""
@@ -1270,6 +1308,10 @@ Failed to execute command '1 COPY dummy_source dummy_dest'"
   local -r vedvfile="dist/test/lib/vedv/components/image/fixtures/Vedvfile"
   local -r image_name=""
   # Stub
+  vedv::image_builder::__expand_cmd_parameters() {
+    echo "$*"
+  }
+  vedv::image_builder::__save_environment_vars_to_local_file() { :; }
   petname() { false; }
   # Act
   run vedv::image_builder::__build "$vedvfile" "$image_name"
@@ -1283,6 +1325,10 @@ Failed to execute command '1 COPY dummy_source dummy_dest'"
   local -r vedvfile="dist/test/lib/vedv/components/image/fixtures/Vedvfile"
   local -r image_name="my-image-name"
   # Stub
+  vedv::image_builder::__expand_cmd_parameters() {
+    echo "$*"
+  }
+  vedv::image_builder::__save_environment_vars_to_local_file() { :; }
   petname() { :; }
   vedv::image_vedvfile_service::get_commands() {
     assert_equal "$*" "$vedvfile"
@@ -1300,16 +1346,20 @@ Failed to execute command '1 COPY dummy_source dummy_dest'"
   local -r vedvfile="dist/test/lib/vedv/components/image/fixtures/Vedvfile"
   local -r image_name="my-image-name"
   # Stub
+  vedv::image_builder::__expand_cmd_parameters() {
+    echo "$*"
+  }
+  vedv::image_builder::__save_environment_vars_to_local_file() { :; }
   petname() { :; }
   vedv::image_vedvfile_service::get_commands() {
     assert_equal "$*" "$vedvfile"
-    echo "1 RUN echo hello"
+    return 1
   }
   # Act
   run vedv::image_builder::__build "$vedvfile" "$image_name"
   # Assert
   assert_failure
-  assert_output 'There is no FROM command'
+  assert_output "Failed to get commands from Vedvfile 'dist/test/lib/vedv/components/image/fixtures/Vedvfile'"
 }
 
 @test "vedv::image_builder::__build() Should fail On error getting image id from image name" {
@@ -1319,6 +1369,10 @@ Failed to execute command '1 COPY dummy_source dummy_dest'"
 
   local -r from_cmd="1 FROM my_image"
   # Stub
+  vedv::image_builder::__expand_cmd_parameters() {
+    echo "$*"
+  }
+  vedv::image_builder::__save_environment_vars_to_local_file() { :; }
   petname() { :; }
   vedv::image_vedvfile_service::get_commands() {
     assert_equal "$*" "$vedvfile"
@@ -1343,6 +1397,10 @@ Failed to execute command '1 COPY dummy_source dummy_dest'"
   local -r from_cmd="1 FROM my_image"
   local -r image_id="image-id"
   # Stub
+  vedv::image_builder::__expand_cmd_parameters() {
+    echo "$*"
+  }
+  vedv::image_builder::__save_environment_vars_to_local_file() { :; }
   petname() { :; }
   vedv::image_vedvfile_service::get_commands() {
     assert_equal "$*" "$vedvfile"
@@ -1374,6 +1432,10 @@ Failed to execute command '1 COPY dummy_source dummy_dest'"
   local -r from_cmd="1 FROM my_image"
   local -r image_id="image-id"
   # Stub
+  vedv::image_builder::__expand_cmd_parameters() {
+    echo "$*"
+  }
+  vedv::image_builder::__save_environment_vars_to_local_file() { :; }
   petname() { :; }
   vedv::image_vedvfile_service::get_commands() {
     assert_equal "$*" "$vedvfile"
@@ -1409,6 +1471,10 @@ Failed to execute command '1 COPY dummy_source dummy_dest'"
   local -r from_cmd="1 FROM my_image"
   local -r image_id="image-id"
   # Stub
+  vedv::image_builder::__expand_cmd_parameters() {
+    echo "$*"
+  }
+  vedv::image_builder::__save_environment_vars_to_local_file() { :; }
   petname() { :; }
   vedv::image_vedvfile_service::get_commands() {
     assert_equal "$*" "$vedvfile"
@@ -1447,6 +1513,10 @@ Failed to execute command '1 COPY dummy_source dummy_dest'"
   local -r from_cmd="1 FROM my_image"
   local -r image_id="image-id"
   # Stub
+  vedv::image_builder::__expand_cmd_parameters() {
+    echo "$*"
+  }
+  vedv::image_builder::__save_environment_vars_to_local_file() { :; }
   petname() { :; }
   vedv::image_vedvfile_service::get_commands() {
     assert_equal "$*" "$vedvfile"
@@ -1490,6 +1560,10 @@ Failed to execute command '1 COPY dummy_source dummy_dest'"
   local -r from_cmd="1 FROM my_image"
   local -r image_id="image-id"
   # Stub
+  vedv::image_builder::__expand_cmd_parameters() {
+    echo "$*"
+  }
+  vedv::image_builder::__save_environment_vars_to_local_file() { :; }
   petname() { :; }
   vedv::image_vedvfile_service::get_commands() {
     assert_equal "$*" "$vedvfile"
@@ -1534,6 +1608,10 @@ Failed to execute command '1 COPY dummy_source dummy_dest'"
 3 COPY home.config /home/vedv/
 4 RUN ls -la /home/vedv/"
   # Stub
+  vedv::image_builder::__expand_cmd_parameters() {
+    echo "$*"
+  }
+  vedv::image_builder::__save_environment_vars_to_local_file() { :; }
   petname() { :; }
   vedv::image_vedvfile_service::get_commands() {
     assert_equal "$*" "$vedvfile"
@@ -1583,6 +1661,10 @@ Failed to execute command '1 COPY dummy_source dummy_dest'"
 2 RUN echo 'hello world'"
   local -r image_id="image-id"
   # Stub
+  vedv::image_builder::__expand_cmd_parameters() {
+    echo "$*"
+  }
+  vedv::image_builder::__save_environment_vars_to_local_file() { :; }
   petname() { :; }
   vedv::image_vedvfile_service::get_commands() {
     assert_equal "$*" "$vedvfile"
@@ -1647,6 +1729,10 @@ Failed to execute command '1 COPY dummy_source dummy_dest'"
 3 COPY home.config /home/vedv/
 4 RUN ls -la /home/vedv/"
   # Stub
+  vedv::image_builder::__expand_cmd_parameters() {
+    echo "$*"
+  }
+  vedv::image_builder::__save_environment_vars_to_local_file() { :; }
   petname() { :; }
   vedv::image_vedvfile_service::get_commands() {
     assert_equal "$*" "$vedvfile"
@@ -1700,6 +1786,10 @@ Failed to execute command '1 COPY dummy_source dummy_dest'"
 3 COPY home.config /home/vedv/
 4 RUN ls -la /home/vedv/"
   # Stub
+  vedv::image_builder::__expand_cmd_parameters() {
+    echo "$*"
+  }
+  vedv::image_builder::__save_environment_vars_to_local_file() { :; }
   petname() { :; }
   vedv::image_vedvfile_service::get_commands() {
     assert_equal "$*" "$vedvfile"
@@ -1749,6 +1839,10 @@ Failed to execute command '1 COPY dummy_source dummy_dest'"
 
   local -r image_id="image-id"
   # Stub
+  vedv::image_builder::__expand_cmd_parameters() {
+    echo "$*"
+  }
+  vedv::image_builder::__save_environment_vars_to_local_file() { :; }
   petname() { :; }
   vedv::image_vedvfile_service::get_commands() {
     assert_equal "$*" "$vedvfile"
@@ -1799,6 +1893,10 @@ Failed to execute command '1 COPY dummy_source dummy_dest'"
 
   local -r image_id="image-id"
   # Stub
+  vedv::image_builder::__expand_cmd_parameters() {
+    echo "$*"
+  }
+  vedv::image_builder::__save_environment_vars_to_local_file() { :; }
   petname() { :; }
   vedv::image_vedvfile_service::get_commands() {
     assert_equal "$*" "$vedvfile"
@@ -1858,6 +1956,10 @@ Failed to execute command '1 COPY dummy_source dummy_dest'"
 
   local -r image_id="image-id"
   # Stub
+  vedv::image_builder::__expand_cmd_parameters() {
+    echo "$*"
+  }
+  vedv::image_builder::__save_environment_vars_to_local_file() { :; }
   petname() { :; }
   vedv::image_vedvfile_service::get_commands() {
     assert_equal "$*" "$vedvfile"
@@ -1931,6 +2033,10 @@ EOF
 
   local -r image_id="image-id"
   # Stub
+  vedv::image_builder::__expand_cmd_parameters() {
+    echo "$*"
+  }
+  vedv::image_builder::__save_environment_vars_to_local_file() { :; }
   petname() { :; }
   vedv::image_vedvfile_service::get_commands() {
     assert_equal "$*" "$vedvfile"
@@ -2297,7 +2403,7 @@ The image 'my-image-name' was removed."
 }
 
 # Tests for vedv::image_builder::__layer_env()
-# bats test_tags=only
+
 @test "vedv::image_builder::__layer_env() Should fail With empty image_id" {
   local -r image_id=""
   local -r cmd=""
@@ -2307,7 +2413,7 @@ The image 'my-image-name' was removed."
   assert_failure
   assert_output "Argument 'image_id' is required"
 }
-# bats test_tags=only
+
 @test "vedv::image_builder::__layer_env() Should fail With empty cmd" {
   local -r image_id="12345"
   local -r cmd=""
@@ -2317,7 +2423,7 @@ The image 'my-image-name' was removed."
   assert_failure
   assert_output "Argument 'cmd' is required"
 }
-# bats test_tags=only
+
 @test "vedv::image_builder::__layer_env() Should fail If get_cmd_body fails" {
   local -r image_id="12345"
   local -r cmd="1 ENV TEST=123"
@@ -2332,7 +2438,7 @@ The image 'my-image-name' was removed."
   assert_failure
   assert_output "Failed to get env from command '1 ENV TEST=123'"
 }
-# bats test_tags=only
+
 @test "vedv::image_builder::__layer_env() Should fail If env is empty" {
   local -r image_id="12345"
   local -r cmd="1 ENV"
@@ -2346,7 +2452,7 @@ The image 'my-image-name' was removed."
   assert_failure
   assert_output "Argument 'env' must not be empty"
 }
-# bats test_tags=only
+
 @test "vedv::image_builder::__layer_env() Should fail If str_encode fails" {
   local -r image_id="12345"
   local -r cmd="1 ENV TEST=123"
@@ -2365,7 +2471,7 @@ The image 'my-image-name' was removed."
   assert_failure
   assert_output "Failed to encode command 'TEST=123'"
 }
-# bats test_tags=only
+
 @test "vedv::image_builder::__layer_env() Should fail If __layer_execute_cmd fails" {
   local -r image_id="12345"
   local -r cmd="1 ENV TEST=123"
@@ -2379,7 +2485,7 @@ The image 'my-image-name' was removed."
     echo "TEST=123"
   }
   vedv::image_builder::__layer_execute_cmd() {
-    assert_equal "$*" "12345 1 ENV TEST=123 ENV vedv::image_service::add_environment_var '12345' 'TEST=123' >/dev/null"
+    assert_equal "$*" "12345 1 ENV TEST=123 ENV vedv::image_service::add_environment_var '12345' 'TEST=123'"
     return 1
   }
 
@@ -2388,7 +2494,7 @@ The image 'my-image-name' was removed."
   assert_failure
   assert_output "Failed to execute command '1 ENV TEST=123'"
 }
-# bats test_tags=only
+
 @test "vedv::image_builder::__layer_env() Should succeed" {
   local -r image_id="12345"
   local -r cmd="1 ENV TEST=123"
@@ -2402,11 +2508,127 @@ The image 'my-image-name' was removed."
     echo "TEST=123"
   }
   vedv::image_builder::__layer_execute_cmd() {
-    assert_equal "$*" "12345 1 ENV TEST=123 ENV vedv::image_service::add_environment_var '12345' 'TEST=123' >/dev/null"
+    assert_equal "$*" "12345 1 ENV TEST=123 ENV vedv::image_service::add_environment_var '12345' 'TEST=123'"
   }
 
   run vedv::image_builder::__layer_env "$image_id" "$cmd"
 
   assert_success
   assert_output ""
+}
+
+# Tests for vedv::image_builder::__expand_cmd_parameters()
+# bats test_tags=only
+@test "vedv::image_builder::__expand_cmd_parameters() Should fail With empty cmd" {
+  local -r cmd=""
+
+  run vedv::image_builder::__expand_cmd_parameters "$cmd"
+
+  assert_failure
+  assert_output "Argument 'cmd' is required"
+}
+# bats test_tags=only
+@test "vedv::image_builder::__expand_cmd_parameters() Should fail If str_escape_double_quotes fails" {
+  local -r cmd="1 RUN ls -la /home/vedv"
+
+  utils::str_escape_double_quotes() {
+    assert_equal "$*" "1 RUN ls -la /home/vedv"
+    return 1
+  }
+
+  run vedv::image_builder::__expand_cmd_parameters "$cmd"
+
+  assert_failure
+  assert_output "Failed to escape command '1 RUN ls -la /home/vedv'"
+}
+# bats test_tags=only
+@test "vedv::image_builder::__expand_cmd_parameters() Should succeed If cmd does not have parameters" {
+  local -r cmd="1 RUN ls -la /home/vedv"
+
+  utils::str_escape_double_quotes() {
+    assert_equal "$*" "1 RUN ls -la /home/vedv"
+    echo "1 RUN ls -la /home/vedv"
+  }
+
+  run vedv::image_builder::__expand_cmd_parameters "$cmd"
+
+  assert_success
+  assert_output "1 RUN ls -la /home/vedv"
+}
+# bats test_tags=only
+@test "vedv::image_builder::__expand_cmd_parameters() Should succeed If cmd has parameters" {
+  local -r cmd="1 RUN ls -la /home/vedv"
+
+  utils::str_escape_double_quotes() {
+    assert_equal "$*" "1 RUN ls -la /home/vedv"
+    echo '1 RUN ls -la /home/${VAR1}/${VAR2}/${VAR3} &&
+echo \"${VAR22}:${VAR23}\"'
+  }
+
+  cat <<'EOF' >"$__VEDV_IMAGE_BUILDER_ENV_VARS_FILE"
+  VAR1=var1
+  VAR2='var2'
+  VAR3="var3"
+  VAR22='var2 var2'
+  VAR23="var3 var3"
+EOF
+
+  run vedv::image_builder::__expand_cmd_parameters "$cmd"
+
+  assert_success
+  assert_output '1 RUN ls -la /home/var1/var2/var3 &&
+echo "var2 var2:var3 var3"'
+}
+
+# Tests for vedv::image_builder::__save_environment_vars_to_local_file()
+@test "vedv::image_builder::__save_environment_vars_to_local_file() Should fail With empty image_id" {
+  local -r image_id=""
+
+  run vedv::image_builder::__save_environment_vars_to_local_file "$image_id"
+
+  assert_failure
+  assert_output "Argument 'image_id' is required"
+}
+
+@test "vedv::image_builder::__save_environment_vars_to_local_file() Should fail If get_environment_vars fails" {
+  local -r image_id="12345"
+
+  vedv::image_service::get_environment_vars() {
+    assert_equal "$*" "12345"
+    return 1
+  }
+
+  run vedv::image_builder::__save_environment_vars_to_local_file "$image_id"
+
+  assert_failure
+  assert_output "Failed to get environment variables for image '12345'"
+}
+
+@test "vedv::image_builder::__save_environment_vars_to_local_file() Should succeed" {
+  local -r image_id="12345"
+
+  vedv::image_service::get_environment_vars() {
+    assert_equal "$*" "12345"
+    cat <<'EOF'
+VAR1=var1
+VAR2='var2'
+VAR3="var3"
+VAR22='var2 var2'
+VAR23="var3 var3"
+EOF
+  }
+
+  run vedv::image_builder::__save_environment_vars_to_local_file "$image_id"
+
+  assert_success
+  assert_output ""
+
+  run cat "$__VEDV_IMAGE_BUILDER_ENV_VARS_FILE"
+
+  assert_success
+  assert_output "local -r var_9f57a558b3_VAR1=var1
+local -r var_9f57a558b3_VAR2='var2'
+local -r var_9f57a558b3_VAR3=\"var3\"
+local -r var_9f57a558b3_VAR22='var2 var2'
+local -r var_9f57a558b3_VAR23=\"var3 var3\""
 }

@@ -22,8 +22,11 @@ readonly ERR_CONTAINER_ENTITY=90
 readonly ERR_VMOBJ_ENTITY=91
 readonly ERR_VMOBJ_OPERATION=92
 
+readonly UTILS_ENCODED_VAR_PREFIX='var_9f57a558b3_'
+readonly UTILS_ENCODED_ESCVAR_PREFIX='escvar_fc064fcc7e_'
+
 # REGEX
-UTILS_REGEX_NAME='[[:alnum:]]+((-|_)[[:alnum:]]+)*'
+readonly UTILS_REGEX_NAME='[[:alnum:]]+((-|_)[[:alnum:]]+)*'
 
 err() {
   echo -e "$*" >&2
@@ -487,11 +490,33 @@ utils::str_escape_quotes() {
   local -r str="$1"
 
   # escape \
-  str_escaped="${str//\\/\\\\}"
+  local str_escaped="${str//\\/\\\\}"
   # escape single quotes
-  local str_escaped="${str_escaped//\'/\\\'}"
+  str_escaped="${str_escaped//\'/\\\'}"
   # escape double quotes
   str_escaped="${str_escaped//\"/\\\"}"
+
+  echo "$str_escaped"
+}
+
+#
+# Escape quotes in a string maintaining the original quotes
+#
+# Arguments:
+#   str   string    string to scape
+#
+# Output:
+#   writes the encoded string to stdout
+#
+utils::str_escape_quotes2() {
+  local -r str="$1"
+
+  # escape \
+  local str_escaped="${str//\\/\\\\}"
+  # escape single quotes
+  str_escaped="${str_escaped//\'/\'\\\'}"
+  # escape double quotes
+  str_escaped="${str_escaped//\"/\"\\\"}"
 
   echo "$str_escaped"
 }
@@ -528,3 +553,89 @@ utils::str_remove_quotes() {
 #   writes the encoded string to stdout
 #
 str_rm_quotes() { utils::str_remove_quotes "$@"; }
+
+declare -ga VED_UTILS_DECODED_VARS=()
+VED_UTILS_DECODED_VARS[0]='\$'
+# shellcheck disable=SC2016
+VED_UTILS_DECODED_VARS[1]='${'
+VED_UTILS_DECODED_VARS[2]='$'
+VED_UTILS_DECODED_VARS[3]='subvar_ef1677a892_'
+readonly VED_UTILS_DECODED_VARS
+
+declare -ga VED_UTILS_ENCODED_VARS=()
+VED_UTILS_ENCODED_VARS[0]="$UTILS_ENCODED_ESCVAR_PREFIX"
+VED_UTILS_ENCODED_VARS[1]='subvar_ef1677a892_'
+VED_UTILS_ENCODED_VARS[2]="\$${UTILS_ENCODED_VAR_PREFIX}"
+VED_UTILS_ENCODED_VARS[3]="\${${UTILS_ENCODED_VAR_PREFIX}"
+readonly VED_UTILS_ENCODED_VARS
+
+#
+# Encode the variables in a text
+#
+# Arguments:
+#   str   text    text to encode
+#
+# Output:
+#   writes the encoded string to stdout
+#
+utils::str_encode_vars() {
+  local -r str="$1"
+
+  if [[ -z "$str" ]]; then
+    return 0
+  fi
+
+  local str_encoded="$str"
+
+  for ((i = 0; i < ${#VED_UTILS_DECODED_VARS[@]}; i += 1)); do
+    local decode_char="${VED_UTILS_DECODED_VARS[$i]}"
+    local encoded_char="${VED_UTILS_ENCODED_VARS[$i]}"
+
+    str_encoded="${str_encoded//"$decode_char"/"$encoded_char"}"
+  done
+
+  echo "$str_encoded"
+}
+
+#
+# Decode the variables in a text
+#
+# Arguments:
+#   str   text    text to decode
+#
+# Output:
+#   writes the decoded string to stdout
+#
+utils::str_decode_vars() {
+  local -r str="$1"
+
+  if [[ -z "$str" ]]; then
+    return 0
+  fi
+
+  local str_decoded="$str"
+
+  for ((i = ${#VED_UTILS_ENCODED_VARS[@]} - 1; i >= 0; i -= 1)); do
+    local decode_char="${VED_UTILS_DECODED_VARS[$i]}"
+    local encoded_char="${VED_UTILS_ENCODED_VARS[$i]}"
+
+    str_decoded="${str_decoded//"$encoded_char"/"$decode_char"}"
+  done
+
+  echo "$str_decoded"
+}
+
+#
+# Escape double quotes in a string
+#
+# Arguments:
+#   str   string    string to scape
+#
+# Output:
+#   writes the encoded string to stdout
+#
+utils::str_escape_double_quotes() {
+  local -r str="$1"
+
+  echo "${str//\"/\\\"}"
+}

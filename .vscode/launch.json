@@ -152,8 +152,8 @@
         "image",
         "build",
         "-t",
-        "image123",
-        "Vedvfile10"
+        "image1",
+        "Vedvfile11"
       ]
     }
   ]

@@ -1291,3 +1291,9 @@ EOF
 @test "vedv::image_service::add_environment_var(): DUMMY" {
   :
 }
+
+# Tests for vedv::image_service::get_environment_vars()
+
+@test "vedv::image_service::get_environment_vars() DUMMY" {
+  :
+}
