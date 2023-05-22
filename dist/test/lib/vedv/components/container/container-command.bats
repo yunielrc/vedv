@@ -21,6 +21,7 @@ Create a new container
 
 Flags:
   -h, --help            show help
+  -s | --standalone     create a standalone container
 
 Options:
   -n, --name <name>     assign a name to the container"
@@ -42,7 +43,7 @@ Options:
   run vedv::container_command::__create "$image_file"
 
   assert_success
-  assert_output 'container created, arguments: /tmp/vedv/test/files/alpine-x86_64.ova '
+  assert_output 'container created, arguments: /tmp/vedv/test/files/alpine-x86_64.ova  false'
 }
 
 @test 'vedv::container_command::__create(), with --name should create a container' {
@@ -52,7 +53,7 @@ Options:
   run vedv::container_command::__create --name "$container_name" "$image_file"
 
   assert_success
-  assert_output 'container created, arguments: /tmp/vedv/test/files/alpine-x86_64.ova super-llama-testunit-container-command'
+  assert_output 'container created, arguments: /tmp/vedv/test/files/alpine-x86_64.ova super-llama-testunit-container-command false'
 }
 
 @test "vedv::container_command::__start(), with arg '-h|--help|help' should show help" {

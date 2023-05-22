@@ -26,6 +26,7 @@ Create a new container
 
 Flags:
   -h, --help            show help
+  -s | --standalone     create a standalone container
 
 Options:
   -n, --name <name>     assign a name to the container"
@@ -44,6 +45,7 @@ Create a new container
 
 Flags:
   -h, --help            show help
+  -s | --standalone     create a standalone container
 
 Options:
   -n, --name <name>     assign a name to the container"
@@ -64,6 +66,7 @@ Create a new container
 
 Flags:
   -h, --help            show help
+  -s | --standalone     create a standalone container
 
 Options:
   -n, --name <name>     assign a name to the container"

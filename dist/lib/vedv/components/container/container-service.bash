@@ -14,7 +14,9 @@ if false; then
   . './../../hypervisors/virtualbox.bash'
 fi
 
-# VARIABLES
+# CONSTANTS
+
+readonly VEDV_CONTAINER_SERVICE_STANDALONE='STANDALONE'
 
 # FUNCTIONS
 
@@ -35,8 +37,9 @@ fi
 # Create a new container
 #
 # Arguments:
-#   image           string  image name or an OVF file
-#   container_name  string  container name
+#   image             string  image name or an OVF file
+#   [container_name]  string  container name
+#   [standalone]      bool    create a standalone container
 #
 # Output:
 #  Writes container ID to the stdout
@@ -47,6 +50,7 @@ fi
 vedv::container_service::create() {
   local -r image="$1"
   local container_name="${2:-}"
+  local -r standalone="${3:-false}"
 
   if [[ -z "$image" ]]; then
     err "Invalid argument 'image': it's empty"
@@ -127,10 +131,17 @@ vedv::container_service::create() {
   fi
   readonly layer_vm_snapshot_name
 
-  vedv::hypervisor::clonevm_link "$image_vm_name" "$container_vm_name" "$layer_vm_snapshot_name" &>/dev/null || {
-    err "Failed to clone vm: '$image_vm_name' to: '$container_vm_name'"
-    return "$ERR_CONTAINER_OPERATION"
-  }
+  if [[ "$standalone" == false ]]; then
+    vedv::hypervisor::clonevm_link "$image_vm_name" "$container_vm_name" "$layer_vm_snapshot_name" &>/dev/null || {
+      err "Failed to link clone vm: '${image_vm_name}' to: '${container_vm_name}'"
+      return "$ERR_CONTAINER_OPERATION"
+    }
+  else
+    vedv::hypervisor::clonevm "$image_vm_name" "$container_vm_name" "$layer_vm_snapshot_name" &>/dev/null || {
+      err "Failed to full clone vm: '${image_vm_name}' to: '${container_vm_name}'"
+      return "$ERR_CONTAINER_OPERATION"
+    }
+  fi
 
   if [[ -z "$container_name" ]]; then
     container_name="$(vedv::container_entity::get_container_name_by_vm_name "$container_vm_name")" || {
@@ -147,7 +158,7 @@ vedv::container_service::create() {
   }
   readonly container_id
 
-  vedv::container_entity::set_parent_image_id "$container_id" "$image_id" || {
+  vedv::container_entity::set_parent_image_id "$container_id" "$([[ "$standalone" == false ]] && echo "$image_id" || echo "$VEDV_CONTAINER_SERVICE_STANDALONE")" || {
     err "Failed to set parent image id for container: '${container_name}'"
     return "$ERR_CONTAINER_OPERATION"
   }
@@ -184,7 +195,7 @@ vedv::container_service::is_started() {
 #   0 on success, non-zero on error.
 #
 vedv::container_service::start() {
-  vedv::vmobj_service::start 'container' true "$@"
+  vedv::vmobj_service::start 'container' 'true' "$@"
 }
 
 #
@@ -201,7 +212,7 @@ vedv::container_service::start() {
 #   0 on success, non-zero on error.
 #
 vedv::container_service::start_no_wait_ssh() {
-  vedv::vmobj_service::start 'container' false "$@"
+  vedv::vmobj_service::start 'container' 'false' "$@"
 }
 
 #
@@ -217,7 +228,7 @@ vedv::container_service::start_no_wait_ssh() {
 #   0 on success, non-zero on error.
 #
 vedv::container_service::stop() {
-  vedv::vmobj_service::stop 'container' true "$@"
+  vedv::vmobj_service::stop 'container' 'true' "$@"
 }
 
 #
@@ -268,6 +279,15 @@ vedv::container_service::remove_one() {
   if [[ -z "$parent_image_id" ]]; then
     err "No 'parent_image_id' for container: '${container_id}'"
     return "$ERR_CONTAINER_OPERATION"
+  fi
+
+  if [[ "$parent_image_id" == "$VEDV_CONTAINER_SERVICE_STANDALONE" ]]; then
+    vedv::hypervisor::rm "$container_vm_name" &>/dev/null || {
+      err "Failed to remove container: '${container_id}'"
+      return "$ERR_CONTAINER_OPERATION"
+    }
+    echo "$container_id"
+    return 0
   fi
 
   # If the container that is being removed (CBR) has siblings running containers

@@ -20,7 +20,7 @@ fi
 # | - containers_ids: integer[]|
 # +----------------------------+
 
-# VARIABLES
+# CONSTANTS
 
 readonly VEDV_IMAGE_ENTITY_TYPE='image'
 # shellcheck disable=SC2034

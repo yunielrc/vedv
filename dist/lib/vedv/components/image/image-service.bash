@@ -372,7 +372,7 @@ vedv::image_service::is_started() {
 #   0 on success, non-zero on error.
 #
 vedv::image_service::start() {
-  vedv::vmobj_service::start_one 'image' true "$@"
+  vedv::vmobj_service::start_one 'image' 'true' "$@"
 }
 
 #

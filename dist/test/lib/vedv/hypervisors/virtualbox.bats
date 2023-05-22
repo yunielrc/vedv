@@ -474,3 +474,8 @@ ${snapshot_name2}"
   assert_success
   assert_output "$(echo -e "$create_m_out" | sed 's/.*UUID:\s\+//' | head -n 2)"
 }
+
+# Tests for vedv::hypervisor::clonevm()
+@test "vedv::hypervisor::clonevm(): DUMMY" {
+  :
+}

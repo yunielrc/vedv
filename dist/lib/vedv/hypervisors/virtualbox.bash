@@ -68,7 +68,43 @@ vedv::hypervisor::validate_vm_name() {
 vedv::virtualbox::validate_vm_name() { vedv::hypervisor::validate_vm_name "$@"; }
 
 #
-# Create a clone of an existing virtual machine
+# Create a full clone of an existing virtual machine
+#
+# Arguments:
+#   vm_name             name of the VM
+#   vm_clone_name       name of the cloned VM
+#   vm_snapshot         name of the snapshot that will be used to clone
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::hypervisor::clonevm() {
+  local -r vm_name="$1"
+  local -r vm_clone_name="$2"
+  local -r vm_snapshot="${3:-}"
+
+  if ! vedv::hypervisor::validate_vm_name "$vm_clone_name" 'clone_vm_name'; then
+    return "$ERR_INVAL_ARG"
+  fi
+
+  if [[ -n "$vm_snapshot" ]]; then
+    VBoxManage clonevm "$vm_name" --name "$vm_clone_name" --register \
+      --snapshot "$vm_snapshot" || {
+      err "Failed to clone VM '${vm_name}' to '${vm_clone_name}' from snapshot '${vm_snapshot}'"
+      return "$ERR_VIRTUALBOX_OPERATION"
+    }
+  else
+    VBoxManage clonevm "$vm_name" --name "$vm_clone_name" --register || {
+      err "Failed to clone VM '${vm_name}' to '${vm_clone_name}'"
+      return "$ERR_VIRTUALBOX_OPERATION"
+    }
+  fi
+
+  return 0
+}
+
+#
+# Create a linked clone of an existing virtual machine
 #
 # Arguments:
 #   vm_name             name of the VM

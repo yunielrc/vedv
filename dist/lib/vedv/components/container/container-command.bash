@@ -31,10 +31,11 @@ vedv::container_command::constructor() {
 # Create a new container
 #
 # Flags:
-#   [-h | --help ]      Show help
+#   -h | --help             Show help
+#   -s | --standalone       Create a standalone container
 #
 # Options:
-#   [-n | --name]            Container name
+#   [-n | --name]           Container name
 #
 # Arguments:
 #   IMAGE               Image name or an OVF file
@@ -46,6 +47,7 @@ vedv::container_command::constructor() {
 #   0 on success, non-zero on error.
 #
 vedv::container_command::__create() {
+  local standalone=false
   local name=''
   local image=''
 
@@ -59,17 +61,20 @@ vedv::container_command::__create() {
       vedv::container_command::__create_help
       return 0
       ;;
+    -s | --standalone)
+      readonly standalone=true
+      shift
+      ;;
     # options
     -n | --name)
-      shift
-      readonly name="${1:-}"
+      readonly name="${2:-}"
       # validate argument
       if [[ -z "$name" ]]; then
         err "No container name specified\n"
         vedv::container_command::__create_help
         return "$ERR_INVAL_ARG"
       fi
-      shift
+      shift 2
       ;;
     *)
       readonly image="$1"
@@ -84,7 +89,7 @@ vedv::container_command::__create() {
     return "$ERR_INVAL_ARG"
   fi
 
-  vedv::container_service::create "$image" "$name"
+  vedv::container_service::create "$image" "$name" "$standalone"
 }
 
 #
@@ -102,6 +107,7 @@ Create a new container
 
 Flags:
   -h, --help            show help
+  -s | --standalone     create a standalone container
 
 Options:
   -n, --name <name>     assign a name to the container

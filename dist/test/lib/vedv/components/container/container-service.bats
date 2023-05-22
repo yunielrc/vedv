@@ -327,7 +327,7 @@ setup_file() {
   run vedv::container_service::create "$image" "$container_name"
 
   assert_failure
-  assert_output "Failed to clone vm: 'image:foo-bar|crc:12345|' to: 'container:bin-baam|crc:12346|'"
+  assert_output "Failed to link clone vm: 'image:foo-bar|crc:12345|' to: 'container:bin-baam|crc:12346|'"
 }
 
 @test "vedv::container_service::create() Should fail If get_container_name_by_vm_name fails" {
