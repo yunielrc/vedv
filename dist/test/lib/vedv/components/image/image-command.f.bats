@@ -166,7 +166,7 @@ Remove unused cache images"
 
     assert_success
     assert_output "Usage:
-vedv image build [OPTIONS] [PATH]
+vedv image build [FLAGS] [OPTIONS] PATH
 
 Build an image from a Vedvfile
 

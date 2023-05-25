@@ -153,7 +153,7 @@ vedv::image_service::remove() {
 @test "vedv::image_command::__build() shows help" {
   # Arrange
   local expected_output="Usage:
-vedv image build [OPTIONS] [PATH]
+vedv image build [FLAGS] [OPTIONS] PATH
 
 Build an image from a Vedvfile"
   # Act
@@ -180,7 +180,7 @@ Build an image from a Vedvfile"
   run vedv::image_command::__build "$custom_vedvfile"
   # Assert
   assert_success
-  assert_output --regexp '^vedv::image_service::build MyVedvfile  false\s*$'
+  assert_output --regexp '^vedv::image_service::build MyVedvfile  false false\s*$'
 }
 
 @test "vedv::image_command::__build() builds an image from default Vedvfile" {
@@ -193,7 +193,7 @@ Build an image from a Vedvfile"
   run vedv::image_command::__build
   # Assert
   assert_success
-  assert_output --regexp '^vedv::image_service::build Vedvfile  false\s*$'
+  assert_output --regexp '^vedv::image_service::build Vedvfile  false false\s*$'
 }
 
 @test "vedv::image_command::__build() Should fails if -n argument is provided without image name" {
@@ -228,7 +228,7 @@ Build an image from a Vedvfile"
     run vedv::image_command::__build "$arg" "$custom_image_name" "$custom_vedvfile"
     # Assert
     assert_success
-    assert_output 'vedv::image_service::build MyVedvfile my-image false'
+    assert_output 'vedv::image_service::build MyVedvfile my-image false false'
   done
 }
 

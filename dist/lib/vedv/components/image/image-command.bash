@@ -242,13 +242,15 @@ HELPMSG
 #   0 on success, non-zero on error.
 #
 vedv::image_command::__build() {
+  local vedvfile='Vedvfile'
   local image_name=''
   local force=false
-  local vedvfile='Vedvfile'
+  local no_cache=false
 
   while [[ $# -gt 0 ]]; do
 
     case "$1" in
+    # Flags
     -h | --help)
       vedv::image_command::__build_help
       return 0
@@ -257,6 +259,11 @@ vedv::image_command::__build() {
       readonly force=true
       shift
       ;;
+    --no-cache)
+      readonly no_cache=true
+      shift
+      ;;
+    # Options
     -n | --name | -t)
       image_name="${2:-}"
       # validate argument
@@ -267,6 +274,7 @@ vedv::image_command::__build() {
       fi
       shift 2
       ;;
+    # Arguments
     *)
       readonly vedvfile="${1:-}"
       break
@@ -280,7 +288,7 @@ vedv::image_command::__build() {
     return "$ERR_INVAL_ARG"
   fi
 
-  vedv::image_service::build "$vedvfile" "$image_name" "$force"
+  vedv::image_service::build "$vedvfile" "$image_name" "$force" "$no_cache"
 }
 
 #
@@ -292,13 +300,14 @@ vedv::image_command::__build() {
 vedv::image_command::__build_help() {
   cat <<-HELPMSG
 Usage:
-${__VED_IMAGE_COMMAND_SCRIPT_NAME} image build [OPTIONS] [PATH]
+${__VED_IMAGE_COMMAND_SCRIPT_NAME} image build [FLAGS] [OPTIONS] PATH
 
 Build an image from a Vedvfile
 
 Flags:
-  -h, --help       show the help
-  --force          force the build removing the image containers
+  -h, --help        show the help
+  --force           force the build removing the image containers
+  --no-cache   do not use cache when building the image
 
 Options:
   -n, --name, -t   image name

@@ -1421,6 +1421,7 @@ vedv::image_builder::__build() {
 #   vedvfile      string  path to Vedvfile
 #   [image_name]  string  name of the image
 #   [force]       bool    force the build removing the image containers
+#   [no_cache]    bool    do not use cache when building the image
 #
 # Output:
 #  Writes image_id (string) image_name (string) and build proccess #  output to the stdout
@@ -1432,6 +1433,7 @@ vedv::image_builder::build() {
   local -r vedvfile="$1"
   local image_name="${2:-}"
   local -r force="${3:-false}"
+  local -r no_cache="${4:-false}"
   # validate arguments
   if [[ -z "$vedvfile" ]]; then
     err "Argument 'vedvfile' is required"
@@ -1445,33 +1447,39 @@ vedv::image_builder::build() {
   local image_id=''
 
   ___set_image_id_64695() {
-    image_id="$(vedv::image_entity::get_id_by_image_name "$image_name")" 2>/dev/null || {
-      if [[ $? != "$ERR_NOT_FOUND" ]]; then
-        err "Failed to get image id for image '${image_name}'"
-        return "$ERR_IMAGE_BUILDER_OPERATION"
-      fi
-    }
+    if [[ -n "$image_name" ]]; then
+      image_id="$(vedv::image_entity::get_id_by_image_name "$image_name")" 2>/dev/null || {
+        if [[ $? != "$ERR_NOT_FOUND" ]]; then
+          err "Failed to get image id for image '${image_name}'"
+          return "$ERR_IMAGE_BUILDER_OPERATION"
+        fi
+      }
+    fi
     # readonly image_id
   }
-
+  ___set_image_id_64695 || return $?
   # if the image has containers the force flag must be used to
   # run the build removing the containers, otherwise it will fail
-  if [[ "$force" == false && -n "$image_name" ]]; then
-    ___set_image_id_64695 || return $?
+  if [[ "$force" == false && -n "$image_id" ]]; then
+    local has_containers
+    has_containers="$(vedv::image_entity::has_containers "$image_id")" || {
+      err "Failed to check if image '${image_name}' has containers"
+      return "$ERR_IMAGE_BUILDER_OPERATION"
+    }
+    readonly has_containers
 
-    if [[ -n "$image_id" ]]; then
-      local has_containers
-      has_containers="$(vedv::image_entity::has_containers "$image_id")" || {
-        err "Failed to check if image '${image_name}' has containers"
-        return "$ERR_IMAGE_BUILDER_OPERATION"
-      }
-      readonly has_containers
-
-      if [[ "$has_containers" == true ]]; then
-        err "The image '${image_name}' has containers, you can force the build but the containers will be removed."
-        return "$ERR_IMAGE_BUILDER_OPERATION"
-      fi
+    if [[ "$has_containers" == true ]]; then
+      err "The image '${image_name}' has containers, you need to force the build, but the containers will be removed."
+      return "$ERR_IMAGE_BUILDER_OPERATION"
     fi
+  fi
+
+  if [[ "$no_cache" == true && -n "$image_id" ]]; then
+    vedv::image_service::remove "$image_id" >/dev/null || {
+      err "Failed to remove image '${image_name}'"
+      return "$ERR_IMAGE_BUILDER_OPERATION"
+    }
+    image_id=''
   fi
 
   if [[ -z "$image_name" ]]; then
@@ -1485,7 +1493,9 @@ vedv::image_builder::build() {
     err "The build proccess has failed."
   }
 
-  ___set_image_id_64695 || return $?
+  if [[ -z "$image_id" ]]; then
+    ___set_image_id_64695 || return $?
+  fi
 
   if [[ -n "$image_id" ]]; then
     vedv::image_service::stop "$image_id" >/dev/null || {
