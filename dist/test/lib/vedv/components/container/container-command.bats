@@ -120,7 +120,7 @@ Aliases:
 
 Flags:
   -h, --help          show help
-  -f, --force         force remove"
+  --force             force remove"
 
   run vedv::container_command::__rm -h
 

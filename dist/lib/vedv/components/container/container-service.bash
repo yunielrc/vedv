@@ -281,6 +281,20 @@ vedv::container_service::remove_one() {
     return "$ERR_CONTAINER_OPERATION"
   fi
 
+  if [[ "$force" == false ]]; then
+    local is_running
+    is_running="$(vedv::container_service::is_started "$container_id")" || {
+      err "Failed to check if container is started: '${container_id}'"
+      return "$ERR_CONTAINER_OPERATION"
+    }
+    readonly is_running
+
+    if [[ "$is_running" == true ]]; then
+      err "You cannot remove a running container '${container_id}'. Stop the container before attempting removal or force remove"
+      return "$ERR_CONTAINER_OPERATION"
+    fi
+  fi
+
   if [[ "$parent_image_id" == "$VEDV_CONTAINER_SERVICE_STANDALONE" ]]; then
     vedv::hypervisor::rm "$container_vm_name" &>/dev/null || {
       err "Failed to remove container: '${container_id}'"

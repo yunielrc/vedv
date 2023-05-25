@@ -215,7 +215,7 @@ vedv::container_command::__rm() {
       vedv::container_command::__rm_help
       return 0
       ;;
-    -f | --force)
+    --force)
       shift
       readonly force=true
       ;;
@@ -253,7 +253,7 @@ Aliases:
 
 Flags:
   -h, --help          show help
-  -f, --force         force remove
+  --force             force remove
 HELPMSG
 }
 

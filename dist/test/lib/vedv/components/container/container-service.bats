@@ -618,6 +618,10 @@ setup_file() {
 @test "vedv::container_service::remove_one() Should fail If __get_running_siblings_ids fails" {
   local -r container_id=123456
 
+  vedv::container_service::is_started() {
+    assert_equal "$*" 123456
+    echo false
+  }
   vedv::container_entity::get_vm_name() {
     assert_equal "$*" 123456
     echo "container:bin-baam|crc:12346|"
@@ -640,6 +644,10 @@ setup_file() {
 @test "vedv::container_service::remove_one() Should fail If there are running siblings and force is false" {
   local -r container_id=123456
 
+  vedv::container_service::is_started() {
+    assert_equal "$*" 123456
+    echo false
+  }
   vedv::container_entity::get_vm_name() {
     assert_equal "$*" 123456
     echo "container:bin-baam|crc:12346|"
@@ -692,6 +700,10 @@ Sibling containers ids: '123457 123458'"
 @test "vedv::container_service::remove_one() Should fail If vedv::hypervisor::rm fails" {
   local -r container_id=123456
 
+  vedv::container_service::is_started() {
+    assert_equal "$*" 123456
+    echo false
+  }
   vedv::container_entity::get_vm_name() {
     assert_equal "$*" 123456
     echo "container:bin-baam|crc:12346|"
@@ -717,6 +729,10 @@ Sibling containers ids: '123457 123458'"
 @test "vedv::container_service::remove_one() Should fail If image_entity::get_vm_name fails" {
   local -r container_id=123456
 
+  vedv::container_service::is_started() {
+    assert_equal "$*" 123456
+    echo false
+  }
   vedv::container_entity::get_vm_name() {
     assert_equal "$*" 123456
     echo "container:bin-baam|crc:12346|"
@@ -745,6 +761,10 @@ Sibling containers ids: '123457 123458'"
 @test "vedv::container_service::remove_one() Should fail If delete_snapshot fails" {
   local -r container_id=123456
 
+  vedv::container_service::is_started() {
+    assert_equal "$*" 123456
+    echo false
+  }
   vedv::container_entity::get_vm_name() {
     assert_equal "$*" 123456
     echo "container:bin-baam|crc:12346|"
@@ -777,6 +797,10 @@ Sibling containers ids: '123457 123458'"
 @test "vedv::container_service::remove_one() Should succeed" {
   local -r container_id=123456
 
+  vedv::container_service::is_started() {
+    assert_equal "$*" 123456
+    echo false
+  }
   vedv::container_entity::get_vm_name() {
     assert_equal "$*" 123456
     echo "container:bin-baam|crc:12346|"

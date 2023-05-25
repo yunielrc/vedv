@@ -155,7 +155,7 @@ Aliases:
 
 Flags:
   -h, --help          show help
-  -f, --force         force remove"
+  --force             force remove"
 }
 
 @test "vedv container rm -h , Should show help" {
@@ -174,7 +174,7 @@ Aliases:
 
 Flags:
   -h, --help          show help
-  -f, --force         force remove"
+  --force             force remove"
   done
 }
 
