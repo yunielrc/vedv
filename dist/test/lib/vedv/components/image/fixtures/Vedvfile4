@@ -6,9 +6,9 @@ COPY home.config /home/vedv/
 
 RUN ls -la /home/vedv/ && \
   cat /home/vedv/home.config && \
-  cat /home/vedv/f1
+  cat /home/vedv/f2
 
-RUN apk add --no-cache \
+RUN sudo apk add --no-cache \
   htop \
   bat \
   bmon

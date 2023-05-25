@@ -21,7 +21,9 @@ readonly ERR_IMAGE_ENTITY=89
 readonly ERR_CONTAINER_ENTITY=90
 readonly ERR_VMOBJ_ENTITY=91
 readonly ERR_VMOBJ_OPERATION=92
-
+# This error code can only be throwed by vedv::image_builder::__layer_execute_cmd()
+readonly ERR_IMAGE_BUILDER_LAYER_CREATION_FAILURE_PREV_RESTORATION_FAIL=100
+#
 readonly UTILS_ENCODED_VAR_PREFIX='var_9f57a558b3_'
 readonly UTILS_ENCODED_ESCVAR_PREFIX='escvar_fc064fcc7e_'
 

@@ -495,6 +495,45 @@ vedv::image_service::delete_layer() {
 }
 
 #
+# Restore last layer
+#
+# Arguments:
+#   image_id  string        image id
+#
+# Output:
+#   Writes error messages to the stderr
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::image_service::restore_last_layer() {
+  local -r image_id="$1"
+  # validate arguments
+  if [[ -z "$image_id" ]]; then
+    err "Argument 'image_id' is required"
+    return "$ERR_INVAL_ARG"
+  fi
+
+  local last_layer_id
+  last_layer_id="$(vedv::image_entity::get_last_layer_id "$image_id")" || {
+    err "Failed to get last layer id for image '${image_id}'"
+    return "$ERR_IMAGE_OPERATION"
+  }
+  readonly last_layer_id
+
+  if [[ -z "$last_layer_id" ]]; then
+    err "Last layer not found for image '${image_id}'"
+    return "$ERR_IMAGE_OPERATION"
+  fi
+
+  vedv::image_service::restore_layer "$image_id" "$last_layer_id" || {
+    err "Failed to restore last layer '${last_layer_id}'"
+    return "$ERR_IMAGE_OPERATION"
+  }
+
+  return 0
+}
+#
 # Restore layer
 #
 # Arguments:

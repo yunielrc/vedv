@@ -1,8 +1,9 @@
+# lang: dockerfile
 FROM /tmp/vedv/test/files/alpine-x86_64.ova
 
 COPY --root rootfs/ /root
 
 COPY home.config .
 
-RUN echo fvedv >fvedv &&
+RUN echo fvedv >fvedv && \
   echo froot | sudo tee /root/froot

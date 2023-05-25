@@ -313,7 +313,7 @@ vedv:image_vedvfile_service::get_vedvfileignore_path() {
   assert_output "Argument 'exec_func' is required"
 }
 
-@test "vedv::image_builder::__layer_execute_cmd(), Should fail If get_arg_from_string fail" {
+@test "vedv::image_builder::__layer_execute_cmd(), Should fail If get_cmd_name fail" {
   # Arrange
   local -r image_id="dummy_id"
   local -r cmd="1 RUN dummy_source dummy_dest"
@@ -348,31 +348,6 @@ vedv:image_vedvfile_service::get_vedvfileignore_path() {
   assert_output "Invalid command name 'RUN', it must be 'COPY'"
 }
 
-@test "vedv::image_builder::__layer_execute_cmd(), Should fail If get_last_layer_id fail" {
-  local -r image_id="dummy_id"
-  local -r cmd="1 COPY dummy_source dummy_dest"
-  local -r caller_command='COPY'
-  local -r exec_func=':'
-  # Stub
-  utils::get_arg_from_string() {
-    assert_equal "$*" "${cmd} 2"
-    echo "COPY"
-  }
-  vedv::image_service::is_started() {
-    assert_equal "$*" "$image_id"
-    echo true
-  }
-  vedv::image_entity::get_last_layer_id() {
-    assert_equal "$*" "$image_id"
-    return 1
-  }
-
-  run vedv::image_builder::__layer_execute_cmd "$image_id" "$cmd" "$caller_command" "$exec_func"
-
-  assert_failure "$ERR_IMAGE_BUILDER_OPERATION"
-  assert_output "Failed to get last layer id for image '${image_id}'"
-}
-
 @test "vedv::image_builder::__layer_execute_cmd(), Should fail With 'exec_func' failure" {
   local -r image_id="dummy_id"
   local -r cmd="1 COPY dummy_source dummy_dest"
@@ -391,21 +366,18 @@ vedv:image_vedvfile_service::get_vedvfileignore_path() {
     assert_equal "$*" "${image_id} ${cmd}"
     echo "layer_id"
   }
-  vedv::image_entity::get_last_layer_id() {
+  vedv::image_service::restore_last_layer() {
     assert_equal "$*" "$image_id"
-    echo "last_layer_id"
-  }
-  vedv::image_service::restore_layer() {
-    assert_equal "$*" "${image_id} last_layer_id"
   }
 
   run vedv::image_builder::__layer_execute_cmd "$image_id" "$cmd" "$caller_command" "$exec_func"
 
-  assert_failure "$ERR_LAYER_OPERATION"
-  assert_output "Failed to execute command '$cmd'"
+  assert_failure "$ERR_IMAGE_BUILDER_OPERATION"
+  assert_output "Failed to execute command '${cmd}'
+Previous layer restored"
 }
 
-@test "vedv::image_builder::__layer_execute_cmd(), Should fail If restore_layer fail" {
+@test "vedv::image_builder::__layer_execute_cmd(), Should fail If restore_last_layer fail" {
   local -r image_id="dummy_id"
   local -r cmd="1 COPY dummy_source dummy_dest"
   local -r caller_command='COPY'
@@ -419,20 +391,16 @@ vedv:image_vedvfile_service::get_vedvfileignore_path() {
     assert_equal "$*" "$image_id"
     echo true
   }
-  vedv::image_entity::get_last_layer_id() {
+  vedv::image_service::restore_last_layer() {
     assert_equal "$*" "$image_id"
-    echo "last_layer_id"
-  }
-  vedv::image_service::restore_layer() {
-    assert_equal "$*" "${image_id} last_layer_id"
     return 1
   }
 
   run vedv::image_builder::__layer_execute_cmd "$image_id" "$cmd" "$caller_command" "$exec_func"
 
   assert_failure
-  assert_output "Failed to restore layer 'last_layer_id'
-Failed to execute command '1 COPY dummy_source dummy_dest'"
+  assert_output "Failed to execute command '1 COPY dummy_source dummy_dest'
+Failed to restore last layer for image 'dummy_id'"
 }
 
 @test "vedv::image_builder::__layer_execute_cmd(), Should fail With __create_layer failure" {
@@ -449,12 +417,8 @@ Failed to execute command '1 COPY dummy_source dummy_dest'"
     assert_equal "$*" "$image_id"
     echo true
   }
-  vedv::image_entity::get_last_layer_id() {
+  vedv::image_service::restore_last_layer() {
     assert_equal "$*" "$image_id"
-    echo "last_layer_id"
-  }
-  vedv::image_service::restore_layer() {
-    assert_equal "$*" "${image_id} last_layer_id"
   }
   vedv::image_builder::__create_layer() {
     assert_equal "$*" "${image_id} ${cmd}"
@@ -464,7 +428,8 @@ Failed to execute command '1 COPY dummy_source dummy_dest'"
   run vedv::image_builder::__layer_execute_cmd "$image_id" "$cmd" "$caller_command" "$exec_func"
 
   assert_failure "$ERR_IMAGE_BUILDER_OPERATION"
-  assert_output "Failed to create layer for image '${image_id}'"
+  assert_output "Failed to create layer for image '${image_id}'
+Previous layer restored"
 }
 
 @test "vedv::image_builder::__layer_execute_cmd(), Should succeed" {
@@ -481,12 +446,8 @@ Failed to execute command '1 COPY dummy_source dummy_dest'"
     assert_equal "$*" "$image_id"
     echo true
   }
-  vedv::image_entity::get_last_layer_id() {
+  vedv::image_service::restore_last_layer() {
     assert_equal "$*" "$image_id"
-    echo "last_layer_id"
-  }
-  vedv::image_service::restore_layer() {
-    assert_equal "$*" "${image_id} last_layer_id"
   }
   vedv::image_builder::__create_layer() {
     assert_equal "$*" "${image_id} ${cmd}"
@@ -500,7 +461,6 @@ Failed to execute command '1 COPY dummy_source dummy_dest'"
 }
 
 # Tests for vedv::image_builder::__layer_from() function
-
 @test "vedv::image_builder::__layer_from(), Should fail With empty 'image' argument" {
   # Run program with invalid arguments
   run vedv::image_builder::__layer_from "" "image_name"
@@ -798,7 +758,8 @@ Failed to execute command '1 COPY dummy_source dummy_dest'"
 
 @test "vedv::image_builder::__layer_copy_calc_id(), Should write copy layer id to stdout" {
   # Arrange
-  local -r cmd="1 COPY source/ dest/"
+  local -r src="$(mktemp)"
+  local -r cmd="1 COPY ${src}/ dest/"
   # Stub
   utils::crc_sum() {
     if [[ ! -t 0 ]]; then
@@ -808,21 +769,11 @@ Failed to execute command '1 COPY dummy_source dummy_dest'"
     fi
   }
   utils::crc_file_sum() { crc_sum "$@"; }
-  utils::get_arg_from_string() {
-    if [[ "$*" == "${cmd} 2" ]]; then
-      echo "COPY"
-      return 0
-    fi
-    if [[ "$*" == "${cmd} 3" ]]; then
-      echo "source/"
-      return 0
-    fi
-  }
-  # act
+  # Act
   run vedv::image_builder::__layer_copy_calc_id "$cmd"
-  # assert
+  # Assert
   assert_success
-  assert_output --partial "1 COPY source/ dest/source/"
+  assert_output --partial "1 COPY ${src}/ dest/"
 }
 
 # Test vedv::image_builder::__layer_copy() function
@@ -1549,7 +1500,7 @@ Failed to execute command '1 COPY dummy_source dummy_dest'"
   run vedv::image_builder::__build "$vedvfile" "$image_name"
   # Assert
   assert_failure "$ERR_IMAGE_BUILDER_OPERATION"
-  assert_output "Failed to create image '${image_name}'"
+  assert_output --partial "Failed to create the layer for command '1 FROM my_image'"
 }
 
 @test "vedv::image_builder::__build() Should call __layer_from with if image_id is empty" {
@@ -1579,7 +1530,7 @@ Failed to execute command '1 COPY dummy_source dummy_dest'"
     assert_equal "$*" "INVALID_CALL"
   }
   vedv::image_service::remove() {
-    assert_equal "$*" "INVALID_CALL"
+    assert_equal "$*" "my-image-name"
   }
   vedv::image_vedvfile_service::get_cmd_body() {
     assert_equal "$*" "$from_cmd"
@@ -1593,7 +1544,7 @@ Failed to execute command '1 COPY dummy_source dummy_dest'"
   run vedv::image_builder::__build "$vedvfile" "$image_name"
   # Assert
   assert_failure "$ERR_IMAGE_BUILDER_OPERATION"
-  assert_output "Failed to create image '${image_name}'"
+  assert_output --partial "Failed to create the layer for command '1 FROM my_image'"
 }
 
 @test "vedv::image_builder::__build() Should fail to delete invalid layers" {
@@ -1651,7 +1602,7 @@ Failed to execute command '1 COPY dummy_source dummy_dest'"
   assert_failure
   assert_output --partial "Failed deleting invalid layers for image '${image_name}'"
 }
-
+# bats test_tags=only
 @test "vedv::image_builder::__build() Should fail If first_invalid_layer_pos < -1 or > commands_length length" {
   # Arrange
   local -r vedvfile="dist/test/lib/vedv/components/image/fixtures/Vedvfile"
@@ -1694,6 +1645,9 @@ Failed to execute command '1 COPY dummy_source dummy_dest'"
   vedv::image_entity::get_layers_ids() {
     assert_equal "$*" "$image_id"
     echo "12345 123456"
+  }
+  vedv::image_service::restore_last_layer() {
+    assert_equal "$*" "$image_id"
   }
   vedv::image_builder::__delete_invalid_layers() {
     assert_equal "$*" "${image_id} ${vfile_cmds}"
@@ -1762,6 +1716,9 @@ Failed to execute command '1 COPY dummy_source dummy_dest'"
     assert_equal "$*" "$image_id"
     echo "12345 123456"
   }
+  vedv::image_service::restore_last_layer() {
+    assert_equal "$*" "$image_id"
+  }
   vedv::image_builder::__delete_invalid_layers() {
     assert_equal "$*" "${image_id} ${cmds}"
     echo 0
@@ -1815,6 +1772,9 @@ Failed to execute command '1 COPY dummy_source dummy_dest'"
     assert_equal "$*" "${from_body} ${image_name}"
     echo "image-id"
   }
+  vedv::image_service::restore_last_layer() {
+    assert_equal "$*" "$image_id"
+  }
   vedv::image_builder::__delete_invalid_layers() {
     assert_equal "$*" "${image_id} ${cmds}"
     echo 4
@@ -1864,6 +1824,9 @@ Failed to execute command '1 COPY dummy_source dummy_dest'"
   }
   vedv::image_builder::__layer_from() {
     assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::image_service::restore_last_layer() {
+    assert_equal "$*" "$image_id"
   }
   vedv::image_builder::__delete_invalid_layers() {
     assert_equal "$*" "${image_id} ${cmds}"
@@ -1918,6 +1881,9 @@ Failed to execute command '1 COPY dummy_source dummy_dest'"
   }
   vedv::image_builder::__layer_from() {
     assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::image_service::restore_last_layer() {
+    assert_equal "$*" "$image_id"
   }
   vedv::image_builder::__delete_invalid_layers() {
     assert_equal "$*" "${image_id} ${cmds}"
@@ -1981,6 +1947,9 @@ Failed to execute command '1 COPY dummy_source dummy_dest'"
   }
   vedv::image_builder::__layer_from() {
     assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::image_service::restore_last_layer() {
+    assert_equal "$*" "$image_id"
   }
   vedv::image_builder::__delete_invalid_layers() {
     assert_equal "$*" "${image_id} ${cmds}"
@@ -2059,6 +2028,9 @@ EOF
   vedv::image_builder::__layer_from() {
     assert_equal "$*" "INVALID_CALL"
   }
+  vedv::image_service::restore_last_layer() {
+    assert_equal "$*" "$image_id"
+  }
   vedv::image_builder::__delete_invalid_layers() {
     assert_equal "$*" "${image_id} ${cmds}"
     echo 2
@@ -2076,7 +2048,7 @@ EOF
   }
   vedv::image_service::stop() {
     assert_equal "$*" "$image_id"
-    false
+    return 1
   }
   # Act
   run vedv::image_builder::__build "$vedvfile" "$image_name"
@@ -2084,7 +2056,7 @@ EOF
   assert_failure
   assert_output "created layer 'layer_id_5' for command 'COPY'
 created layer 'layer_id_4' for command 'RUN'
-Failed to stop image 'my-image-name'"
+Failed to stop the image 'my-image-name'.You must stop it."
 }
 
 @test '__restore_last_layer()' { :; }
@@ -2182,75 +2154,7 @@ Failed to get image id for image 'my-image-name'"
 
   assert_failure
   assert_output "The build proccess has failed.
-The image 'my-image-name' is corrupted.
-Failed to stop the image 'my-image-name'.
-You must stop and remove it."
-}
-
-@test 'vedv::image_builder::build() Should fail if fails to delete the image vm' {
-  local -r vedvfile='dist/test/lib/vedv/components/image/fixtures/Vedvfile'
-  local -r image_name=''
-
-  vedv::image_entity::has_containers() {
-    echo false
-  }
-  petname() {
-    echo 'my-image-name'
-  }
-  vedv::image_builder::__build() {
-    assert_equal "$*" "${vedvfile} my-image-name"
-    return 1
-  }
-  vedv::image_entity::get_id_by_image_name() {
-    assert_equal "$*" "my-image-name"
-    echo '12345678'
-  }
-  vedv::image_service::stop() {
-    assert_equal "$*" "12345678"
-  }
-  vedv::image_service::remove() {
-    assert_equal "$*" "12345678"
-    return 1
-  }
-  run vedv::image_builder::build "$vedvfile" "$image_name"
-
-  assert_failure
-  assert_output "The build proccess has failed.
-The image 'my-image-name' is corrupted.
-Failed to remove the image 'my-image-name'.
-You must remove it."
-}
-
-@test 'vedv::image_builder::build() Should remove the image vm' {
-  local -r vedvfile='dist/test/lib/vedv/components/image/fixtures/Vedvfile'
-  local -r image_name=''
-
-  vedv::image_entity::has_containers() {
-    echo false
-  }
-  petname() {
-    echo 'my-image-name'
-  }
-  vedv::image_builder::__build() {
-    assert_equal "$*" "${vedvfile} my-image-name"
-    return 1
-  }
-  vedv::image_entity::get_id_by_image_name() {
-    assert_equal "$*" "my-image-name"
-    echo '12345678'
-  }
-  vedv::image_service::stop() {
-    assert_equal "$*" "12345678"
-  }
-  vedv::image_service::remove() {
-    assert_equal "$*" "12345678"
-  }
-  run vedv::image_builder::build "$vedvfile" "$image_name"
-
-  assert_failure
-  assert_output "The build proccess has failed.
-The image 'my-image-name' is corrupted.
-The image 'my-image-name' was removed."
+Failed to stop the image 'my-image-name'.You must stop it."
 }
 
 @test 'vedv::image_builder::build() Should build the image' {
@@ -2335,7 +2239,7 @@ The image 'my-image-name' was removed."
   run vedv::image_builder::__layer_user "$image_id" "$cmd"
 
   assert_failure
-  assert_output "Failed to execute command '1 USER nalyd'"
+  assert_output ""
 }
 
 @test "vedv::image_builder::__layer_user() Should succeed" {
@@ -2401,7 +2305,7 @@ The image 'my-image-name' was removed."
   run vedv::image_builder::__layer_workdir "$image_id" "$cmd"
 
   assert_failure
-  assert_output "Failed to execute command '1 WORKDIR /home/nalyd'"
+  assert_output ""
 }
 
 @test "vedv::image_builder::__layer_workdir() Should succeed" {
@@ -2513,7 +2417,7 @@ The image 'my-image-name' was removed."
   run vedv::image_builder::__layer_env "$image_id" "$cmd"
 
   assert_failure
-  assert_output "Failed to execute command '1 ENV TEST=123'"
+  assert_output ""
 }
 
 @test "vedv::image_builder::__layer_env() Should succeed" {
@@ -2539,7 +2443,7 @@ The image 'my-image-name' was removed."
 }
 
 # Tests for vedv::image_builder::__expand_cmd_parameters()
-# bats test_tags=only
+
 @test "vedv::image_builder::__expand_cmd_parameters() Should fail With empty cmd" {
   local -r cmd=""
 
@@ -2548,7 +2452,7 @@ The image 'my-image-name' was removed."
   assert_failure
   assert_output "Argument 'cmd' is required"
 }
-# bats test_tags=only
+
 @test "vedv::image_builder::__expand_cmd_parameters() Should fail If str_escape_double_quotes fails" {
   local -r cmd="1 RUN ls -la /home/vedv"
 
@@ -2562,7 +2466,7 @@ The image 'my-image-name' was removed."
   assert_failure
   assert_output "Failed to escape command '1 RUN ls -la /home/vedv'"
 }
-# bats test_tags=only
+
 @test "vedv::image_builder::__expand_cmd_parameters() Should succeed If cmd does not have parameters" {
   local -r cmd="1 RUN ls -la /home/vedv"
 
@@ -2576,7 +2480,7 @@ The image 'my-image-name' was removed."
   assert_success
   assert_output "1 RUN ls -la /home/vedv"
 }
-# bats test_tags=only
+
 @test "vedv::image_builder::__expand_cmd_parameters() Should succeed If cmd has parameters" {
   local -r cmd="1 RUN ls -la /home/vedv"
 

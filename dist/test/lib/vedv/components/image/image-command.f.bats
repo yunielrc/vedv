@@ -142,7 +142,7 @@ vedv image remove-cache
 Remove unused cache images"
   done
 }
-# bats test_tags=only
+
 @test "vedv image remove-cache, Should remove unused caches" {
 
   vedv image pull "$TEST_OVA_FILE"

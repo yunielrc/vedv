@@ -156,8 +156,9 @@ vedv::image_builder::__calc_command_layer_id() {
 #
 # Execute commands on an image layer
 #
-# Preconditions:
-#  The image must be started and running
+# THIS IS WHERE THE NEW DATA IS WRITEN ON TO THE IMAGE
+# IF THIS FAILS AND THE LAYER RESTORATION FAILS TOO,
+# THE IMAGE IS CORRUPTED AND IT MUST BE DELETED.
 #
 # Arguments:
 #   image_id        string   image where the files will be copy
@@ -170,7 +171,8 @@ vedv::image_builder::__calc_command_layer_id() {
 #  Writes error messages to the stderr
 #
 # Returns:
-#   0 on success, non-zero on error.
+#   0 on success, non-zero on error
+#   in case of error 100, the image is corrupted and it must be deleted
 #
 vedv::image_builder::__layer_execute_cmd() {
   local -r image_id="$1"
@@ -212,31 +214,27 @@ vedv::image_builder::__layer_execute_cmd() {
     return "$ERR_INVAL_ARG"
   fi
 
-  local last_layer_id
-  last_layer_id="$(vedv::image_entity::get_last_layer_id "$image_id")" || {
-    err "Failed to get last layer id for image '${image_id}'"
+  __restore_last_layer() {
+    vedv::image_service::restore_last_layer "$image_id" || {
+      err "Failed to restore last layer for image '${image_id}'"
+      return "$ERR_IMAGE_BUILDER_LAYER_CREATION_FAILURE_PREV_RESTORATION_FAIL"
+    }
+    echo 'Previous layer restored'
+  }
+  # eval "$exec_func" --> THIS IS WHERE THE NEW DATA IS WRITEN ON TO THE IMAGE
+  # IF THIS FAILS AND THE LAYER RESTORATION FAILS TOO, THE IMAGE IS CORRUPTED
+  # AND IT MUST BE DELETED.
+
+  eval "$exec_func" || {
+    err "Failed to execute command '${cmd}'"
+    __restore_last_layer || return $? # OO: exit code 100
     return "$ERR_IMAGE_BUILDER_OPERATION"
   }
-  readonly last_layer_id
-
-  __restore_last_layer() {
-    vedv::image_service::restore_layer "$image_id" "$last_layer_id" || {
-      err "Failed to restore layer '${last_layer_id}'"
-      return "$ERR_IMAGE_BUILDER_OPERATION"
-    }
-    return 0
-  }
-
-  if ! eval "$exec_func"; then
-    __restore_last_layer
-    err "Failed to execute command '$cmd'"
-    return "$ERR_LAYER_OPERATION"
-  fi
   # create layer
   local layer_id
   layer_id="$(vedv::image_builder::__create_layer "$image_id" "$cmd")" || {
-    __restore_last_layer
     err "Failed to create layer for image '${image_id}'"
+    __restore_last_layer || return $? # OO: exit code 100
     return "$ERR_IMAGE_BUILDER_OPERATION"
   }
   readonly layer_id
@@ -261,7 +259,6 @@ vedv::image_builder::__layer_execute_cmd() {
 vedv::image_builder::__layer_from() {
   local -r image="$1"
   local -r image_name="$2"
-
   # validate arguments
   if [[ -z "$image" ]]; then
     err "Argument 'image' is required"
@@ -496,16 +493,14 @@ vedv::image_builder::__layer_copy_calc_id() {
     esac
   done
 
-  if [[ -z "$src" ]]; then
-    err "'src' must not be empty"
-    return "$ERR_INVAL_VALUE"
-  fi
+  local crc_sum_source=''
 
-  local crc_sum_source
-  crc_sum_source="$(utils::crc_file_sum "$src")" || {
-    err "Failed getting 'crc_sum_source' for src: '${src}'"
-    return "$ERR_IMAGE_BUILDER_OPERATION"
-  }
+  if [[ -e "$src" ]]; then
+    crc_sum_source="$(utils::crc_file_sum "$src")" || {
+      err "Failed getting 'crc_sum_source' for src: '${src}'"
+      return "$ERR_IMAGE_BUILDER_OPERATION"
+    }
+  fi
   readonly crc_sum_source
 
   local -r base_vedvfileignore_path="$(vedv:image_vedvfile_service::get_base_vedvfileignore_path)"
@@ -627,10 +622,7 @@ vedv::image_builder::__layer_copy() {
 
   local -r exec_func="vedv::image_service::copy '${image_id}' '${src}' '${dest}' '${user}'"
 
-  vedv::image_builder::__layer_execute_cmd "$image_id" "$cmd" "COPY" "$exec_func" || {
-    err "Failed to execute command '${cmd}'"
-    return "$ERR_IMAGE_BUILDER_OPERATION"
-  }
+  vedv::image_builder::__layer_execute_cmd "$image_id" "$cmd" "COPY" "$exec_func"
 }
 
 #
@@ -821,10 +813,7 @@ vedv::image_builder::__layer_run() {
 
   local -r exec_func="vedv::image_service::execute_cmd '${image_id}' '${exec_cmd_encoded}' '${user}'"
 
-  vedv::image_builder::__layer_execute_cmd "$image_id" "$cmd" "RUN" "$exec_func" || {
-    err "Failed to execute command '${cmd}'"
-    return "$ERR_IMAGE_BUILDER_OPERATION"
-  }
+  vedv::image_builder::__layer_execute_cmd "$image_id" "$cmd" "RUN" "$exec_func"
 }
 
 #
@@ -900,10 +889,8 @@ vedv::image_builder::__layer_user() {
   fi
 
   local -r exec_func="vedv::image_service::set_user '${image_id}' '${user_name}'"
-  vedv::image_builder::__layer_execute_cmd "$image_id" "$cmd" "USER" "$exec_func" || {
-    err "Failed to execute command '${cmd}'"
-    return "$ERR_IMAGE_BUILDER_OPERATION"
-  }
+
+  vedv::image_builder::__layer_execute_cmd "$image_id" "$cmd" "USER" "$exec_func"
 }
 
 #
@@ -979,10 +966,8 @@ vedv::image_builder::__layer_workdir() {
   fi
 
   local -r exec_func="vedv::image_service::set_workdir '${image_id}' '${workdir}' >/dev/null"
-  vedv::image_builder::__layer_execute_cmd "$image_id" "$cmd" "WORKDIR" "$exec_func" || {
-    err "Failed to execute command '${cmd}'"
-    return "$ERR_IMAGE_BUILDER_OPERATION"
-  }
+
+  vedv::image_builder::__layer_execute_cmd "$image_id" "$cmd" "WORKDIR" "$exec_func"
 }
 
 #
@@ -1061,10 +1046,8 @@ vedv::image_builder::__layer_env() {
   readonly env_encoded
 
   local -r exec_func="vedv::image_service::add_environment_var '${image_id}' '${env_encoded}'"
-  vedv::image_builder::__layer_execute_cmd "$image_id" "$cmd" "ENV" "$exec_func" || {
-    err "Failed to execute command '${cmd}'"
-    return "$ERR_IMAGE_BUILDER_OPERATION"
-  }
+
+  vedv::image_builder::__layer_execute_cmd "$image_id" "$cmd" "ENV" "$exec_func"
 }
 
 #
@@ -1204,6 +1187,14 @@ vedv::image_builder::__save_environment_vars_to_local_file() {
 #
 # Build image from Vedvfile
 #
+# On build failure the image is corrupted and deleted if:
+# 1 - The first layer creation fails. The FROM command
+# 2 - A layer deletion fails
+# 3 - A layer creation fails and the previous layer restoration fails too.
+#
+# An image is valid and it will not be deleted if:
+# 1 - Every data is writed without errors and there is a layer for that data.
+#
 # Arguments:
 #   vedvfile  string       path to Vedvfile
 #   image_name  string     name of the image
@@ -1240,11 +1231,11 @@ vedv::image_builder::__build() {
     return "$ERR_VEDV_FILE"
   }
   # prepare commands for env and arg variable substitution. e.g.
-  # _PREFIX_ can be any ramdom string characters like '01b9622e23'
-  # _ENCODED_ can be any ramdom string characters like '8027d5b963'
+  # VAR_PREFIX_ can be any random string characters like '01b9622e23'
+  # VAR_ENCODED_ can be any random string characters like '8027d5b963'
   #
-  # 2 RUN echo $NAME -> 1 RUN echo $_PREFIX_NAME
-  # 3 COPY . \$HOME -> 1 COPY . _ENCODED_HOME
+  # 2 RUN echo $NAME -> 1 RUN echo $VAR_PREFIX_NAME
+  # 3 COPY . \$HOME -> 1 COPY . VAR_ENCODED_HOME
   commands="$(utils::str_encode_vars "$commands")" || {
     err "Failed to prepare commands from Vedvfile '${vedvfile}'"
     return "$ERR_VEDV_FILE"
@@ -1260,6 +1251,17 @@ vedv::image_builder::__build() {
       return "$ERR_IMAGE_BUILDER_OPERATION"
     fi
   }
+
+  __delete_corrupted_image() {
+
+    err "The image '${image_name}' is corrupted and its going to be deleted."
+
+    vedv::image_service::remove "$image_name" >/dev/null || {
+      err "Failed to remove the image '${image_name}'.\nIt must be deleted manually."
+      return "$ERR_IMAGE_BUILDER_OPERATION"
+    }
+    err "The image '${image_name}' was removed."
+  }
   # `image_id` should be empty when there is no image with that name
   #  in that case it's no necessary to validate the from layer
 
@@ -1271,9 +1273,12 @@ vedv::image_builder::__build() {
       return "$ERR_VEDV_FILE"
     }
     image_id="$(vedv::image_builder::__layer_from "$from_body" "$image_name")" || {
-      err "Failed to create image '${image_name}'"
+      err "Failed to create the layer for command '${from_cmd}'"
+      # 1 - The first layer creation fails. The FROM command
+      __delete_corrupted_image
       return "$ERR_IMAGE_BUILDER_OPERATION"
     }
+
     local -a arr_layer_ids
     # shellcheck disable=SC2207
     arr_layer_ids=($(vedv::image_entity::get_layers_ids "$image_id")) || {
@@ -1303,10 +1308,18 @@ vedv::image_builder::__build() {
         return "$ERR_IMAGE_BUILDER_OPERATION"
       }
       __call__layer_from || return
+    else
+      # if there is an image with valid layer FROM, restoring the
+      # last layer will get rid of any data created on an erroneous previous build
+      vedv::image_service::restore_last_layer "$image_id" || {
+        err "Failed to restore layer last layer for image '${image_id}'"
+        __delete_corrupted_image || return $?
+      }
     fi
   else
     __call__layer_from || return
   fi
+
   readonly image_id
 
   __print_build_success_msg() {
@@ -1319,6 +1332,8 @@ vedv::image_builder::__build() {
   local -i first_invalid_cmd_pos
   first_invalid_cmd_pos="$(vedv::image_builder::__delete_invalid_layers "$image_id" "$commands")" || {
     err "Failed deleting invalid layers for image '${image_name}'"
+    # 2 - A layer deletion fails
+    __delete_corrupted_image
     return "$ERR_IMAGE_BUILDER_OPERATION"
   }
   readonly first_invalid_cmd_pos
@@ -1351,13 +1366,6 @@ vedv::image_builder::__build() {
     err "Failed to start image '${image_name}'"
     return "$ERR_IMAGE_BUILDER_OPERATION"
   }
-
-  __stop_vm() {
-    vedv::image_service::stop "$image_id" >/dev/null || {
-      err "Failed to stop image '${image_name}'"
-      return "$ERR_IMAGE_BUILDER_OPERATION"
-    }
-  }
   # The function ...::__expand_cmd_parameters() needs
   # the environment variables to be in the file
   # __VEDV_IMAGE_BUILDER_ENV_VARS_FILE to work properly.
@@ -1382,19 +1390,32 @@ vedv::image_builder::__build() {
     }
 
     layer_id="$(vedv::image_builder::__layer_"${cmd_name,,}" "$image_id" "$evaluated_cmd")" || {
+      local -ri ecode=$?
       err "Failed to create layer for command '${evaluated_cmd}'"
+
+      if [[ $ecode -eq "$ERR_IMAGE_BUILDER_LAYER_CREATION_FAILURE_PREV_RESTORATION_FAIL" ]]; then
+        err "The previous layer to the failure could not be restored."
+        # 3 - A layer creation fails and the previous layer restoration fails too.
+        __delete_corrupted_image
+        return $ecode
+      fi
       return "$ERR_IMAGE_BUILDER_OPERATION"
     }
 
     echo "created layer '${layer_id}' for command '${cmd_name}'"
   done <<<"$cmds_to_run"
 
-  __stop_vm || return $?
+  vedv::image_service::stop "$image_id" >/dev/null || {
+    err "Failed to stop the image '${image_name}'.You must stop it."
+    return "$ERR_IMAGE_BUILDER_OPERATION"
+  }
   __print_build_success_msg
 }
 
 #
 # Build image from Vedvfile
+#
+# __build function wrapper
 #
 # Arguments:
 #   vedvfile      string  path to Vedvfile
@@ -1433,18 +1454,10 @@ vedv::image_builder::build() {
     # readonly image_id
   }
 
-  ___stop_vm_64695() {
-    if [[ -n "$image_id" ]]; then
-      vedv::image_service::stop "$image_id" >/dev/null || {
-        err "Failed to stop the image '${image_name}'.\nYou must stop and remove it."
-        return "$ERR_IMAGE_BUILDER_OPERATION"
-      }
-    fi
-  }
   # if the image has containers the force flag must be used to
   # run the build removing the containers, otherwise it will fail
   if [[ "$force" == false && -n "$image_name" ]]; then
-    ___set_image_id_64695
+    ___set_image_id_64695 || return $?
 
     if [[ -n "$image_id" ]]; then
       local has_containers
@@ -1470,24 +1483,16 @@ vedv::image_builder::build() {
 
   vedv::image_builder::__build "$vedvfile" "$image_name" || {
     err "The build proccess has failed."
-    ___set_image_id_64695 || return
-
-    if [[ -n "$image_id" ]]; then
-      err "The image '${image_name}' is corrupted."
-
-      ___stop_vm_64695 || return
-      vedv::image_service::remove "$image_id" >/dev/null || {
-        err "Failed to remove the image '${image_name}'.\nYou must remove it."
-        return "$ERR_IMAGE_BUILDER_OPERATION"
-      }
-      err "The image '${image_name}' was removed."
-    fi
-    return "$ERR_IMAGE_BUILDER_OPERATION"
   }
 
-  ___set_image_id_64695 || return
+  ___set_image_id_64695 || return $?
 
   if [[ -n "$image_id" ]]; then
-    ___stop_vm_64695 || return
+    vedv::image_service::stop "$image_id" >/dev/null || {
+      err "Failed to stop the image '${image_name}'.You must stop it."
+      return "$ERR_IMAGE_BUILDER_OPERATION"
+    }
   fi
+
+  return 0
 }

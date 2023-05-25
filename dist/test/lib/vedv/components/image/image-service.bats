@@ -1290,3 +1290,70 @@ EOF
 @test "vedv::image_service::get_environment_vars() DUMMY" {
   :
 }
+
+# Tests for vedv::image_service::restore_last_layer()
+# bats test_tags=only
+@test "vedv::image_service::restore_last_layer() Should fail With empty image_id" {
+  # Arrange
+  local -r image_id=""
+  # Act
+  run vedv::image_service::restore_last_layer "$image_id"
+
+  # Assert
+  assert_failure "$ERR_INVAL_ARG"
+  assert_output "Argument 'image_id' is required"
+}
+# bats test_tags=only
+@test "vedv::image_service::restore_last_layer() Should fail If get_last_layer_id fails" {
+  # Arrange
+  local -r image_id="image_id"
+  # Stub
+  vedv::image_entity::get_last_layer_id() {
+    assert_equal "$*" "$image_id"
+    return 1
+  }
+  # Act
+  run vedv::image_service::restore_last_layer "$image_id"
+
+  # Assert
+  assert_failure "$ERR_IMAGE_OPERATION"
+  assert_output "Failed to get last layer id for image '${image_id}'"
+}
+
+# bats test_tags=only
+@test "vedv::image_service::restore_last_layer() Should fail If empty last_layer_id" {
+  # Arrange
+  local -r image_id="image_id"
+  # Stub
+  vedv::image_entity::get_last_layer_id() {
+    assert_equal "$*" "$image_id"
+  }
+  # Act
+  run vedv::image_service::restore_last_layer "$image_id"
+
+  # Assert
+  assert_failure "$ERR_IMAGE_OPERATION"
+  assert_output "Last layer not found for image 'image_id'"
+}
+
+# bats test_tags=only
+@test "vedv::image_service::restore_last_layer() Should fail If restore_layer fails" {
+  # Arrange
+  local -r image_id="image_id"
+  local -r last_layer_id="last_layer_id"
+  # Stub
+  vedv::image_entity::get_last_layer_id() {
+    assert_equal "$*" "$image_id"
+    echo "last_layer_id"
+  }
+  vedv::image_service::restore_layer() {
+    assert_equal "$*" "$image_id $last_layer_id"
+    return 1
+  }
+  # Act
+  run vedv::image_service::restore_last_layer "$image_id"
+
+  # Assert
+  assert_failure "$ERR_IMAGE_OPERATION"
+  assert_output "Failed to restore last layer '${last_layer_id}'"
+}
