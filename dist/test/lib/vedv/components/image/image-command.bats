@@ -173,7 +173,7 @@ Build an image from a Vedvfile"
   local custom_vedvfile="MyVedvfile"
   # Stub
   vedv::image_service::build() {
-    assert_regex "$*" '^MyVedvfile  false\s*$'
+    assert_regex "$*" '^MyVedvfile  false false\s*$'
     echo "${FUNCNAME[0]} $*"
   }
   # Act
@@ -220,7 +220,7 @@ Build an image from a Vedvfile"
   local custom_vedvfile="MyVedvfile"
   # Stub
   vedv::image_service::build() {
-    assert_regex "$*" '^MyVedvfile my-image\s* false$'
+    assert_regex "$*" '^MyVedvfile my-image\s* false false$'
     echo "${FUNCNAME[0]} $*"
   }
   for arg in '-n' '--name' '-t'; do

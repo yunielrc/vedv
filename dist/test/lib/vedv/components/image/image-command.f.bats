@@ -171,8 +171,9 @@ vedv image build [FLAGS] [OPTIONS] PATH
 Build an image from a Vedvfile
 
 Flags:
-  -h, --help       show the help
-  --force          force the build removing the image containers
+  -h, --help        show the help
+  --force           force the build removing the image containers
+  --no-cache   do not use cache when building the image
 
 Options:
   -n, --name, -t   image name"
