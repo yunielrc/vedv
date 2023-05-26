@@ -592,6 +592,8 @@ HELPMSG
 #
 vedv::container_command::__copy() {
   local user=''
+  local chown=''
+  local chmod=''
   local container_name_or_id=''
   local src=''
   local dest=''
@@ -611,15 +613,32 @@ vedv::container_command::__copy() {
       ;;
     # options
     -u | --user)
-      shift
-      readonly user="${1:-}"
+      readonly user="${2:-}"
       # validate argument
       if [[ -z "$user" ]]; then
         err "No user specified\n"
         vedv::container_command::__copy_help
         return "$ERR_INVAL_ARG"
       fi
-      shift
+      shift 2
+      ;;
+    --chown)
+      readonly chown="${2:-}"
+      # validate argument
+      if [[ -z "$chown" ]]; then
+        err "Argument 'chown' no specified"
+        return "$ERR_INVAL_ARG"
+      fi
+      shift 2
+      ;;
+    --chmod)
+      readonly chmod="${2:-}"
+      # validate argument
+      if [[ -z "$chmod" ]]; then
+        err "Argument 'chmod' no specified"
+        return "$ERR_INVAL_ARG"
+      fi
+      shift 2
       ;;
     # arguments
     *)
@@ -647,7 +666,13 @@ vedv::container_command::__copy() {
     return "$ERR_INVAL_ARG"
   fi
 
-  vedv::container_service::copy "$container_name_or_id" "$src" "$dest" "$user"
+  vedv::container_service::copy \
+    "$container_name_or_id" \
+    "$src" \
+    "$dest" \
+    "$user" \
+    "$chown" \
+    "$chmod"
 }
 
 #
@@ -667,11 +692,13 @@ Aliases:
   cp, copy
 
 Flags:
-  -h, --help          show help
-  -r, --root          copy as root user
+  -h, --help              show help
+  -r, --root              copy as root user
 
 Options:
-  -u, --user <user>   copy as specific user
+  -u, --user <user>       copy as specific user
+  --chown <user:group>    change owner of copied files
+  --chmod <mode>          change mode of copied files
 HELPMSG
 }
 

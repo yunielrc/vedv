@@ -925,6 +925,8 @@ vedv::vmobj_service::connect() {
 #   dest          string     vmobj destination path
 #   [user]        string     user name
 #   [use_workdir] boolean    default: true, use vmobj workdir
+#   [chown]       string     chown files to user
+#   [chmod]       string     chmod files to mode
 #
 # Output:
 #  writes command output to the stdout
@@ -939,6 +941,8 @@ vedv::vmobj_service::copy_by_id() {
   local -r dest="$4"
   local -r user="${5:-}"
   local -r use_workdir="${6:-true}"
+  local -r chown="${7:-}"
+  local -r chmod="${8:-}"
   # validate arguments
   vedv::vmobj_entity::validate_type "$type" ||
     return "$?"
@@ -962,7 +966,7 @@ vedv::vmobj_service::copy_by_id() {
   }
   readonly vedvfileignore
 
-  local -r exec_func="vedv::ssh_client::copy \"\$user\" \"\$ip\"  \"\$password\" \"\$port\" '${src}' '${dest}' '${vedvfileignore}' \"\$workdir\""
+  local -r exec_func="vedv::ssh_client::copy \"\$user\" \"\$ip\"  \"\$password\" \"\$port\" '${src}' '${dest}' '${vedvfileignore}' \"\$workdir\" '${chown}' '${chmod}'"
 
   vedv::vmobj_service::__exec_ssh_func "$type" "$vmobj_id" "$exec_func" "$user" "$use_workdir" || {
     err "Failed to copy to ${type}: ${vmobj_id}"
@@ -980,6 +984,8 @@ vedv::vmobj_service::copy_by_id() {
 #   dest              string     vmobj destination path
 #   [user]            string     user name
 #   [use_workdir]     boolean    default: true, use vmobj workdir
+#   [chown]           string     chown files to user
+#   [chmod]           string     chmod files to mode
 #
 # Output:
 #  writes command output to the stdout
@@ -994,6 +1000,8 @@ vedv::vmobj_service::copy() {
   local -r dest="$4"
   local -r user="${5:-}"
   local -r use_workdir="${6:-true}"
+  local -r chown="${7:-}"
+  local -r chmod="${8:-}"
 
   local vmobj_id
   vmobj_id="$(vedv::vmobj_service::get_ids_from_vmobj_names_or_ids "$type" "$vmobj_id_or_name")" || {
@@ -1006,7 +1014,9 @@ vedv::vmobj_service::copy() {
     "$src" \
     "$dest" \
     "$user" \
-    "$use_workdir"
+    "$use_workdir" \
+    "$chown" \
+    "$chmod"
 }
 
 #

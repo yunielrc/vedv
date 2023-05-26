@@ -1,0 +1,6 @@
+# lang: dockerfile
+FROM /tmp/vedv/test/files/alpine-x86_64.ova
+
+USER nalyd
+
+COPY --root --chown vedv:vedv --chmod 445 homefs ./

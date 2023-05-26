@@ -94,14 +94,16 @@ SSHEOF
 # Copy files to a vm
 #
 # Arguments:
-#   user              string  user
-#   ip                string  ip
-#   password          string  password
-#   port              int     ssh port
-#   source            string  source file
-#   dest              string  destination file
-#   exclude_file_path string  exclude file path
-#   workdir           string  workdir
+#   user                string  user
+#   ip                  string  ip
+#   password            string  password
+#   port                int     ssh port
+#   source              string  source file
+#   dest                string  destination file
+#   [exclude_file_path] string  exclude file path
+#   [workdir]           string  workdir
+#   [chown]             string  chown files to user
+#   [chmod]             string  chmod files to mode
 #
 # Output:
 #  Writes command output to the stdout
@@ -118,6 +120,8 @@ vedv::ssh_client::copy() {
   local -r dest="$6"
   local -r exclude_file_path="${7:-}"
   local -r workdir="${8:-}"
+  local -r chown="${9:-}"
+  local -r chmod="${10:-}"
 
   if [[ -z "$user" ]]; then
     err "Argument 'user' must not be empty"
@@ -151,13 +155,22 @@ vedv::ssh_client::copy() {
   dest_wd="$(utils::get_file_path_on_working_dir "$dest" "$workdir")"
   readonly dest_wd
 
+  local rsync_options=''
+
+  if [[ -n "$chown" ]]; then
+    rsync_options+="--chown='${chown}'"
+  fi
+  if [[ -n "$chmod" ]]; then
+    rsync_options+=" --chmod='${chmod}'"
+  fi
+
   {
     # with eval and quoting decoded_source its posible to copy files with spaces and wildcards
     # shellcheck disable=SC2086
-    IFS='' rsync -az --no-owner --no-group \
-      --exclude-from="${exclude_file_path}" \
-      -e "sshpass -p ${password} ssh -o ConnectTimeout=1 -o UserKnownHostsFile=/dev/null  -o PubkeyAuthentication=no -o StrictHostKeyChecking=no -o LogLevel=ERROR -p ${port}" \
-      "$source" "${user}@${ip}:${dest_wd}"
+    eval IFS='' rsync -az --no-owner --no-group "$rsync_options" \
+      --exclude-from="'${exclude_file_path}'" \
+      -e "'sshpass -p ${password} ssh -o ConnectTimeout=1 -o UserKnownHostsFile=/dev/null  -o PubkeyAuthentication=no -o StrictHostKeyChecking=no -o LogLevel=ERROR -p ${port}'" \
+      "'${source}'" "'${user}@${ip}:${dest_wd}'"
   } || {
     err "Error on '${user}@${ip}', rsync exit code: $?"
     return "$ERR_SSH_OPERATION"

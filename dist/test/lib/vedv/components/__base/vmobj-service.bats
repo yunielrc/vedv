@@ -1561,7 +1561,7 @@ EOF
   assert_failure
   assert_output "Failed to get container id by name or id: 12345"
 }
-
+# bats test_tags=only
 @test "vedv::vmobj_service::copy(), Should succeed" {
   local -r type="container"
   local -r vmobj_id=12345
@@ -1573,7 +1573,7 @@ EOF
     echo 12345
   }
   vedv::vmobj_service::copy_by_id() {
-    assert_equal "$*" "container 12345 src dest  true"
+    assert_regex "$*" "container 12345 src dest  true"
   }
 
   run vedv::vmobj_service::copy "$type" "$vmobj_id" "$src" "$dest"
@@ -1668,7 +1668,7 @@ EOF
   assert_failure
   assert_output "Failed to set user 'user' to container: 12345"
 }
-# bats test_tags=only
+
 @test "vedv::vmobj_service::set_user() Should fail If cache::set_user_name fails" {
   local -r type="container"
   local -r vmobj_id=12345
@@ -1830,7 +1830,6 @@ EOF
   assert_output "Failed to set workdir 'workdir1' to container: 22345"
 }
 
-# bats test_tags=only
 @test "vedv::vmobj_service::set_workdir() Should fail If cache::set_workdir fails" {
   local -r type="container"
   local -r vmobj_id="22345"

@@ -669,6 +669,8 @@ vedv::image_service::execute_cmd() {
 #   src       string     local source path
 #   dest      string     image destination path
 #   [user]    string     image user
+#   [chown]   string     chown files to user
+#   [chmod]   string     chmod files to mode
 #
 # Output:
 #  writes command output to the stdout
@@ -681,13 +683,18 @@ vedv::image_service::copy() {
   local -r src="$2"
   local -r dest="$3"
   local -r user="${4:-}"
+  local -r chown="${5:-}"
+  local -r chmod="${6:-}"
 
   vedv::vmobj_service::copy_by_id \
     'image' \
     "$image_id" \
     "$src" \
     "$dest" \
-    "$user"
+    "$user" \
+    'true' \
+    "$chown" \
+    "$chmod"
 }
 
 #

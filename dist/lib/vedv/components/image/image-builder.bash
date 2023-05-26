@@ -583,6 +583,8 @@ vedv::image_builder::__layer_copy() {
   local user=''
   local src=''
   local dest=''
+  local chown=''
+  local chmod=''
 
   while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -593,14 +595,31 @@ vedv::image_builder::__layer_copy() {
       ;;
     # options
     -u | --user)
-      shift
-      readonly user="${1:-}"
+      readonly user="${2:-}"
       # validate argument
       if [[ -z "$user" ]]; then
         err "Argument 'user' no specified"
         return "$ERR_INVAL_ARG"
       fi
-      shift
+      shift 2
+      ;;
+    --chown)
+      readonly chown="${2:-}"
+      # validate argument
+      if [[ -z "$chown" ]]; then
+        err "Argument 'chown' no specified"
+        return "$ERR_INVAL_ARG"
+      fi
+      shift 2
+      ;;
+    --chmod)
+      readonly chmod="${2:-}"
+      # validate argument
+      if [[ -z "$chmod" ]]; then
+        err "Argument 'chmod' no specified"
+        return "$ERR_INVAL_ARG"
+      fi
+      shift 2
       ;;
     # arguments
     *)
@@ -620,7 +639,7 @@ vedv::image_builder::__layer_copy() {
     return "$ERR_INVAL_ARG"
   fi
 
-  local -r exec_func="vedv::image_service::copy '${image_id}' '${src}' '${dest}' '${user}'"
+  local -r exec_func="vedv::image_service::copy '${image_id}' '${src}' '${dest}' '${user}' '${chown}' '${chmod}'"
 
   vedv::image_builder::__layer_execute_cmd "$image_id" "$cmd" "COPY" "$exec_func"
 }
