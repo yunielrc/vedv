@@ -127,7 +127,7 @@ vedv::__run_cmd() {
 
   local -r vmobj_types='container|image'
   # shellcheck disable=SC2034
-  local -r -A vmobj_types_attributes_dict=(
+  local -rA vmobj_types_attributes_dict=(
     [image]="$VEDV_IMAGE_ENTITY_VALID_ATTRIBUTES"
     [container]="$VEDV_CONTAINER_ENTITY_VALID_ATTRIBUTES"
   )
@@ -135,11 +135,14 @@ vedv::__run_cmd() {
   vedv::vmobj_entity::constructor \
     "$vmobj_types" \
     "$(arr2str vmobj_types_attributes_dict)"
+  # shellcheck disable=SC2034
+  local -rA vedv_vmobj_service_use_cache_dict=([container]=true)
 
   vedv::vmobj_service::constructor \
     "$VEDV_SSH_IP" \
     "$VEDV_SSH_USER" \
-    "$VEDV_SSH_PASSWORD"
+    "$VEDV_SSH_PASSWORD" \
+    "$(arr2str vedv_vmobj_service_use_cache_dict)"
 
   vedv::image_command::constructor "$__VEDV_SCRIPT_NAME"
 

@@ -156,6 +156,21 @@
         "image1",
         "Vedvfile"
       ]
+    },
+    {
+      "type": "bashdb",
+      "request": "launch",
+      "name": "Bash-Debug (vedv image login)",
+      "env": {
+        "VEDV_HADOLINT_ENABLED": "false"
+      },
+      "program": "${workspaceFolder}/dist/usr/bin/vedv",
+      "args": [
+        "container",
+        "login",
+        "nalyd",
+        "<<<'echo $0'",
+      ]
     }
   ]
 }

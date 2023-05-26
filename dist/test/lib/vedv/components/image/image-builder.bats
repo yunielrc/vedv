@@ -1404,7 +1404,7 @@ Previous layer restored"
     assert_equal "$*" "$image_id"
   }
   vedv::image_service::remove() {
-    assert_equal "$*" "$image_id"
+    assert_equal "$*" "true $image_id"
     false
   }
   # Act
@@ -1443,7 +1443,7 @@ Previous layer restored"
     assert_equal "$*" "$image_id"
   }
   vedv::image_service::remove() {
-    assert_equal "$*" "$image_id"
+    assert_equal "$*" "true $image_id"
   }
   vedv::image_vedvfile_service::get_cmd_body() {
     assert_equal "$*" "$from_cmd"
@@ -1485,7 +1485,7 @@ Previous layer restored"
     assert_equal "$*" "$image_id"
   }
   vedv::image_service::remove() {
-    assert_equal "$*" "$image_id"
+    assert_equal "$*" "true $image_id"
   }
   vedv::image_vedvfile_service::get_cmd_body() {
     assert_equal "$*" "$from_cmd"

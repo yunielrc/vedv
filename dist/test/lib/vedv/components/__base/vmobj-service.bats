@@ -5,17 +5,22 @@ load test_helper
 setup_file() {
   vedv::vmobj_entity::constructor \
     'container|image' \
-    '([image]="image_cache|ova_file_sum|ssh_port" [container]="parent_vmobj_id|ssh_port")'
+    '([image]="image_cache|ova_file_sum|ssh_port" [container]="parent_vmobj_id|ssh_port|workdir|user_name")'
   export __VEDV_VMOBJ_ENTITY_TYPE
   export __VEDV_VMOBJ_ENTITY_VALID_ATTRIBUTES_DICT_STR
+  # shellcheck disable=SC2034
+  local -rA vedv_vmobj_service_use_cache_dict=([container]=true)
 
   vedv::vmobj_service::constructor \
     "$TEST_SSH_IP" \
     "$TEST_SSH_USER" \
-    "$TEST_SSH_PASSWORD"
+    "$TEST_SSH_PASSWORD" \
+    "$(arr2str vedv_vmobj_service_use_cache_dict)"
+
   export __VEDV_VMOBJ_SERVICE_SSH_IP
   export __VEDV_VMOBJ_SERVICE_SSH_USER
   export __VEDV_VMOBJ_SERVICE_SSH_PASSWORD
+  export __VEDV_VMOBJ_SERVICE_USE_CACHE_DICT
 
 }
 
@@ -1654,7 +1659,7 @@ EOF
     echo "vedv"
   }
   vedv::vmobj_service::execute_cmd_by_id() {
-    assert_equal "$*" "container 12345 vedv-adduser 'user' '${__VEDV_VMOBJ_SERVICE_SSH_PASSWORD}' root"
+    assert_equal "$*" "container 12345 vedv-adduser 'user' '${__VEDV_VMOBJ_SERVICE_SSH_PASSWORD}' && vedv-setuser 'user' root false"
     return 1
   }
 
@@ -1662,6 +1667,29 @@ EOF
 
   assert_failure
   assert_output "Failed to set user 'user' to container: 12345"
+}
+# bats test_tags=only
+@test "vedv::vmobj_service::set_user() Should fail If cache::set_user_name fails" {
+  local -r type="container"
+  local -r vmobj_id=12345
+  local -r user_name="user"
+
+  vedv::vmobj_service::get_user() {
+    assert_equal "$*" "container 12345"
+    echo "vedv"
+  }
+  vedv::vmobj_service::execute_cmd_by_id() {
+    assert_equal "$*" "container 12345 vedv-adduser 'user' '${__VEDV_VMOBJ_SERVICE_SSH_PASSWORD}' && vedv-setuser 'user' root false"
+  }
+  vedv::vmobj_entity::cache::set_user_name() {
+    assert_equal "$*" "container 12345 user"
+    return 1
+  }
+
+  run vedv::vmobj_service::set_user "$type" "$vmobj_id" "$user_name"
+
+  assert_failure
+  assert_output "Failed to make user cache for container: 12345"
 }
 
 @test "vedv::vmobj_service::set_user() Should succeed" {
@@ -1674,7 +1702,31 @@ EOF
     echo "vedv"
   }
   vedv::vmobj_service::execute_cmd_by_id() {
-    assert_regex "$*" "container 12345 vedv-adduser .*user.* root false"
+    assert_equal "$*" "container 12345 vedv-adduser 'user' '${__VEDV_VMOBJ_SERVICE_SSH_PASSWORD}' && vedv-setuser 'user' root false"
+  }
+  vedv::vmobj_entity::cache::set_user_name() {
+    assert_equal "$*" "container 12345 user"
+  }
+
+  run vedv::vmobj_service::set_user "$type" "$vmobj_id" "$user_name"
+
+  assert_success
+  assert_output ""
+}
+@test "vedv::vmobj_service::set_user() Should succeed With use_cache false" {
+  local -r type="image"
+  local -r vmobj_id=12345
+  local -r user_name="user"
+
+  vedv::vmobj_service::get_user() {
+    assert_equal "$*" "image 12345"
+    echo "vedv"
+  }
+  vedv::vmobj_service::execute_cmd_by_id() {
+    assert_equal "$*" "image 12345 vedv-adduser 'user' '${__VEDV_VMOBJ_SERVICE_SSH_PASSWORD}' && vedv-setuser 'user' root false"
+  }
+  vedv::vmobj_entity::cache::set_user_name() {
+    assert_equal "$*" "INVALID_CALL"
   }
 
   run vedv::vmobj_service::set_user "$type" "$vmobj_id" "$user_name"
@@ -1778,6 +1830,34 @@ EOF
   assert_output "Failed to set workdir 'workdir1' to container: 22345"
 }
 
+# bats test_tags=only
+@test "vedv::vmobj_service::set_workdir() Should fail If cache::set_workdir fails" {
+  local -r type="container"
+  local -r vmobj_id="22345"
+  local -r workdir="workdir1"
+
+  vedv::vmobj_service::get_workdir() {
+    assert_equal "$*" "container 22345"
+    echo "workdir2"
+  }
+  vedv::vmobj_service::get_user() {
+    assert_equal "$*" "container 22345"
+    echo "vedv"
+  }
+  vedv::vmobj_service::execute_cmd_by_id() {
+    assert_equal "$*" "container 22345 vedv-setworkdir 'workdir1' 'vedv' root false"
+  }
+  vedv::vmobj_entity::cache::set_workdir() {
+    assert_equal "$*" "container 22345 workdir1"
+    return 1
+  }
+
+  run vedv::vmobj_service::set_workdir "$type" "$vmobj_id" "$workdir"
+
+  assert_failure
+  assert_output "Failed to make workdir cache for container: 22345"
+}
+
 @test "vedv::vmobj_service::set_workdir() Should Succeed" {
   local -r type="container"
   local -r vmobj_id="22345"
@@ -1794,6 +1874,35 @@ EOF
   vedv::vmobj_service::execute_cmd_by_id() {
     assert_equal "$*" "container 22345 vedv-setworkdir 'workdir1' 'vedv' root false"
   }
+  vedv::vmobj_entity::cache::set_workdir() {
+    assert_equal "$*" "container 22345 workdir1"
+  }
+
+  run vedv::vmobj_service::set_workdir "$type" "$vmobj_id" "$workdir"
+
+  assert_success
+  assert_output ""
+}
+
+@test "vedv::vmobj_service::set_workdir() Should Succeed With use_cache false" {
+  local -r type="image"
+  local -r vmobj_id="22345"
+  local -r workdir="workdir1"
+
+  vedv::vmobj_service::get_workdir() {
+    assert_equal "$*" "image 22345"
+    echo "workdir2"
+  }
+  vedv::vmobj_service::get_user() {
+    assert_equal "$*" "image 22345"
+    echo "vedv"
+  }
+  vedv::vmobj_service::execute_cmd_by_id() {
+    assert_equal "$*" "image 22345 vedv-setworkdir 'workdir1' 'vedv' root false"
+  }
+  vedv::vmobj_entity::cache::set_workdir() {
+    assert_equal "$*" "INVALID_CALL"
+  }
 
   run vedv::vmobj_service::set_workdir "$type" "$vmobj_id" "$workdir"
 
@@ -1803,68 +1912,258 @@ EOF
 
 # Tests for vedv::vmobj_service::get_user()
 
-@test "vedv::vmobj_service::get_user() Should fail If execute_cmd_by_id fails" {
-  local -r type="image"
-  local -r vmobj_id="22345"
+@test "vedv::vmobj_service::get_user() Should fail If get_user_name fails" {
+  local -r type="container"
+  local -r vmobj_id="12345"
 
-  vedv::vmobj_service::execute_cmd_by_id() {
-    assert_equal "$*" "image 22345 vedv-getuser root false"
+  vedv::vmobj_entity::cache::get_user_name() {
+    assert_equal "$*" "container 12345"
     return 1
   }
 
   run vedv::vmobj_service::get_user "$type" "$vmobj_id"
 
   assert_failure
-  assert_output "Failed to get user of image: 22345"
+  assert_output "Failed to get cached user for container: 12345"
 }
 
-@test "vedv::vmobj_service::get_user() Should succeed" {
-  local -r type="image"
-  local -r vmobj_id="22345"
+@test "vedv::vmobj_service::get_user() Should succed if user is cached" {
+  local -r type="container"
+  local -r vmobj_id="12345"
 
-  vedv::vmobj_service::execute_cmd_by_id() {
-    assert_equal "$*" "image 22345 vedv-getuser root false"
+  vedv::vmobj_entity::cache::get_user_name() {
+    assert_equal "$*" "container 12345"
+    echo 'vedv'
   }
 
   run vedv::vmobj_service::get_user "$type" "$vmobj_id"
 
   assert_success
-  assert_output ""
+  assert_output "vedv"
+}
+
+@test "vedv::vmobj_service::get_user() Should fail If get_user fails" {
+  local -r type="container"
+  local -r vmobj_id="12345"
+
+  vedv::vmobj_entity::cache::get_user_name() {
+    assert_equal "$*" "container 12345"
+  }
+  vedv::vmobj_service::execute_cmd_by_id() {
+    assert_equal "$*" "container 12345 vedv-getuser root false"
+    return 1
+  }
+
+  run vedv::vmobj_service::get_user "$type" "$vmobj_id"
+
+  assert_failure
+  assert_output "Failed to get user of container: 12345
+Failed to get default user for container: 12345"
+}
+
+@test "vedv::vmobj_service::get_user() Should fail If set_user_name fails" {
+  local -r type="container"
+  local -r vmobj_id="12345"
+
+  vedv::vmobj_entity::cache::get_user_name() {
+    assert_equal "$*" "container 12345"
+  }
+  vedv::vmobj_service::execute_cmd_by_id() {
+    assert_equal "$*" "container 12345 vedv-getuser root false"
+    echo 'vedv'
+  }
+  vedv::vmobj_entity::cache::set_user_name() {
+    assert_equal "$*" "container 12345 vedv"
+    return 1
+  }
+
+  run vedv::vmobj_service::get_user "$type" "$vmobj_id"
+
+  assert_failure
+  assert_output "Failed to make user cache for container: 12345"
+}
+
+@test "vedv::vmobj_service::get_user() Should fail If execute_cmd_by_id fails" {
+  local -r type="container"
+  local -r vmobj_id="12345"
+  local -r force_nocache='true'
+
+  vedv::vmobj_service::execute_cmd_by_id() {
+    assert_equal "$*" "container 12345 vedv-getuser root false"
+    return 1
+  }
+
+  run vedv::vmobj_service::get_user "$type" "$vmobj_id" "$force_nocache"
+
+  assert_failure
+  assert_output "Failed to get user of container: 12345"
+}
+
+@test "vedv::vmobj_service::get_user() Should succeed without cache" {
+  local -r type="container"
+  local -r vmobj_id="12345"
+  local -r force_nocache='true'
+
+  vedv::vmobj_service::execute_cmd_by_id() {
+    assert_equal "$*" "container 12345 vedv-getuser root false"
+    echo 'vedv'
+  }
+
+  run vedv::vmobj_service::get_user "$type" "$vmobj_id" "$force_nocache"
+
+  assert_success
+  assert_output "vedv"
+}
+
+@test "vedv::vmobj_service::get_user() Should succeed with cache" {
+  local -r type="container"
+  local -r vmobj_id="12345"
+
+  vedv::vmobj_entity::cache::get_user_name() {
+    assert_equal "$*" "container 12345"
+  }
+  vedv::vmobj_service::execute_cmd_by_id() {
+    assert_equal "$*" "container 12345 vedv-getuser root false"
+    echo 'vedv'
+  }
+  vedv::vmobj_entity::cache::set_user_name() {
+    assert_equal "$*" "container 12345 vedv"
+  }
+
+  run vedv::vmobj_service::get_user "$type" "$vmobj_id"
+
+  assert_success
+  assert_output "vedv"
 }
 
 # Tests for vedv::vmobj_service::get_workdir()
 
-@test "vedv::vmobj_service::get_workdir() Should fail If execute_cmd_by_id fails" {
-  local -r type="image"
-  local -r vmobj_id="22345"
+@test "vedv::vmobj_service::get_workdir() Should fail If get_workdir_name fails" {
+  local -r type="container"
+  local -r vmobj_id="12345"
 
-  vedv::vmobj_service::execute_cmd_by_id() {
-    assert_equal "$*" "image 22345 vedv-getworkdir root false"
+  vedv::vmobj_entity::cache::get_workdir() {
+    assert_equal "$*" "container 12345"
     return 1
   }
 
   run vedv::vmobj_service::get_workdir "$type" "$vmobj_id"
 
   assert_failure
-  assert_output "Failed to get user of image: 22345"
+  assert_output "Failed to get cached workdir for container: 12345"
 }
 
-@test "vedv::vmobj_service::get_workdir() Should succeed" {
-  local -r type="image"
-  local -r vmobj_id="22345"
+@test "vedv::vmobj_service::get_workdir() Should succed if workdir is cached" {
+  local -r type="container"
+  local -r vmobj_id="12345"
 
-  vedv::vmobj_service::execute_cmd_by_id() {
-    assert_equal "$*" "image 22345 vedv-getworkdir root false"
+  vedv::vmobj_entity::cache::get_workdir() {
+    assert_equal "$*" "container 12345"
+    echo 'vedv'
   }
 
   run vedv::vmobj_service::get_workdir "$type" "$vmobj_id"
 
   assert_success
-  assert_output ""
+  assert_output "vedv"
+}
+
+@test "vedv::vmobj_service::get_workdir() Should fail If get_workdir fails" {
+  local -r type="container"
+  local -r vmobj_id="12345"
+
+  vedv::vmobj_entity::cache::get_workdir() {
+    assert_equal "$*" "container 12345"
+  }
+  vedv::vmobj_service::execute_cmd_by_id() {
+    assert_equal "$*" "container 12345 vedv-getworkdir root false"
+    return 1
+  }
+
+  run vedv::vmobj_service::get_workdir "$type" "$vmobj_id"
+
+  assert_failure
+  assert_output "Failed to get workdir of container: 12345
+Failed to get default workdir for container: 12345"
+}
+
+@test "vedv::vmobj_service::get_workdir() Should fail If set_workdir_name fails" {
+  local -r type="container"
+  local -r vmobj_id="12345"
+
+  vedv::vmobj_entity::cache::get_workdir() {
+    assert_equal "$*" "container 12345"
+  }
+  vedv::vmobj_service::execute_cmd_by_id() {
+    assert_equal "$*" "container 12345 vedv-getworkdir root false"
+    echo 'vedv'
+  }
+  vedv::vmobj_entity::cache::set_workdir() {
+    assert_equal "$*" "container 12345 vedv"
+    return 1
+  }
+
+  run vedv::vmobj_service::get_workdir "$type" "$vmobj_id"
+
+  assert_failure
+  assert_output "Failed to make workdir cache for container: 12345"
+}
+
+@test "vedv::vmobj_service::get_workdir() Should fail If execute_cmd_by_id fails" {
+  local -r type="container"
+  local -r vmobj_id="12345"
+  local -r force_nocache='true'
+
+  vedv::vmobj_service::execute_cmd_by_id() {
+    assert_equal "$*" "container 12345 vedv-getworkdir root false"
+    return 1
+  }
+
+  run vedv::vmobj_service::get_workdir "$type" "$vmobj_id" "$force_nocache"
+
+  assert_failure
+  assert_output "Failed to get workdir of container: 12345"
+}
+
+@test "vedv::vmobj_service::get_workdir() Should succeed without cache" {
+  local -r type="container"
+  local -r vmobj_id="12345"
+  local -r force_nocache='true'
+
+  vedv::vmobj_service::execute_cmd_by_id() {
+    assert_equal "$*" "container 12345 vedv-getworkdir root false"
+    echo 'vedv'
+  }
+
+  run vedv::vmobj_service::get_workdir "$type" "$vmobj_id" "$force_nocache"
+
+  assert_success
+  assert_output "vedv"
+}
+
+@test "vedv::vmobj_service::get_workdir() Should succeed with cache" {
+  local -r type="container"
+  local -r vmobj_id="12345"
+
+  vedv::vmobj_entity::cache::get_workdir() {
+    assert_equal "$*" "container 12345"
+  }
+  vedv::vmobj_service::execute_cmd_by_id() {
+    assert_equal "$*" "container 12345 vedv-getworkdir root false"
+    echo 'vedv'
+  }
+  vedv::vmobj_entity::cache::set_workdir() {
+    assert_equal "$*" "container 12345 vedv"
+  }
+
+  run vedv::vmobj_service::get_workdir "$type" "$vmobj_id"
+
+  assert_success
+  assert_output "vedv"
 }
 
 # Tests for vedv::vmobj_service::add_environment_var()
-# bats test_tags=only
+
 @test "vedv::vmobj_service::add_environment_var() Should fail With empty type" {
   local -r type=""
   local -r vmobj_id="22345"
@@ -1875,7 +2174,7 @@ EOF
   assert_failure
   assert_output "Argument 'type' must not be empty"
 }
-# bats test_tags=only
+
 @test "vedv::vmobj_service::add_environment_var() Should fail With empty vmobj_id" {
   local -r type="container"
   local -r vmobj_id=""
@@ -1886,7 +2185,7 @@ EOF
   assert_failure
   assert_output "Invalid argument 'vmobj_id': it's empty"
 }
-# bats test_tags=only
+
 @test "vedv::vmobj_service::add_environment_var() Should fail With empty env_var" {
   local -r type="container"
   local -r vmobj_id="22345"
@@ -1897,7 +2196,7 @@ EOF
   assert_failure
   assert_output "Invalid argument 'env_var': it's empty"
 }
-# bats test_tags=only
+
 @test "vedv::vmobj_service::add_environment_var() Should fail If execute_cmd_by_id fails" {
   local -r type="container"
   local -r vmobj_id="22345"
@@ -1913,7 +2212,7 @@ EOF
   assert_failure
   assert_output "Failed to add environment variable 'env_var1' to container: 22345"
 }
-# bats test_tags=only
+
 @test "vedv::vmobj_service::add_environment_var() Should succeed" {
   local -r type="container"
   local -r vmobj_id="22345"
@@ -1930,7 +2229,47 @@ EOF
 }
 
 # Tests for vedv::vmobj_service::get_environment_var()
-# bats test_tags=only
+
 @test "vedv::vmobj_service::get_environment_var() DUMMY" {
   :
+}
+
+# Tests for vedv::vmobj_service::use_cache()
+
+@test "vedv::vmobj_service::use_cache() Should fail With invalid type" {
+  local -r type='invalid'
+
+  run vedv::vmobj_service::use_cache "$type"
+
+  assert_failure
+  assert_output "Invalid type: invalid, valid types are: container|image"
+}
+
+@test "vedv::vmobj_service::use_cache() Should echo false With empty ..._USE_CACHE_DICT" {
+  local -r type='container'
+
+  __VEDV_VMOBJ_SERVICE_USE_CACHE_DICT=''
+
+  run vedv::vmobj_service::use_cache "$type"
+
+  assert_success
+  assert_output "false"
+}
+
+@test "vedv::vmobj_service::use_cache() Should echo false If dict key does not exist" {
+  local -r type='image'
+
+  run vedv::vmobj_service::use_cache "$type"
+
+  assert_success
+  assert_output "false"
+}
+
+@test "vedv::vmobj_service::use_cache() Should echo true" {
+  local -r type='container'
+
+  run vedv::vmobj_service::use_cache "$type"
+
+  assert_success
+  assert_output "true"
 }

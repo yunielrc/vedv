@@ -46,3 +46,23 @@ load test_helper
 @test 'vedv::container_entity::set_parent_image_id() DUMMY' {
   :
 }
+
+# Test vedv::container_entity::get_user_name()
+@test 'vedv::container_entity::cache::get_user_name() DUMMY' {
+  :
+}
+
+# Test vedv::container_entity::__set_user_name()
+@test 'vedv::container_entity::cache::set_user_name() DUMMY' {
+  :
+}
+
+# Test vedv::container_entity::get_workdir()
+@test 'vedv::container_entity::cache::get_workdir() DUMMY' {
+  :
+}
+
+# Test vedv::container_entity::__set_workdir()
+@test 'vedv::container_entity::cache::set_workdir() DUMMY' {
+  :
+}

@@ -20,7 +20,10 @@ fi
 # Constructor
 #
 # Arguments:
-#  ssh_ip       string  ssh ip address
+#  ssh_ip            string           ssh ip address
+#  ssh_user          string           ssh user
+#  ssh_password      string           ssh password
+#  [use_cache_dict]  <string, bool>   default: false, not use cache
 #
 # Returns:
 #   0 on success, non-zero on error.
@@ -29,6 +32,38 @@ vedv::vmobj_service::constructor() {
   readonly __VEDV_VMOBJ_SERVICE_SSH_IP="$1"
   readonly __VEDV_VMOBJ_SERVICE_SSH_USER="$2"
   readonly __VEDV_VMOBJ_SERVICE_SSH_PASSWORD="$3"
+  readonly __VEDV_VMOBJ_SERVICE_USE_CACHE_DICT="${4:-}"
+}
+
+#
+# Return if use cache for a given vmobj type
+#
+# Arguments:
+#  type string   type (e.g. 'container|image')
+#
+# Output:
+#  writes true if use cache otherwise false to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+vedv::vmobj_service::use_cache() {
+  local -r type="$1"
+  # validate argument
+  vedv::vmobj_entity::validate_type "$type" ||
+    return "$?"
+
+  if [[ -z "$__VEDV_VMOBJ_SERVICE_USE_CACHE_DICT" ]]; then
+    echo false
+    return 0
+  fi
+
+  eval local -rA use_cache_dict="$__VEDV_VMOBJ_SERVICE_USE_CACHE_DICT"
+
+  if [[ -v use_cache_dict["$type"] ]]; then
+    echo "${use_cache_dict["$type"]}"
+  else
+    echo false
+  fi
 }
 
 #
@@ -1022,14 +1057,26 @@ vedv::vmobj_service::set_user() {
     err "Failed to set user '${user_name}' to ${type}: ${vmobj_id}"
     return "$ERR_VMOBJ_OPERATION"
   }
+
+  local use_cache
+  use_cache="$(vedv::vmobj_service::use_cache "$type")"
+  readonly use_cache
+
+  if [[ "$use_cache" == true ]]; then
+    vedv::vmobj_entity::cache::set_user_name "$type" "$vmobj_id" "$user_name" || {
+      err "Failed to make user cache for ${type}: ${vmobj_id}"
+      return "$ERR_VMOBJ_OPERATION"
+    }
+  fi
 }
 
 #
 # Get default vedv user
 #
 # Arguments:
-#   type       string     type (e.g. 'container|image')
-#   vmobj_id   string     vmobj id
+#   type            string    type (e.g. 'container|image')
+#   vmobj_id        string    vmobj id
+#   [force_nocache] bool      force no cache, default: false
 #
 # Output:
 #  writes command output to the stdout
@@ -1040,6 +1087,37 @@ vedv::vmobj_service::set_user() {
 vedv::vmobj_service::get_user() {
   local -r type="$1"
   local -r vmobj_id="$2"
+  local -r force_nocache="${3:-false}"
+
+  local use_cache
+  use_cache="$(vedv::vmobj_service::use_cache "$type")"
+  readonly use_cache
+
+  if [[ "$force_nocache" == false && "$use_cache" == true ]]; then
+
+    local cached_user=''
+
+    cached_user="$(vedv::vmobj_entity::cache::get_user_name "$type" "$vmobj_id")" || {
+      err "Failed to get cached user for ${type}: ${vmobj_id}"
+      return "$ERR_VMOBJ_OPERATION"
+    }
+
+    if [[ -n "$cached_user" ]]; then
+      echo "$cached_user"
+      return 0
+    fi
+
+    cached_user="$(vedv::vmobj_service::get_user "$type" "$vmobj_id" 'true')" || {
+      err "Failed to get default user for ${type}: ${vmobj_id}"
+      return "$ERR_VMOBJ_OPERATION"
+    }
+    vedv::vmobj_entity::cache::set_user_name "$type" "$vmobj_id" "$cached_user" || {
+      err "Failed to make user cache for ${type}: ${vmobj_id}"
+      return "$ERR_VMOBJ_OPERATION"
+    }
+    echo "$cached_user"
+    return 0
+  fi
 
   local -r cmd='vedv-getuser'
 
@@ -1104,6 +1182,18 @@ vedv::vmobj_service::set_workdir() {
     err "Failed to set workdir '${workdir}' to ${type}: ${vmobj_id}"
     return "$ERR_VMOBJ_OPERATION"
   }
+
+  local use_cache
+  use_cache="$(vedv::vmobj_service::use_cache "$type")"
+  readonly use_cache
+
+  if [[ "$use_cache" == true ]]; then
+    vedv::vmobj_entity::cache::set_workdir "$type" "$vmobj_id" "$workdir" || {
+      err "Failed to make workdir cache for ${type}: ${vmobj_id}"
+      return "$ERR_VMOBJ_OPERATION"
+    }
+  fi
+
 }
 
 #
@@ -1112,6 +1202,7 @@ vedv::vmobj_service::set_workdir() {
 # Arguments:
 #   type       string     type (e.g. 'container|image')
 #   vmobj_id   string     vmobj id
+#   [force_nocache] bool      force no cache, default: false
 #
 # Output:
 #  writes command output to the stdout
@@ -1122,11 +1213,42 @@ vedv::vmobj_service::set_workdir() {
 vedv::vmobj_service::get_workdir() {
   local -r type="$1"
   local -r vmobj_id="$2"
+  local -r force_nocache="${3:-false}"
+
+  local use_cache
+  use_cache="$(vedv::vmobj_service::use_cache "$type")"
+  readonly use_cache
+
+  if [[ "$force_nocache" == false && "$use_cache" == true ]]; then
+
+    local cached_workdir=''
+
+    cached_workdir="$(vedv::vmobj_entity::cache::get_workdir "$type" "$vmobj_id")" || {
+      err "Failed to get cached workdir for ${type}: ${vmobj_id}"
+      return "$ERR_VMOBJ_OPERATION"
+    }
+
+    if [[ -n "$cached_workdir" ]]; then
+      echo "$cached_workdir"
+      return 0
+    fi
+
+    cached_workdir="$(vedv::vmobj_service::get_workdir "$type" "$vmobj_id" 'true')" || {
+      err "Failed to get default workdir for ${type}: ${vmobj_id}"
+      return "$ERR_VMOBJ_OPERATION"
+    }
+    vedv::vmobj_entity::cache::set_workdir "$type" "$vmobj_id" "$cached_workdir" || {
+      err "Failed to make workdir cache for ${type}: ${vmobj_id}"
+      return "$ERR_VMOBJ_OPERATION"
+    }
+    echo "$cached_workdir"
+    return 0
+  fi
 
   local -r cmd='vedv-getworkdir'
 
   vedv::vmobj_service::execute_cmd_by_id "$type" "$vmobj_id" "$cmd" 'root' 'false' || {
-    err "Failed to get user of ${type}: ${vmobj_id}"
+    err "Failed to get workdir of ${type}: ${vmobj_id}"
     return "$ERR_VMOBJ_OPERATION"
   }
 }

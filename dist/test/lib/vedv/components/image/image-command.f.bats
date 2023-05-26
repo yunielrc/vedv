@@ -173,6 +173,7 @@ Remove unused cache images"
 }
 
 # Tests for 'vedv image build'
+# bats test_tags=only
 @test "vedv image build -h , Should show help" {
 
   for arg in '-h' '--help'; do
@@ -187,10 +188,10 @@ Build an image from a Vedvfile
 Flags:
   -h, --help        show the help
   --force           force the build removing the image containers
-  --no-cache   do not use cache when building the image
+  --no-cache        do not use cache when building the image
 
 Options:
-  -n, --name, -t   image name"
+  -n, --name, -t    image name"
   done
 }
 
