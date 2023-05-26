@@ -695,15 +695,18 @@ ${__VED_CONTAINER_COMMAND_SCRIPT_NAME} container COMMAND
 
 Manage containers
 
+Flags:
+  -h, --help       show this help
+
 Commands:
-  create           Create a new container
-  start            Start one or more containers
-  remove           Remove one or more containers
-  stop             Stop one or more containers
-  list             List containers
-  login            Login to a container
-  exec             Execute a command in a container
-  copy             Copy files from local filesystem to a container
+  create           create a new container
+  start            start one or more containers
+  remove           remove one or more containers
+  stop             stop one or more containers
+  list             list containers
+  login            login to a container
+  exec             execute a command in a container
+  copy             copy files from local filesystem to a container
 
 Run '${__VED_CONTAINER_COMMAND_SCRIPT_NAME} container COMMAND --help' for more information on a command.
 HELPMSG

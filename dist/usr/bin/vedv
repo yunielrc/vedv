@@ -62,12 +62,12 @@ ${__VEDV_SCRIPT_NAME} [HYPERVISOR] COMMAND
 A tool for developing with reproducible virtual machines environments
 
 Flags:
-  -h, --help       Show this help
+  -h, --help       show this help
 
 Commands:
-  container        Manage containers
-  image            Manage images
-  build            Build an image from a Vedvfile
+  container        manage containers
+  image            manage images
+  build            build an image from a Vedvfile
 
 Run '${__VEDV_SCRIPT_NAME} COMMAND --help' for more information on a command.
 HELPMSG

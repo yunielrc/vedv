@@ -328,10 +328,10 @@ Build an image from a Vedvfile
 Flags:
   -h, --help        show the help
   --force           force the build removing the image containers
-  --no-cache   do not use cache when building the image
+  --no-cache        do not use cache when building the image
 
 Options:
-  -n, --name, -t   image name
+  -n, --name, -t    image name
 HELPMSG
 }
 
@@ -355,12 +355,15 @@ ${__VED_IMAGE_COMMAND_SCRIPT_NAME} image COMMAND
 
 Manage images
 
+Flags:
+  -h, --help       show this help
+
 Commands:
-  build            Build an image from a Vedvfile
-  pull             Pull an image from a registry or file
-  list             List images
-  remove           Remove one or more images
-  remove-cache     Remove unused cache images
+  build            build an image from a Vedvfile
+  pull             pull an image from a registry or file
+  list             list images
+  remove           remove one or more images
+  remove-cache     remove unused cache images
 
 Run '${__VED_IMAGE_COMMAND_SCRIPT_NAME} image COMMAND --help' for more information on a command.
 HELPMSG
