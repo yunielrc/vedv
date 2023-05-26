@@ -216,8 +216,8 @@ vedv::container_command::__rm() {
       return 0
       ;;
     --force)
-      shift
       readonly force=true
+      shift
       ;;
     *)
       readonly container_names_or_ids=("$@")

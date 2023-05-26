@@ -290,7 +290,7 @@ vedv::container_service::remove_one() {
     readonly is_running
 
     if [[ "$is_running" == true ]]; then
-      err "You cannot remove a running container '${container_id}'. Stop the container before attempting removal or force remove"
+      err "Failed to remove a running container '${container_id}'. Stop the container first or force remove"
       return "$ERR_CONTAINER_OPERATION"
     fi
   fi
@@ -362,7 +362,7 @@ vedv::container_service::remove_one() {
 #   container_id  string     container id
 #
 # Output:
-#  writes removed container id to the stdout
+#  writes removed container_id (string) to the stdout
 #
 # Returns:
 #   0 on success, non-zero on error.

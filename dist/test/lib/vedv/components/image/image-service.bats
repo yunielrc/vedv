@@ -618,8 +618,7 @@ Failed to remove image: '1234567890'"
   run vedv::image_service::remove_one "$image_id"
 
   assert_failure
-  assert_output "Failed to remove image '1234567890' because it has containers, remove them first: 2234567890 2334567890
-Failed to remove image: '1234567890'"
+  assert_output "Failed to remove image '1234567890' because it has child containers. Remove child containers first or force remove. Child containers ids: 2234567890 2334567890"
 }
 
 @test 'vedv::image_service::remove_one() Should fail If get_image_cache fails' {

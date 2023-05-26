@@ -1256,7 +1256,7 @@ vedv::image_builder::__build() {
 
     err "The image '${image_name}' is corrupted and its going to be deleted."
 
-    vedv::image_service::remove "$image_name" >/dev/null || {
+    vedv::image_service::remove 'true' "$image_name" >/dev/null || {
       err "Failed to remove the image '${image_name}'.\nIt must be deleted manually."
       return "$ERR_IMAGE_BUILDER_OPERATION"
     }
@@ -1298,12 +1298,7 @@ vedv::image_builder::__build() {
     readonly from_val_res
 
     if [[ "$from_val_res" == 'invalid' ]]; then
-      # remove all child containers, to leave only the layers
-      vedv::image_service::child_containers_remove_all "$image_id" || {
-        err "Failed to remove child containers for image '${image_id}'"
-        return "$ERR_IMAGE_BUILDER_OPERATION"
-      }
-      vedv::image_service::remove "$image_id" >/dev/null || {
+      vedv::image_service::remove 'true' "$image_id" >/dev/null || {
         err "Failed to remove image '${image_name}'"
         return "$ERR_IMAGE_BUILDER_OPERATION"
       }
@@ -1475,7 +1470,7 @@ vedv::image_builder::build() {
   fi
 
   if [[ "$no_cache" == true && -n "$image_id" ]]; then
-    vedv::image_service::remove "$image_id" >/dev/null || {
+    vedv::image_service::remove 'true' "$image_id" >/dev/null || {
       err "Failed to remove image '${image_name}'"
       return "$ERR_IMAGE_BUILDER_OPERATION"
     }

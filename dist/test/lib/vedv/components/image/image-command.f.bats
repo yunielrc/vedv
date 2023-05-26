@@ -102,9 +102,16 @@ Aliases:
 
     assert_success
     assert_output "Usage:
-vedv image rm IMAGE [IMAGE...]
+vedv image rm [FLAGS] IMAGE [IMAGE...]
 
-Remove one or more images"
+Remove one or more images
+
+Aliases:
+  rm, remove
+
+Flags:
+  -h, --help          show help
+  --force             force remove"
   done
 }
 
@@ -124,9 +131,16 @@ Remove one or more images"
 
   assert_success
   assert_output 'Usage:
-vedv image rm IMAGE [IMAGE...]
+vedv image rm [FLAGS] IMAGE [IMAGE...]
 
-Remove one or more images'
+Remove one or more images
+
+Aliases:
+  rm, remove
+
+Flags:
+  -h, --help          show help
+  --force             force remove'
 }
 
 # Tests for 'vedv image remove-cache'

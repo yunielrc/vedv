@@ -191,6 +191,7 @@ vedv::image_service::list() {
 #
 # Arguments:
 #   image_id string    image id
+#   force    bool      force remove image
 #
 # Output:
 #  writes deleted image_id (string) to the stdout
@@ -200,9 +201,14 @@ vedv::image_service::list() {
 #
 vedv::image_service::remove_one() {
   local -r image_id="$1"
+  local -r force="${2:-false}"
   # validate arguments
   if [[ -z "$image_id" ]]; then
     err "Argument 'image_id' is required"
+    return "$ERR_INVAL_ARG"
+  fi
+  if [[ -z "$force" ]]; then
+    err "Invalid argument 'force': it's empty"
     return "$ERR_INVAL_ARG"
   fi
 
@@ -233,9 +239,17 @@ vedv::image_service::remove_one() {
   readonly containers_ids
 
   if [[ -n "$containers_ids" ]]; then
-    err "Failed to remove image '${image_id}' because it has containers, remove them first: ${containers_ids}"
-    ___echo_remove_image_failed
-    return "$ERR_IMAGE_OPERATION"
+
+    if [[ "$force" == false ]]; then
+      err "Failed to remove image '${image_id}' because it has child containers. Remove child containers first or force remove. Child containers ids: ${containers_ids}"
+      return "$ERR_IMAGE_OPERATION"
+    fi
+
+    vedv::image_service::child_containers_remove_all "$image_id" || {
+      err "Failed to remove child containers for image: '${image_id}'"
+      ___echo_remove_image_failed
+      return "$ERR_IMAGE_OPERATION"
+    }
   fi
 
   local image_cache_vm_name
@@ -267,10 +281,31 @@ vedv::image_service::remove_one() {
 }
 
 #
+#  Remove an image
+#
+# Arguments:
+#   force     bool      force remove image
+#   image_id  string    container id
+#
+# Output:
+#  writes removed image_id (string) to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::image_service::remove_one_batch() {
+  local -r force="$1"
+  local -r image_id="$2"
+
+  vedv::image_service::remove_one "$image_id" "$force"
+}
+
+#
 # Remove one or more images
 #
 # Arguments:
-#   image_ids_or_names string    image ids or names
+#   force               bool      force the remove, removing child containers if the image has
+#   image_ids_or_names  string    image ids or names
 #
 # Output:
 #  writes deleted image_ids (string) to the stdout
@@ -279,9 +314,17 @@ vedv::image_service::remove_one() {
 #   0 on success, non-zero on error.
 #
 vedv::image_service::remove() {
+  local -r force="$1"
+  # validate arguments
+  if [[ -z "$force" ]]; then
+    err "Invalid argument 'force': it's empty"
+    return "$ERR_INVAL_ARG"
+  fi
+  shift
+
   vedv::vmobj_service::exec_func_on_many_vmobj \
     'image' \
-    'vedv::image_service::remove_one' \
+    "vedv::image_service::remove_one_batch ${force}" \
     "$@"
 }
 

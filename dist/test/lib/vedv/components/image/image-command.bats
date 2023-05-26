@@ -82,7 +82,7 @@ vedv::image_service::remove() {
 }
 
 @test "vedv::image_command::__rm(), with arg '-h|--help|help' should show help" {
-  local -r help_output='vedv image rm IMAGE [IMAGE...]'
+  local -r help_output='vedv image rm [FLAGS] IMAGE [IMAGE...]'
 
   run vedv::image_command::__rm -h
 
@@ -101,7 +101,7 @@ vedv::image_service::remove() {
   run vedv::image_command::__rm "$image_name_or_id"
 
   assert_success
-  assert_output "vedv::image_service::__rm ${image_name_or_id}"
+  assert_output "vedv::image_service::__rm false ${image_name_or_id}"
 }
 
 @test "vedv::image_command::run_cmd, with invalid arg throw an error" {
