@@ -431,7 +431,8 @@ vedv::image_service::start() {
 #   0 on success, non-zero on error.
 #
 vedv::image_service::stop() {
-  vedv::vmobj_service::secure_stop_one 'image' "$@"
+  vedv::vmobj_service::stop 'image' 'true' "$@"
+  # vedv::vmobj_service::secure_stop_one 'image' "$@"
 }
 
 #
