@@ -607,18 +607,6 @@ setup_file() {
   assert_output "Invalid attribute: invalid, valid attributes are: parent_image_id|ssh_port"
 }
 
-@test 'vedv::vmobj_entity::__set_attribute() Should fail With empty value' {
-  local -r type='container'
-  local -r vmobj_id='23456'
-  local -r attribute='ssh_port'
-  local -r value=''
-
-  run vedv::vmobj_entity::__set_attribute "$type" "$vmobj_id" "$attribute" "$value"
-
-  assert_failure
-  assert_output "Value for the attribute: 'ssh_port' is empty"
-}
-
 @test 'vedv::vmobj_entity::__set_attribute() Should fail If get_vm_name fails' {
   local -r type='container'
   local -r vmobj_id='23456'

@@ -1247,6 +1247,11 @@ vedv::vmobj_service::get_workdir() {
       err "Failed to get default workdir for ${type}: ${vmobj_id}"
       return "$ERR_VMOBJ_OPERATION"
     }
+
+    if [[ -z "$cached_workdir" ]]; then
+      cached_workdir='.'
+    fi
+
     vedv::vmobj_entity::cache::set_workdir "$type" "$vmobj_id" "$cached_workdir" || {
       err "Failed to make workdir cache for ${type}: ${vmobj_id}"
       return "$ERR_VMOBJ_OPERATION"

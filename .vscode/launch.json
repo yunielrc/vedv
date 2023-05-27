@@ -168,7 +168,7 @@
       "args": [
         "container",
         "login",
-        "nalyd",
+        "nalyd1",
         "<<<'echo $0'",
       ]
     }

@@ -510,11 +510,6 @@ vedv::vmobj_entity::__set_attribute() {
   vedv::vmobj_entity::__validate_attribute "$type" "$attribute" ||
     return "$?"
 
-  if [[ -z "$value" ]]; then
-    err "Value for the attribute: '${attribute}' is empty"
-    return "$ERR_INVAL_VALUE"
-  fi
-
   local vmobj_vm_name
   vmobj_vm_name="$(vedv::vmobj_entity::get_vm_name "$type" "$vmobj_id")" || {
     err "Error getting the vm name for the ${type}: '${vmobj_id}'"
