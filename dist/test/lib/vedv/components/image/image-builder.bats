@@ -2557,3 +2557,69 @@ local -r var_9f57a558b3_VAR3=\"var3\"
 local -r var_9f57a558b3_VAR22='var2 var2'
 local -r var_9f57a558b3_VAR23=\"var3 var3\""
 }
+
+# Tests for vedv::image_builder::__layer_shell_calc_id()
+@test "vedv::image_builder::__layer_shell_calc_id(): DUMMY" {
+  :
+}
+
+# Tests for vedv::image_builder::__layer_shell()
+
+@test "vedv::image_builder::__layer_shell() Should fail With empty image_id" {
+  local -r image_id=""
+  local -r cmd=""
+
+  run vedv::image_builder::__layer_shell "$image_id" "$cmd"
+
+  assert_failure
+  assert_output "Argument 'image_id' is required"
+}
+
+@test "vedv::image_builder::__layer_shell() Should fail With empty cmd" {
+  local -r image_id="12345"
+  local -r cmd=
+
+  run vedv::image_builder::__layer_shell "$image_id" "$cmd"
+
+  assert_failure
+  assert_output "Argument 'cmd' is required"
+}
+
+@test "vedv::image_builder::__layer_shell() Should fail If shell is empty" {
+  local -r image_id="12345"
+  local -r cmd="1 SHELL"
+
+  run vedv::image_builder::__layer_shell "$image_id" "$cmd"
+
+  assert_failure
+  assert_output "Invalid number of arguments, expected 3, got 2"
+}
+
+@test "vedv::image_builder::__layer_shell() Should fail If __layer_execute_cmd fails" {
+  local -r image_id="12345"
+  local -r cmd="1 SHELL nalyd"
+
+  vedv::image_builder::__layer_execute_cmd() {
+    assert_equal "$*" "12345 1 SHELL nalyd SHELL vedv::image_service::set_shell '12345' 'nalyd'"
+    return 1
+  }
+
+  run vedv::image_builder::__layer_shell "$image_id" "$cmd"
+
+  assert_failure
+  assert_output ""
+}
+
+@test "vedv::image_builder::__layer_shell() Should succeed" {
+  local -r image_id="12345"
+  local -r cmd="1 SHELL nalyd"
+
+  vedv::image_builder::__layer_execute_cmd() {
+    assert_equal "$*" "12345 1 SHELL nalyd SHELL vedv::image_service::set_shell '12345' 'nalyd'"
+  }
+
+  run vedv::image_builder::__layer_shell "$image_id" "$cmd"
+
+  assert_success
+  assert_output ""
+}

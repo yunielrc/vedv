@@ -153,8 +153,8 @@
         "build",
         "--force",
         "-n",
-        "image1",
-        "Vedvfile12"
+        "image2",
+        "Vedvfile13"
       ]
     },
     {

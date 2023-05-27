@@ -20,8 +20,10 @@ chmod 0444 "${__VEDV_CONFIG_DIR}/distro"
 touch "${__VEDV_CONFIG_DIR}/layer/env"
 # link /etc/profile.d/vedv-env.sh to vedv environment file
 ln -sf "${__VEDV_CONFIG_DIR}/layer/env" /etc/profile.d/vedv-env.sh
-# create workdir
+# create workdir file
 touch "${__VEDV_CONFIG_DIR}/layer/workdir"
+# create shell file
+touch "${__VEDV_CONFIG_DIR}/layer/shell"
 
 # ADD USER
 adduser --disabled-password "$VEDV_USER"
@@ -95,6 +97,8 @@ fi
 adduser --disabled-password "$VEDV_USER"
 echo "${VEDV_USER}:${VEDV_PASS}" | chpasswd
 adduser "$VEDV_USER" wheel
+
+usermod -s "$(vedv-getshell)" "$VEDV_USER"
 EOF
 
 chmod 0755 /usr/local/bin/vedv-adduser
@@ -233,5 +237,49 @@ cat "${__VEDV_CONFIG_DIR}/layer/env"
 EOF
 
 chmod 0755 /usr/local/bin/vedv-getenv_vars
+
+# add vedv-setshell script
+cat <<EOF >/usr/local/bin/vedv-setshell
+#!/usr/bin/env bash
+#
+# Set default shell
+#
+
+set -eu
+
+if [[ "\$#" -ne 1 ]]; then
+  echo "usage: vedv-setshell <shell>" >&2
+  exit 1
+fi
+
+readonly VEDV_SHELL="\$1"
+
+if ! command -v "\$VEDV_SHELL" &>/dev/null; then
+  echo "shell '\${VEDV_SHELL}' does not exist" >&2
+  exit 1
+fi
+
+readonly VEDV_SHELL_FILE="\$(command -v "\$VEDV_SHELL")"
+
+for user in root \$(getent passwd | grep ':/home' | cut -f1 -d:); do
+  usermod -s "\$VEDV_SHELL_FILE" "\$user"
+done
+
+echo "\$VEDV_SHELL_FILE" >"${__VEDV_CONFIG_DIR}/layer/shell"
+EOF
+
+chmod 0755 /usr/local/bin/vedv-setshell
+
+# add vedv-getshell script
+cat <<EOF >/usr/local/bin/vedv-getshell
+#!/usr/bin/env sh
+#
+# Get default vedv shell
+#
+
+cat "${__VEDV_CONFIG_DIR}/layer/shell"
+EOF
+
+chmod 0755 /usr/local/bin/vedv-getshell
 
 echo '>> DONE!'

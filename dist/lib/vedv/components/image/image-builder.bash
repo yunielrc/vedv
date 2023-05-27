@@ -855,9 +855,6 @@ vedv::image_builder::__layer_user_calc_id() {
 #
 # Creates and set the default user for the image
 #
-# Preconditions:
-#  The image must be started and running
-#
 # Arguments:
 #   image_id  string       image where the user will be set
 #   cmd string             user command (e.g. "1 USER nalyd")
@@ -910,6 +907,80 @@ vedv::image_builder::__layer_user() {
   local -r exec_func="vedv::image_service::set_user '${image_id}' '${user_name}'"
 
   vedv::image_builder::__layer_execute_cmd "$image_id" "$cmd" "USER" "$exec_func"
+}
+
+#
+# Calculates the layer id for the shell command
+#
+# Arguments:
+#   cmd string    shell command (e.g. "1 SHELL bash")
+#
+# Output:
+#  Writes layer_id (string) to the stdout
+#
+# Returns:
+#  0 on success, non-zero on error.
+#
+vedv::image_builder::__layer_shell_calc_id() {
+  local -r cmd="$1"
+  vedv::image_builder::__simple_layer_command_calc_id "$cmd" "SHELL"
+}
+
+#
+# Set the shell for all users in the image
+#
+# Arguments:
+#   image_id  string       image where the shell will be set
+#   cmd string             shell command (e.g. "1 SHELL nalyd")
+#
+# Output:
+#  Writes command_output (text) to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::image_builder::__layer_shell() {
+  local -r image_id="$1"
+  local -r cmd="$2"
+  # validate arguments
+  if [[ -z "$image_id" ]]; then
+    err "Argument 'image_id' is required"
+    return "$ERR_INVAL_ARG"
+  fi
+  if [[ -z "$cmd" ]]; then
+    err "Argument 'cmd' is required"
+    return "$ERR_INVAL_ARG"
+  fi
+  # do not allow escaped $ or $ in the command
+  if [[ "$cmd" == *"$UTILS_ENCODED_ESCVAR_PREFIX"* || "$cmd" == *"$UTILS_ENCODED_VAR_PREFIX"* ]]; then
+    err 'Invalid command, it must not contain: \$ or $'
+    return "$ERR_INVAL_ARG"
+  fi
+  # This works like shell on the terminal, it split the string on spaces
+  # ignoring those inside quotes, then it removes the quotes and finally
+  # it set the arguments to the positional parameters ($1, $2, $3, ...)
+  # cmd: "1 SHELL bash"
+  #
+  # also eval do variable substitution
+  #
+  eval set -- "$cmd"
+
+  if [[ $# -ne 3 ]]; then
+    err "Invalid number of arguments, expected 3, got $#"
+    return "$ERR_INVAL_ARG"
+  fi
+  shift 2 # skip command id and name
+
+  local -r shell="${1:-}"
+
+  if [[ -z "$shell" ]]; then
+    err "Argument 'shell' must not be empty"
+    return "$ERR_INVAL_ARG"
+  fi
+
+  local -r exec_func="vedv::image_service::set_shell '${image_id}' '${shell}'"
+
+  vedv::image_builder::__layer_execute_cmd "$image_id" "$cmd" "SHELL" "$exec_func"
 }
 
 #
@@ -1483,7 +1554,7 @@ vedv::image_builder::build() {
     readonly has_containers
 
     if [[ "$has_containers" == true ]]; then
-      err "The image '${image_name}' has containers, you need to force the build, but the containers will be removed."
+      err "The image '${image_name}' has containers, you need to force the build, the containers will be removed."
       return "$ERR_IMAGE_BUILDER_OPERATION"
     fi
   fi

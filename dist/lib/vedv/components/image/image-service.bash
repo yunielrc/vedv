@@ -745,6 +745,29 @@ vedv::image_service::set_workdir() {
 }
 
 #
+# Set the shell for all users in the image
+#
+# Arguments:
+#   image_id  string  image id
+#   shell     string  shell name (e.g. /bin/bash, or bash)
+#
+# Output:
+#  writes command output to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::image_service::set_shell() {
+  local -r image_id="$1"
+  local -r shell="$2"
+
+  vedv::vmobj_service::set_shell \
+    'image' \
+    "$image_id" \
+    "$shell"
+}
+
+#
 # Add environment variable to vmobj filesystem
 #
 # Arguments:

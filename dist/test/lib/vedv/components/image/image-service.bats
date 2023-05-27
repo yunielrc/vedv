@@ -1356,3 +1356,8 @@ EOF
   assert_failure "$ERR_IMAGE_OPERATION"
   assert_output "Failed to restore last layer '${last_layer_id}'"
 }
+
+# Tests for vedv::image_service::set_shell()
+@test "vedv::image_service::set_shell(): DUMMY" {
+  :
+}

@@ -714,7 +714,7 @@ vedv::vmobj_service::__exec_ssh_func() {
   local -r vmobj_id="$2"
   local -r exec_func="$3"
   local user="${4:-}"
-  local use_workdir="${5:-true}"
+  local use_workdir="${5:-false}"
 
   # validate arguments
   vedv::vmobj_entity::validate_type "$type" ||
@@ -882,7 +882,7 @@ vedv::vmobj_service::connect_by_id() {
 
   local -r exec_func="vedv::ssh_client::connect \"\$user\" \"\$ip\"  \"\$password\" \"\$port\""
 
-  vedv::vmobj_service::__exec_ssh_func "$type" "$vmobj_id" "$exec_func" "$user" || {
+  vedv::vmobj_service::__exec_ssh_func "$type" "$vmobj_id" "$exec_func" "$user" 'false' || {
     err "Failed to connect to ${type}: ${vmobj_id}"
     return "$ERR_VMOBJ_OPERATION"
   }
@@ -1264,6 +1264,58 @@ vedv::vmobj_service::get_workdir() {
 
   vedv::vmobj_service::execute_cmd_by_id "$type" "$vmobj_id" "$cmd" 'root' 'false' || {
     err "Failed to get workdir of ${type}: ${vmobj_id}"
+    return "$ERR_VMOBJ_OPERATION"
+  }
+}
+
+#
+# Set the default shell for all users on the vmobj
+#
+# Arguments:
+#   type      string     type (e.g. 'container|image')
+#   vmobj_id  string     vmobj id
+#   shell     string     shell
+#
+# Output:
+#  writes command output to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::vmobj_service::set_shell() {
+  local -r type="$1"
+  local -r vmobj_id="$2"
+  local -r shell="$3"
+
+  local -r cmd="vedv-setshell '${shell}'"
+
+  vedv::vmobj_service::execute_cmd_by_id "$type" "$vmobj_id" "$cmd" 'root' 'false' || {
+    err "Failed to set shell '${shell}' to ${type}: ${vmobj_id}"
+    return "$ERR_VMOBJ_OPERATION"
+  }
+}
+
+#
+# Get shell
+#
+# Arguments:
+#   type       string     type (e.g. 'container|image')
+#   vmobj_id   string     vmobj id
+#
+# Output:
+#  writes command output to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::vmobj_service::get_shell() {
+  local -r type="$1"
+  local -r vmobj_id="$2"
+
+  local -r cmd='vedv-getshell'
+
+  vedv::vmobj_service::execute_cmd_by_id "$type" "$vmobj_id" "$cmd" 'root' 'false' || {
+    err "Failed to get shell of ${type}: ${vmobj_id}"
     return "$ERR_VMOBJ_OPERATION"
   }
 }

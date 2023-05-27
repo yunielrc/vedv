@@ -1167,11 +1167,13 @@ EOF
   assert_failure
   assert_output "Invalid argument 'user': it's empty"
 }
-
+# bats test_tags=only
 @test "vedv::vmobj_service::__exec_ssh_func(), Should fail If get_workdir fails" {
   local -r type="container"
   local -r vmobj_id=12345
   local -r exec_func="ssh_func"
+  local -r user='vedv'
+  local -r use_workdir='true'
 
   vedv::vmobj_service::get_user() {
     assert_equal "$*" "container 12345"
@@ -1182,7 +1184,7 @@ EOF
     return 1
   }
 
-  run vedv::vmobj_service::__exec_ssh_func "$type" "$vmobj_id" "$exec_func"
+  run vedv::vmobj_service::__exec_ssh_func "$type" "$vmobj_id" "$exec_func" "$user" "$use_workdir"
 
   assert_failure
   assert_output "Failed to get default workdir for container"
@@ -2271,4 +2273,14 @@ Failed to get default workdir for container: 12345"
 
   assert_success
   assert_output "true"
+}
+
+# Tests for vedv::vmobj_service::set_shell()
+@test "vedv::vmobj_service::set_shell(): DUMMY" {
+  :
+}
+
+# Tests for vedv::vmobj_service::get_shell()
+@test "vedv::vmobj_service::get_shell(): DUMMY" {
+  :
 }

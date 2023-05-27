@@ -582,7 +582,7 @@ vedv::hypervisor::remove_inaccessible_hdds() {
     local there_is_error=false
 
     while IFS= read -r hdd_uuid; do
-      VBoxManage closemedium disk "$hdd_uuid" --delete &>/dev/null || {
+      VBoxManage closemedium disk "$hdd_uuid" &>/dev/null || {
         there_is_error=true
         err "Failed to remove inaccessible hdd '${hdd_uuid}'"
         continue
