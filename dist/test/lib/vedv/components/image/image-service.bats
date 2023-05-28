@@ -1291,7 +1291,7 @@ EOF
 }
 
 # Tests for vedv::image_service::restore_last_layer()
-# bats test_tags=only
+
 @test "vedv::image_service::restore_last_layer() Should fail With empty image_id" {
   # Arrange
   local -r image_id=""
@@ -1302,7 +1302,7 @@ EOF
   assert_failure "$ERR_INVAL_ARG"
   assert_output "Argument 'image_id' is required"
 }
-# bats test_tags=only
+
 @test "vedv::image_service::restore_last_layer() Should fail If get_last_layer_id fails" {
   # Arrange
   local -r image_id="image_id"
@@ -1319,7 +1319,6 @@ EOF
   assert_output "Failed to get last layer id for image '${image_id}'"
 }
 
-# bats test_tags=only
 @test "vedv::image_service::restore_last_layer() Should fail If empty last_layer_id" {
   # Arrange
   local -r image_id="image_id"
@@ -1335,7 +1334,6 @@ EOF
   assert_output "Last layer not found for image 'image_id'"
 }
 
-# bats test_tags=only
 @test "vedv::image_service::restore_last_layer() Should fail If restore_layer fails" {
   # Arrange
   local -r image_id="image_id"
@@ -1358,6 +1356,17 @@ EOF
 }
 
 # Tests for vedv::image_service::set_shell()
-@test "vedv::image_service::set_shell(): DUMMY" {
-  :
+# bats test_tags=only
+@test "vedv::image_service::set_shell(): Should succeed" {
+  local -r image_id=23456
+  local -r shell='sh'
+
+  vedv::vmobj_service::set_shell() {
+    assert_equal "$*" 'image 23456 sh'
+  }
+
+  run vedv::image_service::set_shell "$image_id" "$shell"
+
+  assert_success
+  assert_output ''
 }

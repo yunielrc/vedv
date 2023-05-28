@@ -1,8 +1,4 @@
 # lang: dockerfile
 FROM /tmp/vedv/test/files/alpine-x86_64.ova
 
-SHELL bash
-RUN echo "\$SHELL" >'shell'
-
 SHELL sh
-RUN echo "\$SHELL" >>'shell'

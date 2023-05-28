@@ -2324,11 +2324,65 @@ Failed to get default workdir for container: 12345"
 }
 
 # Tests for vedv::vmobj_service::set_shell()
-@test "vedv::vmobj_service::set_shell(): DUMMY" {
-  :
+# bats test_tags=only
+@test "vedv::vmobj_service::set_shell(): Should fail If execute_cmd_by_id fails" {
+  local -r type="container"
+  local -r vmobj_id=12345
+  local -r shell="sh"
+
+  vedv::vmobj_service::execute_cmd_by_id() {
+    assert_equal "$*" "container 12345 vedv-setshell 'sh' root <none>"
+    return 1
+  }
+
+  run vedv::vmobj_service::set_shell "$type" "$vmobj_id" "$shell"
+
+  assert_failure
+  assert_output "Failed to set shell 'sh' to container: 12345"
+}
+
+# bats test_tags=only
+@test "vedv::vmobj_service::set_shell(): Should succeed" {
+  local -r type="container"
+  local -r vmobj_id=12345
+  local -r shell="shell"
+
+  vedv::vmobj_service::execute_cmd_by_id() {
+    assert_equal "$*" "container 12345 vedv-setshell 'shell' root <none>"
+  }
+
+  run vedv::vmobj_service::set_shell "$type" "$vmobj_id" "$shell"
+
+  assert_success
+  assert_output ""
 }
 
 # Tests for vedv::vmobj_service::get_shell()
-@test "vedv::vmobj_service::get_shell(): DUMMY" {
-  :
+@test "vedv::vmobj_service::get_shell(): Should fail If execute_cmd_by_id fails" {
+  local -r type="container"
+  local -r vmobj_id=12345
+
+  vedv::vmobj_service::execute_cmd_by_id() {
+    assert_equal "$*" "container 12345 vedv-getshell root <none>"
+    return 1
+  }
+
+  run vedv::vmobj_service::get_shell "$type" "$vmobj_id"
+
+  assert_failure
+  assert_output "Failed to get shell of container: 12345"
+}
+
+@test "vedv::vmobj_service::get_shell(): Should succeed" {
+  local -r type="container"
+  local -r vmobj_id=12345
+
+  vedv::vmobj_service::execute_cmd_by_id() {
+    assert_equal "$*" "container 12345 vedv-getshell root <none>"
+  }
+
+  run vedv::vmobj_service::get_shell "$type" "$vmobj_id"
+
+  assert_success
+  assert_output ""
 }

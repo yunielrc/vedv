@@ -106,11 +106,11 @@ ${__VED_CONTAINER_COMMAND_SCRIPT_NAME} container create [FLAGS] [OPTIONS] IMAGE
 Create a new container
 
 Flags:
-  -h, --help            show help
-  -s | --standalone     create a standalone container
+  -h, --help          show help
+  -s, --standalone    create a standalone container
 
 Options:
-  -n, --name <name>     assign a name to the container
+  -n, --name <name>   assign a name to the container
 HELPMSG
 }
 

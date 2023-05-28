@@ -2577,7 +2577,7 @@ local -r var_9f57a558b3_VAR23=\"var3 var3\""
 
 @test "vedv::image_builder::__layer_shell() Should fail With empty cmd" {
   local -r image_id="12345"
-  local -r cmd=
+  local -r cmd=""
 
   run vedv::image_builder::__layer_shell "$image_id" "$cmd"
 

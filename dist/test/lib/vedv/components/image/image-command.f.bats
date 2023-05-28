@@ -9,6 +9,7 @@ setup_file() {
 }
 
 teardown() {
+  delete_vms_by_partial_vm_name 'container123'
   delete_vms_by_partial_vm_name 'image123'
   delete_vms_by_partial_vm_name 'image:alpine-x86_64'
   delete_vms_by_partial_vm_name 'image-cache|'
@@ -206,7 +207,7 @@ Options:
   done
 }
 
-@test "vedv image build, Should build the image" {
+@test "vedv image build, Should build the image from vedvfile" {
   cd "${BATS_TEST_DIRNAME}/fixtures/vedvfiles"
 
   run vedv image build -t 'image123'
@@ -222,6 +223,36 @@ Build finished
 }
 
 # bats test_tags=only
+@test "vedv image build, Should build the image with SHELL command" {
+  cd "${BATS_TEST_DIRNAME}/fixtures"
+
+  run vedv image build -t 'image123' ./shell.vedvfile
+
+  assert_success
+  assert_output --regexp "
+created layer '.*' for command 'FROM'
+created layer '.*' for command 'SHELL'
+
+Build finished
+.* image123"
+
+  vedv container create -n 'container123' 'image123'
+
+  run_cmd_wrapper() {
+    vedv container exec 'container123' <<'EOF'
+echo "shell_env: $SHELL"
+echo -n 'shell_user: '
+getent passwd | grep -e '/home' -e '^root:' | cut -d: -f7 | uniq
+EOF
+  }
+
+  run run_cmd_wrapper
+
+  assert_success
+  assert_output "shell_env: /bin/sh
+shell_user: /bin/sh"
+}
+
 @test "vedv image build, Should build the image with USER" {
   cd "${BATS_TEST_DIRNAME}/fixtures"
 
