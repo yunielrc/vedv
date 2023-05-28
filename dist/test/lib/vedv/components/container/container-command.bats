@@ -320,11 +320,14 @@ EOF
 Execute a command in a container
 
 Flags:
-  -h, --help          show help
-  -r, --root          execute command as root user
+  -h, --help            show help
+  -r, --root            execute command as root user
 
 Options:
-  -u, --user <user>   execute command as specific user"
+  -u, --user    <user>  execute command as specific user
+  -w, --workdir <dir>   working directory for command
+  -e, --env     <env>   environment variable for command
+  -s, --shell   <shell> shell to use for command"
 }
 
 @test "vedv::container_command::__execute_cmd() Should show help" {
@@ -348,20 +351,78 @@ EOF
 Execute a command in a container
 
 Flags:
-  -h, --help          show help
-  -r, --root          execute command as root user
+  -h, --help            show help
+  -r, --root            execute command as root user
 
 Options:
-  -u, --user <user>   execute command as specific user"
+  -u, --user    <user>  execute command as specific user
+  -w, --workdir <dir>   working directory for command
+  -e, --env     <env>   environment variable for command
+  -s, --shell   <shell> shell to use for command"
   done
 }
 # bats test_tags=only
-@test "vedv::container_command::__execute_cmd() Should run command" {
+@test "vedv::container_command::__execute_cmd() Should fail With empty user" {
   vedv::container_service::execute_cmd() {
-    assert_equal "$*" 'container1 command1 '
+    assert_equal "$*" 'INVALID_CALL'
   }
   # Act
-  run vedv::container_command::__execute_cmd 'container1' 'command1'
+  run vedv::container_command::__execute_cmd --user
+  # Assert
+  assert_failure
+  assert_output --partial "No user specified"
+}
+# bats test_tags=only
+@test "vedv::container_command::__execute_cmd() Should fail With empty workdir" {
+  vedv::container_service::execute_cmd() {
+    assert_equal "$*" 'INVALID_CALL'
+  }
+  # Act
+  run vedv::container_command::__execute_cmd --user 'user1' --workdir
+  # Assert
+  assert_failure
+  assert_output --partial "No workdir specified"
+}
+# bats test_tags=only
+@test "vedv::container_command::__execute_cmd() Should fail With empty env" {
+  vedv::container_service::execute_cmd() {
+    assert_equal "$*" 'INVALID_CALL'
+  }
+  # Act
+  run vedv::container_command::__execute_cmd --user 'user1' --workdir 'workdir1' --env
+  # Assert
+  assert_failure
+  assert_output --partial "No environment specified"
+}
+# bats test_tags=only
+@test "vedv::container_command::__execute_cmd() Should succeed With root" {
+  vedv::container_service::execute_cmd() {
+    assert_equal "$*" 'container1 command1 root   '
+  }
+  # Act
+  run vedv::container_command::__execute_cmd --root container1 'command1'
+  # Assert
+  assert_success
+  assert_output ""
+}
+# bats test_tags=only
+@test "vedv::container_command::__execute_cmd() Should fail with empty shell" {
+  vedv::container_service::execute_cmd() {
+    assert_equal "$*" 'INVALID_CALL'
+  }
+  # Act
+  run vedv::container_command::__execute_cmd --user 'user1' --workdir 'workdir1' --env E1=val1 --env E2=val2 --shell
+  # Assert
+  assert_failure
+  assert_output --partial "No shell specified"
+}
+# bats test_tags=only
+@test "vedv::container_command::__execute_cmd() Should succeed" {
+  vedv::container_service::execute_cmd() {
+    assert_equal "$*" 'container1 command1 user1 workdir1 E1=val1 E2=val2  bash'
+  }
+  # Act
+  run vedv::container_command::__execute_cmd --user 'user1' --workdir 'workdir1' --shell 'bash' --env E1=val1 --env E2=val2 container1 'command1'
   # Assert
   assert_success
   assert_output ""

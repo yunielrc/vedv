@@ -309,7 +309,7 @@ SSHEOF
   assert_output --partial "Linux"
 }
 
-# Tests for vedv container login
+# Tests for vedv container exec
 @test "vedv container exec container123a uname, Should exec cmd" {
 
   vedv container create --name 'container123a' "$TEST_OVA_FILE"
@@ -338,7 +338,61 @@ SSHEOF
   assert_success "Linux"
 }
 
-# bats test_tags=only
+@test "vedv container exec --root container123a id" {
+
+  vedv container create --name 'container123a' "$TEST_OVA_FILE"
+  vedv container start --wait 'container123a'
+
+  run vedv container exec --root container123a id
+
+  assert_success
+  assert_output --partial "uid=0(root) gid=0(root)"
+}
+
+@test "vedv container exec container123a --workdir /etc" {
+
+  vedv container create --name 'container123a' "$TEST_OVA_FILE"
+  vedv container start --wait 'container123a'
+
+  run vedv container exec --workdir /etc container123a pwd
+
+  assert_success
+  assert_output "/etc"
+}
+
+@test "vedv container exec container123a --env 'E1=ve1 E2=ve2'" {
+
+  vedv container create --name 'container123a' "$TEST_OVA_FILE"
+  vedv container start --wait 'container123a'
+
+  run vedv container exec --env 'E1=ve1 E2=ve2' container123a 'echo "$E1 $E2 $USER"'
+
+  assert_success
+  assert_output "ve1 ve2 vedv"
+}
+
+@test "vedv container exec container123a --env 'E1=\"ve1 ef\"' --env E2=ve2" {
+
+  vedv container create --name 'container123a' "$TEST_OVA_FILE"
+  vedv container start --wait 'container123a'
+
+  run vedv container exec --env 'E1="ve1 ef"' --env E2=ve2 container123a 'echo "E1:${E1} E2:${E2} U:${USER}"'
+
+  assert_success
+  assert_output "E1:ve1 ef E2:ve2 U:vedv"
+}
+
+@test "vedv container exec container123a --shell bash 'echo \$0'" {
+
+  vedv container create --name 'container123a' "$TEST_OVA_FILE"
+  vedv container start --wait 'container123a'
+
+  run vedv container exec --shell bash container123a 'echo $0'
+
+  assert_success
+  assert_output "bash"
+}
+# Tests for vedv container copy
 @test "vedv container copy container123a " {
 
   vedv container create --name 'container123a' "$TEST_OVA_FILE"

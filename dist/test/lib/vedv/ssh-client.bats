@@ -1,4 +1,4 @@
-# shellcheck disable=SC2317
+# shellcheck disable=SC2317,SC2016
 load test_helper
 
 setup_file() {
@@ -12,6 +12,8 @@ setup_file() {
 teardown_file() {
   delete_vms_by_partial_vm_name "$VM_NAME_SSH"
 }
+
+# Tests for vedv::ssh_client::run_cmd()
 
 @test "vedv::ssh_client::run_cmd() Should fail With empty 'user'" {
   local user=""
@@ -77,7 +79,7 @@ teardown_file() {
   assert_success
   # assert_output ''
 }
-# bats test_tags=only
+
 @test "vedv::ssh_client::run_cmd() Should success With workdir" {
   local -r user="$TEST_SSH_USER"
   local -r ip="$TEST_SSH_IP"
@@ -94,6 +96,39 @@ teardown_file() {
 
   assert_success
   assert_output 'test_file'
+}
+
+@test "vedv::ssh_client::run_cmd() Should success With environment variables" {
+  local -r user="$TEST_SSH_USER"
+  local -r ip="$TEST_SSH_IP"
+  local -r password="$TEST_SSH_USER"
+  local -r cmd='echo "E1:${E1}, E2:${E2}"'
+  local -r port="$TEST_SSH_PORT"
+  local -r workdir=""
+  local -r env="E1=e1_value E2='e2 value'"
+
+  run vedv::ssh_client::run_cmd "$user" "$ip" "$password" \
+    "$cmd" "$port" "$workdir" "$env"
+
+  assert_success
+  assert_output 'E1:e1_value, E2:e2 value'
+}
+# bats test_tags=only
+@test "vedv::ssh_client::run_cmd() Should success With a given shell" {
+  local -r user="$TEST_SSH_USER"
+  local -r ip="$TEST_SSH_IP"
+  local -r password="$TEST_SSH_USER"
+  local -r cmd='echo "E1:${E1}, E2:${E2}, SHELL: $0"'
+  local -r port="$TEST_SSH_PORT"
+  local -r workdir=""
+  local -r env="E1=e1_value E2='e2 value'"
+  local -r shell="bash"
+
+  run vedv::ssh_client::run_cmd "$user" "$ip" "$password" \
+    "$cmd" "$port" "$workdir" "$env" "$shell"
+
+  assert_success
+  assert_output 'E1:e1_value, E2:e2 value, SHELL: bash'
 }
 
 # Tests for vedv::ssh_client::wait_for_ssh_service()
@@ -208,7 +243,6 @@ teardown_file() {
   assert_output "line1"
 }
 
-# bats test_tags=only
 @test "vedv::ssh_client::copy(), Should copy to /home/vedv/workdir" {
   local -r user="$TEST_SSH_USER"
   local -r ip="$TEST_SSH_IP"

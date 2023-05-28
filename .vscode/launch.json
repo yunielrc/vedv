@@ -151,10 +151,9 @@
       "args": [
         "image",
         "build",
-        "--force",
         "-n",
-        "image2",
-        "Vedvfile13"
+        "image123",
+        "Vedvfile5"
       ]
     },
     {
@@ -170,6 +169,25 @@
         "login",
         "nalyd1",
         "<<<'echo $0'",
+      ]
+    },
+    {
+      "type": "bashdb",
+      "request": "launch",
+      "name": "Bash-Debug (vedv image exec)",
+      "env": {
+        "VEDV_HADOLINT_ENABLED": "false"
+      },
+      "program": "${workspaceFolder}/dist/usr/bin/vedv",
+      "args": [
+        "container",
+        "exec",
+        "--env",
+        "E1='ve1 ef'",
+        "--env",
+        "E2=\"ve2 ef\"",
+        "container123a",
+        "echo \"E1:${E1} E2:${E2} U:${USER}\""
       ]
     }
   ]

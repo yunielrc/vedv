@@ -11,12 +11,14 @@ fi
 # Run commands inside vm
 #
 # Arguments:
-#   user      string  user
-#   ip        string  ip
-#   password  string  password
-#   cmd       string  command
-#   port      int     ssh port
-#   workdir   string  workdir
+#   user        string    user
+#   ip          string    ip
+#   password    string    password
+#   cmd         string    command
+#   [port]      int       ssh port
+#   [workdir]   string    workdir
+#   [env]       string    environment variable for command
+#   [shell]     string    shell to use for command
 #
 # Output:
 #  Writes command output to the stdout
@@ -31,6 +33,8 @@ vedv::ssh_client::run_cmd() {
   local -r cmd="$4"
   local -ri port=${5:-22}
   local -r workdir="${6:-}"
+  local -r env="${7:-}"
+  local -r shell="${8:-}"
 
   if [[ -z "$user" ]]; then
     err "Argument 'user' must not be empty"
@@ -70,6 +74,25 @@ vedv::ssh_client::run_cmd() {
   fi
   readonly set_workdir_cmd
 
+  local set_env=''
+
+  if [[ -n "$env" ]]; then
+    local decoded_env
+    decoded_env="$(utils::str_decode "$env")"
+    readonly decoded_env
+    set_env="export ${decoded_env}"
+  fi
+  readonly set_env
+
+  local begin_shell=''
+  local end_shell=''
+
+  if [[ -n "$shell" ]]; then
+    begin_shell="${shell} <<'SHELL_EOF'"
+    end_shell='SHELL_EOF'
+  fi
+  readonly begin_shell end_shell
+
   {
     sshpass -p "$password" \
       ssh -T -o 'ConnectTimeout=2' \
@@ -79,8 +102,11 @@ vedv::ssh_client::run_cmd() {
       -o 'LogLevel=ERROR' \
       -p "$port" \
       "${user}@${ip}" <<SSHEOF
-         ${set_workdir_cmd}
-         ${decoded_cmd}
+        ${begin_shell}
+        ${set_workdir_cmd}
+        ${set_env}
+        ${decoded_cmd}
+${end_shell}
 SSHEOF
   } || {
     err "Error on '${user}@${ip}', exit code: $?"

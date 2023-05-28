@@ -500,6 +500,9 @@ vedv::container_service::list() {
 #   container_id_or_name  string    container id or name
 #   cmd                   string    command to execute
 #   [user]                string    user name
+#   [workdir]             string    working directory for command
+#   [env]                 string    environment variable for command
+#   [shell]               string    shell to use for command
 #
 # Output:
 #  writes command output to the stdout
@@ -511,12 +514,18 @@ vedv::container_service::execute_cmd() {
   local -r container_id_or_name="$1"
   local -r cmd="$2"
   local -r user="${3:-}"
+  local -r workdir="${4:-}"
+  local -r env="${5:-}"
+  local -r shell="${6:-}"
 
   vedv::vmobj_service::execute_cmd \
     'container' \
     "$container_id_or_name" \
     "$cmd" \
-    "$user"
+    "$user" \
+    "$workdir" \
+    "$env" \
+    "$shell"
 }
 
 #

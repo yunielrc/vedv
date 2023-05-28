@@ -173,7 +173,7 @@ Remove unused cache images"
 }
 
 # Tests for 'vedv image build'
-# bats test_tags=only
+
 @test "vedv image build -h , Should show help" {
 
   for arg in '-h' '--help'; do
@@ -221,6 +221,7 @@ Build finished
 .* image123"
 }
 
+# bats test_tags=only
 @test "vedv image build, Should build the image with USER" {
   cd "${BATS_TEST_DIRNAME}/fixtures"
 

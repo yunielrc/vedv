@@ -466,15 +466,18 @@ HELPMSG
 # Execute cmd in a container
 #
 # Flags:
-#   -h | --help               show help
-#   --root                    use root user to execute command
+#   -h, --help                    show help
+#   -r, --root                    execute command as root user
 #
 # Options:
-#   -u, --user <user> string  user to execute command
+#   -u, --user    <user>  string  user to execute command
+#   -w, --workdir <dir>   string  working directory for command
+#   -e, --env     <env>   string  environment variable for command
+#   -s, --shell   <shell> string  shell to use for command
 #
 # Arguments:
-#   CONTAINER           container name or id
-#   CMD                 command to execute
+#   CONTAINER             string  container name or id
+#   CMD                   string  command to execute
 #
 # Output:
 #   writes any error to stderr
@@ -484,6 +487,9 @@ HELPMSG
 #
 vedv::container_command::__execute_cmd() {
   local user=''
+  local workdir=''
+  local env=''
+  local shell=''
   local container_name_or_id=''
   local cmd=''
 
@@ -502,15 +508,45 @@ vedv::container_command::__execute_cmd() {
       ;;
     # options
     -u | --user)
-      shift
-      readonly user="${1:-}"
+      readonly user="${2:-}"
       # validate argument
       if [[ -z "$user" ]]; then
         err "No user specified\n"
         vedv::container_command::__execute_cmd
         return "$ERR_INVAL_ARG"
       fi
-      shift
+      shift 2
+      ;;
+    -w | --workdir)
+      readonly workdir="${2:-}"
+      # validate argument
+      if [[ -z "$workdir" ]]; then
+        err "No workdir specified\n"
+        vedv::container_command::__execute_cmd
+        return "$ERR_INVAL_ARG"
+      fi
+      shift 2
+      ;;
+    -e | --env)
+      local new_env="${2:-}"
+      # validate argument
+      if [[ -z "$new_env" ]]; then
+        err "No environment specified\n"
+        vedv::container_command::__execute_cmd
+        return "$ERR_INVAL_ARG"
+      fi
+      env+="${new_env} "
+      shift 2
+      ;;
+    -s | --shell)
+      readonly shell="${2:-}"
+      # validate argument
+      if [[ -z "$shell" ]]; then
+        err "No shell specified\n"
+        vedv::container_command::__execute_cmd
+        return "$ERR_INVAL_ARG"
+      fi
+      shift 2
       ;;
     # arguments
     *)
@@ -539,7 +575,13 @@ vedv::container_command::__execute_cmd() {
     return "$ERR_INVAL_ARG"
   fi
 
-  vedv::container_service::execute_cmd "$container_name_or_id" "$cmd" "$user"
+  vedv::container_service::execute_cmd \
+    "$container_name_or_id" \
+    "$cmd" \
+    "$user" \
+    "$workdir" \
+    "$env" \
+    "$shell"
 }
 
 #
@@ -561,11 +603,14 @@ EOF
 Execute a command in a container
 
 Flags:
-  -h, --help          show help
-  -r, --root          execute command as root user
+  -h, --help            show help
+  -r, --root            execute command as root user
 
 Options:
-  -u, --user <user>   execute command as specific user
+  -u, --user    <user>  execute command as specific user
+  -w, --workdir <dir>   working directory for command
+  -e, --env     <env>   environment variable for command
+  -s, --shell   <shell> shell to use for command
 HELPMSG
 }
 
