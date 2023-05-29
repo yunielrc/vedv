@@ -671,7 +671,8 @@ vedv::container_command::__copy() {
       readonly chown="${2:-}"
       # validate argument
       if [[ -z "$chown" ]]; then
-        err "Argument 'chown' no specified"
+        err "No chown value specified\n"
+        vedv::container_command::__copy_help
         return "$ERR_INVAL_ARG"
       fi
       shift 2
@@ -680,7 +681,8 @@ vedv::container_command::__copy() {
       readonly chmod="${2:-}"
       # validate argument
       if [[ -z "$chmod" ]]; then
-        err "Argument 'chmod' no specified"
+        err "No chmod value specified\n"
+        vedv::container_command::__copy_help
         return "$ERR_INVAL_ARG"
       fi
       shift 2

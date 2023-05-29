@@ -25,11 +25,11 @@ vedv container create [FLAGS] [OPTIONS] IMAGE
 Create a new container
 
 Flags:
-  -h, --help            show help
-  -s | --standalone     create a standalone container
+  -h, --help          show help
+  -s, --standalone    create a standalone container
 
 Options:
-  -n, --name <name>     assign a name to the container"
+  -n, --name <name>   assign a name to the container"
 }
 
 @test "vedv container create -h , Should show help" {
@@ -44,11 +44,11 @@ vedv container create [FLAGS] [OPTIONS] IMAGE
 Create a new container
 
 Flags:
-  -h, --help            show help
-  -s | --standalone     create a standalone container
+  -h, --help          show help
+  -s, --standalone    create a standalone container
 
 Options:
-  -n, --name <name>     assign a name to the container"
+  -n, --name <name>   assign a name to the container"
   done
 }
 
@@ -65,11 +65,11 @@ vedv container create [FLAGS] [OPTIONS] IMAGE
 Create a new container
 
 Flags:
-  -h, --help            show help
-  -s | --standalone     create a standalone container
+  -h, --help          show help
+  -s, --standalone    create a standalone container
 
 Options:
-  -n, --name <name>     assign a name to the container"
+  -n, --name <name>   assign a name to the container"
 }
 
 @test "vedv container create --name container123, Should throw error Without passing an image" {
@@ -393,7 +393,7 @@ SSHEOF
   assert_output "bash"
 }
 # Tests for vedv container copy
-@test "vedv container copy container123a " {
+@test "vedv container copy container123a src /home/vedv/file123" {
 
   vedv container create --name 'container123a' "$TEST_OVA_FILE"
   vedv container start --wait 'container123a'
@@ -407,4 +407,29 @@ SSHEOF
 
   assert_success
   assert_success "file123"
+}
+
+# Tests for vedv container copy
+# bats test_tags=only
+@test "vedv container copy container123a src dest " {
+
+  vedv container create --name 'container123a' "$TEST_OVA_FILE"
+  vedv container start --wait 'container123a'
+
+  local -r src="$(mktemp)"
+  echo "file123" >"$src"
+
+  vedv container copy --root container123a "$src" /home/vedv/file123
+
+  run vedv container exec --root container123a ls -l /home/vedv/file123
+
+  assert_success
+  assert_output --partial "-rw-------    1 root     vedv"
+
+  vedv container copy --root --chown vedv --chmod 440 container123a "$src" /home/vedv/file124
+
+  run vedv container exec --root container123a ls -l /home/vedv/file124
+
+  assert_success
+  assert_output --partial "-r--r-----    1 vedv     vedv"
 }

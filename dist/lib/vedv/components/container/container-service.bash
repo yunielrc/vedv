@@ -579,7 +579,7 @@ vedv::container_service::copy() {
     "$src" \
     "$dest" \
     "$user" \
-    'true' \
+    '' \
     "$chown" \
     "$chmod"
 }

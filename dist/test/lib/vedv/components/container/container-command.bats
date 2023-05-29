@@ -20,11 +20,11 @@ vedv container create [FLAGS] [OPTIONS] IMAGE
 Create a new container
 
 Flags:
-  -h, --help            show help
-  -s | --standalone     create a standalone container
+  -h, --help          show help
+  -s, --standalone    create a standalone container
 
 Options:
-  -n, --name <name>     assign a name to the container"
+  -n, --name <name>   assign a name to the container"
 
   run vedv::container_command::__create -h
 
@@ -361,7 +361,7 @@ Options:
   -s, --shell   <shell> shell to use for command"
   done
 }
-# bats test_tags=only
+
 @test "vedv::container_command::__execute_cmd() Should fail With empty user" {
   vedv::container_service::execute_cmd() {
     assert_equal "$*" 'INVALID_CALL'
@@ -372,7 +372,7 @@ Options:
   assert_failure
   assert_output --partial "No user specified"
 }
-# bats test_tags=only
+
 @test "vedv::container_command::__execute_cmd() Should fail With empty workdir" {
   vedv::container_service::execute_cmd() {
     assert_equal "$*" 'INVALID_CALL'
@@ -383,7 +383,7 @@ Options:
   assert_failure
   assert_output --partial "No workdir specified"
 }
-# bats test_tags=only
+
 @test "vedv::container_command::__execute_cmd() Should fail With empty env" {
   vedv::container_service::execute_cmd() {
     assert_equal "$*" 'INVALID_CALL'
@@ -394,7 +394,7 @@ Options:
   assert_failure
   assert_output --partial "No environment specified"
 }
-# bats test_tags=only
+
 @test "vedv::container_command::__execute_cmd() Should succeed With root" {
   vedv::container_service::execute_cmd() {
     assert_equal "$*" 'container1 command1 root   '
@@ -405,7 +405,7 @@ Options:
   assert_success
   assert_output ""
 }
-# bats test_tags=only
+
 @test "vedv::container_command::__execute_cmd() Should fail with empty shell" {
   vedv::container_service::execute_cmd() {
     assert_equal "$*" 'INVALID_CALL'
@@ -416,7 +416,7 @@ Options:
   assert_failure
   assert_output --partial "No shell specified"
 }
-# bats test_tags=only
+
 @test "vedv::container_command::__execute_cmd() Should succeed" {
   vedv::container_service::execute_cmd() {
     assert_equal "$*" 'container1 command1 user1 workdir1 E1=val1 E2=val2  bash'
@@ -507,4 +507,61 @@ Usage:
 vedv container copy [FLAGS] [OPTIONS] CONTAINER LOCAL_SRC CONTAINER_DEST
 
 Copy files from local filesystem to a container"
+}
+
+@test "vedv::container_command::__copy() Should show error when chown is missing" {
+  # Arrange
+  local container_name_or_id='container1'
+  local user='vedv'
+  local chown='nalyd'
+  local chmod='644'
+  local src='src1'
+  local dest='dest1'
+
+  vedv::container_service::copy() {
+    assert_equal "$*" 'INVALID_CALL'
+  }
+  # Act
+  run vedv::container_command::__copy --user "$user" --chown
+  # Assert
+  assert_failure
+  assert_output --partial "No chown value specified"
+}
+
+@test "vedv::container_command::__copy() Should show error when chmod is missing" {
+  # Arrange
+  local container_name_or_id='container1'
+  local user='vedv'
+  local chown='nalyd'
+  local chmod='644'
+  local src='src1'
+  local dest='dest1'
+
+  vedv::container_service::copy() {
+    assert_equal "$*" 'INVALID_CALL'
+  }
+  # Act
+  run vedv::container_command::__copy --user "$user" --chown "$chown" --chmod
+  # Assert
+  assert_failure
+  assert_output --partial "No chmod value specified"
+}
+
+@test "vedv::container_command::__copy() Should show suceed" {
+  # Arrange
+  local container_name_or_id='container1'
+  local user='vedv'
+  local chown='nalyd'
+  local chmod='644'
+  local src='src1'
+  local dest='dest1'
+
+  vedv::container_service::copy() {
+    assert_equal "$*" 'container1 src1 dest1 vedv nalyd 644'
+  }
+  # Act
+  run vedv::container_command::__copy --user "$user" --chown "$chown" --chmod "$chmod" "$container_name_or_id" "$src" "$dest"
+  # Assert
+  assert_success
+  assert_output ""
 }

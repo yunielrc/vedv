@@ -834,6 +834,45 @@ Previous layer restored"
   assert_output "Argument 'dest' must not be empty"
 }
 
+@test "vedv::image_builder::__layer_copy() Should fail if chown is missing" {
+  # Arrange
+  local -r image_id="image_id"
+  local -r cmd="1 COPY --chown"
+
+  # Act
+  run vedv::image_builder::__layer_copy "$image_id" "$cmd"
+  # Assert the output and status
+  assert_failure
+  assert_output "Invalid number of arguments, expected at least 4, got 3"
+}
+
+@test "vedv::image_builder::__layer_copy() Should fail if chmod is missing" {
+  # Arrange
+  local -r image_id="image_id"
+  local -r cmd="1 COPY --chown nalyd --chmod"
+
+  # Act
+  run vedv::image_builder::__layer_copy "$image_id" "$cmd"
+  # Assert the output and status
+  assert_failure
+  assert_output "Argument 'chmod' no specified"
+}
+# bats test_tags=only
+@test "vedv::image_builder::__layer_copy() Should succeed With all arguments" {
+  # Arrange
+  local -r image_id="image_id"
+  local -r cmd="1 COPY --chown nalyd --chmod 644 --user root src1 dest1"
+  # Stub
+  vedv::image_builder::__layer_execute_cmd() {
+    assert_equal "$*" "image_id 1 COPY --chown nalyd --chmod 644 --user root src1 dest1 COPY vedv::image_service::copy 'image_id' 'src1' 'dest1' 'root' 'nalyd' '644'"
+  }
+  # Act
+  run vedv::image_builder::__layer_copy "$image_id" "$cmd"
+  # Assert the output and status
+  assert_success
+  assert_output ""
+}
+
 @test "vedv::image_builder::__layer_copy() succeeds if all arguments are valid and __layer_exec_cmd succeeds" {
   # Arrange
   local -r image_id="image_id"
@@ -843,16 +882,6 @@ Previous layer restored"
 
   local -r exec_func="vedv::ssh_client::copy \"\$user\" \"\$ip\"  \"\$password\" \"\$port\" '${_source}' '${dest}'"
   # Stub
-  utils::get_arg_from_string() {
-    if [[ "$*" == "${cmd} 3" ]]; then
-      echo "source/"
-      return 0
-    fi
-    if [[ "$*" == "${cmd} 4" ]]; then
-      echo "dest/"
-      return 0
-    fi
-  }
   vedv::image_builder::__layer_execute_cmd() {
     assert_equal "$*" "${image_id} ${cmd} COPY ${exec_func}"
   }
@@ -1602,7 +1631,7 @@ Previous layer restored"
   assert_failure
   assert_output --partial "Failed deleting invalid layers for image '${image_name}'"
 }
-# bats test_tags=only
+
 @test "vedv::image_builder::__build() Should fail If first_invalid_layer_pos < -1 or > commands_length length" {
   # Arrange
   local -r vedvfile="dist/test/lib/vedv/components/image/fixtures/Vedvfile"

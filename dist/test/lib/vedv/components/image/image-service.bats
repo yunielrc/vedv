@@ -1356,7 +1356,7 @@ EOF
 }
 
 # Tests for vedv::image_service::set_shell()
-# bats test_tags=only
+
 @test "vedv::image_service::set_shell(): Should succeed" {
   local -r image_id=23456
   local -r shell='sh'
@@ -1369,4 +1369,24 @@ EOF
 
   assert_success
   assert_output ''
+}
+
+# Tests for vedv::image_service::copy()
+@test "vedv::image_service::copy() Should succeed" {
+  # Arrange
+  local -r image_id="image_id"
+  local -r src="src1"
+  local -r dest="src2"
+  local -r user="vedv"
+  local -r chown="nalyd"
+  local -r chmod="644"
+  # Stub
+  vedv::vmobj_service::copy_by_id() {
+    assert_equal "$*" "image ${image_id} ${src} ${dest} ${user}  ${chown} ${chmod}"
+  }
+  # Act
+  run vedv::image_service::copy "$image_id" "$src" "$dest" "$user" "$chown" "$chmod"
+  # Assert
+  assert_success
+  assert_output ""
 }

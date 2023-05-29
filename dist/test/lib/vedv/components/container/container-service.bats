@@ -967,6 +967,21 @@ Sibling containers ids: '123457 123458'"
 }
 
 # Tests for vedv::container_service::copy()
-@test "vedv::container_service::copy()" {
-  :
+# bats test_tags=only
+@test "vedv::container_service::copy() Should succeed" {
+  local -r container_id_or_name="container1"
+  local -r src="src1"
+  local -r dest="dest1"
+  local -r user="vedv"
+  local -r chown="nalyd"
+  local -r chmod="644"
+
+  vedv::vmobj_service::copy() {
+    assert_equal "$*" "container container1 src1 dest1 vedv  nalyd 644"
+  }
+
+  run vedv::container_service::copy "$container_id_or_name" "$src" "$dest" "$user" "$chown" "$chmod"
+
+  assert_success
+  assert_output ""
 }

@@ -222,7 +222,6 @@ Build finished
 .* image123"
 }
 
-# bats test_tags=only
 @test "vedv image build, Should build the image with SHELL command" {
   cd "${BATS_TEST_DIRNAME}/fixtures"
 
@@ -278,4 +277,31 @@ created layer '.*' for command 'RUN'
 
 Build finished
 .* image123"
+}
+
+# bats test_tags=only
+@test "vedv image build , Should build with COPY --chown --chmod command" {
+  cd "${BATS_TEST_DIRNAME}/fixtures"
+
+  run vedv image build -t 'image123' ./copy-chown-chmod.vedvfile
+
+  assert_success
+  assert_output --regexp "
+created layer '.*' for command 'FROM'
+created layer '.*' for command 'COPY'
+
+Build finished
+.* image123"
+
+  vedv container create -n 'container123' 'image123'
+
+  run vedv container exec --root container123 'ls -l /root && ls -l /root/homefs'
+
+  assert_success
+  assert_output --regexp "total .*
+dr-xr-xr-x    3 vedv     vedv .* homefs
+.*
+total 2
+dr-xr-xr-x    2 vedv     vedv .* d1
+-r-xr-xr-x    1 vedv     vedv .* f2"
 }

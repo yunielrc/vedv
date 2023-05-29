@@ -1527,7 +1527,6 @@ EOF
   assert_output "Invalid argument 'dest': it's empty"
 }
 
-# bats test_tags=only
 @test "vedv::vmobj_service::copy_by_id(), Should fail If get_workdir fails" {
   local -r type="container"
   local -r vmobj_id=12345
@@ -1545,7 +1544,6 @@ EOF
   assert_output "Failed to get default workdir for container"
 }
 
-# bats test_tags=only
 @test "vedv::vmobj_service::copy_by_id(), Should fail If get_joined_vedvfileignore fails" {
   local -r type="container"
   local -r vmobj_id=12345
@@ -1567,7 +1565,6 @@ EOF
   assert_output "Failed to get joined vedvfileignore"
 }
 
-# bats test_tags=only
 @test "vedv::vmobj_service::copy_by_id(), Should fail If __exec_ssh_func fails" {
   local -r type="container"
   local -r vmobj_id=12345
@@ -1593,6 +1590,33 @@ EOF
   assert_output "Failed to copy to container: 12345"
 }
 
+@test "vedv::vmobj_service::copy_by_id(), Should Succeed" {
+  local -r type="container"
+  local -r vmobj_id=12345
+  local -r src="src"
+  local -r dest="dest"
+  local -r user="user"
+  local -r workdir="/home/vedv"
+  local -r chown="nalyd"
+  local -r chmod="644"
+
+  vedv::vmobj_service::get_workdir() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+  vedv:image_vedvfile_service::get_joined_vedvfileignore() {
+    echo "/tmp/vedvfileignore"
+  }
+  vedv::vmobj_service::__exec_ssh_func() {
+    assert_equal "$*" "container 12345 vedv::ssh_client::copy \"\$user\" \"\$ip\"  \"\$password\" \"\$port\" 'src' 'dest' '/tmp/vedvfileignore' '/home/vedv' 'nalyd' '644' user"
+    return 1
+  }
+
+  run vedv::vmobj_service::copy_by_id "$type" "$vmobj_id" "$src" "$dest" "$user" "$workdir" "$chown" "$chmod"
+
+  assert_failure
+  assert_output "Failed to copy to container: 12345"
+}
+
 # Tests for vedv::vmobj_service::copy()
 
 @test "vedv::vmobj_service::copy(), Should fail If get_ids_from_vmobj_names_or_ids fails" {
@@ -1611,7 +1635,7 @@ EOF
   assert_failure
   assert_output "Failed to get container id by name or id: 12345"
 }
-
+# bats test_tags=only
 @test "vedv::vmobj_service::copy(), Should succeed" {
   local -r type="container"
   local -r vmobj_id=12345
@@ -1623,10 +1647,34 @@ EOF
     echo 12345
   }
   vedv::vmobj_service::copy_by_id() {
-    assert_regex "$*" "container 12345 src dest"
+    assert_equal "$*" "container 12345 src dest    "
   }
 
   run vedv::vmobj_service::copy "$type" "$vmobj_id" "$src" "$dest"
+
+  assert_success
+  assert_output ""
+}
+
+@test "vedv::vmobj_service::copy(), Should succeed with all arguments" {
+  local -r type="container"
+  local -r vmobj_id=12345
+  local -r src="src"
+  local -r dest="dest"
+  local -r user='vedv'
+  local -r workdir='/home/vedv'
+  local -r chown="nalyd"
+  local -r chmod="644"
+
+  vedv::vmobj_service::get_ids_from_vmobj_names_or_ids() {
+    assert_equal "$*" "container 12345"
+    echo 12345
+  }
+  vedv::vmobj_service::copy_by_id() {
+    assert_equal "$*" "container 12345 src dest vedv /home/vedv nalyd 644"
+  }
+
+  run vedv::vmobj_service::copy "$type" "$vmobj_id" "$src" "$dest" "$user" "$workdir" "$chown" "$chmod"
 
   assert_success
   assert_output ""
@@ -2324,7 +2372,7 @@ Failed to get default workdir for container: 12345"
 }
 
 # Tests for vedv::vmobj_service::set_shell()
-# bats test_tags=only
+
 @test "vedv::vmobj_service::set_shell(): Should fail If execute_cmd_by_id fails" {
   local -r type="container"
   local -r vmobj_id=12345
@@ -2341,7 +2389,6 @@ Failed to get default workdir for container: 12345"
   assert_output "Failed to set shell 'sh' to container: 12345"
 }
 
-# bats test_tags=only
 @test "vedv::vmobj_service::set_shell(): Should succeed" {
   local -r type="container"
   local -r vmobj_id=12345
