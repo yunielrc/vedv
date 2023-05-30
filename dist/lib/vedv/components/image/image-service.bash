@@ -183,7 +183,7 @@ vedv::image_service::pull() {
 vedv::image_service::list() {
   vedv::vmobj_service::list \
     'image' \
-    true
+    'true'
 }
 
 #

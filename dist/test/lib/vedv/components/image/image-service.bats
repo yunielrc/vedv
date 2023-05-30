@@ -541,9 +541,19 @@ setup_file() {
 }
 
 # Tests for vedv::image_service::list()
-@test 'vedv::image_service::list()' {
-  :
+
+@test 'vedv::image_service::list() Should succeed' {
+
+  vedv::vmobj_service::list() {
+    assert_equal "$*" "image true"
+  }
+
+  run vedv::image_service::list
+
+  assert_success
+  assert_output ""
 }
+
 # Tests for vedv::image_service::remove_one()
 
 @test 'vedv::image_service::remove_one() Should fail With empty image_id' {
@@ -746,8 +756,29 @@ Failed to remove image: '1234567890'"
 }
 
 # Tests for vedv::image_service::list()
-@test 'vedv::image_service::remove()' {
-  :
+
+@test 'vedv::image_service::remove() Should fail If force is empty' {
+  local -r force=''
+  local -r image_id='1234567890'
+
+  run vedv::image_service::remove "$force" "$image_id"
+
+  assert_failure
+  assert_output "Invalid argument 'force': it's empty"
+}
+
+@test 'vedv::image_service::remove() Should succeed' {
+  local -r force='true'
+  local -r image_id='1234567890'
+
+  vedv::vmobj_service::exec_func_on_many_vmobj() {
+    assert_equal "$*" "image vedv::image_service::remove_one_batch true 1234567890"
+  }
+
+  run vedv::image_service::remove "$force" "$image_id"
+
+  assert_success
+  assert_output ""
 }
 
 # Tests for vedv::image_service::remove_unused_cache()
@@ -879,18 +910,45 @@ EOF
 }
 
 # Tests for vedv::image_service::is_started()
-@test 'vedv::image_service::is_started()' {
-  :
+@test 'vedv::image_service::is_started() Should succeed' {
+  local -r image_id='1234567890'
+
+  vedv::vmobj_service::is_started() {
+    assert_equal "$*" "image 1234567890"
+  }
+
+  run vedv::image_service::is_started "$image_id"
+
+  assert_success
+  assert_output ""
 }
 
 # Tests for vedv::image_service::start()
-@test 'vedv::image_service::start()' {
-  :
+@test 'vedv::image_service::start() Should succeed' {
+  local -r image_id='1234567890'
+
+  vedv::vmobj_service::start_one() {
+    assert_equal "$*" "image true 1234567890"
+  }
+
+  run vedv::image_service::start "$image_id"
+
+  assert_success
+  assert_output ""
 }
 
 # Tests for vedv::image_service::stop()
-@test 'vedv::image_service::stop()' {
-  :
+@test 'vedv::image_service::stop() Should succeed' {
+  local -r image_id='1234567890'
+
+  vedv::vmobj_service::stop() {
+    assert_equal "$*" "image true 1234567890"
+  }
+
+  run vedv::image_service::stop "$image_id"
+
+  assert_success
+  assert_output ""
 }
 
 # Test vedv::image_service::child_containers_remove_all() function
@@ -963,16 +1021,6 @@ EOF
   # Assert
   assert_success
   assert_output ''
-}
-
-# Test vedv::image_service::__get_child_containers_ids function
-@test "vedv::image_service::__get_child_containers_ids()" {
-  :
-}
-
-# Test vedv::image_entity::get_layers_ids function
-@test "vedv::image_entity::get_layers_ids()" {
-  :
 }
 
 # Tests vedv::image_service::delete_layer()
@@ -1265,29 +1313,81 @@ EOF
 }
 
 # Tests for vedv::image_service::copy()
-@test "vedv::image_service::copy(): DUMMY" {
-  :
+@test "vedv::image_service::copy(): Should succeed" {
+  local -r image_id="12345"
+  local -r src="src1"
+  local -r dest="dest1"
+  local -r user="vedv"
+  local -r chown="nalyd"
+  local -r chmod="644"
+
+  vedv::vmobj_service::copy_by_id() {
+    assert_equal "$*" "image 12345 src1 dest1 vedv  nalyd 644"
+  }
 }
 
 # Tests for vedv::image_service::execute_cmd()
-@test "vedv::image_service::execute_cmd(): DUMMY" {
-  :
+# bats test_tags=only
+@test "vedv::image_service::execute_cmd(): Should succeed" {
+  local -r image_id="12345"
+  local -r cmd="1 RUN echo 'hello'"
+  local -r user="vedv"
+
+  vedv::vmobj_service::execute_cmd_by_id() {
+    assert_equal "$*" "image 12345 1 RUN echo 'hello' vedv"
+  }
+
+  run vedv::image_service::execute_cmd "$image_id" "$cmd" "$user"
+
+  assert_success
+  assert_output ""
 }
 
 # Tests for vedv::image_service::set_workdir()
-@test "vedv::image_service::set_workdir(): DUMMY" {
-  :
+# bats test_tags=only
+@test "vedv::image_service::set_workdir(): Should succeed" {
+  local -r image_id="12345"
+  local -r workdir="/home/vedv"
+
+  vedv::vmobj_service::set_workdir() {
+    assert_equal "$*" "image 12345 /home/vedv"
+  }
+
+  run vedv::image_service::set_workdir "$image_id" "$workdir"
+
+  assert_success
+  assert_output ""
 }
 
 # Tests for vedv::image_service::add_environment_var()
-@test "vedv::image_service::add_environment_var(): DUMMY" {
-  :
+# bats test_tags=only
+@test "vedv::image_service::add_environment_var() Should succeed" {
+  local -r image_id="12345"
+  local -r env_var="TEST_ENV=123"
+
+  vedv::vmobj_service::add_environment_var() {
+    assert_equal "$*" "image 12345 TEST_ENV=123"
+  }
+
+  run vedv::image_service::add_environment_var "$image_id" "$env_var"
+
+  assert_success
+  assert_output ""
 }
 
 # Tests for vedv::image_service::get_environment_vars()
+# bats test_tags=only
+@test "vedv::image_service::get_environment_vars() Should succeed" {
+  local -r image_id="12345"
 
-@test "vedv::image_service::get_environment_vars() DUMMY" {
-  :
+  vedv::vmobj_service::get_environment_vars() {
+    assert_equal "$*" "image 12345"
+  }
+
+  run vedv::image_service::get_environment_vars "$image_id"
+
+  assert_success
+  assert_output ""
 }
 
 # Tests for vedv::image_service::restore_last_layer()
