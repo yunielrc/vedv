@@ -8,48 +8,145 @@ setup() {
 }
 
 # Tests for vedv::container_entity::gen_vm_name()
-@test "vedv::container_entity::gen_vm_name() DUMMY" {
-  :
+# bats test_tags=only
+@test "vedv::container_entity::gen_vm_name() Should succeed" {
+  # Setup
+  local -r container_name="ct1"
+  # Mock
+  vedv::vmobj_entity::gen_vm_name() {
+    assert_equal "$*" "container ct1"
+  }
+  # Act
+  run vedv::container_entity::gen_vm_name "$container_name"
+  # Assert
+  assert_success
+  assert_output ""
 }
 
 # Tests for vedv::container_entity::get_vm_name()
-@test "vedv::container_entity::get_vm_name() DUMMY" {
-  :
+# bats test_tags=only
+@test "vedv::container_entity::get_vm_name() Should succeed" {
+  # Setup
+  local -r container_name="ct1"
+  # Mock
+  vedv::vmobj_entity::get_vm_name() {
+    assert_equal "$*" "container ct1"
+  }
+  # Act
+  run vedv::container_entity::get_vm_name "$container_name"
+  # Assert
+  assert_success
+  assert_output ""
 }
 
 # Test for vedv::container_entity::get_vm_name_by_container_name()
-@test "vedv::container_entity::get_vm_name_by_container_name() DUMMY" {
-  :
+@test "vedv::container_entity::get_vm_name_by_container_name() Should succeed" {
+  # Setup
+  local -r container_name="ct1"
+  # Mock
+  vedv::vmobj_entity::get_vm_name_by_vmobj_name() {
+    assert_equal "$*" "container ct1"
+  }
+  # Act
+  run vedv::container_entity::get_vm_name_by_container_name "$container_name"
+  # Assert
+  assert_success
+  assert_output ""
 }
 
 # Test vedv::container_entity::get_container_name_by_vm_name()
-@test "vedv::container_entity::get_container_name_by_vm_name() DUMMY" {
-  :
+# bats test_tags=only
+@test "vedv::container_entity::get_container_name_by_vm_name() Should succeed" {
+  # Setup
+  local -r container_name="ct1"
+  # Mock
+  vedv::vmobj_entity::get_vmobj_name_by_vm_name() {
+    assert_equal "$*" "container ct1"
+  }
+  # Act
+  run vedv::container_entity::get_container_name_by_vm_name "$container_name"
+  # Assert
+  assert_success
+  assert_output ""
 }
 
 # Test vedv::container_entity::get_id_by_vm_name()
-@test "vedv::container_entity::get_id_by_vm_name() DUMMY" {
-  :
+# bats test_tags=only
+@test "vedv::container_entity::get_id_by_vm_name() Should succeed" {
+  # Setup
+  local -r container_name="ct1"
+  # Mock
+  vedv::vmobj_entity::get_vmobj_id_by_vm_name() {
+    assert_equal "$*" "container ct1"
+  }
+  # Act
+  run vedv::container_entity::get_id_by_vm_name "$container_name"
+  # Assert
+  assert_success
+  assert_output ""
 }
 
 # Test vedv::container_entity::get_id_by_container_name()
-@test "vedv::container_entity::get_id_by_container_name() DUMMY" {
-  :
+@test "vedv::container_entity::get_id_by_container_name() Should succeed" {
+  # Setup
+  local -r container_name="ct1"
+  # Mock
+  vedv::vmobj_entity::get_id_by_vmobj_name() {
+    assert_equal "$*" "container ct1"
+  }
+  # Act
+  run vedv::container_entity::get_id_by_container_name "$container_name"
+  # Assert
+  assert_success
+  assert_output ""
 }
 
 # Test vedv::container_entity::get_ssh_port()
-@test 'vedv::container_entity::get_ssh_port() DUMMY' {
-  :
+@test 'vedv::container_entity::get_ssh_port() Should succeed' {
+  # Setup
+  local -r container_name="ct1"
+  # Mock
+  vedv::vmobj_entity::get_ssh_port() {
+    assert_equal "$*" "container ct1"
+  }
+  # Act
+  run vedv::container_entity::get_ssh_port "$container_name"
+  # Assert
+  assert_success
+  assert_output ""
 }
 
 # Test vedv::container_entity::set_ssh_port()
-@test 'vedv::container_entity::set_ssh_port() DUMMY' {
-  :
+@test 'vedv::container_entity::set_ssh_port() Should succeed' {
+  # Setup
+  local -r container_name="ct1"
+  local -r value="val1"
+  # Mock
+  vedv::vmobj_entity::set_ssh_port() {
+    assert_equal "$*" "container ct1 val1"
+  }
+  # Act
+  run vedv::container_entity::set_ssh_port "$container_name" "$value"
+  # Assert
+  assert_success
+  assert_output ""
 }
 
 # Test vedv::container_entity::set_parent_image_id()
-@test 'vedv::container_entity::set_parent_image_id() DUMMY' {
-  :
+# bats test_tags=only
+@test 'vedv::container_entity::set_parent_image_id() Should succeed' {
+  # Setup
+  local -r container_name="ct1"
+  local -r value="val1"
+  # Mock
+  vedv::vmobj_entity::__set_attribute() {
+    assert_equal "$*" "container ct1 parent_image_id val1"
+  }
+  # Act
+  run vedv::container_entity::set_parent_image_id "$container_name" "$value"
+  # Assert
+  assert_success
+  assert_output ""
 }
 
 # Test vedv::container_entity::cache::get_user_name()

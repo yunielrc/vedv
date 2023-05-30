@@ -2215,13 +2215,35 @@ Failed to stop the image 'my-image-name'.You must stop it."
 }
 
 # Tests for vedv::image_builder::__layer_run_calc_id()
-@test "vedv::image_builder::__layer_run_calc_id(): DUMMY" {
-  :
+# bats test_tags=only
+@test "vedv::image_builder::__layer_run_calc_id(): Should succeed" {
+  local -r cmd="1 RUN echo 'hello world'"
+
+  vedv::image_builder::__simple_layer_command_calc_id() {
+    assert_equal "$*" "${cmd} RUN"
+    echo "12345"
+  }
+
+  run vedv::image_builder::__layer_run_calc_id "$cmd"
+
+  assert_success
+  assert_output "12345"
 }
 
 # Tests for vedv::image_builder::__layer_user_calc_id()
-@test "vedv::image_builder::__layer_user_calc_id(): DUMMY" {
-  :
+# bats test_tags=only
+@test "vedv::image_builder::__layer_user_calc_id(): Should succeed" {
+  local -r cmd="1 USER nalyd"
+
+  vedv::image_builder::__simple_layer_command_calc_id() {
+    assert_equal "$*" "${cmd} USER"
+    echo "12345"
+  }
+
+  run vedv::image_builder::__layer_user_calc_id "$cmd"
+
+  assert_success
+  assert_output "12345"
 }
 
 # Tests for vedv::image_builder::__layer_user()
@@ -2286,8 +2308,19 @@ Failed to stop the image 'my-image-name'.You must stop it."
 }
 
 # Tests for vedv::image_builder::__layer_workdir_calc_id()
-@test "vedv::image_builder::__layer_workdir_calc_id(): DUMMY" {
-  :
+# bats test_tags=only
+@test "vedv::image_builder::__layer_workdir_calc_id(): Should succeed" {
+  local -r cmd="1 WORKDIR /home/nalyd"
+
+  vedv::image_builder::__simple_layer_command_calc_id() {
+    assert_equal "$*" "${cmd} WORKDIR"
+    echo "12345"
+  }
+
+  run vedv::image_builder::__layer_workdir_calc_id "$cmd"
+
+  assert_success
+  assert_output "12345"
 }
 
 # Tests for vedv::image_builder::__layer_workdir()
@@ -2352,8 +2385,19 @@ Failed to stop the image 'my-image-name'.You must stop it."
 }
 
 # Tests for vedv::image_builder::__layer_env_calc_id()
-@test "vedv::image_builder::__layer_env_calc_id(): DUMMY" {
-  :
+# bats test_tags=only
+@test "vedv::image_builder::__layer_env_calc_id(): Should succeed" {
+  local -r image_id="12345"
+  local -r cmd="1 ENV E1=v1"
+
+  vedv::image_builder::__simple_layer_command_calc_id() {
+    assert_equal "$*" "${cmd} ENV"
+  }
+
+  run vedv::image_builder::__layer_env_calc_id "$cmd"
+
+  assert_success
+  assert_output ""
 }
 
 # Tests for vedv::image_builder::__layer_env()
@@ -2588,8 +2632,18 @@ local -r var_9f57a558b3_VAR23=\"var3 var3\""
 }
 
 # Tests for vedv::image_builder::__layer_shell_calc_id()
-@test "vedv::image_builder::__layer_shell_calc_id(): DUMMY" {
-  :
+@test "vedv::image_builder::__layer_shell_calc_id(): Should succeed" {
+  local -r image_id="12345"
+  local -r cmd="1 SHELL zsh"
+
+  vedv::image_builder::__simple_layer_command_calc_id() {
+    assert_equal "$*" "${cmd} SHELL"
+  }
+
+  run vedv::image_builder::__layer_shell_calc_id "$cmd"
+
+  assert_success
+  assert_output ""
 }
 
 # Tests for vedv::image_builder::__layer_shell()

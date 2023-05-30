@@ -2326,9 +2326,19 @@ Failed to get default workdir for container: 12345"
 }
 
 # Tests for vedv::vmobj_service::get_environment_var()
+# bats test_tags=only
+@test "vedv::vmobj_service::get_environment_vars() Should succeed" {
+  local -r type="container"
+  local -r vmobj_id="22345"
 
-@test "vedv::vmobj_service::get_environment_var() DUMMY" {
-  :
+  vedv::vmobj_service::execute_cmd_by_id() {
+    assert_equal "$*" "container 22345 vedv-getenv_vars root <none>"
+  }
+
+  run vedv::vmobj_service::get_environment_vars "$type" "$vmobj_id"
+
+  assert_success
+  assert_output ""
 }
 
 # Tests for vedv::vmobj_service::use_cache()
