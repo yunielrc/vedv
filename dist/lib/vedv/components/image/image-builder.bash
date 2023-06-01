@@ -1309,10 +1309,7 @@ vedv::image_builder::__build() {
     return "$ERR_NOT_FOUND"
   fi
   if [[ -z "$image_name" ]]; then
-    image_name="$(petname)" || {
-      err 'Failed to generate a random name for the image'
-      return "$ERR_IMAGE_BUILDER_OPERATION"
-    }
+    image_name="$(petname)" || return $?
   fi
   readonly image_name
 
@@ -1353,6 +1350,7 @@ vedv::image_builder::__build() {
     }
     err "The image '${image_name}' was removed."
   }
+
   # `image_id` should be empty when there is no image with that name
   #  in that case it's no necessary to validate the from layer
 
@@ -1360,7 +1358,7 @@ vedv::image_builder::__build() {
   __call__layer_from() {
     local from_body
     from_body="$(vedv::image_vedvfile_service::get_cmd_body "$from_cmd")" || {
-      err "Failed to get from body from Vedvfile '${vedvfile}'"
+      err "Failed to get cmd body from Vedvfile '${vedvfile}'"
       return "$ERR_VEDV_FILE"
     }
     image_id="$(vedv::image_builder::__layer_from "$from_body" "$image_name")" || {
@@ -1373,7 +1371,7 @@ vedv::image_builder::__build() {
     local -a arr_layer_ids
     # shellcheck disable=SC2207
     arr_layer_ids=($(vedv::image_entity::get_layers_ids "$image_id")) || {
-      err "Failed to get layers ids for image '${image_name}'"
+      err "Failed to get layers ids for image '${image_name}'. Try build the image again with --no-cache."
       return "$ERR_IMAGE_BUILDER_OPERATION"
     }
     echo "created layer '${arr_layer_ids[0]}' for command 'FROM'"
@@ -1398,8 +1396,8 @@ vedv::image_builder::__build() {
       # if there is an image with valid layer FROM, restoring the
       # last layer will get rid of any data created on an erroneous previous build
       vedv::image_service::restore_last_layer "$image_id" || {
-        err "Failed to restore layer last layer for image '${image_id}'"
-        __delete_corrupted_image || return $?
+        err "Failed to restore layer last layer for image '${image_id}'. Try build the image again with --no-cache."
+        return "$ERR_IMAGE_BUILDER_OPERATION"
       }
     fi
   else
@@ -1417,9 +1415,8 @@ vedv::image_builder::__build() {
   # all previous commands of this position are ignored because their layers are valid
   local -i first_invalid_cmd_pos
   first_invalid_cmd_pos="$(vedv::image_builder::__delete_invalid_layers "$image_id" "$commands")" || {
-    err "Failed deleting invalid layers for image '${image_name}'"
+    err "Failed deleting invalid layers for image '${image_name}'. Try build the image again with --no-cache."
     # 2 - A layer deletion fails
-    __delete_corrupted_image
     return "$ERR_IMAGE_BUILDER_OPERATION"
   }
   readonly first_invalid_cmd_pos
@@ -1480,9 +1477,8 @@ vedv::image_builder::__build() {
       err "Failed to create layer for command '${evaluated_cmd}'"
 
       if [[ $ecode -eq "$ERR_IMAGE_BUILDER_LAYER_CREATION_FAILURE_PREV_RESTORATION_FAIL" ]]; then
-        err "The previous layer to the failure could not be restored."
+        err "The previous layer to the failure could not be restored. Try build the image again with --no-cache."
         # 3 - A layer creation fails and the previous layer restoration fails too.
-        __delete_corrupted_image
         return $ecode
       fi
       return "$ERR_IMAGE_BUILDER_OPERATION"

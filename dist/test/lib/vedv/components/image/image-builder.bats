@@ -1272,7 +1272,7 @@ Previous layer restored"
   assert_output "Argument 'vedvfile' is required"
 }
 
-@test "vedv::image_builder::__build() should fail with not existent 'vedvfile' argument" {
+@test "vedv::image_builder::__build() Should fail with non-existent 'vedvfile'" {
   # Arrange
   local -r vedvfile="123abc45fgfhzbzdf"
   local -r image_name=""
@@ -1282,34 +1282,32 @@ Previous layer restored"
   assert_failure "$ERR_NOT_FOUND"
   assert_output "File '${vedvfile}' does not exist"
 }
-
-@test "vedv::image_builder::__build() Should fail to generate a random name" {
+# bats test_tags=only
+@test "vedv::image_builder::__build() Should gen image_name IF empty" {
   # Arrange
   local -r vedvfile="dist/test/lib/vedv/components/image/fixtures/Vedvfile"
   local -r image_name=""
   # Stub
-  vedv::image_builder::__expand_cmd_parameters() {
-    echo "$*"
+  petname() {
+    echo 'petname-called' >&2
+    return 1
   }
-  vedv::image_builder::__save_environment_vars_to_local_file() { :; }
-  petname() { false; }
   # Act
   run vedv::image_builder::__build "$vedvfile" "$image_name"
   # Assert
-  assert_failure "$ERR_IMAGE_BUILDER_OPERATION"
-  assert_output 'Failed to generate a random name for the image'
+  assert_failure 1
+  assert_output "petname-called"
 }
 
-@test "vedv::image_builder::__build() Should fail With invalid vedvfile" {
+# bats test_tags=only
+@test "vedv::image_builder::__build() Should fail With invalid  vedvfile" {
   # Arrange
   local -r vedvfile="dist/test/lib/vedv/components/image/fixtures/Vedvfile"
   local -r image_name="my-image-name"
   # Stub
-  vedv::image_builder::__expand_cmd_parameters() {
-    echo "$*"
+  petname() {
+    assert_equal "$*" "INVALID_CALL"
   }
-  vedv::image_builder::__save_environment_vars_to_local_file() { :; }
-  petname() { :; }
   vedv::image_vedvfile_service::get_commands() {
     assert_equal "$*" "$vedvfile"
     false
@@ -1321,27 +1319,30 @@ Previous layer restored"
   assert_output "Failed to get commands from Vedvfile '${vedvfile}'"
 }
 
-@test "vedv::image_builder::__build() Should fail With missing FROM command" {
+# bats test_tags=only
+@test "vedv::image_builder::__build() Should fail If str_encode_vars fails" {
   # Arrange
   local -r vedvfile="dist/test/lib/vedv/components/image/fixtures/Vedvfile"
   local -r image_name="my-image-name"
   # Stub
-  vedv::image_builder::__expand_cmd_parameters() {
-    echo "$*"
+  petname() {
+    assert_equal "$*" "INVALID_CALL"
   }
-  vedv::image_builder::__save_environment_vars_to_local_file() { :; }
-  petname() { :; }
   vedv::image_vedvfile_service::get_commands() {
     assert_equal "$*" "$vedvfile"
+    echo "1 RUN echo hello"
+  }
+  utils::str_encode_vars() {
+    assert_equal "$*" "1 RUN echo hello"
     return 1
   }
   # Act
   run vedv::image_builder::__build "$vedvfile" "$image_name"
   # Assert
-  assert_failure
-  assert_output "Failed to get commands from Vedvfile 'dist/test/lib/vedv/components/image/fixtures/Vedvfile'"
+  assert_failure "$ERR_VEDV_FILE"
+  assert_output "Failed to prepare commands from Vedvfile '${vedvfile}'"
 }
-
+# bats test_tags=only
 @test "vedv::image_builder::__build() Should fail On error getting image id from image name" {
   # Arrange
   local -r vedvfile="dist/test/lib/vedv/components/image/fixtures/Vedvfile"
@@ -1349,13 +1350,15 @@ Previous layer restored"
 
   local -r from_cmd="1 FROM my_image"
   # Stub
-  vedv::image_builder::__expand_cmd_parameters() {
-    echo "$*"
+  petname() {
+    assert_equal "$*" "INVALID_CALL"
   }
-  vedv::image_builder::__save_environment_vars_to_local_file() { :; }
-  petname() { :; }
   vedv::image_vedvfile_service::get_commands() {
     assert_equal "$*" "$vedvfile"
+    echo "$from_cmd"
+  }
+  utils::str_encode_vars() {
+    assert_equal "$*" "$from_cmd"
     echo "$from_cmd"
   }
   vedv::image_entity::get_id_by_image_name() {
@@ -1368,7 +1371,7 @@ Previous layer restored"
   assert_failure "$ERR_IMAGE_BUILDER_OPERATION"
   assert_output "Failed to get image id for image '${image_name}'"
 }
-
+# bats test_tags=only
 @test "vedv::image_builder::__build() Should fail On error validating layer from" {
   # Arrange
   local -r vedvfile="dist/test/lib/vedv/components/image/fixtures/Vedvfile"
@@ -1377,13 +1380,16 @@ Previous layer restored"
   local -r from_cmd="1 FROM my_image"
   local -r image_id="image-id"
   # Stub
-  vedv::image_builder::__expand_cmd_parameters() {
-    echo "$*"
+
+  petname() {
+    assert_equal "$*" "INVALID_CALL"
   }
-  vedv::image_builder::__save_environment_vars_to_local_file() { :; }
-  petname() { :; }
   vedv::image_vedvfile_service::get_commands() {
     assert_equal "$*" "$vedvfile"
+    echo "$from_cmd"
+  }
+  utils::str_encode_vars() {
+    assert_equal "$*" "$from_cmd"
     echo "$from_cmd"
   }
   vedv::image_entity::get_id_by_image_name() {
@@ -1394,16 +1400,13 @@ Previous layer restored"
     assert_equal "$*" "${image_id} ${from_cmd}"
     false
   }
-  vedv::image_service::child_containers_remove_all() {
-    assert_equal "$*" "$image_id"
-  }
   # Act
   run vedv::image_builder::__build "$vedvfile" "$image_name"
   # Assert
   assert_failure "$ERR_IMAGE_BUILDER_OPERATION"
   assert_output "Failed to validate layer from for image '${image_name}'"
 }
-
+# bats test_tags=only
 @test "vedv::image_builder::__build() Should fail to remove the image" {
   # Arrange
   local -r vedvfile="dist/test/lib/vedv/components/image/fixtures/Vedvfile"
@@ -1412,13 +1415,15 @@ Previous layer restored"
   local -r from_cmd="1 FROM my_image"
   local -r image_id="image-id"
   # Stub
-  vedv::image_builder::__expand_cmd_parameters() {
-    echo "$*"
+  petname() {
+    assert_equal "$*" "INVALID_CALL"
   }
-  vedv::image_builder::__save_environment_vars_to_local_file() { :; }
-  petname() { :; }
   vedv::image_vedvfile_service::get_commands() {
     assert_equal "$*" "$vedvfile"
+    echo "$from_cmd"
+  }
+  utils::str_encode_vars() {
+    assert_equal "$*" "$from_cmd"
     echo "$from_cmd"
   }
   vedv::image_entity::get_id_by_image_name() {
@@ -1428,9 +1433,6 @@ Previous layer restored"
   vedv::image_builder::__validate_layer_from() {
     assert_equal "$*" "${image_id} ${from_cmd}"
     echo 'invalid'
-  }
-  vedv::image_service::child_containers_remove_all() {
-    assert_equal "$*" "$image_id"
   }
   vedv::image_service::remove() {
     assert_equal "$*" "true $image_id"
@@ -1442,7 +1444,7 @@ Previous layer restored"
   assert_failure "$ERR_IMAGE_BUILDER_OPERATION"
   assert_output "Failed to remove image '${image_name}'"
 }
-
+# bats test_tags=only
 @test "vedv::image_builder::__build() Should fail to get cmd body" {
   # Arrange
   local -r vedvfile="dist/test/lib/vedv/components/image/fixtures/Vedvfile"
@@ -1451,13 +1453,16 @@ Previous layer restored"
   local -r from_cmd="1 FROM my_image"
   local -r image_id="image-id"
   # Stub
-  vedv::image_builder::__expand_cmd_parameters() {
-    echo "$*"
+
+  petname() {
+    assert_equal "$*" "INVALID_CALL"
   }
-  vedv::image_builder::__save_environment_vars_to_local_file() { :; }
-  petname() { :; }
   vedv::image_vedvfile_service::get_commands() {
     assert_equal "$*" "$vedvfile"
+    echo "$from_cmd"
+  }
+  utils::str_encode_vars() {
+    assert_equal "$*" "$from_cmd"
     echo "$from_cmd"
   }
   vedv::image_entity::get_id_by_image_name() {
@@ -1467,9 +1472,6 @@ Previous layer restored"
   vedv::image_builder::__validate_layer_from() {
     assert_equal "$*" "${image_id} ${from_cmd}"
     echo 'invalid'
-  }
-  vedv::image_service::child_containers_remove_all() {
-    assert_equal "$*" "$image_id"
   }
   vedv::image_service::remove() {
     assert_equal "$*" "true $image_id"
@@ -1482,9 +1484,9 @@ Previous layer restored"
   run vedv::image_builder::__build "$vedvfile" "$image_name"
   # Assert
   assert_failure
-  assert_output "Failed to get from body from Vedvfile '${vedvfile}'"
+  assert_output "Failed to get cmd body from Vedvfile '${vedvfile}'"
 }
-
+# bats test_tags=only
 @test "vedv::image_builder::__build() Should fail creating layer from" {
   # Arrange
   local -r vedvfile="dist/test/lib/vedv/components/image/fixtures/Vedvfile"
@@ -1493,13 +1495,16 @@ Previous layer restored"
   local -r from_cmd="1 FROM my_image"
   local -r image_id="image-id"
   # Stub
-  vedv::image_builder::__expand_cmd_parameters() {
-    echo "$*"
+
+  petname() {
+    assert_equal "$*" "INVALID_CALL"
   }
-  vedv::image_builder::__save_environment_vars_to_local_file() { :; }
-  petname() { :; }
   vedv::image_vedvfile_service::get_commands() {
     assert_equal "$*" "$vedvfile"
+    echo "$from_cmd"
+  }
+  utils::str_encode_vars() {
+    assert_equal "$*" "$from_cmd"
     echo "$from_cmd"
   }
   vedv::image_entity::get_id_by_image_name() {
@@ -1510,11 +1515,8 @@ Previous layer restored"
     assert_equal "$*" "${image_id} ${from_cmd}"
     echo 'invalid'
   }
-  vedv::image_service::child_containers_remove_all() {
-    assert_equal "$*" "$image_id"
-  }
   vedv::image_service::remove() {
-    assert_equal "$*" "true $image_id"
+    assert_regex "$*" "true (${image_name}|${image_id})"
   }
   vedv::image_vedvfile_service::get_cmd_body() {
     assert_equal "$*" "$from_cmd"
@@ -1529,10 +1531,12 @@ Previous layer restored"
   run vedv::image_builder::__build "$vedvfile" "$image_name"
   # Assert
   assert_failure "$ERR_IMAGE_BUILDER_OPERATION"
-  assert_output --partial "Failed to create the layer for command '1 FROM my_image'"
+  assert_output "Failed to create the layer for command '1 FROM my_image'
+The image 'my-image-name' is corrupted and its going to be deleted.
+The image 'my-image-name' was removed."
 }
-
-@test "vedv::image_builder::__build() Should call __layer_from with if image_id is empty" {
+# bats test_tags=only
+@test "vedv::image_builder::__build() Should fail If get_layers_ids fails" {
   # Arrange
   local -r vedvfile="dist/test/lib/vedv/components/image/fixtures/Vedvfile"
   local -r image_name="my-image-name"
@@ -1540,13 +1544,117 @@ Previous layer restored"
   local -r from_cmd="1 FROM my_image"
   local -r image_id="image-id"
   # Stub
-  vedv::image_builder::__expand_cmd_parameters() {
-    echo "$*"
+
+  petname() {
+    assert_equal "$*" "INVALID_CALL"
   }
-  vedv::image_builder::__save_environment_vars_to_local_file() { :; }
-  petname() { :; }
   vedv::image_vedvfile_service::get_commands() {
     assert_equal "$*" "$vedvfile"
+    echo "$from_cmd"
+  }
+  utils::str_encode_vars() {
+    assert_equal "$*" "$from_cmd"
+    echo "$from_cmd"
+  }
+  vedv::image_entity::get_id_by_image_name() {
+    assert_equal "$*" "$image_name"
+    echo 'image-id'
+  }
+  vedv::image_builder::__validate_layer_from() {
+    assert_equal "$*" "${image_id} ${from_cmd}"
+    echo 'invalid'
+  }
+  vedv::image_service::remove() {
+    assert_regex "$*" "true (${image_name}|${image_id})"
+  }
+  vedv::image_vedvfile_service::get_cmd_body() {
+    assert_equal "$*" "$from_cmd"
+    echo "$vedvfile"
+  }
+  vedv::image_builder::__layer_from() {
+    # shellcheck disable=SC2154
+    assert_equal "$*" "${from_body} ${image_name}"
+  }
+  vedv::image_entity::get_layers_ids() {
+    assert_equal "$*" "$image_id"
+    return 1
+  }
+  # Act
+  run vedv::image_builder::__build "$vedvfile" "$image_name"
+  # Assert
+  assert_failure "$ERR_IMAGE_BUILDER_OPERATION"
+  assert_output "Failed to get layers ids for image 'my-image-name'. Try build the image again with --no-cache."
+}
+# bats test_tags=only
+@test "vedv::image_builder::__build() Should fail If restore_last_layer fails On valid layer from" {
+  # Arrange
+  local -r vedvfile="dist/test/lib/vedv/components/image/fixtures/Vedvfile"
+  local -r image_name="my-image-name"
+
+  local -r from_cmd="1 FROM my_image"
+  local -r image_id="image-id"
+  # Stub
+
+  petname() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::image_vedvfile_service::get_commands() {
+    assert_equal "$*" "$vedvfile"
+    echo "$from_cmd"
+  }
+  utils::str_encode_vars() {
+    assert_equal "$*" "$from_cmd"
+    echo "$from_cmd"
+  }
+  vedv::image_entity::get_id_by_image_name() {
+    assert_equal "$*" "$image_name"
+    echo 'image-id'
+  }
+  vedv::image_builder::__validate_layer_from() {
+    assert_equal "$*" "${image_id} ${from_cmd}"
+    echo 'valid'
+  }
+  vedv::image_service::remove() {
+    assert_regex "$*" "INVALID_CALL"
+  }
+  vedv::image_vedvfile_service::get_cmd_body() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::image_builder::__layer_from() {
+    # shellcheck disable=SC2154
+    assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::image_entity::get_layers_ids() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::image_service::restore_last_layer() {
+    assert_equal "$*" "$image_id"
+    return 1
+  }
+  # Act
+  run vedv::image_builder::__build "$vedvfile" "$image_name"
+  # Assert
+  assert_failure "$ERR_IMAGE_BUILDER_OPERATION"
+  assert_output "Failed to restore layer last layer for image 'image-id'. Try build the image again with --no-cache."
+}
+# bats test_tags=only
+@test "vedv::image_builder::__build() Should call __layer_from If image_id is empty" {
+  # Arrange
+  local -r vedvfile="dist/test/lib/vedv/components/image/fixtures/Vedvfile"
+  local -r image_name="my-image-name"
+
+  local -r from_cmd="1 FROM my_image"
+  local -r image_id="image-id"
+  # Stub
+  petname() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::image_vedvfile_service::get_commands() {
+    assert_equal "$*" "$vedvfile"
+    echo "$from_cmd"
+  }
+  utils::str_encode_vars() {
+    assert_equal "$*" "$from_cmd"
     echo "$from_cmd"
   }
   vedv::image_entity::get_id_by_image_name() {
@@ -1555,15 +1663,18 @@ Previous layer restored"
   vedv::image_builder::__validate_layer_from() {
     assert_equal "$*" "INVALID_CALL"
   }
-  vedv::image_service::child_containers_remove_all() {
-    assert_equal "$*" "INVALID_CALL"
-  }
   vedv::image_service::remove() {
-    assert_equal "$*" "my-image-name"
+    assert_equal "$*" "true my-image-name"
   }
   vedv::image_vedvfile_service::get_cmd_body() {
     assert_equal "$*" "$from_cmd"
     echo "$vedvfile"
+  }
+  vedv::image_entity::get_layers_ids() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::image_service::restore_last_layer() {
+    assert_equal "$*" "INVALID_CALL"
   }
   vedv::image_builder::__layer_from() {
     assert_equal "$*" "${from_body} ${image_name}"
@@ -1573,9 +1684,11 @@ Previous layer restored"
   run vedv::image_builder::__build "$vedvfile" "$image_name"
   # Assert
   assert_failure "$ERR_IMAGE_BUILDER_OPERATION"
-  assert_output --partial "Failed to create the layer for command '1 FROM my_image'"
+  assert_output "Failed to create the layer for command '1 FROM my_image'
+The image 'my-image-name' is corrupted and its going to be deleted.
+The image 'my-image-name' was removed."
 }
-
+# bats test_tags=only
 @test "vedv::image_builder::__build() Should fail to delete invalid layers" {
   # Arrange
   local -r vedvfile="dist/test/lib/vedv/components/image/fixtures/Vedvfile"
@@ -1588,14 +1701,17 @@ Previous layer restored"
 3 COPY home.config /home/vedv/
 4 RUN ls -la /home/vedv/"
   # Stub
-  vedv::image_builder::__expand_cmd_parameters() {
-    echo "$*"
+
+  petname() {
+    assert_equal "$*" "INVALID_CALL"
   }
-  vedv::image_builder::__save_environment_vars_to_local_file() { :; }
-  petname() { :; }
   vedv::image_vedvfile_service::get_commands() {
     assert_equal "$*" "$vedvfile"
     echo "$cmds"
+  }
+  utils::str_encode_vars() {
+    assert_equal "$*" "$from_cmd"
+    echo "$from_cmd"
   }
   vedv::image_entity::get_id_by_image_name() {
     assert_equal "$*" "$image_name"
@@ -1618,9 +1734,6 @@ Previous layer restored"
     assert_equal "$*" "$image_id"
     echo "12345 123456"
   }
-  vedv::image_service::child_containers_remove_all() {
-    assert_equal "$*" "INVALID_CALL"
-  }
   vedv::image_builder::__delete_invalid_layers() {
     assert_equal "$*" "${image_id} ${cmds}"
     false
@@ -1631,7 +1744,7 @@ Previous layer restored"
   assert_failure
   assert_output --partial "Failed deleting invalid layers for image '${image_name}'"
 }
-
+# bats test_tags=only
 @test "vedv::image_builder::__build() Should fail If first_invalid_layer_pos < -1 or > commands_length length" {
   # Arrange
   local -r vedvfile="dist/test/lib/vedv/components/image/fixtures/Vedvfile"
@@ -1641,11 +1754,14 @@ Previous layer restored"
 2 RUN echo 'hello world'"
   local -r image_id="image-id"
   # Stub
-  vedv::image_builder::__expand_cmd_parameters() {
-    echo "$*"
+
+  petname() {
+    assert_equal "$*" "INVALID_CALL"
   }
-  vedv::image_builder::__save_environment_vars_to_local_file() { :; }
-  petname() { :; }
+  utils::str_encode_vars() {
+    assert_equal "$*" "$from_cmd"
+    echo "$from_cmd"
+  }
   vedv::image_vedvfile_service::get_commands() {
     assert_equal "$*" "$vedvfile"
     echo "$vfile_cmds"
@@ -1661,9 +1777,6 @@ Previous layer restored"
   vedv::image_builder::__validate_layer_from() {
     assert_equal "$*" "${image_id} ${from_cmd}"
     echo 'valid'
-  }
-  vedv::image_service::child_containers_remove_all() {
-    assert_equal "$*" "INVALID_CALL"
   }
   vedv::image_service::remove() {
     assert_equal "$*" "INVALID_CALL"
@@ -1712,11 +1825,14 @@ Previous layer restored"
 3 COPY home.config /home/vedv/
 4 RUN ls -la /home/vedv/"
   # Stub
-  vedv::image_builder::__expand_cmd_parameters() {
-    echo "$*"
+
+  petname() {
+    assert_equal "$*" "INVALID_CALL"
   }
-  vedv::image_builder::__save_environment_vars_to_local_file() { :; }
-  petname() { :; }
+  utils::str_encode_vars() {
+    assert_equal "$*" "$from_cmd"
+    echo "$from_cmd"
+  }
   vedv::image_vedvfile_service::get_commands() {
     assert_equal "$*" "$vedvfile"
     echo "$cmds"
@@ -1725,9 +1841,6 @@ Previous layer restored"
     assert_equal "$*" "$image_name"
   }
   vedv::image_builder::__validate_layer_from() {
-    assert_equal "$*" "INVALID_CALL"
-  }
-  vedv::image_service::child_containers_remove_all() {
     assert_equal "$*" "INVALID_CALL"
   }
   vedv::image_service::remove() {
@@ -1772,11 +1885,10 @@ Previous layer restored"
 3 COPY home.config /home/vedv/
 4 RUN ls -la /home/vedv/"
   # Stub
-  vedv::image_builder::__expand_cmd_parameters() {
-    echo "$*"
+
+  petname() {
+    assert_equal "$*" "INVALID_CALL"
   }
-  vedv::image_builder::__save_environment_vars_to_local_file() { :; }
-  petname() { :; }
   vedv::image_vedvfile_service::get_commands() {
     assert_equal "$*" "$vedvfile"
     echo "$cmds"
@@ -1814,25 +1926,28 @@ Previous layer restored"
   assert_failure
   assert_output ""
 }
-
+# bats test_tags=only
 @test "vedv::image_builder::__build() Should fail starting image" {
   # Arrange
   local -r vedvfile="dist/test/lib/vedv/components/image/fixtures/Vedvfile"
   local -r image_name="my-image-name"
   # commands without 'FROM' command
   local -r from_cmd="1 FROM my_image"
-  local -r cmds="1 FROM /tmp/alpine-x86_64.ova
+  local -r cmds="1 FROM my_image
 2 COPY homefs/* /home/vedv/
 3 COPY home.config /home/vedv/
 4 RUN ls -la /home/vedv/"
 
   local -r image_id="image-id"
   # Stub
-  vedv::image_builder::__expand_cmd_parameters() {
-    echo "$*"
+
+  petname() {
+    assert_equal "$*" "INVALID_CALL"
   }
-  vedv::image_builder::__save_environment_vars_to_local_file() { :; }
-  petname() { :; }
+  utils::str_encode_vars() {
+    assert_equal "$*" "$cmds"
+    echo "$cmds"
+  }
   vedv::image_vedvfile_service::get_commands() {
     assert_equal "$*" "$vedvfile"
     echo "$cmds"
@@ -1844,9 +1959,6 @@ Previous layer restored"
   vedv::image_builder::__validate_layer_from() {
     assert_equal "$*" "${image_id} ${from_cmd}"
     echo 'valid'
-  }
-  vedv::image_service::child_containers_remove_all() {
-    assert_equal "$*" "INVALID_CALL"
   }
   vedv::image_service::remove() {
     assert_equal "$*" "INVALID_CALL"
@@ -1871,7 +1983,67 @@ Previous layer restored"
   assert_failure "$ERR_IMAGE_BUILDER_OPERATION"
   assert_output "Failed to start image '${image_name}'"
 }
+# bats test_tags=only
+@test "vedv::image_builder::__build() Should fail __save_environment_vars_to_local_file" {
+  # Arrange
+  local -r vedvfile="dist/test/lib/vedv/components/image/fixtures/Vedvfile"
+  local -r image_name="my-image-name"
+  # commands without 'FROM' command
+  local -r from_cmd="1 FROM my_image"
+  local -r cmds="1 FROM my_image
+2 COPY homefs/* /home/vedv/
+3 COPY home.config /home/vedv/
+4 RUN ls -la /home/vedv/"
 
+  local -r image_id="image-id"
+  # Stub
+
+  petname() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+  utils::str_encode_vars() {
+    assert_equal "$*" "$cmds"
+    echo "$cmds"
+  }
+  vedv::image_vedvfile_service::get_commands() {
+    assert_equal "$*" "$vedvfile"
+    echo "$cmds"
+  }
+  vedv::image_entity::get_id_by_image_name() {
+    assert_equal "$*" "$image_name"
+    echo 'image-id'
+  }
+  vedv::image_builder::__validate_layer_from() {
+    assert_equal "$*" "${image_id} ${from_cmd}"
+    echo 'valid'
+  }
+  vedv::image_service::remove() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::image_builder::__layer_from() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::image_service::restore_last_layer() {
+    assert_equal "$*" "$image_id"
+  }
+  vedv::image_builder::__delete_invalid_layers() {
+    assert_equal "$*" "${image_id} ${cmds}"
+    echo 2
+  }
+  vedv::image_service::start() {
+    assert_equal "$*" "$image_id"
+  }
+  vedv::image_builder::__save_environment_vars_to_local_file() {
+    assert_equal "$*" "$image_id"
+    false
+  }
+  # Act
+  run vedv::image_builder::__build "$vedvfile" "$image_name"
+
+  assert_failure "$ERR_IMAGE_BUILDER_OPERATION"
+  assert_output "Failed to save environment variables for image '${image_id}'"
+}
+# bats test_tags=only
 @test "vedv::image_builder::__build() Should fail to create layer for a command" {
   # Arrange
   local -r vedvfile="dist/test/lib/vedv/components/image/fixtures/Vedvfile"
@@ -1885,11 +2057,14 @@ Previous layer restored"
 
   local -r image_id="image-id"
   # Stub
-  vedv::image_builder::__expand_cmd_parameters() {
-    echo "$*"
+
+  petname() {
+    assert_equal "$*" "INVALID_CALL"
   }
-  vedv::image_builder::__save_environment_vars_to_local_file() { :; }
-  petname() { :; }
+  utils::str_encode_vars() {
+    assert_equal "$*" "$cmds"
+    echo "$cmds"
+  }
   vedv::image_vedvfile_service::get_commands() {
     assert_equal "$*" "$vedvfile"
     echo "$cmds"
@@ -1901,9 +2076,6 @@ Previous layer restored"
   vedv::image_builder::__validate_layer_from() {
     assert_equal "$*" "${image_id} ${from_cmd}"
     echo 'valid'
-  }
-  vedv::image_service::child_containers_remove_all() {
-    assert_equal "$*" "INVALID_CALL"
   }
   vedv::image_service::remove() {
     assert_equal "$*" "INVALID_CALL"
@@ -1919,6 +2091,9 @@ Previous layer restored"
     echo 3
   }
   vedv::image_service::start() {
+    assert_equal "$*" "$image_id"
+  }
+  vedv::image_builder::__save_environment_vars_to_local_file() {
     assert_equal "$*" "$image_id"
   }
   vedv::image_service::stop() {
@@ -1937,7 +2112,7 @@ Previous layer restored"
   assert_failure "$ERR_IMAGE_BUILDER_OPERATION"
   assert_output "Failed to create layer for command '4 RUN ls -la /home/vedv/'"
 }
-
+# bats test_tags=only
 @test "vedv::image_builder::__build() Should create layers 4 and 5 for a command" {
   # Arrange
   local -r vedvfile="dist/test/lib/vedv/components/image/fixtures/Vedvfile"
@@ -1951,11 +2126,14 @@ Previous layer restored"
 
   local -r image_id="image-id"
   # Stub
-  vedv::image_builder::__expand_cmd_parameters() {
-    echo "$*"
+
+  petname() {
+    assert_equal "$*" "INVALID_CALL"
   }
-  vedv::image_builder::__save_environment_vars_to_local_file() { :; }
-  petname() { :; }
+  utils::str_encode_vars() {
+    assert_equal "$*" "$cmds"
+    echo "$cmds"
+  }
   vedv::image_vedvfile_service::get_commands() {
     assert_equal "$*" "$vedvfile"
     echo "$cmds"
@@ -1967,9 +2145,6 @@ Previous layer restored"
   vedv::image_builder::__validate_layer_from() {
     assert_equal "$*" "${image_id} ${from_cmd}"
     echo 'valid'
-  }
-  vedv::image_service::child_containers_remove_all() {
-    assert_equal "$*" "INVALID_CALL"
   }
   vedv::image_service::remove() {
     assert_equal "$*" "INVALID_CALL"
@@ -1985,6 +2160,9 @@ Previous layer restored"
     echo 2
   }
   vedv::image_service::start() {
+    assert_equal "$*" "$image_id"
+  }
+  vedv::image_builder::__save_environment_vars_to_local_file() {
     assert_equal "$*" "$image_id"
   }
   vedv::image_service::stop() {
@@ -2009,15 +2187,13 @@ Previous layer restored"
   run vedv::image_builder::__build "$vedvfile" "$image_name"
   # Assert
   assert_success
-  assert_output <<EOF
-created 'layer_id_4' for command 'RUN'
-created 'layer_id_5' for command 'COPY'
+  assert_output "created layer 'layer_id_5' for command 'COPY'
+created layer 'layer_id_4' for command 'RUN'
 
 Build finished
-image-id my-image-name
-EOF
+image-id my-image-name"
 }
-
+# bats test_tags=only
 @test "vedv::image_builder::__build() Should fail stopping image" {
   # Arrange
   local -r vedvfile="dist/test/lib/vedv/components/image/fixtures/Vedvfile"
@@ -2031,11 +2207,14 @@ EOF
 
   local -r image_id="image-id"
   # Stub
-  vedv::image_builder::__expand_cmd_parameters() {
-    echo "$*"
+
+  petname() {
+    assert_equal "$*" "INVALID_CALL"
   }
-  vedv::image_builder::__save_environment_vars_to_local_file() { :; }
-  petname() { :; }
+  utils::str_encode_vars() {
+    assert_equal "$*" "$cmds"
+    echo "$cmds"
+  }
   vedv::image_vedvfile_service::get_commands() {
     assert_equal "$*" "$vedvfile"
     echo "$cmds"
@@ -2047,9 +2226,6 @@ EOF
   vedv::image_builder::__validate_layer_from() {
     assert_equal "$*" "${image_id} ${from_cmd}"
     echo 'valid'
-  }
-  vedv::image_service::child_containers_remove_all() {
-    assert_equal "$*" "INVALID_CALL"
   }
   vedv::image_service::remove() {
     assert_equal "$*" "INVALID_CALL"
@@ -2065,6 +2241,9 @@ EOF
     echo 2
   }
   vedv::image_service::start() {
+    assert_equal "$*" "$image_id"
+  }
+  vedv::image_builder::__save_environment_vars_to_local_file() {
     assert_equal "$*" "$image_id"
   }
   vedv::image_builder::__layer_run() {
@@ -2117,7 +2296,7 @@ Failed to stop the image 'my-image-name'.You must stop it."
   assert_failure
   assert_output "File '${vedvfile}' does not exist"
 }
-# bats test_tags=only
+
 @test 'vedv::image_builder::build() Should fail If fails to get image id' {
   local -r vedvfile='dist/test/lib/vedv/components/image/fixtures/Vedvfile'
   local -r image_name="image1"
@@ -2133,7 +2312,7 @@ Failed to stop the image 'my-image-name'.You must stop it."
   assert_failure
   assert_output "Failed to get image id for image '${image_name}'"
 }
-# bats test_tags=only
+
 @test 'vedv::image_builder::build() Should fail If has_containers fails' {
   local -r vedvfile='dist/test/lib/vedv/components/image/fixtures/Vedvfile'
   local -r image_name="image1"
@@ -2154,7 +2333,7 @@ Failed to stop the image 'my-image-name'.You must stop it."
   assert_failure
   assert_output "Failed to check if image '${image_name}' has containers"
 }
-# bats test_tags=only
+
 @test 'vedv::image_builder::build() Should fail If force is false and has containers' {
   local -r vedvfile='dist/test/lib/vedv/components/image/fixtures/Vedvfile'
   local -r image_name="image1"
@@ -2175,7 +2354,7 @@ Failed to stop the image 'my-image-name'.You must stop it."
   assert_failure
   assert_output "The image '${image_name}' has containers, you need to force the build, the containers will be removed."
 }
-# bats test_tags=only
+
 @test 'vedv::image_builder::build() Should fail If delete_layer_cache fails' {
   local -r vedvfile='dist/test/lib/vedv/components/image/fixtures/Vedvfile'
   local -r image_name="image1"
@@ -2199,7 +2378,7 @@ Failed to stop the image 'my-image-name'.You must stop it."
   assert_failure
   assert_output "Failed to remove image '${image_name}'"
 }
-# bats test_tags=only
+
 @test 'vedv::image_builder::build() Should fail If stop fails' {
   local -r vedvfile='dist/test/lib/vedv/components/image/fixtures/Vedvfile'
   local -r image_name="image1"
@@ -2232,7 +2411,7 @@ Failed to stop the image 'my-image-name'.You must stop it."
   assert_output "The build proccess has failed.
 Failed to stop the image 'image1'.You must stop it."
 }
-# bats test_tags=only
+
 @test 'vedv::image_builder::build() Should succeed' {
   local -r vedvfile='dist/test/lib/vedv/components/image/fixtures/Vedvfile'
   local -r image_name="image1"
