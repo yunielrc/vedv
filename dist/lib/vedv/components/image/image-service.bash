@@ -810,6 +810,65 @@ vedv::image_service::get_environment_vars() {
 }
 
 #
+# Delete layer cache
+# This function is used to delete the layers others than
+# the first layer (FROM)
+#
+# Arguments:
+#   image_id  string     image id
+#
+# Output:
+#  writes process result
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::image_service::delete_layer_cache() {
+  local -r image_id="$1"
+  # validate arguments
+  if [[ -z "$image_id" ]]; then
+    err "Argument 'image_id' is required"
+    return "$ERR_INVAL_ARG"
+  fi
+
+  local layers_ids
+  layers_ids="$(vedv::image_entity::get_layers_ids "$image_id")" || {
+    err "Failed to get layers ids for image '${image_id}'"
+    return "$ERR_IMAGE_OPERATION"
+  }
+
+  if [[ -z "$layers_ids" ]]; then
+    return 0
+  fi
+
+  local -a layers_ids_arr
+  IFS=' ' read -r -a layers_ids_arr <<<"$layers_ids"
+
+  local -r layer_from_id="${layers_ids_arr[0]}"
+  layers_ids_arr=("${layers_ids_arr[@]:1}")
+  # reverse array
+  local -a reversed_array=()
+  for ((i = ${#layers_ids_arr[@]} - 1; i >= 0; i--)); do
+    reversed_array+=("${layers_ids_arr[i]}")
+  done
+  layers_ids_arr=("${reversed_array[@]}")
+  # layers_ids_arr=($(tac -s ' ' <<<"${layers_ids_arr[@]}")) # inefficient
+  readonly layers_ids_arr
+
+  for layer_id in "${layers_ids_arr[@]}"; do
+    vedv::image_service::delete_layer "$image_id" "$layer_id" || {
+      err "Failed to delete layer '${layer_id}' for image '${image_id}'"
+      return "$ERR_IMAGE_OPERATION"
+    }
+  done
+
+  vedv::image_service::restore_layer "$image_id" "$layer_from_id" || {
+    err "Failed to restore layer '${layer_from_id}' for image '${image_id}'"
+    return "$ERR_IMAGE_OPERATION"
+  }
+}
+
+#
 # Build an image from a Vedvfile,
 #
 # Arguments:

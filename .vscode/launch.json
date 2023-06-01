@@ -151,9 +151,10 @@
       "args": [
         "image",
         "build",
+        "--no-cache",
         "-t",
         "image123",
-        "copy-chown-chmod.vedvfile"
+        "Vedvfile"
       ]
     },
     {

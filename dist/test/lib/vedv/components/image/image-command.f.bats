@@ -213,8 +213,7 @@ Options:
   run vedv image build -t 'image123'
 
   assert_success
-  assert_output --regexp "
-created layer '.*' for command 'FROM'
+  assert_output --regexp "created layer '.*' for command 'FROM'
 created layer '.*' for command 'COPY'
 created layer '.*' for command 'RUN'
 
@@ -228,8 +227,7 @@ Build finished
   run vedv image build -t 'image123' ./shell.vedvfile
 
   assert_success
-  assert_output --regexp "
-created layer '.*' for command 'FROM'
+  assert_output --regexp "created layer '.*' for command 'FROM'
 created layer '.*' for command 'SHELL'
 
 Build finished
@@ -258,8 +256,7 @@ shell_user: /bin/sh"
   run vedv image build -t 'image123' ./Vedvfile5
 
   assert_success
-  assert_output --regexp "
-created layer '.*' for command 'FROM'
+  assert_output --regexp "created layer '.*' for command 'FROM'
 created layer '.*' for command 'USER'
 created layer '.*' for command 'WORKDIR'
 created layer '.*' for command 'COPY'
@@ -279,15 +276,13 @@ Build finished
 .* image123"
 }
 
-# bats test_tags=only
 @test "vedv image build , Should build with COPY --chown --chmod command" {
   cd "${BATS_TEST_DIRNAME}/fixtures"
 
   run vedv image build -t 'image123' ./copy-chown-chmod.vedvfile
 
   assert_success
-  assert_output --regexp "
-created layer '.*' for command 'FROM'
+  assert_output --regexp "created layer '.*' for command 'FROM'
 created layer '.*' for command 'COPY'
 
 Build finished
@@ -304,4 +299,38 @@ dr-xr-xr-x    3 vedv     vedv .* homefs
 total 2
 dr-xr-xr-x    2 vedv     vedv .* d1
 -r-xr-xr-x    1 vedv     vedv .* f2"
+}
+
+# bats test_tags=only
+@test "vedv image build --no-cache -t image123 Vedvfile2" {
+  cd "${BATS_TEST_DIRNAME}/fixtures"
+
+  run vedv image build -t 'image123' ./Vedvfile2
+
+  assert_success
+  assert_line --index 0 --regexp "created layer '.*' for command 'FROM'"
+  assert_line --index 1 --regexp "created layer '.*' for command 'RUN'"
+  assert_line --index 2 --regexp "created layer '.*' for command 'COPY'"
+  assert_line --index 3 --regexp "created layer '.*' for command 'COPY'"
+  assert_line --index 4 "Build finished"
+  assert_line --index 5 --regexp ".* image123"
+
+  run vedv image build -t 'image123' ./Vedvfile2
+
+  assert_success
+  assert_line --index 0 "Build finished"
+  assert_line --index 1 --regexp ".* image123"
+
+  __run_cmd_wrapper() {
+    vedv image build --no-cache -t 'image123' ./Vedvfile2 2>/dev/null
+  }
+
+  run __run_cmd_wrapper
+
+  assert_success
+  assert_line --index 0 --regexp "created layer '.*' for command 'RUN'"
+  assert_line --index 1 --regexp "created layer '.*' for command 'COPY'"
+  assert_line --index 2 --regexp "created layer '.*' for command 'COPY'"
+  assert_line --index 3 "Build finished"
+  assert_line --index 4 --regexp ".* image123"
 }

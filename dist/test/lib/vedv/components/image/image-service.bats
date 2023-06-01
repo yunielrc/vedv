@@ -1327,7 +1327,7 @@ EOF
 }
 
 # Tests for vedv::image_service::execute_cmd()
-# bats test_tags=only
+
 @test "vedv::image_service::execute_cmd(): Should succeed" {
   local -r image_id="12345"
   local -r cmd="1 RUN echo 'hello'"
@@ -1344,7 +1344,7 @@ EOF
 }
 
 # Tests for vedv::image_service::set_workdir()
-# bats test_tags=only
+
 @test "vedv::image_service::set_workdir(): Should succeed" {
   local -r image_id="12345"
   local -r workdir="/home/vedv"
@@ -1360,7 +1360,7 @@ EOF
 }
 
 # Tests for vedv::image_service::add_environment_var()
-# bats test_tags=only
+
 @test "vedv::image_service::add_environment_var() Should succeed" {
   local -r image_id="12345"
   local -r env_var="TEST_ENV=123"
@@ -1376,7 +1376,7 @@ EOF
 }
 
 # Tests for vedv::image_service::get_environment_vars()
-# bats test_tags=only
+
 @test "vedv::image_service::get_environment_vars() Should succeed" {
   local -r image_id="12345"
 
@@ -1486,6 +1486,95 @@ EOF
   }
   # Act
   run vedv::image_service::copy "$image_id" "$src" "$dest" "$user" "$chown" "$chmod"
+  # Assert
+  assert_success
+  assert_output ""
+}
+
+# Tests for vedv::image_service::delete_layer_cache()
+# bats test_tags=only
+@test "vedv::image_service::delete_layer_cache() Should fail With empty image_id" {
+  # Arrange
+  local -r image_id=""
+  # Act
+  run vedv::image_service::delete_layer_cache "$image_id"
+  # Assert
+  assert_failure "$ERR_INVAL_ARG"
+  assert_output "Argument 'image_id' is required"
+}
+# bats test_tags=only
+@test "vedv::image_service::delete_layer_cache() Should fail If get_layers_ids fails" {
+  # Arrange
+  local -r image_id=2345
+  # Stub
+  vedv::image_entity::get_layers_ids() {
+    assert_equal "$*" "$image_id"
+    return 1
+  }
+  # Act
+  run vedv::image_service::delete_layer_cache "$image_id"
+  # Assert
+  assert_failure "$ERR_IMAGE_OPERATION"
+  assert_output "Failed to get layers ids for image '${image_id}'"
+}
+# bats test_tags=only
+@test "vedv::image_service::delete_layer_cache() Should fail If delete_layer fails" {
+  # Arrange
+  local -r image_id=2345
+  # Stub
+  vedv::image_entity::get_layers_ids() {
+    assert_equal "$*" "$image_id"
+    echo "1234560 1234561 1234562 1234563"
+  }
+  vedv::image_service::delete_layer() {
+    assert_equal "$*" "${image_id} 1234563"
+    return 1
+  }
+  # Act
+  run vedv::image_service::delete_layer_cache "$image_id"
+  # Assert
+  assert_failure "$ERR_IMAGE_OPERATION"
+  assert_output "Failed to delete layer '1234563' for image '${image_id}'"
+}
+# bats test_tags=only
+@test "vedv::image_service::delete_layer_cache() Should fail If restore_layer fails" {
+  # Arrange
+  local -r image_id=2345
+  # Stub
+  vedv::image_entity::get_layers_ids() {
+    assert_equal "$*" "$image_id"
+    echo "1234560 1234561 1234562 1234563"
+  }
+  vedv::image_service::delete_layer() {
+    assert_regex "$*" "${image_id} (1234563|1234562|1234561)"
+  }
+  vedv::image_service::restore_layer() {
+    assert_equal "$*" "${image_id} 1234560"
+    return 1
+  }
+  # Act
+  run vedv::image_service::delete_layer_cache "$image_id"
+  # Assert
+  assert_failure "$ERR_IMAGE_OPERATION"
+  assert_output "Failed to restore layer '1234560' for image '${image_id}'"
+}
+# bats test_tags=only
+@test "vedv::image_service::delete_layer_cache() Should succeed" {
+  # Arrange
+  local -r image_id=2345
+  # Stub
+  vedv::image_entity::get_layers_ids() {
+    assert_equal "$*" "$image_id"
+    echo "1234560 1234561 1234562 1234563"
+  }
+  vedv::image_service::delete_layer() {
+    assert_regex "$*" "${image_id} (1234563|1234562|1234561)"
+  }
+  vedv::image_service::restore_layer() {
+    assert_equal "$*" "${image_id} 1234560"
+  }
+  # Act
+  run vedv::image_service::delete_layer_cache "$image_id"
   # Assert
   assert_success
   assert_output ""

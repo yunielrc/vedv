@@ -1335,7 +1335,7 @@ vedv::image_builder::__build() {
   local -r from_cmd="$(echo "$commands" | head -n 1)"
 
   local image_id
-  image_id="$(vedv::image_entity::get_id_by_image_name "$image_name")" || {
+  image_id="$(vedv::image_entity::get_id_by_image_name "$image_name" 2>/dev/null)" || {
     if [[ $? != "$ERR_NOT_FOUND" ]]; then
       err "Failed to get image id for image '${image_name}'"
       return "$ERR_IMAGE_BUILDER_OPERATION"
@@ -1533,7 +1533,7 @@ vedv::image_builder::build() {
 
   ___set_image_id_64695() {
     if [[ -n "$image_name" ]]; then
-      image_id="$(vedv::image_entity::get_id_by_image_name "$image_name")" 2>/dev/null || {
+      image_id="$(vedv::image_entity::get_id_by_image_name "$image_name" 2>/dev/null)" || {
         if [[ $? != "$ERR_NOT_FOUND" ]]; then
           err "Failed to get image id for image '${image_name}'"
           return "$ERR_IMAGE_BUILDER_OPERATION"
@@ -1560,7 +1560,7 @@ vedv::image_builder::build() {
   fi
 
   if [[ "$no_cache" == true && -n "$image_id" ]]; then
-    vedv::image_service::remove 'true' "$image_id" >/dev/null || {
+    vedv::image_service::delete_layer_cache "$image_id" >/dev/null || {
       err "Failed to remove image '${image_name}'"
       return "$ERR_IMAGE_BUILDER_OPERATION"
     }
