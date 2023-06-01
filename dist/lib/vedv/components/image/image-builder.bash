@@ -1,6 +1,7 @@
 #
-# Build images
+# Build the image
 #
+# It takes a vedvfile and creates an image from it.
 #
 
 # this is only for code completion
@@ -1568,10 +1569,7 @@ vedv::image_builder::build() {
   fi
 
   if [[ -z "$image_name" ]]; then
-    image_name="$(petname)" || {
-      err 'Failed to generate a random name for the image'
-      return "$ERR_IMAGE_BUILDER_OPERATION"
-    }
+    image_name="$(petname)"
   fi
 
   vedv::image_builder::__build "$vedvfile" "$image_name" || {

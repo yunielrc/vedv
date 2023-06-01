@@ -10,6 +10,7 @@ setup_file() {
 
 teardown() {
   delete_vms_by_partial_vm_name 'container123'
+  delete_vms_by_partial_vm_name 'container124'
   delete_vms_by_partial_vm_name 'image123'
   delete_vms_by_partial_vm_name 'image:alpine-x86_64'
   delete_vms_by_partial_vm_name 'image-cache|'
@@ -301,7 +302,6 @@ dr-xr-xr-x    2 vedv     vedv .* d1
 -r-xr-xr-x    1 vedv     vedv .* f2"
 }
 
-# bats test_tags=only
 @test "vedv image build --no-cache -t image123 Vedvfile2" {
   cd "${BATS_TEST_DIRNAME}/fixtures"
 
@@ -333,4 +333,51 @@ dr-xr-xr-x    2 vedv     vedv .* d1
   assert_line --index 2 --regexp "created layer '.*' for command 'COPY'"
   assert_line --index 3 "Build finished"
   assert_line --index 4 --regexp ".* image123"
+}
+
+@test "vedv image build -t image123 Vedvfile2 , Should fail 2nd build without --force because the image has containers" {
+  cd "${BATS_TEST_DIRNAME}/fixtures"
+
+  run vedv image build -t 'image123' ./Vedvfile2
+
+  assert_success
+  assert_output --regexp "created layer '.*' for command 'FROM'
+created layer '.*' for command 'RUN'
+created layer '.*' for command 'COPY'
+created layer '.*' for command 'COPY'
+
+Build finished
+.* image123"
+
+  vedv container create -n 'container123' 'image123'
+  vedv container create -n 'container124' 'image123'
+
+  run vedv image build -t 'image123' ./Vedvfile2
+
+  assert_failure
+  assert_output "The image 'image123' has containers, you need to force the build, the containers will be removed."
+}
+# bats test_tags=only
+@test "vedv image build --force -t image123 Vedvfile2, Should succeed" {
+  cd "${BATS_TEST_DIRNAME}/fixtures"
+
+  run vedv image build -t 'image123' ./Vedvfile2
+
+  assert_success
+  assert_output --regexp "created layer '.*' for command 'FROM'
+created layer '.*' for command 'RUN'
+created layer '.*' for command 'COPY'
+created layer '.*' for command 'COPY'
+
+Build finished
+.* image123"
+
+  vedv container create -n 'container123' 'image123'
+  vedv container create -n 'container124' 'image123'
+
+  run vedv image build --force -t 'image123' ./Vedvfile2
+
+  assert_success
+  assert_line --index 0 "Build finished"
+  assert_line --index 1 --regexp ".* image123"
 }

@@ -857,7 +857,7 @@ Previous layer restored"
   assert_failure
   assert_output "Argument 'chmod' no specified"
 }
-# bats test_tags=only
+
 @test "vedv::image_builder::__layer_copy() Should succeed With all arguments" {
   # Arrange
   local -r image_id="image_id"
@@ -2117,105 +2117,154 @@ Failed to stop the image 'my-image-name'.You must stop it."
   assert_failure
   assert_output "File '${vedvfile}' does not exist"
 }
-
-@test 'vedv::image_builder::build() Should fail if image_name generation fails' {
+# bats test_tags=only
+@test 'vedv::image_builder::build() Should fail If fails to get image id' {
   local -r vedvfile='dist/test/lib/vedv/components/image/fixtures/Vedvfile'
+  local -r image_name="image1"
+  local -r force=""
+  local -r no_cache=""
 
-  vedv::image_entity::has_containers() {
-    echo false
+  vedv::image_entity::get_id_by_image_name() {
+    assert_equal "$*" "image1"
+    return 1
   }
-  petname() { false; }
-
-  run vedv::image_builder::build "$vedvfile"
+  run vedv::image_builder::build "$vedvfile" "$image_name"
 
   assert_failure
-  assert_output "Failed to generate a random name for the image"
+  assert_output "Failed to get image id for image '${image_name}'"
 }
-
-@test 'vedv::image_builder::build() Should fail if fails to get image id' {
+# bats test_tags=only
+@test 'vedv::image_builder::build() Should fail If has_containers fails' {
   local -r vedvfile='dist/test/lib/vedv/components/image/fixtures/Vedvfile'
-  local -r image_name=''
+  local -r image_name="image1"
+  local -r force=false
+  local -r no_cache=""
 
+  vedv::image_entity::get_id_by_image_name() {
+    assert_equal "$*" "image1"
+    echo "22345"
+  }
   vedv::image_entity::has_containers() {
+    assert_equal "$*" "22345"
+    return 1
+  }
+
+  run vedv::image_builder::build "$vedvfile" "$image_name" "$force" "$no_cache"
+
+  assert_failure
+  assert_output "Failed to check if image '${image_name}' has containers"
+}
+# bats test_tags=only
+@test 'vedv::image_builder::build() Should fail If force is false and has containers' {
+  local -r vedvfile='dist/test/lib/vedv/components/image/fixtures/Vedvfile'
+  local -r image_name="image1"
+  local -r force=false
+  local -r no_cache=""
+
+  vedv::image_entity::get_id_by_image_name() {
+    assert_equal "$*" "image1"
+    echo "22345"
+  }
+  vedv::image_entity::has_containers() {
+    assert_equal "$*" "22345"
+    echo true
+  }
+
+  run vedv::image_builder::build "$vedvfile" "$image_name" "$force" "$no_cache"
+
+  assert_failure
+  assert_output "The image '${image_name}' has containers, you need to force the build, the containers will be removed."
+}
+# bats test_tags=only
+@test 'vedv::image_builder::build() Should fail If delete_layer_cache fails' {
+  local -r vedvfile='dist/test/lib/vedv/components/image/fixtures/Vedvfile'
+  local -r image_name="image1"
+  local -r force=true
+  local -r no_cache=true
+
+  vedv::image_entity::get_id_by_image_name() {
+    assert_equal "$*" "image1"
+    echo "22345"
+  }
+  vedv::image_entity::has_containers() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::image_service::delete_layer_cache() {
+    assert_equal "$*" "22345"
+    return 1
+  }
+
+  run vedv::image_builder::build "$vedvfile" "$image_name" "$force" "$no_cache"
+
+  assert_failure
+  assert_output "Failed to remove image '${image_name}'"
+}
+# bats test_tags=only
+@test 'vedv::image_builder::build() Should fail If stop fails' {
+  local -r vedvfile='dist/test/lib/vedv/components/image/fixtures/Vedvfile'
+  local -r image_name="image1"
+  local -r force=false
+  local -r no_cache=false
+
+  vedv::image_entity::get_id_by_image_name() {
+    assert_equal "$*" "image1"
+    echo "22345"
+  }
+  vedv::image_entity::has_containers() {
+    assert_equal "$*" "22345"
     echo false
   }
-  petname() {
-    echo 'my-image-name'
+  vedv::image_service::delete_layer_cache() {
+    assert_equal "$*" "INVALID_CALL"
   }
   vedv::image_builder::__build() {
     assert_equal "$*" "${vedvfile} ${image_name}"
     return 1
   }
-  vedv::image_entity::get_id_by_image_name() {
-    assert_equal "$*" "my-image-name"
+  vedv::image_service::stop() {
+    assert_equal "$*" "22345"
     return 1
   }
-  run vedv::image_builder::build "$vedvfile" "$image_name"
+
+  run vedv::image_builder::build "$vedvfile" "$image_name" "$force" "$no_cache"
 
   assert_failure
   assert_output "The build proccess has failed.
-Failed to get image id for image 'my-image-name'"
+Failed to stop the image 'image1'.You must stop it."
 }
-
-@test 'vedv::image_builder::build() Should fail if fails to stop the image vm' {
+# bats test_tags=only
+@test 'vedv::image_builder::build() Should succeed' {
   local -r vedvfile='dist/test/lib/vedv/components/image/fixtures/Vedvfile'
-  local -r image_name=''
+  local -r image_name="image1"
+  local -r force=false
+  local -r no_cache=false
 
+  vedv::image_entity::get_id_by_image_name() {
+    assert_equal "$*" "image1"
+    echo "22345"
+  }
   vedv::image_entity::has_containers() {
+    assert_equal "$*" "22345"
     echo false
   }
-  petname() {
-    echo 'my-image-name'
+  vedv::image_service::delete_layer_cache() {
+    assert_equal "$*" "INVALID_CALL"
   }
   vedv::image_builder::__build() {
-    assert_equal "$*" "${vedvfile} my-image-name"
-    return 1
-  }
-  vedv::image_entity::get_id_by_image_name() {
-    assert_equal "$*" "my-image-name"
-    echo '12345678'
-  }
-  vedv::image_service::stop() {
-    assert_equal "$*" "12345678"
-    return 1
-  }
-  run vedv::image_builder::build "$vedvfile" "$image_name"
-
-  assert_failure
-  assert_output "The build proccess has failed.
-Failed to stop the image 'my-image-name'.You must stop it."
-}
-
-@test 'vedv::image_builder::build() Should build the image' {
-  local -r vedvfile='dist/test/lib/vedv/components/image/fixtures/Vedvfile'
-  local -r image_name='my-image-name'
-
-  vedv::image_entity::has_containers() {
-    echo false
-  }
-  petname() {
-    assert_equal "" "INVALID_CALL"
-  }
-  vedv::image_entity::get_id_by_image_name() {
-    assert_equal "$*" "my-image-name"
-    echo '12345678'
-  }
-  vedv::image_service::stop() {
-    assert_equal "$*" "12345678"
-  }
-
-  vedv::image_builder::__build() {
-    return 0
     assert_equal "$*" "${vedvfile} ${image_name}"
   }
-  run vedv::image_builder::build "$vedvfile" "$image_name"
+  vedv::image_service::stop() {
+    assert_equal "$*" "22345"
+  }
+
+  run vedv::image_builder::build "$vedvfile" "$image_name" "$force" "$no_cache"
 
   assert_success
   assert_output ""
 }
 
 # Tests for vedv::image_builder::__layer_run_calc_id()
-# bats test_tags=only
+
 @test "vedv::image_builder::__layer_run_calc_id(): Should succeed" {
   local -r cmd="1 RUN echo 'hello world'"
 
@@ -2231,7 +2280,7 @@ Failed to stop the image 'my-image-name'.You must stop it."
 }
 
 # Tests for vedv::image_builder::__layer_user_calc_id()
-# bats test_tags=only
+
 @test "vedv::image_builder::__layer_user_calc_id(): Should succeed" {
   local -r cmd="1 USER nalyd"
 
@@ -2308,7 +2357,7 @@ Failed to stop the image 'my-image-name'.You must stop it."
 }
 
 # Tests for vedv::image_builder::__layer_workdir_calc_id()
-# bats test_tags=only
+
 @test "vedv::image_builder::__layer_workdir_calc_id(): Should succeed" {
   local -r cmd="1 WORKDIR /home/nalyd"
 
@@ -2385,7 +2434,7 @@ Failed to stop the image 'my-image-name'.You must stop it."
 }
 
 # Tests for vedv::image_builder::__layer_env_calc_id()
-# bats test_tags=only
+
 @test "vedv::image_builder::__layer_env_calc_id(): Should succeed" {
   local -r image_id="12345"
   local -r cmd="1 ENV E1=v1"
