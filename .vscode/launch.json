@@ -70,6 +70,28 @@
     {
       "type": "bashdb",
       "request": "launch",
+      "name": "Bash-Debug (vedv container create --publish ...)",
+      "cwd": "${workspaceFolder}",
+      "program": "${workspaceFolder}/dist/usr/bin/vedv",
+      "args": [
+        "container",
+        "create",
+        "-n",
+        "dyli1",
+        "-p",
+        "8080:80/tcp",
+        "-p",
+        "8082:82",
+        "-p",
+        "8081",
+        "-p",
+        "81/udp",
+        "/tmp/vedv/test/files/alpine-x86_64.ova"
+      ]
+    },
+    {
+      "type": "bashdb",
+      "request": "launch",
       "name": "Bash-Debug (vedv container start)",
       "cwd": "${workspaceFolder}",
       "program": "${workspaceFolder}/dist/usr/bin/vedv",

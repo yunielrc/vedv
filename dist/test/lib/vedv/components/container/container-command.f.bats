@@ -6,6 +6,9 @@ setup_file() {
   export VED_HADOLINT_CONFIG="$TEST_HADOLINT_CONFIG"
   VEDV_HADOLINT_ENABLED=false
   export VEDV_HADOLINT_ENABLED
+
+  vedv::hypervisor::constructor
+  export __VEDV_HYPERVISOR_FRONTEND
 }
 
 teardown() {
@@ -25,11 +28,13 @@ vedv container create [FLAGS] [OPTIONS] IMAGE
 Create a new container
 
 Flags:
-  -h, --help          show help
-  -s, --standalone    create a standalone container
+  -h, --help                                  show help
+  -s, --standalone                            create a standalone container
 
 Options:
-  -n, --name <name>   assign a name to the container"
+  -n, --name <name>                           assign a name to the container
+  -p, --publish <host-port>:<port>[/proto]    publish a container's port(s) to the host.
+                                              proto is tcp or udp (default tcp)"
 }
 
 @test "vedv container create -h , Should show help" {
@@ -44,11 +49,13 @@ vedv container create [FLAGS] [OPTIONS] IMAGE
 Create a new container
 
 Flags:
-  -h, --help          show help
-  -s, --standalone    create a standalone container
+  -h, --help                                  show help
+  -s, --standalone                            create a standalone container
 
 Options:
-  -n, --name <name>   assign a name to the container"
+  -n, --name <name>                           assign a name to the container
+  -p, --publish <host-port>:<port>[/proto]    publish a container's port(s) to the host.
+                                              proto is tcp or udp (default tcp)"
   done
 }
 
@@ -65,11 +72,29 @@ vedv container create [FLAGS] [OPTIONS] IMAGE
 Create a new container
 
 Flags:
-  -h, --help          show help
-  -s, --standalone    create a standalone container
+  -h, --help                                  show help
+  -s, --standalone                            create a standalone container
 
 Options:
-  -n, --name <name>   assign a name to the container"
+  -n, --name <name>                           assign a name to the container
+  -p, --publish <host-port>:<port>[/proto]    publish a container's port(s) to the host.
+                                              proto is tcp or udp (default tcp)"
+}
+
+@test "vedv container create --name, Should throw error Without container name value" {
+
+  run vedv container create --name
+
+  assert_failure
+  assert_output --partial "No container name specified"
+}
+
+@test "vedv container create --name container123 --publish, Should throw error Without publish port value" {
+
+  run vedv container create --name 'container123' --publish
+
+  assert_failure
+  assert_output --partial "No publish port specified"
 }
 
 @test "vedv container create --name container123, Should throw error Without passing an image" {
@@ -94,6 +119,27 @@ Options:
 
   assert_success
   assert_output "container123"
+}
+# bats test_tags=only
+@test "vedv container create --name container123 -p 8080:80/tcp -p 8082:82 -p 8081 -p 81/udp image, Should create a container" {
+  local -r container_id='container123'
+
+  run vedv container create --name "$container_id" -p 8080:80/tcp -p 8082:82 -p 8081 -p 81/udp "$TEST_OVA_FILE"
+
+  assert_success
+  assert_output "container123"
+
+  local container_vm_name="$(vedv::hypervisor::list_vms_by_partial_name "container:${container_id}|" | head -n 1)"
+
+  run vedv::hypervisor::get_forwarding_ports "$container_vm_name"
+
+  assert_success
+  assert_output "2150172608,tcp,,8082,,82
+2227371250,udp,,81,,81
+2250533131,tcp,,8081,,8081
+3074115300,tcp,,8080,,80
+nc,tcp,,4444,,4444
+test-ssh,tcp,,2022,,22"
 }
 
 # Tests for 'vedv container start'
@@ -410,7 +456,7 @@ SSHEOF
 }
 
 # Tests for vedv container copy
-# bats test_tags=only
+
 @test "vedv container copy container123a src dest " {
 
   vedv container create --name 'container123a' "$TEST_OVA_FILE"

@@ -67,7 +67,6 @@ Flags:
 Commands:
   container        manage containers
   image            manage images
-  build            build an image from a Vedvfile
 
 Run '${__VEDV_SCRIPT_NAME} COMMAND --help' for more information on a command.
 HELPMSG

@@ -1,7 +1,7 @@
 #
 # WMObj service
 #
-# Its provide a common base for VMObj Services
+# It provides a common base for VMObj Services
 #
 
 # this is only for code completion

@@ -50,6 +50,7 @@ vedv::container_command::__create() {
   local standalone=false
   local name=''
   local image=''
+  local -a publish_ports=()
 
   if [[ $# == 0 ]]; then set -- '-h'; fi
 
@@ -76,6 +77,17 @@ vedv::container_command::__create() {
       fi
       shift 2
       ;;
+    -p | --publish)
+      local new_publish_port="${2:-}"
+      # validate argument
+      if [[ -z "$new_publish_port" ]]; then
+        err "No publish port specified\n"
+        vedv::container_command::__create_help
+        return "$ERR_INVAL_ARG"
+      fi
+      publish_ports+=("$new_publish_port")
+      shift 2
+      ;;
     *)
       readonly image="$1"
       break
@@ -89,7 +101,11 @@ vedv::container_command::__create() {
     return "$ERR_INVAL_ARG"
   fi
 
-  vedv::container_service::create "$image" "$name" "$standalone"
+  vedv::container_service::create \
+    "$image" \
+    "$name" \
+    "$standalone" \
+    "${publish_ports[*]}"
 }
 
 #
@@ -106,11 +122,13 @@ ${__VED_CONTAINER_COMMAND_SCRIPT_NAME} container create [FLAGS] [OPTIONS] IMAGE
 Create a new container
 
 Flags:
-  -h, --help          show help
-  -s, --standalone    create a standalone container
+  -h, --help                                  show help
+  -s, --standalone                            create a standalone container
 
 Options:
-  -n, --name <name>   assign a name to the container
+  -n, --name <name>                           assign a name to the container
+  -p, --publish <host-port>:<port>[/proto]    publish a container's port(s) to the host.
+                                              proto is tcp or udp (default tcp)
 HELPMSG
 }
 

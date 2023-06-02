@@ -691,13 +691,41 @@ vedv::hypervisor::get_description() {
 vedv::virtualbox::get_description() { vedv::hypervisor::get_description "$@"; }
 
 #
+# Get forwarding ports
+#
+# Arguments:
+#   vm_name string  virtual machine name
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::hypervisor::get_forwarding_ports() {
+  local -r vm_name="$1"
+
+  if [ -z "$vm_name" ]; then
+    err "Argument 'vm_name' must not be empty"
+    return "$ERR_INVAL_ARG"
+  fi
+
+  local vminfo
+  vminfo="$(VBoxManage showvminfo "$vm_name" --machinereadable)" || {
+    err "Error getting forwarding ports of vm: ${vm_name}"
+    return "$ERR_VIRTUALBOX_OPERATION"
+  }
+  readonly vminfo
+
+  echo "$vminfo" | grep -o '^Forwarding([[:digit:]]\+)=".*"' | grep -o '".*"' | tr -d '"'
+}
+
+#
 # Add forwarding port
 #
 # Arguments:
-#   vm_name        virtual machine name
-#   rule_name      rule name
-#   host_port      host port
-#   guest_port     guest port
+#   vm_name     string  virtual machine name
+#   rule_name   string  rule name
+#   host_port   string  host port
+#   guest_port  string  guest port
+#   protocol    string  protocol
 #
 # Returns:
 #   0 on success, non-zero on error.
@@ -707,6 +735,7 @@ vedv::hypervisor::add_forwarding_port() {
   local -r rule_name="$2"
   local -r host_port="$3"
   local -r guest_port="$4"
+  local -r protocol="${5:-tcp}"
 
   if [ -z "$vm_name" ]; then
     err "Argument 'vm_name' must not be empty"
@@ -724,9 +753,13 @@ vedv::hypervisor::add_forwarding_port() {
     err "Argument 'guest_port' must not be empty"
     return "$ERR_INVAL_ARG"
   fi
+  if [ -z "$protocol" ]; then
+    err "Argument 'protocol' must not be empty"
+    return "$ERR_INVAL_ARG"
+  fi
 
   if ! VBoxManage modifyvm "$vm_name" --natpf1 \
-    "${rule_name},tcp,,${host_port},,${guest_port}" >/dev/null; then
+    "${rule_name},${protocol},,${host_port},,${guest_port}" >/dev/null; then
     err "Error adding forwarding port, rule name: ${rule_name}"
     return "$ERR_VIRTUALBOX_OPERATION"
   fi

@@ -210,7 +210,7 @@ vedv::ssh_client::copy() {
 # Arguments:
 #   ip        string  ip
 #   port      int     ssh port
-#   [timeout] int     timeout in seconds (default: 25)
+#   [timeout] int     timeout in seconds (default: 35)
 #
 # Output:
 #  Writes error message to the stderr

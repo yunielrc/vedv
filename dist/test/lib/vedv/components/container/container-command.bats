@@ -13,6 +13,7 @@ vedv::container_service::stop() { echo "$@"; }
 vedv::container_service::remove() { echo "$@"; }
 vedv::container_service::list() { echo "include stopped containers: ${1:-false}"; }
 
+# Tests for vedv::container_command::__create()
 @test "vedv::container_command::__create(), with arg '-h|--help|help' should show help" {
   local -r help_output="Usage:
 vedv container create [FLAGS] [OPTIONS] IMAGE
@@ -20,11 +21,13 @@ vedv container create [FLAGS] [OPTIONS] IMAGE
 Create a new container
 
 Flags:
-  -h, --help          show help
-  -s, --standalone    create a standalone container
+  -h, --help                                  show help
+  -s, --standalone                            create a standalone container
 
 Options:
-  -n, --name <name>   assign a name to the container"
+  -n, --name <name>                           assign a name to the container
+  -p, --publish <host-port>:<port>[/proto]    publish a container's port(s) to the host.
+                                              proto is tcp or udp (default tcp)"
 
   run vedv::container_command::__create -h
 
@@ -43,7 +46,18 @@ Options:
   run vedv::container_command::__create "$image_file"
 
   assert_success
-  assert_output 'container created, arguments: /tmp/vedv/test/files/alpine-x86_64.ova  false'
+  assert_output 'container created, arguments: /tmp/vedv/test/files/alpine-x86_64.ova  false '
+}
+
+# bats test_tags=only
+@test 'vedv::container_command::__create(), Should fail With empty name value' {
+  local container_name='super-llama-testunit-container-command'
+  local image_file="$TEST_OVA_FILE"
+
+  run vedv::container_command::__create --name
+
+  assert_failure
+  assert_output --partial 'No container name specified'
 }
 
 @test 'vedv::container_command::__create(), with --name should create a container' {
@@ -53,7 +67,29 @@ Options:
   run vedv::container_command::__create --name "$container_name" "$image_file"
 
   assert_success
-  assert_output 'container created, arguments: /tmp/vedv/test/files/alpine-x86_64.ova super-llama-testunit-container-command false'
+  assert_output 'container created, arguments: /tmp/vedv/test/files/alpine-x86_64.ova super-llama-testunit-container-command false '
+}
+
+# bats test_tags=only
+@test 'vedv::container_command::__create(), Should fail With empty publish value' {
+  local container_name='super-llama-testunit-container-command'
+  local image_file="$TEST_OVA_FILE"
+
+  run vedv::container_command::__create --name "$container_name" --publish
+
+  assert_failure
+  assert_output --partial 'No publish port specified'
+}
+
+# bats test_tags=only
+@test 'vedv::container_command::__create(), Should succeed' {
+  local container_name='super-llama-testunit-container-command'
+  local image_file="$TEST_OVA_FILE"
+
+  run vedv::container_command::__create --name "$container_name" -p 8080:80/tcp -p 8082:82 -p 8081 -p 81/udp --standalone "$image_file"
+
+  assert_success
+  assert_output 'container created, arguments: /tmp/vedv/test/files/alpine-x86_64.ova super-llama-testunit-container-command true 8080:80/tcp 8082:82 8081 81/udp'
 }
 
 @test "vedv::container_command::__start(), with arg '-h|--help|help' should show help" {

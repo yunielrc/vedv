@@ -37,9 +37,10 @@ readonly VEDV_CONTAINER_SERVICE_STANDALONE='STANDALONE'
 # Create a new container
 #
 # Arguments:
-#   image             string  image name or an OVF file
-#   [container_name]  string  container name
-#   [standalone]      bool    create a standalone container
+#   image               string    image name or an OVF file
+#   [container_name]    string    container name
+#   [standalone]        bool      create a standalone container
+#   [publish_ports]     string[]  ports to be published
 #
 # Output:
 #  Writes container ID to the stdout
@@ -51,6 +52,7 @@ vedv::container_service::create() {
   local -r image="$1"
   local container_name="${2:-}"
   local -r standalone="${3:-false}"
+  local -r publish_ports="${4:-}"
 
   if [[ -z "$image" ]]; then
     err "Invalid argument 'image': it's empty"
@@ -163,7 +165,130 @@ vedv::container_service::create() {
     return "$ERR_CONTAINER_OPERATION"
   }
 
+  if [[ -n "$publish_ports" ]]; then
+    vedv::container_service::publish_ports "$container_id" "$publish_ports" || {
+      err "Failed to publish ports for container: '${container_name}'"
+      return "$ERR_CONTAINER_OPERATION"
+    }
+  fi
+
   echo "$container_name"
+}
+
+#
+# Publish ports for a container
+#
+# Arguments:
+#   container_id  string     container id
+#   ports_arr     string[]   ports to be published. eg: 8080:80/tcp 8081:81/udp
+#
+# Output:
+#  writes error message to the stderr
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::container_service::publish_ports() {
+  local -r container_id="$1"
+  local -a ports_arr=()
+
+  IFS=' ' read -r -a ports_arr <<<"${2:-}"
+  readonly ports_arr
+
+  if [[ -z "$container_id" ]]; then
+    err "Invalid argument 'container_id': it's empty"
+    return "$ERR_INVAL_ARG"
+  fi
+
+  if [[ ${#ports_arr[@]} -eq 0 ]]; then
+    return 0
+  fi
+
+  for port in "${ports_arr[@]}"; do
+    vedv::container_service::publish_port "$container_id" "$port" || {
+      err "Failed to publish port: '${port}' for container: '${container_id}'"
+      return "$ERR_CONTAINER_OPERATION"
+    }
+  done
+}
+
+#
+# Publish a port for a container
+#
+# Arguments:
+#   container_id  string     container id
+#   port          string[]   port to be published. eg: 8080:80/tcp 8082:82 8081 81/udp
+#
+# Output:
+#  writes error message to the stderr
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::container_service::publish_port() {
+  local -r container_id="$1"
+  local -r port="$2"
+  # validate arguments
+  if [[ -z "$container_id" ]]; then
+    err "Invalid argument 'container_id': it's empty"
+    return "$ERR_INVAL_ARG"
+  fi
+  if [[ -z "$port" ]]; then
+    err "Invalid argument 'port': it's empty"
+    return "$ERR_INVAL_ARG"
+  fi
+
+  local -i host_port=''
+  local -i container_port=''
+  local protocol=''
+  local -r rule_name="$(utils::crc_sum <<<"$port")"
+
+  # 8080:80/tcp
+  if [[ "$port" =~ ^[[:digit:]]+:[[:digit:]]+/(tcp|udp)$ ]]; then
+    local -a port_arr
+    IFS=':' read -ra port_arr <<<"$port"
+    host_port="${port_arr[0]}"
+    container_port="${port_arr[1]%%/*}"
+    protocol="${port_arr[1]##*/}"
+  # 8082:82
+  elif [[ "$port" =~ ^[[:digit:]]+:[[:digit:]]+$ ]]; then
+    IFS=':' read -r host_port container_port <<<"$port"
+    protocol='tcp'
+  # 81/udp
+  elif [[ "$port" =~ ^[[:digit:]]+/(tcp|udp)$ ]]; then
+    IFS='/' read -r container_port protocol <<<"$port"
+    host_port="$container_port"
+  # 8081
+  elif [[ "$port" =~ ^[[:digit:]]+$ ]]; then
+    host_port="$port"
+    container_port="$port"
+    protocol='tcp'
+  else
+    err "Invalid port format: '${port}'"
+    return "$ERR_INVAL_ARG"
+  fi
+
+  local container_vm_name
+  container_vm_name="$(vedv::container_entity::get_vm_name "$container_id")" || {
+    err "Failed to get vm name for container: '${container_id}'"
+    return "$ERR_CONTAINER_OPERATION"
+  }
+  readonly container_vm_name
+
+  if [[ -z "$container_vm_name" ]]; then
+    err "There is no container with id '${container_id}'"
+    return "$ERR_CONTAINER_OPERATION"
+  fi
+
+  vedv::hypervisor::add_forwarding_port \
+    "$container_vm_name" \
+    "$rule_name" \
+    "$host_port" \
+    "$container_port" \
+    "$protocol" 2>/dev/null || {
+    err "Failed to publish port: '${port}' for container: '${container_id}'"
+    return "$ERR_CONTAINER_OPERATION"
+  }
 }
 
 #
@@ -446,8 +571,8 @@ vedv::container_service::__get_running_siblings_ids() {
 # Remove one or more containers by name or id
 #
 # Arguments:
-#   force         bool       force remove container (true|false)
-#   containers_name_or_id string     containers name or id
+#   force                 bool      force remove container (true|false)
+#   containers_name_or_id string    containers name or id
 #
 # Output:
 #  writes removed containers name or id to the stdout
@@ -556,8 +681,8 @@ vedv::container_service::connect() {
 #   src                   string     local source path
 #   dest                  string     container destination path
 #   [user]                string     container user
-#   [chown]   string     chown files to user
-#   [chmod]   string     chmod files to mode
+#   [chown]               string     chown files to user
+#   [chmod]               string     chmod files to mode
 #
 # Output:
 #  writes command output to the stdout
