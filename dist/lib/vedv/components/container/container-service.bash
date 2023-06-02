@@ -216,8 +216,8 @@ vedv::container_service::publish_ports() {
 # Publish a port for a container
 #
 # Arguments:
-#   container_id  string     container id
-#   port          string[]   port to be published. eg: 8080:80/tcp 8082:82 8081 81/udp
+#   container_id  string   container id
+#   port          string   port to be published. eg: 8080:80/tcp 8082:82 8081 81/udp
 #
 # Output:
 #  writes error message to the stderr
@@ -295,7 +295,7 @@ vedv::container_service::publish_port() {
 # Tell if a container is started
 #
 # Arguments:
-#   container_id string       container id
+#   container_id  string       container id
 #
 # Output:
 #  Writes true if started otherwise false to the stdout
@@ -311,7 +311,7 @@ vedv::container_service::is_started() {
 # Start one or more containers by name or id
 #
 # Arguments:
-#   containers_name_or_id     containers name or id
+#   containers_name_or_ids  @string    containers name or id
 #
 # Output:
 #  writes started containers name or id to the stdout
@@ -328,7 +328,7 @@ vedv::container_service::start() {
 # without waiting for ssh to be started
 #
 # Arguments:
-#   containers_name_or_id     containers name or id
+#   containers_name_or_ids  @string     containers name or id
 #
 # Output:
 #  writes started containers name or id to the stdout
@@ -344,7 +344,7 @@ vedv::container_service::start_no_wait_ssh() {
 #  Stop securely one or more running containers by name or id
 #
 # Arguments:
-#   containers_name_or_id     containers name or id
+#   containers_name_or_ids  @string     containers name or id
 #
 # Output:
 #  writes stopped containers name or id to the stdout
@@ -571,8 +571,8 @@ vedv::container_service::__get_running_siblings_ids() {
 # Remove one or more containers by name or id
 #
 # Arguments:
-#   force                 bool      force remove container (true|false)
-#   containers_name_or_id string    containers name or id
+#   force                   bool      force remove container (true|false)
+#   containers_name_or_ids  @string    containers name or id
 #
 # Output:
 #  writes removed containers name or id to the stdout

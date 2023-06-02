@@ -325,7 +325,7 @@ vedv::vmobj_service::start_one() {
 # Arguments:
 #   type                string    type (e.g. 'container|image')
 #   wait_for_ssh        bool      wait for ssh (true|false)
-#   vmobj_names_or_ids  string    vmobj name or id
+#   vmobj_names_or_ids  @string   vmobj name or id
 #
 # Output:
 #  writes started vmobj ids to the stdout
@@ -430,7 +430,7 @@ vedv::vmobj_service::stop_one() {
 # Arguments:
 #   type                string    type (e.g. 'container|image')
 #   save_state          bool      save state before stop
-#   vmobj_names_or_ids  string    vmobj name or id
+#   vmobj_names_or_ids  @string   vmobj name or id
 #
 # Output:
 #  writes stopped vmobj ids to the stdout
@@ -545,7 +545,7 @@ vedv::vmobj_service::secure_stop_one() {
 #
 # Arguments:
 #   type                string    type (e.g. 'container|image')
-#   vmobj_names_or_ids  string    vmobj name or id
+#   vmobj_names_or_ids  @string   vmobj name or id
 #
 # Output:
 #  writes stopped vmobj ids to the stdout

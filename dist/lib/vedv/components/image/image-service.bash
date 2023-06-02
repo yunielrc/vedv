@@ -305,7 +305,7 @@ vedv::image_service::remove_one_batch() {
 #
 # Arguments:
 #   force               bool      force the remove, removing child containers if the image has
-#   image_ids_or_names  string    image ids or names
+#   image_ids_or_names  @string   image ids or names
 #
 # Output:
 #  writes deleted image_ids (string) to the stdout
