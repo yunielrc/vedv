@@ -1427,3 +1427,74 @@ vedv::vmobj_service::get_environment_vars() {
     return "$ERR_VMOBJ_OPERATION"
   }
 }
+
+#
+# Add expose ports to vmobj filesystem
+#
+# Arguments:
+#   type      string     type (e.g. 'container|image')
+#   vmobj_id  string     vmobj id
+#   ports     string[]   ports (e.g. 80/tcp 443/udp 8080)
+#
+# Output:
+#  writes command output to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::vmobj_service::add_expose_ports() {
+  local -r type="$1"
+  local -r vmobj_id="$2"
+  local -r ports="$3"
+  # validate arguments
+  vedv::vmobj_entity::validate_type "$type" ||
+    return "$?"
+
+  if [[ -z "$vmobj_id" ]]; then
+    err "Invalid argument 'vmobj_id': it's empty"
+    return "$ERR_INVAL_ARG"
+  fi
+  if [[ -z "$ports" ]]; then
+    err "Invalid argument 'ports': it's empty"
+    return "$ERR_INVAL_ARG"
+  fi
+
+  readonly ports_regex='^[[:digit:]]+(/(tcp|udp))?([[:space:]]+[[:digit:]]+(/(tcp|udp))?)*$'
+
+  if [[ ! "$ports" =~ $ports_regex ]]; then
+    err "Invalid argument 'ports': it's invalid"
+    return "$ERR_INVAL_ARG"
+  fi
+
+  local -r cmd="vedv-addexpose_ports $'${ports}'"
+
+  vedv::vmobj_service::execute_cmd_by_id "$type" "$vmobj_id" "$cmd" 'root' '<none>' || {
+    err "Failed to add expose ports '${ports}' to ${type}: ${vmobj_id}"
+    return "$ERR_VMOBJ_OPERATION"
+  }
+}
+
+#
+# Get expose ports from vmobj filesystem
+#
+# Arguments:
+#   type      string     type (e.g. 'container|image')
+#   vmobj_id  string     vmobj id
+#
+# Output:
+#  writes expose ports (text) to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::vmobj_service::get_expose_ports() {
+  local -r type="$1"
+  local -r vmobj_id="$2"
+
+  local -r cmd='vedv-getexpose_ports'
+
+  vedv::vmobj_service::execute_cmd_by_id "$type" "$vmobj_id" "$cmd" 'root' '<none>' || {
+    err "Failed to get expose ports of ${type}: ${vmobj_id}"
+    return "$ERR_VMOBJ_OPERATION"
+  }
+}

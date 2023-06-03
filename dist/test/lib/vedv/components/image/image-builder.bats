@@ -1282,7 +1282,7 @@ Previous layer restored"
   assert_failure "$ERR_NOT_FOUND"
   assert_output "File '${vedvfile}' does not exist"
 }
-# bats test_tags=only
+
 @test "vedv::image_builder::__build() Should gen image_name IF empty" {
   # Arrange
   local -r vedvfile="dist/test/lib/vedv/components/image/fixtures/Vedvfile"
@@ -1299,7 +1299,6 @@ Previous layer restored"
   assert_output "petname-called"
 }
 
-# bats test_tags=only
 @test "vedv::image_builder::__build() Should fail With invalid  vedvfile" {
   # Arrange
   local -r vedvfile="dist/test/lib/vedv/components/image/fixtures/Vedvfile"
@@ -1319,7 +1318,6 @@ Previous layer restored"
   assert_output "Failed to get commands from Vedvfile '${vedvfile}'"
 }
 
-# bats test_tags=only
 @test "vedv::image_builder::__build() Should fail If str_encode_vars fails" {
   # Arrange
   local -r vedvfile="dist/test/lib/vedv/components/image/fixtures/Vedvfile"
@@ -1342,7 +1340,7 @@ Previous layer restored"
   assert_failure "$ERR_VEDV_FILE"
   assert_output "Failed to prepare commands from Vedvfile '${vedvfile}'"
 }
-# bats test_tags=only
+
 @test "vedv::image_builder::__build() Should fail On error getting image id from image name" {
   # Arrange
   local -r vedvfile="dist/test/lib/vedv/components/image/fixtures/Vedvfile"
@@ -1371,7 +1369,7 @@ Previous layer restored"
   assert_failure "$ERR_IMAGE_BUILDER_OPERATION"
   assert_output "Failed to get image id for image '${image_name}'"
 }
-# bats test_tags=only
+
 @test "vedv::image_builder::__build() Should fail On error validating layer from" {
   # Arrange
   local -r vedvfile="dist/test/lib/vedv/components/image/fixtures/Vedvfile"
@@ -1406,7 +1404,7 @@ Previous layer restored"
   assert_failure "$ERR_IMAGE_BUILDER_OPERATION"
   assert_output "Failed to validate layer from for image '${image_name}'"
 }
-# bats test_tags=only
+
 @test "vedv::image_builder::__build() Should fail to remove the image" {
   # Arrange
   local -r vedvfile="dist/test/lib/vedv/components/image/fixtures/Vedvfile"
@@ -1444,7 +1442,7 @@ Previous layer restored"
   assert_failure "$ERR_IMAGE_BUILDER_OPERATION"
   assert_output "Failed to remove image '${image_name}'"
 }
-# bats test_tags=only
+
 @test "vedv::image_builder::__build() Should fail to get cmd body" {
   # Arrange
   local -r vedvfile="dist/test/lib/vedv/components/image/fixtures/Vedvfile"
@@ -1486,7 +1484,7 @@ Previous layer restored"
   assert_failure
   assert_output "Failed to get cmd body from Vedvfile '${vedvfile}'"
 }
-# bats test_tags=only
+
 @test "vedv::image_builder::__build() Should fail creating layer from" {
   # Arrange
   local -r vedvfile="dist/test/lib/vedv/components/image/fixtures/Vedvfile"
@@ -1535,7 +1533,7 @@ Previous layer restored"
 The image 'my-image-name' is corrupted and its going to be deleted.
 The image 'my-image-name' was removed."
 }
-# bats test_tags=only
+
 @test "vedv::image_builder::__build() Should fail If get_layers_ids fails" {
   # Arrange
   local -r vedvfile="dist/test/lib/vedv/components/image/fixtures/Vedvfile"
@@ -1585,7 +1583,7 @@ The image 'my-image-name' was removed."
   assert_failure "$ERR_IMAGE_BUILDER_OPERATION"
   assert_output "Failed to get layers ids for image 'my-image-name'. Try build the image again with --no-cache."
 }
-# bats test_tags=only
+
 @test "vedv::image_builder::__build() Should fail If restore_last_layer fails On valid layer from" {
   # Arrange
   local -r vedvfile="dist/test/lib/vedv/components/image/fixtures/Vedvfile"
@@ -1637,7 +1635,7 @@ The image 'my-image-name' was removed."
   assert_failure "$ERR_IMAGE_BUILDER_OPERATION"
   assert_output "Failed to restore layer last layer for image 'image-id'. Try build the image again with --no-cache."
 }
-# bats test_tags=only
+
 @test "vedv::image_builder::__build() Should call __layer_from If image_id is empty" {
   # Arrange
   local -r vedvfile="dist/test/lib/vedv/components/image/fixtures/Vedvfile"
@@ -1688,7 +1686,7 @@ The image 'my-image-name' was removed."
 The image 'my-image-name' is corrupted and its going to be deleted.
 The image 'my-image-name' was removed."
 }
-# bats test_tags=only
+
 @test "vedv::image_builder::__build() Should fail to delete invalid layers" {
   # Arrange
   local -r vedvfile="dist/test/lib/vedv/components/image/fixtures/Vedvfile"
@@ -1744,7 +1742,7 @@ The image 'my-image-name' was removed."
   assert_failure
   assert_output --partial "Failed deleting invalid layers for image '${image_name}'"
 }
-# bats test_tags=only
+
 @test "vedv::image_builder::__build() Should fail If first_invalid_layer_pos < -1 or > commands_length length" {
   # Arrange
   local -r vedvfile="dist/test/lib/vedv/components/image/fixtures/Vedvfile"
@@ -1926,7 +1924,7 @@ The image 'my-image-name' was removed."
   assert_failure
   assert_output ""
 }
-# bats test_tags=only
+
 @test "vedv::image_builder::__build() Should fail starting image" {
   # Arrange
   local -r vedvfile="dist/test/lib/vedv/components/image/fixtures/Vedvfile"
@@ -1983,7 +1981,7 @@ The image 'my-image-name' was removed."
   assert_failure "$ERR_IMAGE_BUILDER_OPERATION"
   assert_output "Failed to start image '${image_name}'"
 }
-# bats test_tags=only
+
 @test "vedv::image_builder::__build() Should fail __save_environment_vars_to_local_file" {
   # Arrange
   local -r vedvfile="dist/test/lib/vedv/components/image/fixtures/Vedvfile"
@@ -2043,7 +2041,7 @@ The image 'my-image-name' was removed."
   assert_failure "$ERR_IMAGE_BUILDER_OPERATION"
   assert_output "Failed to save environment variables for image '${image_id}'"
 }
-# bats test_tags=only
+
 @test "vedv::image_builder::__build() Should fail to create layer for a command" {
   # Arrange
   local -r vedvfile="dist/test/lib/vedv/components/image/fixtures/Vedvfile"
@@ -2112,7 +2110,7 @@ The image 'my-image-name' was removed."
   assert_failure "$ERR_IMAGE_BUILDER_OPERATION"
   assert_output "Failed to create layer for command '4 RUN ls -la /home/vedv/'"
 }
-# bats test_tags=only
+
 @test "vedv::image_builder::__build() Should create layers 4 and 5 for a command" {
   # Arrange
   local -r vedvfile="dist/test/lib/vedv/components/image/fixtures/Vedvfile"
@@ -2193,7 +2191,7 @@ created layer 'layer_id_4' for command 'RUN'
 Build finished
 image-id my-image-name"
 }
-# bats test_tags=only
+
 @test "vedv::image_builder::__build() Should fail stopping image" {
   # Arrange
   local -r vedvfile="dist/test/lib/vedv/components/image/fixtures/Vedvfile"
@@ -2930,6 +2928,83 @@ local -r var_9f57a558b3_VAR23=\"var3 var3\""
   }
 
   run vedv::image_builder::__layer_shell "$image_id" "$cmd"
+
+  assert_success
+  assert_output ""
+}
+
+# Tests for vedv::image_builder::__layer_expose_calc_id()
+# bats test_tags=only
+@test "vedv::image_builder::__layer_expose_calc_id(): Should succeed" {
+  local -r image_id="12345"
+  local -r cmd="1 EXPOSE 8080"
+
+  vedv::image_builder::__simple_layer_command_calc_id() {
+    assert_equal "$*" "${cmd} EXPOSE"
+  }
+
+  run vedv::image_builder::__layer_expose_calc_id "$cmd"
+
+  assert_success
+  assert_output ""
+}
+
+# Tests for vedv::image_builder::__layer_expose()
+# bats test_tags=only
+@test "vedv::image_builder::__layer_expose() Should fail With empty image_id" {
+  local -r image_id=""
+  local -r cmd=""
+
+  run vedv::image_builder::__layer_expose "$image_id" "$cmd"
+
+  assert_failure
+  assert_output "Argument 'image_id' is required"
+}
+# bats test_tags=only
+@test "vedv::image_builder::__layer_expose() Should fail With empty cmd" {
+  local -r image_id="12345"
+  local -r cmd=""
+
+  run vedv::image_builder::__layer_expose "$image_id" "$cmd"
+
+  assert_failure
+  assert_output "Argument 'cmd' is required"
+}
+# bats test_tags=only
+@test "vedv::image_builder::__layer_expose() Should fail If port is empty" {
+  local -r image_id="12345"
+  local -r cmd="1 EXPOSE"
+
+  run vedv::image_builder::__layer_expose "$image_id" "$cmd"
+
+  assert_failure
+  assert_output "Invalid number of arguments, expected at least 3, got 2"
+}
+# bat test_tags=only
+@test "vedv::image_builder::__layer_expose() Should fail If __layer_execute_cmd fails" {
+  local -r image_id="12345"
+  local -r cmd="1 EXPOSE 8080"
+
+  vedv::image_builder::__layer_execute_cmd() {
+    assert_equal "$*" "12345 1 EXPOSE 8080 EXPOSE vedv::image_service::add_expose_ports '12345' '8080'"
+    return 1
+  }
+
+  run vedv::image_builder::__layer_expose "$image_id" "$cmd"
+
+  assert_failure
+  assert_output ""
+}
+# bats test_tags=only
+@test "vedv::image_builder::__layer_expose() Should succeed" {
+  local -r image_id="12345"
+  local -r cmd="1 EXPOSE 8080"
+
+  vedv::image_builder::__layer_execute_cmd() {
+    assert_equal "$*" "12345 1 EXPOSE 8080 EXPOSE vedv::image_service::add_expose_ports '12345' '8080'"
+  }
+
+  run vedv::image_builder::__layer_expose "$image_id" "$cmd"
 
   assert_success
   assert_output ""

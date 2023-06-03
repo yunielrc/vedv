@@ -463,7 +463,9 @@ vedv::image_builder::__layer_copy_calc_id() {
   #
   # also eval do variable substitution
   #
+  set -o noglob
   eval set -- "$cmd"
+  set +o noglob
 
   if [[ "$#" -lt 4 ]]; then
     err "Invalid number of arguments, expected at least 4, got $#"
@@ -573,7 +575,9 @@ vedv::image_builder::__layer_copy() {
   # also eval do variable substitution
   #
   # 1 COPY --root 'file space' ./file*
+  set -o noglob
   eval set -- "$cmd"
+  set +o noglob
 
   if [[ "$#" -lt 4 ]]; then
     err "Invalid number of arguments, expected at least 4, got $#"
@@ -890,7 +894,9 @@ vedv::image_builder::__layer_user() {
   #
   # also eval do variable substitution
   #
+  set -o noglob
   eval set -- "$cmd"
+  set +o noglob
 
   if [[ $# -ne 3 ]]; then
     err "Invalid number of arguments, expected 3, got $#"
@@ -898,13 +904,7 @@ vedv::image_builder::__layer_user() {
   fi
   shift 2 # skip command id and name
 
-  local -r user_name="${1:-}"
-
-  if [[ -z "$user_name" ]]; then
-    err "Argument 'user_name' must not be empty"
-    return "$ERR_INVAL_ARG"
-  fi
-
+  local -r user_name="$1"
   local -r exec_func="vedv::image_service::set_user '${image_id}' '${user_name}'"
 
   vedv::image_builder::__layer_execute_cmd "$image_id" "$cmd" "USER" "$exec_func"
@@ -964,7 +964,9 @@ vedv::image_builder::__layer_shell() {
   #
   # also eval do variable substitution
   #
+  set -o noglob
   eval set -- "$cmd"
+  set +o noglob
 
   if [[ $# -ne 3 ]]; then
     err "Invalid number of arguments, expected 3, got $#"
@@ -972,13 +974,7 @@ vedv::image_builder::__layer_shell() {
   fi
   shift 2 # skip command id and name
 
-  local -r shell="${1:-}"
-
-  if [[ -z "$shell" ]]; then
-    err "Argument 'shell' must not be empty"
-    return "$ERR_INVAL_ARG"
-  fi
-
+  local -r shell="$1"
   local -r exec_func="vedv::image_service::set_shell '${image_id}' '${shell}'"
 
   vedv::image_builder::__layer_execute_cmd "$image_id" "$cmd" "SHELL" "$exec_func"
@@ -1041,7 +1037,9 @@ vedv::image_builder::__layer_workdir() {
   #
   # also eval do variable substitution
   #
+  set -o noglob
   eval set -- "$cmd"
+  set +o noglob
 
   if [[ $# -ne 3 ]]; then
     err "Invalid number of arguments, expected 3, got $#"
@@ -1049,13 +1047,7 @@ vedv::image_builder::__layer_workdir() {
   fi
   shift 2 # skip command id and name
 
-  local -r workdir="${1:-}"
-
-  if [[ -z "$workdir" ]]; then
-    err "Argument 'workdir' must not be empty"
-    return "$ERR_INVAL_ARG"
-  fi
-
+  local -r workdir="$1"
   local -r exec_func="vedv::image_service::set_workdir '${image_id}' '${workdir}' >/dev/null"
 
   vedv::image_builder::__layer_execute_cmd "$image_id" "$cmd" "WORKDIR" "$exec_func"
@@ -1139,6 +1131,76 @@ vedv::image_builder::__layer_env() {
   local -r exec_func="vedv::image_service::add_environment_var '${image_id}' '${env_encoded}'"
 
   vedv::image_builder::__layer_execute_cmd "$image_id" "$cmd" "ENV" "$exec_func"
+}
+
+#
+# Calculates the layer id for the expose command
+#
+# Arguments:
+#   cmd		string    expose command (e.g. "1 EXPOSE bash")
+#
+# Output:
+#  Writes layer_id (string) to the stdout
+#
+# Returns:
+#  0 on success, non-zero on error.
+#
+vedv::image_builder::__layer_expose_calc_id() {
+  local -r cmd="$1"
+  vedv::image_builder::__simple_layer_command_calc_id "$cmd" "EXPOSE"
+}
+
+#
+# Add expose ports
+#
+# Arguments:
+#   image_id  string       image where the expose will be set
+#   cmd 	  string       expose command (e.g. "1 EXPOSE 8080/tcp")
+#
+# Output:
+#  Writes command_output (text) to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::image_builder::__layer_expose() {
+  local -r image_id="$1"
+  local -r cmd="$2"
+  # validate arguments
+  if [[ -z "$image_id" ]]; then
+    err "Argument 'image_id' is required"
+    return "$ERR_INVAL_ARG"
+  fi
+  if [[ -z "$cmd" ]]; then
+    err "Argument 'cmd' is required"
+    return "$ERR_INVAL_ARG"
+  fi
+  # do not allow escaped $ or $ in the command
+  if [[ "$cmd" == *"$UTILS_ENCODED_ESCVAR_PREFIX"* || "$cmd" == *"$UTILS_ENCODED_VAR_PREFIX"* ]]; then
+    err 'Invalid command, it must not contain: \$ or $'
+    return "$ERR_INVAL_ARG"
+  fi
+  # This works like expose on the terminal, it split the string on spaces
+  # ignoring those inside quotes, then it removes the quotes and finally
+  # it set the arguments to the positional parameters ($1, $2, $3, ...)
+  # cmd: "1 EXPOSE 8080/tcp"
+  #
+  # also eval do variable substitution
+  #
+  set -o noglob
+  eval set -- "$cmd"
+  set +o noglob
+
+  if [[ $# -lt 3 ]]; then
+    err "Invalid number of arguments, expected at least 3, got $#"
+    return "$ERR_INVAL_ARG"
+  fi
+  shift 2 # skip command id and name
+
+  local -r ports="$*"
+  local -r exec_func="vedv::image_service::add_expose_ports '${image_id}' '${ports}'"
+
+  vedv::image_builder::__layer_execute_cmd "$image_id" "$cmd" "EXPOSE" "$exec_func"
 }
 
 #

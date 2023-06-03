@@ -885,3 +885,46 @@ vedv::image_service::delete_layer_cache() {
 vedv::image_service::build() {
   vedv::image_builder::build "$@"
 }
+
+#
+# Add expose ports to image
+#
+# Arguments:
+#   image_id  string    image id
+#   ports     string[]  ports (e.g. 80/tcp 443/udp 8080)
+#
+# Output:
+#   writes process result
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::image_service::add_expose_ports() {
+  local -r image_id="$1"
+  local -r ports="$2"
+
+  vedv::vmobj_service::add_expose_ports \
+    'image' \
+    "$image_id" \
+    "$ports"
+}
+
+#
+# Get expose ports from image
+#
+# Arguments:
+#   image_id  string    image id
+#
+# Output:
+#   writes expose ports (text) to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::image_service::get_expose_ports() {
+  local -r image_id="$1"
+
+  vedv::vmobj_service::get_expose_ports \
+    'image' \
+    "$image_id"
+}

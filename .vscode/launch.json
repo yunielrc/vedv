@@ -173,10 +173,9 @@
       "args": [
         "image",
         "build",
-        "--no-cache",
         "-t",
         "image123",
-        "Vedvfile"
+        "expose.vedvfile"
       ]
     },
     {

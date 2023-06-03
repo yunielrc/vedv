@@ -357,7 +357,7 @@ Build finished
   assert_failure
   assert_output "The image 'image123' has containers, you need to force the build, the containers will be removed."
 }
-# bats test_tags=only
+
 @test "vedv image build --force -t image123 Vedvfile2, Should succeed" {
   cd "${BATS_TEST_DIRNAME}/fixtures"
 
@@ -380,4 +380,34 @@ Build finished
   assert_success
   assert_line --index 0 "Build finished"
   assert_line --index 1 --regexp ".* image123"
+}
+# bats test_tags=only
+@test "vedv image build -t 'image123' ./expose.vedvfile, Should succeed" {
+  cd "${BATS_TEST_DIRNAME}/fixtures"
+
+  run vedv image build -t 'image123' ./expose.vedvfile
+
+  assert_success
+  assert_output --regexp "created layer '.*' for command 'FROM'
+created layer '.*' for command 'EXPOSE'
+created layer '.*' for command 'EXPOSE'
+created layer '.*' for command 'EXPOSE'
+created layer '.*' for command 'EXPOSE'
+
+Build finished
+.* image123"
+
+  vedv container create -n 'container123' 'image123'
+
+  run vedv container exec --root 'container123' vedv-getexpose_ports
+
+  assert_success
+  assert_output "22/udp
+23/tcp
+443/tcp
+444/udp
+80/tcp
+8080/tcp
+8081/udp
+81/tcp"
 }

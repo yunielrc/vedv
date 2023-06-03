@@ -1635,7 +1635,7 @@ EOF
   assert_failure
   assert_output "Failed to get container id by name or id: 12345"
 }
-# bats test_tags=only
+
 @test "vedv::vmobj_service::copy(), Should succeed" {
   local -r type="container"
   local -r vmobj_id=12345
@@ -2326,7 +2326,7 @@ Failed to get default workdir for container: 12345"
 }
 
 # Tests for vedv::vmobj_service::get_environment_var()
-# bats test_tags=only
+
 @test "vedv::vmobj_service::get_environment_vars() Should succeed" {
   local -r type="container"
   local -r vmobj_id="22345"
@@ -2439,6 +2439,83 @@ Failed to get default workdir for container: 12345"
   }
 
   run vedv::vmobj_service::get_shell "$type" "$vmobj_id"
+
+  assert_success
+  assert_output ""
+}
+
+# Tests for vedv::vmobj_service::add_expose_ports()
+# bats test_tags=only
+@test "vedv::vmobj_service::add_expose_ports() Should fail With empty type" {
+  local -r type=""
+  local -r vmobj_id="22345"
+  local -r ports="ports1"
+
+  run vedv::vmobj_service::add_expose_ports "$type" "$vmobj_id" "$ports"
+
+  assert_failure
+  assert_output "Argument 'type' must not be empty"
+}
+# bats test_tags=only
+@test "vedv::vmobj_service::add_expose_ports() Should fail With empty vmobj_id" {
+  local -r type="container"
+  local -r vmobj_id=""
+  local -r ports="ports1"
+
+  run vedv::vmobj_service::add_expose_ports "$type" "$vmobj_id" "$ports"
+
+  assert_failure
+  assert_output "Invalid argument 'vmobj_id': it's empty"
+}
+# bats test_tags=only
+@test "vedv::vmobj_service::add_expose_ports() Should fail With empty ports" {
+  local -r type="container"
+  local -r vmobj_id="22345"
+  local -r ports=""
+
+  run vedv::vmobj_service::add_expose_ports "$type" "$vmobj_id" "$ports"
+
+  assert_failure
+  assert_output "Invalid argument 'ports': it's empty"
+}
+# bats test_tags=only
+@test "vedv::vmobj_service::add_expose_ports() Should fail With invalid ports" {
+  local -r type="container"
+  local -r vmobj_id="22345"
+  local -r ports="8081/tca" # it must be 8081/tcp
+
+  run vedv::vmobj_service::add_expose_ports "$type" "$vmobj_id" "$ports"
+
+  assert_failure
+  assert_output "Invalid argument 'ports': it's invalid"
+}
+# bats test_tags=only
+@test "vedv::vmobj_service::add_expose_ports() Should fail If execute_cmd_by_id fails" {
+  local -r type="container"
+  local -r vmobj_id="22345"
+  local -r ports="8081/udp"
+
+  vedv::vmobj_service::execute_cmd_by_id() {
+    assert_equal "$*" "container 22345 vedv-addexpose_ports $'8081/udp' root <none>"
+    return 1
+  }
+
+  run vedv::vmobj_service::add_expose_ports "$type" "$vmobj_id" "$ports"
+
+  assert_failure
+  assert_output "Failed to add expose ports '8081/udp' to container: 22345"
+}
+# bats test_tags=only
+@test "vedv::vmobj_service::add_expose_ports() Should succeed" {
+  local -r type="container"
+  local -r vmobj_id="22345"
+  local -r ports="8081/tcp"
+
+  vedv::vmobj_service::execute_cmd_by_id() {
+    assert_equal "$*" "container 22345 vedv-addexpose_ports $'8081/tcp' root <none>"
+  }
+
+  run vedv::vmobj_service::add_expose_ports "$type" "$vmobj_id" "$ports"
 
   assert_success
   assert_output ""

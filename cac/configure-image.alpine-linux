@@ -18,6 +18,8 @@ echo 'alpine' >"${__VEDV_CONFIG_DIR}/distro"
 chmod 0444 "${__VEDV_CONFIG_DIR}/distro"
 # create environment file
 touch "${__VEDV_CONFIG_DIR}/layer/env"
+# create expose file
+touch "${__VEDV_CONFIG_DIR}/layer/expose"
 # link /etc/profile.d/vedv-env.sh to vedv environment file
 ln -sf "${__VEDV_CONFIG_DIR}/layer/env" /etc/profile.d/vedv-env.sh
 # create workdir file
@@ -281,5 +283,60 @@ cat "${__VEDV_CONFIG_DIR}/layer/shell"
 EOF
 
 chmod 0755 /usr/local/bin/vedv-getshell
+
+# add expose ports
+cat <<EOF >/usr/local/bin/vedv-addexpose_ports
+#!/usr/bin/env bash
+#
+# Add expose ports
+#
+
+set -eu
+
+if [[ "\$#" -eq 0 ]]; then
+  echo "usage: vedv-addexpose_ports <EXPOSE_PORT1> [EXPOSE_PORT2] [...]" >&2
+  exit 1
+fi
+
+readonly EXPOSE_PORTS="\$*"
+
+readonly EXPOSE_PORTS_REGEX='^[[:digit:]]+(/(tcp|udp))?([[:space:]]+[[:digit:]]+(/(tcp|udp))?)*$'
+
+if [[ ! "\$EXPOSE_PORTS" =~ \$EXPOSE_PORTS_REGEX ]]; then
+  echo "expose ports are invalid" >&2
+  exit 1
+fi
+
+readonly EXPOSE_FILE="${__VEDV_CONFIG_DIR}/layer/expose"
+
+IFS=' ' read -ra EXPOSE_PORTS_ARR <<<"\$EXPOSE_PORTS"
+{
+  for port in "\${EXPOSE_PORTS_ARR[@]}"; do
+    if [[ "\$port" =~ ^[[:digit:]]+$ ]]; then
+      echo "\$port/tcp"
+      continue
+    fi
+    echo "\$port"
+  done
+} >>"\$EXPOSE_FILE"
+# sort and remove duplicates ignoring case
+readonly TMP_FILE="\$(mktemp)"
+sort -f -u "\$EXPOSE_FILE" >"\$TMP_FILE"
+mv "\$TMP_FILE" "\$EXPOSE_FILE"
+EOF
+
+chmod 0755 /usr/local/bin/vedv-addexpose_ports
+
+# get expose ports
+cat <<EOF >/usr/local/bin/vedv-getexpose_ports
+#!/usr/bin/env sh
+#
+# Get expose ports
+#
+
+cat "${__VEDV_CONFIG_DIR}/layer/expose"
+EOF
+
+chmod 0755 /usr/local/bin/vedv-getexpose_ports
 
 echo '>> DONE!'

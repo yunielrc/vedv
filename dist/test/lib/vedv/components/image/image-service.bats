@@ -1492,7 +1492,7 @@ EOF
 }
 
 # Tests for vedv::image_service::delete_layer_cache()
-# bats test_tags=only
+
 @test "vedv::image_service::delete_layer_cache() Should fail With empty image_id" {
   # Arrange
   local -r image_id=""
@@ -1502,7 +1502,7 @@ EOF
   assert_failure "$ERR_INVAL_ARG"
   assert_output "Argument 'image_id' is required"
 }
-# bats test_tags=only
+
 @test "vedv::image_service::delete_layer_cache() Should fail If get_layers_ids fails" {
   # Arrange
   local -r image_id=2345
@@ -1517,7 +1517,7 @@ EOF
   assert_failure "$ERR_IMAGE_OPERATION"
   assert_output "Failed to get layers ids for image '${image_id}'"
 }
-# bats test_tags=only
+
 @test "vedv::image_service::delete_layer_cache() Should fail If delete_layer fails" {
   # Arrange
   local -r image_id=2345
@@ -1536,7 +1536,7 @@ EOF
   assert_failure "$ERR_IMAGE_OPERATION"
   assert_output "Failed to delete layer '1234563' for image '${image_id}'"
 }
-# bats test_tags=only
+
 @test "vedv::image_service::delete_layer_cache() Should fail If restore_layer fails" {
   # Arrange
   local -r image_id=2345
@@ -1558,7 +1558,7 @@ EOF
   assert_failure "$ERR_IMAGE_OPERATION"
   assert_output "Failed to restore layer '1234560' for image '${image_id}'"
 }
-# bats test_tags=only
+
 @test "vedv::image_service::delete_layer_cache() Should succeed" {
   # Arrange
   local -r image_id=2345
@@ -1575,6 +1575,23 @@ EOF
   }
   # Act
   run vedv::image_service::delete_layer_cache "$image_id"
+  # Assert
+  assert_success
+  assert_output ""
+}
+
+# Tests for vedv::image_service::add_expose_ports()
+# bats test_tags=only
+@test "vedv::image_service::add_expose_ports() Should fail With empty image_id" {
+  # Arrange
+  local -r image_id=""
+  local -r ports="1234 1235"
+  # Stubs
+  vedv::vmobj_service::add_expose_ports() {
+    assert_equal "$*" "image ${image_id} ${ports}"
+  }
+  # Act
+  run vedv::image_service::add_expose_ports "$image_id" "$ports"
   # Assert
   assert_success
   assert_output ""
