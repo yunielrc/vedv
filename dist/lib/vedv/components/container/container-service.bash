@@ -168,7 +168,7 @@ vedv::container_service::create() {
   }
 
   if [[ -n "$publish_ports" ]]; then
-    vedv::container_service::publish_ports "$container_id" "$publish_ports" || {
+    vedv::container_service::__publish_ports "$container_id" "$publish_ports" || {
       err "Failed to publish ports for container: '${container_name}'"
       return "$ERR_CONTAINER_OPERATION"
     }
@@ -234,7 +234,7 @@ vedv::container_service::__publish_exposed_ports() {
 
     local port="${random_host_port}:${exp_port}"
 
-    vedv::container_service::publish_port "$container_id" "$port" || {
+    vedv::container_service::__publish_port "$container_id" "$port" || {
       err "Failed to publish port: '${port}' for container: '${container_id}'"
       return "$ERR_CONTAINER_OPERATION"
     }
@@ -254,7 +254,7 @@ vedv::container_service::__publish_exposed_ports() {
 # Returns:
 #   0 on success, non-zero on error.
 #
-vedv::container_service::publish_ports() {
+vedv::container_service::__publish_ports() {
   local -r container_id="$1"
   local -a ports_arr=()
 
@@ -271,7 +271,7 @@ vedv::container_service::publish_ports() {
   fi
 
   for port in "${ports_arr[@]}"; do
-    vedv::container_service::publish_port "$container_id" "$port" || {
+    vedv::container_service::__publish_port "$container_id" "$port" || {
       err "Failed to publish port: '${port}' for container: '${container_id}'"
       return "$ERR_CONTAINER_OPERATION"
     }
@@ -291,7 +291,7 @@ vedv::container_service::publish_ports() {
 # Returns:
 #   0 on success, non-zero on error.
 #
-vedv::container_service::publish_port() {
+vedv::container_service::__publish_port() {
   local -r container_id="$1"
   local -r port="$2"
   # validate arguments

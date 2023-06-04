@@ -594,7 +594,7 @@ setup_file() {
   vedv::container_entity::set_parent_image_id() {
     assert_equal "$*" "12346 12345"
   }
-  vedv::container_service::publish_ports() {
+  vedv::container_service::__publish_ports() {
     assert_regex "$*" "12346 -p 8080:80/tcp -p 8082:82 -p 8081 -p 81/udp"
     return 1
   }
@@ -663,7 +663,7 @@ setup_file() {
   vedv::container_entity::set_parent_image_id() {
     assert_equal "$*" "12346 12345"
   }
-  vedv::container_service::publish_ports() {
+  vedv::container_service::__publish_ports() {
     assert_equal "$*" "12346 -p 8080:80/tcp -p 8082:82 -p 8081 -p 81/udp"
   }
   vedv::container_service::__publish_exposed_ports() {
@@ -1155,78 +1155,78 @@ Sibling containers ids: '123457 123458'"
   assert_output ""
 }
 
-# Tets for vedv::container_service::publish_ports()
+# Tets for vedv::container_service::__publish_ports()
 
-@test "vedv::container_service::publish_ports() Should fail If container_id is empty" {
+@test "vedv::container_service::__publish_ports() Should fail If container_id is empty" {
   local -r container_id=''
 
-  run vedv::container_service::publish_ports "$container_id"
+  run vedv::container_service::__publish_ports "$container_id"
 
   assert_failure
   assert_output "Invalid argument 'container_id': it's empty"
 }
 
-@test "vedv::container_service::publish_ports() Should succeed if no ports to publish" {
+@test "vedv::container_service::__publish_ports() Should succeed if no ports to publish" {
   local -r container_id=123456
 
-  run vedv::container_service::publish_ports "$container_id"
+  run vedv::container_service::__publish_ports "$container_id"
 
   assert_success
   assert_output ""
 }
 
-@test "vedv::container_service::publish_ports() Should fail if publish_port fails" {
+@test "vedv::container_service::__publish_ports() Should fail if publish_port fails" {
   local -r container_id=123456
   local -r publish_ports='8080:80/tcp 8082:82 8081 81/udp'
 
-  vedv::container_service::publish_port() {
+  vedv::container_service::__publish_port() {
     assert_equal "$*" "123456 8080:80/tcp"
     return 1
   }
 
-  run vedv::container_service::publish_ports "$container_id" "$publish_ports"
+  run vedv::container_service::__publish_ports "$container_id" "$publish_ports"
 
   assert_failure
   assert_output "Failed to publish port: '8080:80/tcp' for container: '123456'"
 }
 
-@test "vedv::container_service::publish_ports() Should succeed" {
+@test "vedv::container_service::__publish_ports() Should succeed" {
   local -r container_id=123456
   local -r publish_ports='8080:80/tcp 8082:82 8081 81/udp'
 
-  vedv::container_service::publish_port() {
+  vedv::container_service::__publish_port() {
     assert_regex "$*" "123456 (8080:80/tcp|8082:82|8081|81/udp)"
   }
 
-  run vedv::container_service::publish_ports "$container_id" "$publish_ports"
+  run vedv::container_service::__publish_ports "$container_id" "$publish_ports"
 
   assert_success
   assert_output ""
 }
 
-# Tests for vedv::container_service::publish_port()
+# Tests for vedv::container_service::__publish_port()
 
-@test "vedv::container_service::publish_port() Should fail If container_id is empty" {
+@test "vedv::container_service::__publish_port() Should fail If container_id is empty" {
   local -r container_id=''
   local -r publish_port='8080:80/tcp'
 
-  run vedv::container_service::publish_port "$container_id" "$publish_port"
+  run vedv::container_service::__publish_port "$container_id" "$publish_port"
 
   assert_failure
   assert_output "Invalid argument 'container_id': it's empty"
 }
 
-@test "vedv::container_service::publish_port() Should fail If port is empty" {
+@test "vedv::container_service::__publish_port() Should fail If port is empty" {
   local -r container_id=12345
   local -r publish_port=''
 
-  run vedv::container_service::publish_port "$container_id" "$publish_port"
+  run vedv::container_service::__publish_port "$container_id" "$publish_port"
 
   assert_failure
   assert_output "Invalid argument 'port': it's empty"
 }
 
-@test "vedv::container_service::publish_port() Should fail If get_vm_name fails" {
+@test "vedv::container_service::__publish_port() Should fail If get_vm_name fails" {
   local -r container_id=12345
   local -r publish_port='8080:80/tcp'
 
@@ -1235,13 +1235,13 @@ Sibling containers ids: '123457 123458'"
     return 1
   }
 
-  run vedv::container_service::publish_port "$container_id" "$publish_port"
+  run vedv::container_service::__publish_port "$container_id" "$publish_port"
 
   assert_failure
   assert_output "Failed to get vm name for container: '12345'"
 }
 
-@test "vedv::container_service::publish_port() Should fail If container_vm_name is empty" {
+@test "vedv::container_service::__publish_port() Should fail If container_vm_name is empty" {
   local -r container_id=12345
   local -r publish_port='8080:80/tcp'
 
@@ -1249,13 +1249,13 @@ Sibling containers ids: '123457 123458'"
     assert_equal "$*" 12345
   }
 
-  run vedv::container_service::publish_port "$container_id" "$publish_port"
+  run vedv::container_service::__publish_port "$container_id" "$publish_port"
 
   assert_failure
   assert_output "There is no container with id '12345'"
 }
 
-@test "vedv::container_service::publish_port() Should fail If add_forwarding_port fails" {
+@test "vedv::container_service::__publish_port() Should fail If add_forwarding_port fails" {
   local -r container_id=12345
   local -r publish_port='8080:80/tcp'
 
@@ -1272,13 +1272,13 @@ Sibling containers ids: '123457 123458'"
     return 1
   }
 
-  run vedv::container_service::publish_port "$container_id" "$publish_port"
+  run vedv::container_service::__publish_port "$container_id" "$publish_port"
 
   assert_failure "$ERR_CONTAINER_OPERATION"
   assert_output "Failed to publish port: '8080:80/tcp' for container: '12345'"
 }
 
-@test "vedv::container_service::publish_port() Should succeed With port '8080:80/tcp'" {
+@test "vedv::container_service::__publish_port() Should succeed With port '8080:80/tcp'" {
   local -r container_id=12345
   local -r publish_port='8080:80/tcp'
 
@@ -1290,13 +1290,13 @@ Sibling containers ids: '123457 123458'"
     echo "container_vm_name: $1, port_id: $2, host_port: $3, container_port: $4, protocol: $5"
   }
 
-  run vedv::container_service::publish_port "$container_id" "$publish_port"
+  run vedv::container_service::__publish_port "$container_id" "$publish_port"
 
   assert_success
   assert_output "container_vm_name: container:bin-baam|crc:12346|, port_id: 3074115300, host_port: 8080, container_port: 80, protocol: tcp"
 }
 
-@test "vedv::container_service::publish_port() Should succeed With port '8080:80/udp'" {
+@test "vedv::container_service::__publish_port() Should succeed With port '8080:80/udp'" {
   local -r container_id=12345
   local -r publish_port='8080:80/udp'
 
@@ -1308,13 +1308,13 @@ Sibling containers ids: '123457 123458'"
     echo "container_vm_name: $1, port_id: $2, host_port: $3, container_port: $4, protocol: $5"
   }
 
-  run vedv::container_service::publish_port "$container_id" "$publish_port"
+  run vedv::container_service::__publish_port "$container_id" "$publish_port"
 
   assert_success
   assert_output "container_vm_name: container:bin-baam|crc:12346|, port_id: 3803504386, host_port: 8080, container_port: 80, protocol: udp"
 }
 
-@test "vedv::container_service::publish_port() Should succeed With port '8082:82'" {
+@test "vedv::container_service::__publish_port() Should succeed With port '8082:82'" {
   local -r container_id=12345
   local -r publish_port='8082:82'
 
@@ -1326,13 +1326,13 @@ Sibling containers ids: '123457 123458'"
     echo "container_vm_name: $1, port_id: $2, host_port: $3, container_port: $4, protocol: $5"
   }
 
-  run vedv::container_service::publish_port "$container_id" "$publish_port"
+  run vedv::container_service::__publish_port "$container_id" "$publish_port"
 
   assert_success
   assert_output "container_vm_name: container:bin-baam|crc:12346|, port_id: 2150172608, host_port: 8082, container_port: 82, protocol: tcp"
 }
 
-@test "vedv::container_service::publish_port() Should succeed With port '8081'" {
+@test "vedv::container_service::__publish_port() Should succeed With port '8081'" {
   local -r container_id=12345
   local -r publish_port='8081'
 
@@ -1344,13 +1344,13 @@ Sibling containers ids: '123457 123458'"
     echo "container_vm_name: $1, port_id: $2, host_port: $3, container_port: $4, protocol: $5"
   }
 
-  run vedv::container_service::publish_port "$container_id" "$publish_port"
+  run vedv::container_service::__publish_port "$container_id" "$publish_port"
 
   assert_success
   assert_output "container_vm_name: container:bin-baam|crc:12346|, port_id: 2250533131, host_port: 8081, container_port: 8081, protocol: tcp"
 }
 
-@test "vedv::container_service::publish_port() Should succeed With port '81/udp'" {
+@test "vedv::container_service::__publish_port() Should succeed With port '81/udp'" {
   local -r container_id=12345
   local -r publish_port='81/udp'
 
@@ -1362,7 +1362,7 @@ Sibling containers ids: '123457 123458'"
     echo "container_vm_name: $1, port_id: $2, host_port: $3, container_port: $4, protocol: $5"
   }
 
-  run vedv::container_service::publish_port "$container_id" "$publish_port"
+  run vedv::container_service::__publish_port "$container_id" "$publish_port"
 
   assert_success
   assert_output "container_vm_name: container:bin-baam|crc:12346|, port_id: 2227371250, host_port: 81, container_port: 81, protocol: udp"
@@ -1438,7 +1438,7 @@ Sibling containers ids: '123457 123458'"
   vedv::container_service::stop() {
     assert_equal "$*" 123456
   }
-  vedv::container_service::publish_port() {
+  vedv::container_service::__publish_port() {
     assert_regex "$*" "123456 .*:80/tcp"
     return 1
   }
@@ -1461,7 +1461,7 @@ Sibling containers ids: '123457 123458'"
   vedv::container_service::stop() {
     assert_equal "$*" 123456
   }
-  vedv::container_service::publish_port() {
+  vedv::container_service::__publish_port() {
     echo "$*"
   }
 
