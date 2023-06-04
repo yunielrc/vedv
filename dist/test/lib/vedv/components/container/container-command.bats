@@ -602,7 +602,7 @@ Copy files from local filesystem to a container"
 }
 
 # Tests for vedv::container_command::__list_ports()
-# bats test_tags=only
+
 @test "vedv::container_command::__list_ports() Should show help with no args" {
 
   # Act
@@ -612,7 +612,7 @@ Copy files from local filesystem to a container"
   assert_output --partial "Usage:
 vedv container ports CONTAINER"
 }
-# bats test_tags=only
+
 @test "vedv::container_command::__list_ports() Should show help" {
 
   for arg in '-h' '--help'; do
@@ -624,7 +624,7 @@ vedv container ports CONTAINER"
 vedv container ports CONTAINER"
   done
 }
-# bats test_tags=only
+
 @test "vedv::container_command::__list_ports() Should suceed" {
   # Arrange
   local container_name_or_id='container1'
@@ -637,4 +637,42 @@ vedv container ports CONTAINER"
   # Assert
   assert_success
   assert_output "container1"
+}
+
+# Tests for vedv::container_command::__list_exposed_ports()
+# bats test_tags=only
+@test "vedv::container_command::__list_exposed_ports() Should show help with no args" {
+
+  # Act
+  run vedv::container_command::__list_exposed_ports
+  # Assert
+  assert_success
+  assert_output --partial "Usage:
+vedv container list-exposed-ports CONTAINER"
+}
+# bats test_tags=only
+@test "vedv::container_command::__list_exposed_ports() Should show help" {
+
+  for arg in '-h' '--help'; do
+    # Act
+    run vedv::container_command::__list_exposed_ports "$arg"
+    # Assert
+    assert_success
+    assert_output --partial "Usage:
+vedv container list-exposed-ports CONTAINER"
+  done
+}
+# bats test_tags=only
+@test "vedv::container_command::__list_exposed_ports() Should suceed" {
+  # Arrange
+  local container_name_or_id='container1'
+
+  vedv::container_service::list_exposed_ports() {
+    assert_equal "$*" 'container1'
+  }
+  # Act
+  run vedv::container_command::__list_exposed_ports "$container_name_or_id"
+  # Assert
+  assert_success
+  assert_output ""
 }

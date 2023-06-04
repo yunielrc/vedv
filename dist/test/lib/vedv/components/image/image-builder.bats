@@ -2986,7 +2986,7 @@ local -r var_9f57a558b3_VAR23=\"var3 var3\""
   local -r cmd="1 EXPOSE 8080"
 
   vedv::image_builder::__layer_execute_cmd() {
-    assert_equal "$*" "12345 1 EXPOSE 8080 EXPOSE vedv::image_service::add_expose_ports '12345' '8080'"
+    assert_equal "$*" "12345 1 EXPOSE 8080 EXPOSE vedv::image_service::add_exposed_ports '12345' '8080'"
     return 1
   }
 
@@ -3001,7 +3001,7 @@ local -r var_9f57a558b3_VAR23=\"var3 var3\""
   local -r cmd="1 EXPOSE 8080"
 
   vedv::image_builder::__layer_execute_cmd() {
-    assert_equal "$*" "12345 1 EXPOSE 8080 EXPOSE vedv::image_service::add_expose_ports '12345' '8080'"
+    assert_equal "$*" "12345 1 EXPOSE 8080 EXPOSE vedv::image_service::add_exposed_ports '12345' '8080'"
   }
 
   run vedv::image_builder::__layer_expose "$image_id" "$cmd"

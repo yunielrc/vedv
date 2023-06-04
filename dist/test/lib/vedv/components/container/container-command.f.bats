@@ -517,8 +517,8 @@ Build finished
   assert_output --regexp '.*,tcp,,.*,,2300'
 }
 
-# Tests for vedv container
-# bats test_tags=only
+# Tests for vedv container list-ports ..
+
 @test "vedv container list-ports container123" {
   local -r container_id='container123'
 
@@ -555,4 +555,37 @@ Build finished
   assert_output --partial '50000/tcp -> 5000'
   assert_output --partial '8081/udp -> 8081'
   assert_output --partial '23000/tcp -> 2300'
+}
+
+# Tests for vedv container list-exposed-ports ..
+# bats test_tags=only
+@test "vedv container list-exposed-ports container123" {
+  local -r container_id='container123'
+
+  run vedv image build \
+    -t 'image123' \
+    "${BATS_TEST_DIRNAME}/fixtures/expose.vedvfile"
+
+  assert_success
+  assert_output --regexp "created layer '.*' for command 'FROM'
+created layer '.*' for command 'EXPOSE'
+created layer '.*' for command 'EXPOSE'
+created layer '.*' for command 'EXPOSE'
+
+Build finished
+.* image123"
+
+  run vedv container create --name "$container_id" 'image123'
+
+  assert_success
+  assert_output "$container_id"
+
+  run vedv container list-exposed-ports "$container_id"
+
+  assert_success
+  assert_output '2300/tcp
+3000/udp
+5000/tcp
+8080/tcp
+8081/udp'
 }

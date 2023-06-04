@@ -737,7 +737,11 @@ vedv::vmobj_service::__exec_ssh_func() {
     err "Invalid argument 'user': it's empty"
     return "$ERR_INVAL_ARG"
   fi
-
+  # vmobj is leaving running by the function call below,
+  # vmobj can not be stopped here in case that it was previously in stopped state
+  # because the minimum time to start a vmobj with a ready ssh service is 10 seconds,
+  # so it's better to leave it running and stop from a higher level function
+  # that knows the context of the operation and when to stop it.
   vedv::vmobj_service::start_one "$type" 'true' "$vmobj_id" >/dev/null || {
     err "Failed to start ${type}: ${vmobj_id}"
     return "$ERR_VMOBJ_OPERATION"
@@ -1442,7 +1446,7 @@ vedv::vmobj_service::get_environment_vars() {
 # Returns:
 #   0 on success, non-zero on error.
 #
-vedv::vmobj_service::add_expose_ports() {
+vedv::vmobj_service::add_exposed_ports() {
   local -r type="$1"
   local -r vmobj_id="$2"
   local -r ports="$3"
@@ -1475,7 +1479,7 @@ vedv::vmobj_service::add_expose_ports() {
 }
 
 #
-# Get expose ports from vmobj filesystem
+# List exposed ports from vmobj filesystem
 #
 # Arguments:
 #   type      string     type (e.g. 'container|image')
@@ -1487,14 +1491,46 @@ vedv::vmobj_service::add_expose_ports() {
 # Returns:
 #   0 on success, non-zero on error.
 #
-vedv::vmobj_service::get_expose_ports() {
+vedv::vmobj_service::list_exposed_ports_by_id() {
   local -r type="$1"
   local -r vmobj_id="$2"
 
   local -r cmd='vedv-getexpose_ports'
 
   vedv::vmobj_service::execute_cmd_by_id "$type" "$vmobj_id" "$cmd" 'root' '<none>' || {
-    err "Failed to get expose ports of ${type}: ${vmobj_id}"
+    err "Failed to list exposed ports of ${type}: ${vmobj_id}"
     return "$ERR_VMOBJ_OPERATION"
   }
+}
+
+#
+# List exposed ports from vmobj filesystem
+#
+# Arguments:
+#   type              string     type (e.g. 'container|image')
+#   vmobj_name_or_id  string     vmobj name or id
+#
+# Output:
+#  writes expose ports (text) to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::vmobj_service::list_exposed_ports() {
+  local -r type="$1"
+  local -r vmobj_name_or_id="$2"
+  # validate arguments
+  if [[ -z "$vmobj_name_or_id" ]]; then
+    err "Invalid argument 'vmobj_name_or_id': it's empty"
+    return "$ERR_INVAL_ARG"
+  fi
+
+  local vmobj_id
+  vmobj_id="$(vedv::vmobj_service::get_ids_from_vmobj_names_or_ids "$type" "$vmobj_name_or_id")" || {
+    err "Failed to get id for container: '${vmobj_name_or_id}'"
+    return "$ERR_CONTAINER_OPERATION"
+  }
+  readonly vmobj_id
+
+  vedv::vmobj_service::list_exposed_ports_by_id "$type" "$vmobj_id"
 }

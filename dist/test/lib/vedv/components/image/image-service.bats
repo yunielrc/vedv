@@ -1580,19 +1580,33 @@ EOF
   assert_output ""
 }
 
-# Tests for vedv::image_service::add_expose_ports()
+# Tests for vedv::image_service::add_exposed_ports()
 # bats test_tags=only
-@test "vedv::image_service::add_expose_ports() Should fail With empty image_id" {
+@test "vedv::image_service::add_exposed_ports() Should fail With empty image_id" {
   # Arrange
   local -r image_id=""
   local -r ports="1234 1235"
   # Stubs
-  vedv::vmobj_service::add_expose_ports() {
+  vedv::vmobj_service::add_exposed_ports() {
     assert_equal "$*" "image ${image_id} ${ports}"
   }
   # Act
-  run vedv::image_service::add_expose_ports "$image_id" "$ports"
+  run vedv::image_service::add_exposed_ports "$image_id" "$ports"
   # Assert
+  assert_success
+  assert_output ""
+}
+
+# Tests for vedv::image_service::list_exposed_ports()
+@test "vedv::image_service::list_exposed_ports() Should succeed" {
+  local -r image_name_or_id='12345'
+
+  vedv::vmobj_service::list_exposed_ports() {
+    assert_equal "$*" "image 12345"
+  }
+
+  run vedv::image_service::list_exposed_ports "$image_name_or_id"
+
   assert_success
   assert_output ""
 }

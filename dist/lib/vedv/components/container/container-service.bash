@@ -209,7 +209,7 @@ vedv::container_service::__publish_exposed_ports() {
   local exp_ports_str
 
   # the function below starts the container
-  exp_ports_str="$(vedv::container_service::get_expose_ports "$container_id")" 2>/dev/null || {
+  exp_ports_str="$(vedv::container_service::list_exposed_ports "$container_id")" 2>/dev/null || {
     err "Failed to get exposed ports for container: '${container_id}'"
     return "$ERR_CONTAINER_OPERATION"
   }
@@ -776,23 +776,23 @@ vedv::container_service::copy() {
 }
 
 #
-# Get expose ports from container
+# List exposed ports from container filesystem
 #
 # Arguments:
-#   container_id  string    container id
+#   container_name_or_id  string    container name or id
 #
 # Output:
-#   writes expose ports (text) to the stdout
+#   writes exposed ports (text) to the stdout
 #
 # Returns:
 #   0 on success, non-zero on error.
 #
-vedv::container_service::get_expose_ports() {
-  local -r container_id="$1"
+vedv::container_service::list_exposed_ports() {
+  local -r container_name_or_id="$1"
 
-  vedv::vmobj_service::get_expose_ports \
+  vedv::vmobj_service::list_exposed_ports \
     'container' \
-    "$container_id"
+    "$container_name_or_id"
 }
 
 #

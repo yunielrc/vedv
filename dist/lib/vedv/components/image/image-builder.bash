@@ -1198,7 +1198,7 @@ vedv::image_builder::__layer_expose() {
   shift 2 # skip command id and name
 
   local -r ports="$*"
-  local -r exec_func="vedv::image_service::add_expose_ports '${image_id}' '${ports}'"
+  local -r exec_func="vedv::image_service::add_exposed_ports '${image_id}' '${ports}'"
 
   vedv::image_builder::__layer_execute_cmd "$image_id" "$cmd" "EXPOSE" "$exec_func"
 }

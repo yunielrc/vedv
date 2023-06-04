@@ -899,11 +899,11 @@ vedv::image_service::build() {
 # Returns:
 #   0 on success, non-zero on error.
 #
-vedv::image_service::add_expose_ports() {
+vedv::image_service::add_exposed_ports() {
   local -r image_id="$1"
   local -r ports="$2"
 
-  vedv::vmobj_service::add_expose_ports \
+  vedv::vmobj_service::add_exposed_ports \
     'image' \
     "$image_id" \
     "$ports"
@@ -913,7 +913,7 @@ vedv::image_service::add_expose_ports() {
 # Get expose ports from image
 #
 # Arguments:
-#   image_id  string    image id
+#   image_name_or_id  string    image id
 #
 # Output:
 #   writes expose ports (text) to the stdout
@@ -921,10 +921,10 @@ vedv::image_service::add_expose_ports() {
 # Returns:
 #   0 on success, non-zero on error.
 #
-vedv::image_service::get_expose_ports() {
-  local -r image_id="$1"
+vedv::image_service::list_exposed_ports() {
+  local -r image_name_or_id="$1"
 
-  vedv::vmobj_service::get_expose_ports \
+  vedv::vmobj_service::list_exposed_ports \
     'image' \
-    "$image_id"
+    "$image_name_or_id"
 }

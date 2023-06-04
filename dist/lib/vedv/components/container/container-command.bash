@@ -839,6 +839,69 @@ HELPMSG
 }
 
 #
+# List exposed ports
+#
+# Flags:
+#   [-h | --help]		show help
+#
+# Arguments:
+#   CONTAINER			container name or id
+#
+# Output:
+#   writes port mappings (text) to stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::container_command::__list_exposed_ports() {
+  local container_name_or_id=''
+
+  if [[ $# == 0 ]]; then set -- '-h'; fi
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+    -h | --help)
+      vedv::container_command::__list_exposed_ports_help
+      return 0
+      ;;
+    *)
+      readonly container_name_or_id="$1"
+      break
+      ;;
+    esac
+  done
+
+  if [[ -z "$container_name_or_id" ]]; then
+    err "Missing argument 'CONTAINER'\n"
+    vedv::container_command::__list_exposed_ports_help
+    return "$ERR_INVAL_ARG"
+  fi
+
+  vedv::container_service::list_exposed_ports "$container_name_or_id"
+}
+
+#
+# Show help for __list_exposed_ports command
+#
+# Output:
+#  Writes the help to the stdout
+#
+vedv::container_command::__list_exposed_ports_help() {
+  cat <<-HELPMSG
+Usage:
+${__VED_CONTAINER_COMMAND_SCRIPT_NAME} container list-exposed-ports CONTAINER
+
+List port mappings for the container
+
+Aliases:
+  eports, list-exposed-ports
+
+Flags:
+  -h, --help          show help
+HELPMSG
+}
+
+#
 # Show help
 #
 # Flags:
@@ -870,6 +933,8 @@ Commands:
   login            login to a container
   exec             execute a command in a container
   copy             copy files from local filesystem to a container
+  ports            list port mappings for the container
+  eports           list exposed ports for the container
 
 Run '${__VED_CONTAINER_COMMAND_SCRIPT_NAME} container COMMAND --help' for more information on a command.
 HELPMSG
@@ -927,6 +992,11 @@ vedv::container_command::run_cmd() {
     ports | list-ports)
       shift
       vedv::container_command::__list_ports "$@"
+      return $?
+      ;;
+    eports | list-exposed-ports)
+      shift
+      vedv::container_command::__list_exposed_ports "$@"
       return $?
       ;;
     *)
