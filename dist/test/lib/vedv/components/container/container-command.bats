@@ -23,6 +23,7 @@ Create a new container
 Flags:
   -h, --help                                  show help
   -s, --standalone                            create a standalone container
+  -P, --publish-all                           publish all exposed ports to random ports
 
 Options:
   -n, --name <name>                           assign a name to the container
@@ -46,10 +47,9 @@ Options:
   run vedv::container_command::__create "$image_file"
 
   assert_success
-  assert_output 'container created, arguments: /tmp/vedv/test/files/alpine-x86_64.ova  false '
+  assert_output 'container created, arguments: /tmp/vedv/test/files/alpine-x86_64.ova  false  false'
 }
 
-# bats test_tags=only
 @test 'vedv::container_command::__create(), Should fail With empty name value' {
   local container_name='super-llama-testunit-container-command'
   local image_file="$TEST_OVA_FILE"
@@ -67,10 +67,9 @@ Options:
   run vedv::container_command::__create --name "$container_name" "$image_file"
 
   assert_success
-  assert_output 'container created, arguments: /tmp/vedv/test/files/alpine-x86_64.ova super-llama-testunit-container-command false '
+  assert_output 'container created, arguments: /tmp/vedv/test/files/alpine-x86_64.ova super-llama-testunit-container-command false  false'
 }
 
-# bats test_tags=only
 @test 'vedv::container_command::__create(), Should fail With empty publish value' {
   local container_name='super-llama-testunit-container-command'
   local image_file="$TEST_OVA_FILE"
@@ -81,17 +80,17 @@ Options:
   assert_output --partial 'No publish port specified'
 }
 
-# bats test_tags=only
 @test 'vedv::container_command::__create(), Should succeed' {
   local container_name='super-llama-testunit-container-command'
   local image_file="$TEST_OVA_FILE"
 
-  run vedv::container_command::__create --name "$container_name" -p 8080:80/tcp -p 8082:82 -p 8081 -p 81/udp --standalone "$image_file"
+  run vedv::container_command::__create --name "$container_name" -p 8080:80/tcp -p 8082:82 -p 8081 -p 81/udp --standalone --publish-all "$image_file"
 
   assert_success
-  assert_output 'container created, arguments: /tmp/vedv/test/files/alpine-x86_64.ova super-llama-testunit-container-command true 8080:80/tcp 8082:82 8081 81/udp'
+  assert_output 'container created, arguments: /tmp/vedv/test/files/alpine-x86_64.ova super-llama-testunit-container-command true 8080:80/tcp 8082:82 8081 81/udp true'
 }
 
+# Tets for vedv::container_command::__start()
 @test "vedv::container_command::__start(), with arg '-h|--help|help' should show help" {
   local -r help_output="Usage:
 vedv container start [FLAGS] CONTAINER [CONTAINER...]

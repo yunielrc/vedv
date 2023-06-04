@@ -37,10 +37,11 @@ readonly VEDV_CONTAINER_SERVICE_STANDALONE='STANDALONE'
 # Create a new container
 #
 # Arguments:
-#   image               string    image name or an OVF file
-#   [container_name]    string    container name
-#   [standalone]        bool      create a standalone container
-#   [publish_ports]     string[]  ports to be published
+#   image             string    image name or an OVF file
+#   [container_name]  string    container name
+#   [standalone]      bool      create a standalone container
+#   [publish_ports]   string[]  ports to be published
+#   [publish_all]     bool      publish all ports
 #
 # Output:
 #  Writes container ID to the stdout
@@ -53,6 +54,7 @@ vedv::container_service::create() {
   local container_name="${2:-}"
   local -r standalone="${3:-false}"
   local -r publish_ports="${4:-}"
+  local -r publish_all="${5:-false}"
 
   if [[ -z "$image" ]]; then
     err "Invalid argument 'image': it's empty"
@@ -172,7 +174,71 @@ vedv::container_service::create() {
     }
   fi
 
+  if [[ "$publish_all" == true ]]; then
+    vedv::container_service::__publish_exposed_ports "$container_id" || {
+      err "Failed to publish all ports for container: '${container_name}'"
+      return "$ERR_CONTAINER_OPERATION"
+    }
+  fi
+
   echo "$container_name"
+}
+
+#
+# Publish all exposed ports
+# Assign a random host port for each container exposed port
+#
+# Arguments:
+#   container_id  string     container id
+#
+# Output:
+#  writes error message to the stderr
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::container_service::__publish_exposed_ports() {
+  local -r container_id="$1"
+
+  if [[ -z "$container_id" ]]; then
+    err "Invalid argument 'container_id': it's empty"
+    return "$ERR_INVAL_ARG"
+  fi
+
+  local -a exp_ports_arr=
+  local exp_ports_str
+
+  # the function below starts the container
+  exp_ports_str="$(vedv::container_service::get_expose_ports "$container_id")" 2>/dev/null || {
+    err "Failed to get exposed ports for container: '${container_id}'"
+    return "$ERR_CONTAINER_OPERATION"
+  }
+  readonly exp_ports_str
+
+  vedv::container_service::stop "$container_id" >/dev/null || {
+    err "Failed to stop container: '${container_id}'"
+    return "$ERR_CONTAINER_OPERATION"
+  }
+
+  if [[ -z "$exp_ports_str" ]]; then
+    return 0
+  fi
+
+  readarray -t exp_ports_arr <<<"$exp_ports_str"
+  readonly exp_ports_arr
+
+  for exp_port in "${exp_ports_arr[@]}"; do
+    local random_host_port=''
+
+    random_host_port="$(utils::get_a_dynamic_port)"
+
+    local port="${random_host_port}:${exp_port}"
+
+    vedv::container_service::publish_port "$container_id" "$port" || {
+      err "Failed to publish port: '${port}' for container: '${container_id}'"
+      return "$ERR_CONTAINER_OPERATION"
+    }
+  done
 }
 
 #
@@ -707,4 +773,24 @@ vedv::container_service::copy() {
     '' \
     "$chown" \
     "$chmod"
+}
+
+#
+# Get expose ports from container
+#
+# Arguments:
+#   container_id  string    container id
+#
+# Output:
+#   writes expose ports (text) to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::container_service::get_expose_ports() {
+  local -r container_id="$1"
+
+  vedv::vmobj_service::get_expose_ports \
+    'container' \
+    "$container_id"
 }

@@ -77,16 +77,31 @@
         "container",
         "create",
         "-n",
-        "dyli1",
+        "dyli123",
         "-p",
-        "8080:80/tcp",
+        "57864:2300/tcp",
         "-p",
         "8082:82",
         "-p",
         "8081",
         "-p",
         "81/udp",
-        "/tmp/vedv/test/files/alpine-x86_64.ova"
+        "image123"
+      ]
+    },
+    {
+      "type": "bashdb",
+      "request": "launch",
+      "name": "Bash-Debug (vedv container create --publish-all ...)",
+      "cwd": "${workspaceFolder}",
+      "program": "${workspaceFolder}/dist/usr/bin/vedv",
+      "args": [
+        "container",
+        "create",
+        "-P",
+        "-n",
+        "dyli126",
+        "image123"
       ]
     },
     {

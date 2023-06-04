@@ -18,6 +18,7 @@ teardown() {
 }
 
 # Tests for 'vedv container create'
+
 @test "vedv container create, Should show help" {
   run vedv container create
 
@@ -30,6 +31,7 @@ Create a new container
 Flags:
   -h, --help                                  show help
   -s, --standalone                            create a standalone container
+  -P, --publish-all                           publish all exposed ports to random ports
 
 Options:
   -n, --name <name>                           assign a name to the container
@@ -51,6 +53,7 @@ Create a new container
 Flags:
   -h, --help                                  show help
   -s, --standalone                            create a standalone container
+  -P, --publish-all                           publish all exposed ports to random ports
 
 Options:
   -n, --name <name>                           assign a name to the container
@@ -74,6 +77,7 @@ Create a new container
 Flags:
   -h, --help                                  show help
   -s, --standalone                            create a standalone container
+  -P, --publish-all                           publish all exposed ports to random ports
 
 Options:
   -n, --name <name>                           assign a name to the container
@@ -120,7 +124,7 @@ Options:
   assert_success
   assert_output "container123"
 }
-# bats test_tags=only
+
 @test "vedv container create --name container123 -p 8080:80/tcp -p 8082:82 -p 8081 -p 81/udp image, Should create a container" {
   local -r container_id='container123'
 
@@ -438,6 +442,7 @@ SSHEOF
   assert_success
   assert_output "bash"
 }
+
 # Tests for vedv container copy
 @test "vedv container copy container123a src /home/vedv/file123" {
 
@@ -456,7 +461,6 @@ SSHEOF
 }
 
 # Tests for vedv container copy
-
 @test "vedv container copy container123a src dest " {
 
   vedv container create --name 'container123a' "$TEST_OVA_FILE"
@@ -478,4 +482,39 @@ SSHEOF
 
   assert_success
   assert_output --partial "-r--r-----    1 vedv     vedv"
+}
+
+# Tests for vedv container create --publish-all ...
+
+@test "vedv container create --publish-all --name container123 image, Should succeed" {
+  cd "${BATS_TEST_DIRNAME}/fixtures"
+
+  local container_id='container123'
+
+  run vedv image build -t 'image123' "${BATS_TEST_DIRNAME}/fixtures/expose.vedvfile"
+
+  assert_success
+  assert_output --regexp "created layer '.*' for command 'FROM'
+created layer '.*' for command 'EXPOSE'
+created layer '.*' for command 'EXPOSE'
+created layer '.*' for command 'EXPOSE'
+
+Build finished
+.* image123"
+
+  run vedv container create --publish-all --name "$container_id" 'image123'
+
+  assert_success
+  assert_output "$container_id"
+
+  local container_vm_name="$(vedv::hypervisor::list_vms_by_partial_name "container:${container_id}|" | head -n 1)"
+
+  run vedv::hypervisor::get_forwarding_ports "$container_vm_name"
+
+  assert_success
+  assert_output --regexp '.*,udp,,.*,,3000'
+  assert_output --regexp '.*,tcp,,.*,,8080'
+  assert_output --regexp '.*,tcp,,.*,,5000'
+  assert_output --regexp '.*,udp,,.*,,8081'
+  assert_output --regexp '.*,tcp,,.*,,2300'
 }

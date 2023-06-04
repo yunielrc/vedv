@@ -51,6 +51,7 @@ vedv::container_command::__create() {
   local name=''
   local image=''
   local -a publish_ports=()
+  local publish_all=false
 
   if [[ $# == 0 ]]; then set -- '-h'; fi
 
@@ -88,6 +89,11 @@ vedv::container_command::__create() {
       publish_ports+=("$new_publish_port")
       shift 2
       ;;
+    -P | --publish-all)
+      readonly publish_all=true
+      shift
+      ;;
+    # arguments
     *)
       readonly image="$1"
       break
@@ -105,7 +111,8 @@ vedv::container_command::__create() {
     "$image" \
     "$name" \
     "$standalone" \
-    "${publish_ports[*]}"
+    "${publish_ports[*]}" \
+    "$publish_all"
 }
 
 #
@@ -124,6 +131,7 @@ Create a new container
 Flags:
   -h, --help                                  show help
   -s, --standalone                            create a standalone container
+  -P, --publish-all                           publish all exposed ports to random ports
 
 Options:
   -n, --name <name>                           assign a name to the container
