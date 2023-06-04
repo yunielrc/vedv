@@ -696,6 +696,9 @@ vedv::virtualbox::get_description() { vedv::hypervisor::get_description "$@"; }
 # Arguments:
 #   vm_name string  virtual machine name
 #
+# Output:
+#   writes the forwarding ports (text) to stdout
+#
 # Returns:
 #   0 on success, non-zero on error.
 #

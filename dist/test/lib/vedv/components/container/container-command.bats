@@ -600,3 +600,41 @@ Copy files from local filesystem to a container"
   assert_success
   assert_output ""
 }
+
+# Tests for vedv::container_command::__list_ports()
+# bats test_tags=only
+@test "vedv::container_command::__list_ports() Should show help with no args" {
+
+  # Act
+  run vedv::container_command::__list_ports
+  # Assert
+  assert_success
+  assert_output --partial "Usage:
+vedv container ports CONTAINER"
+}
+# bats test_tags=only
+@test "vedv::container_command::__list_ports() Should show help" {
+
+  for arg in '-h' '--help'; do
+    # Act
+    run vedv::container_command::__list_ports "$arg"
+    # Assert
+    assert_success
+    assert_output --partial "Usage:
+vedv container ports CONTAINER"
+  done
+}
+# bats test_tags=only
+@test "vedv::container_command::__list_ports() Should suceed" {
+  # Arrange
+  local container_name_or_id='container1'
+
+  vedv::container_service::list_ports() {
+    echo "$*"
+  }
+  # Act
+  run vedv::container_command::__list_ports "$container_name_or_id"
+  # Assert
+  assert_success
+  assert_output "container1"
+}

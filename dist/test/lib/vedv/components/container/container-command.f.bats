@@ -487,9 +487,7 @@ SSHEOF
 # Tests for vedv container create --publish-all ...
 
 @test "vedv container create --publish-all --name container123 image, Should succeed" {
-  cd "${BATS_TEST_DIRNAME}/fixtures"
-
-  local container_id='container123'
+  local -r container_id='container123'
 
   run vedv image build -t 'image123' "${BATS_TEST_DIRNAME}/fixtures/expose.vedvfile"
 
@@ -507,7 +505,7 @@ Build finished
   assert_success
   assert_output "$container_id"
 
-  local container_vm_name="$(vedv::hypervisor::list_vms_by_partial_name "container:${container_id}|" | head -n 1)"
+  local -r container_vm_name="$(vedv::hypervisor::list_vms_by_partial_name "container:${container_id}|" | head -n 1)"
 
   run vedv::hypervisor::get_forwarding_ports "$container_vm_name"
 
@@ -517,4 +515,44 @@ Build finished
   assert_output --regexp '.*,tcp,,.*,,5000'
   assert_output --regexp '.*,udp,,.*,,8081'
   assert_output --regexp '.*,tcp,,.*,,2300'
+}
+
+# Tests for vedv container
+# bats test_tags=only
+@test "vedv container list-ports container123" {
+  local -r container_id='container123'
+
+  run vedv image build \
+    -t 'image123' \
+    "${BATS_TEST_DIRNAME}/fixtures/expose.vedvfile"
+
+  assert_success
+  assert_output --regexp "created layer '.*' for command 'FROM'
+created layer '.*' for command 'EXPOSE'
+created layer '.*' for command 'EXPOSE'
+created layer '.*' for command 'EXPOSE'
+
+Build finished
+.* image123"
+
+  run vedv container create \
+    -p 30000:3000/udp \
+    -p 8080 \
+    -p 50000:5000 \
+    -p 8081/udp \
+    -p 23000:2300/tcp \
+    --name "$container_id" \
+    'image123'
+
+  assert_success
+  assert_output "$container_id"
+
+  run vedv container list-ports "$container_id"
+
+  assert_success
+  assert_output --partial '30000/udp -> 3000'
+  assert_output --partial '8080/tcp -> 8080'
+  assert_output --partial '50000/tcp -> 5000'
+  assert_output --partial '8081/udp -> 8081'
+  assert_output --partial '23000/tcp -> 2300'
 }

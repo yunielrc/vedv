@@ -123,8 +123,8 @@ vedv::vmobj_service::is_started() {
 # Get ids from a list with vmobj names or ids
 #
 # Arguments:
-#   type string   type (e.g. 'container|image')
-#   vmobj_ids_or_names string    vmobj ids or names
+#   type                string  type (e.g. 'container|image')
+#   vmobj_ids_or_names  @string  vmobj ids or names
 #
 # Output:
 #  writes vmobj_ids (string) to the stdout

@@ -794,3 +794,89 @@ vedv::container_service::get_expose_ports() {
     'container' \
     "$container_id"
 }
+
+#
+# List port mappings for the container
+#
+# Arguments:
+#   container_id  string    container id
+#
+# Output:
+#   writes expose ports (text) to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::container_service::list_ports_by_id() {
+  local -r container_id="$1"
+  # validate arguments
+  if [[ -z "$container_id" ]]; then
+    err "Invalid argument 'container_id': it's empty"
+    return "$ERR_INVAL_ARG"
+  fi
+
+  local container_vm_name
+  container_vm_name="$(vedv::container_entity::get_vm_name "$container_id")" || {
+    err "Failed to get vm name for container: '${container_id}'"
+    return "$ERR_CONTAINER_OPERATION"
+  }
+  readonly container_vm_name
+
+  if [[ -z "$container_vm_name" ]]; then
+    err "There is no container with id '${container_id}'"
+    return "$ERR_CONTAINER_OPERATION"
+  fi
+
+  local vm_fw_ports
+  vm_fw_ports="$(vedv::hypervisor::get_forwarding_ports "$container_vm_name")" || {
+    err "Failed to get ports for container: '${container_id}'"
+    return "$ERR_CONTAINER_OPERATION"
+  }
+  readonly vm_fw_ports
+
+  local -a vm_fw_ports_arr=()
+  readarray -t vm_fw_ports_arr <<<"$vm_fw_ports"
+
+  for vm_fw_port in "${vm_fw_ports_arr[@]}"; do
+    # transform from: 2150172608,tcp,,8082,,82
+    # to            : 8082/tcp -> 82
+    local -a vm_fw_port_arr
+    IFS=',' read -ra vm_fw_port_arr <<<"$vm_fw_port"
+
+    local protocol="${vm_fw_port_arr[1]}"
+    local host_port="${vm_fw_port_arr[3]}"
+    local container_port="${vm_fw_port_arr[5]}"
+
+    echo "${host_port}/${protocol} -> ${container_port}"
+  done
+}
+
+#
+# List port mappings for the container
+#
+# Arguments:
+#   container_name_or_id  string    container name or id
+#
+# Output:
+#   writes expose ports (text) to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::container_service::list_ports() {
+  local -r container_name_or_id="$1"
+  # validate arguments
+  if [[ -z "$container_name_or_id" ]]; then
+    err "Invalid argument 'container_name_or_id': it's empty"
+    return "$ERR_INVAL_ARG"
+  fi
+
+  local container_id
+  container_id="$(vedv::vmobj_service::get_ids_from_vmobj_names_or_ids 'container' "$container_name_or_id")" || {
+    err "Failed to get id for container: '${container_name_or_id}'"
+    return "$ERR_CONTAINER_OPERATION"
+  }
+  readonly container_id
+
+  vedv::container_service::list_ports_by_id "$container_id"
+}

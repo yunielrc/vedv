@@ -776,6 +776,69 @@ HELPMSG
 }
 
 #
+# List port mappings for the container
+#
+# Flags:
+#   [-h | --help]		show help
+#
+# Arguments:
+#   CONTAINER			container name or id
+#
+# Output:
+#   writes port mappings (text) to stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::container_command::__list_ports() {
+  local container_name_or_id=''
+
+  if [[ $# == 0 ]]; then set -- '-h'; fi
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+    -h | --help)
+      vedv::container_command::__list_ports_help
+      return 0
+      ;;
+    *)
+      readonly container_name_or_id="$1"
+      break
+      ;;
+    esac
+  done
+
+  if [[ -z "$container_name_or_id" ]]; then
+    err "Missing argument 'CONTAINER'\n"
+    vedv::container_command::__list_ports_help
+    return "$ERR_INVAL_ARG"
+  fi
+
+  vedv::container_service::list_ports "$container_name_or_id"
+}
+
+#
+# Show help for __list_ports command
+#
+# Output:
+#  Writes the help to the stdout
+#
+vedv::container_command::__list_ports_help() {
+  cat <<-HELPMSG
+Usage:
+${__VED_CONTAINER_COMMAND_SCRIPT_NAME} container ports CONTAINER
+
+List port mappings for the container
+
+Aliases:
+  ports, list-ports
+
+Flags:
+  -h, --help          show help
+HELPMSG
+}
+
+#
 # Show help
 #
 # Flags:
@@ -859,6 +922,11 @@ vedv::container_command::run_cmd() {
     copy | cp)
       shift
       vedv::container_command::__copy "$@"
+      return $?
+      ;;
+    ports | list-ports)
+      shift
+      vedv::container_command::__list_ports "$@"
       return $?
       ;;
     *)

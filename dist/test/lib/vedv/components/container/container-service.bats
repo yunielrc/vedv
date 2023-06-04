@@ -1472,3 +1472,121 @@ Sibling containers ids: '123457 123458'"
 123456 .*:81
 123456 .*:82/udp"
 }
+
+# Tests for vedv::container_service::list_ports_by_id()
+# bats test_tags=only
+@test "vedv::container_service::list_ports_by_id() Should fail If container_id is empty" {
+  local -r container_id=''
+
+  run vedv::container_service::list_ports_by_id "$container_id"
+
+  assert_failure
+  assert_output "Invalid argument 'container_id': it's empty"
+}
+# bats test_tags=only
+@test "vedv::container_service::list_ports_by_id() Should fail If get_vm_name fails" {
+  local -r container_id=123456
+
+  vedv::container_entity::get_vm_name() {
+    assert_equal "$*" 123456
+    return 1
+  }
+
+  run vedv::container_service::list_ports_by_id "$container_id"
+
+  assert_failure
+  assert_output "Failed to get vm name for container: '123456'"
+}
+# bats test_tags=only
+@test "vedv::container_service::list_ports_by_id() Should fail If container_vm_name is empty" {
+  local -r container_id=123456
+
+  vedv::container_entity::get_vm_name() {
+    assert_equal "$*" 123456
+  }
+
+  run vedv::container_service::list_ports_by_id "$container_id"
+
+  assert_failure
+  assert_output "There is no container with id '123456'"
+}
+# bats test_tags=only
+@test "vedv::container_service::list_ports_by_id() Should fail If get_forwarding_ports fails" {
+  local -r container_id=123456
+
+  vedv::container_entity::get_vm_name() {
+    assert_equal "$*" 123456
+    echo "container:bin-baam|crc:12346|"
+  }
+  vedv::hypervisor::get_forwarding_ports() {
+    assert_equal "$*" "container:bin-baam|crc:12346|"
+    return 1
+  }
+
+  run vedv::container_service::list_ports_by_id "$container_id"
+
+  assert_failure
+  assert_output "Failed to get ports for container: '123456'"
+}
+# bats test_tags=only
+@test "vedv::container_service::list_ports_by_id() Should succeed" {
+  local -r container_id=123456
+
+  vedv::container_entity::get_vm_name() {
+    assert_equal "$*" 123456
+    echo "container:bin-baam|crc:12346|"
+  }
+  vedv::hypervisor::get_forwarding_ports() {
+    assert_equal "$*" "container:bin-baam|crc:12346|"
+    echo "2150172608,tcp,,8081,,81
+2150172608,udp,,8082,,82"
+  }
+
+  run vedv::container_service::list_ports_by_id "$container_id"
+
+  assert_success
+  assert_output "8081/tcp -> 81
+8082/udp -> 82"
+}
+
+# Tests for vedv::container_service::list_ports()
+# bats test_tags=only
+@test "vedv::container_service::list_ports() Should fail If container_name is empty" {
+  local -r container_name_or_id=''
+
+  run vedv::container_service::list_ports "$container_name_or_id"
+
+  assert_failure
+  assert_output "Invalid argument 'container_name_or_id': it's empty"
+}
+# bats test_tags=only
+@test "vedv::container_service::list_ports() Should fail If get_ids_from_vmobj_names_or_ids fails" {
+  local -r container_name_or_id='container1'
+
+  vedv::vmobj_service::get_ids_from_vmobj_names_or_ids() {
+    assert_equal "$*" "container container1"
+    return 1
+  }
+
+  run vedv::container_service::list_ports "$container_name_or_id"
+
+  assert_failure
+  assert_output "Failed to get id for container: 'container1'"
+}
+# bats test_tags=only
+@test "vedv::container_service::list_ports() Should succeed" {
+  local -r container_name_or_id='container1'
+
+  vedv::vmobj_service::get_ids_from_vmobj_names_or_ids() {
+    assert_equal "$*" "container container1"
+    echo 123456
+  }
+  vedv::container_service::list_ports_by_id() {
+    echo "$*"
+  }
+
+  run vedv::container_service::list_ports "$container_name_or_id"
+
+  assert_success
+  assert_output "123456"
+}
