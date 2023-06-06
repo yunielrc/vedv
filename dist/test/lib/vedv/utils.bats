@@ -699,7 +699,7 @@ calc_item_id_from_array_b() { echo "$1"; }
 }
 
 # Tests for utils::get_file_path_on_working_dir()
-# bats test_tags=only
+
 @test "utils::get_file_path_on_working_dir() Should fail With empty file_ name" {
   local -r file_name=""
   local -r working_dir=""
@@ -709,7 +709,7 @@ calc_item_id_from_array_b() { echo "$1"; }
   assert_failure
   assert_output "file_name is required"
 }
-# bats test_tags=only
+
 @test "utils::get_file_path_on_working_dir() Should return file_name" {
   local -r file_name="file1"
   local -r working_dir=""
@@ -719,7 +719,7 @@ calc_item_id_from_array_b() { echo "$1"; }
   assert_success
   assert_output "file1"
 }
-# bats test_tags=only
+
 @test "utils::get_file_path_on_working_dir() Should return file_name with working_dir" {
   local -r file_name="file1"
   local -r working_dir="/home/vedv"
@@ -729,7 +729,7 @@ calc_item_id_from_array_b() { echo "$1"; }
   assert_success
   assert_output "/home/vedv/file1"
 }
-# bats test_tags=only
+
 @test "utils::get_file_path_on_working_dir() Should return file_name 1" {
   local -r file_name="/file1"
   local -r working_dir="/home/vedv"

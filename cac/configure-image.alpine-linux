@@ -18,20 +18,25 @@ echo 'alpine' >"${__VEDV_CONFIG_DIR}/distro"
 chmod 0444 "${__VEDV_CONFIG_DIR}/distro"
 # create environment file
 touch "${__VEDV_CONFIG_DIR}/layer/env"
-# create expose file
-touch "${__VEDV_CONFIG_DIR}/layer/expose"
+chmod 0644 "${__VEDV_CONFIG_DIR}/layer/env"
 # link /etc/profile.d/vedv-env.sh to vedv environment file
 ln -sf "${__VEDV_CONFIG_DIR}/layer/env" /etc/profile.d/vedv-env.sh
+# create expose file
+touch "${__VEDV_CONFIG_DIR}/layer/expose"
+chmod 0644 "${__VEDV_CONFIG_DIR}/layer/expose"
 # create workdir file
 touch "${__VEDV_CONFIG_DIR}/layer/workdir"
+chmod 0644 "${__VEDV_CONFIG_DIR}/layer/workdir"
 # create shell file
 touch "${__VEDV_CONFIG_DIR}/layer/shell"
+chmod 0644 "${__VEDV_CONFIG_DIR}/layer/shell"
 
 # ADD USER
 adduser --disabled-password "$VEDV_USER"
 echo "${VEDV_USER}:${VEDV_PASS}" | chpasswd
 # define default user
 echo "$VEDV_USER" >"${__VEDV_CONFIG_DIR}/layer/user"
+chmod 0644 "${__VEDV_CONFIG_DIR}/layer/user"
 
 # CHANGE ROOT PASSWORD
 echo "root:${VEDV_PASS}" | chpasswd

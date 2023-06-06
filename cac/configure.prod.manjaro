@@ -6,9 +6,9 @@ sudo pacman -Syu --noconfirm --needed yay
 
 yay -Syu --noconfirm --needed \
   virtualbox \
-  python-petname \
   hadolint-bin \
   gnu-netcat \
   python-pip
 
 pip install dockerfile-parse
+pip install petname

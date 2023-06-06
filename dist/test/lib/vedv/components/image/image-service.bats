@@ -1610,3 +1610,18 @@ EOF
   assert_success
   assert_output ""
 }
+# Tests for vedv::image_service::cache_data()
+@test "vedv::image_service::cache_data() Should succeed" {
+  # Arrange
+  local -r image_id="12345"
+  local -r data="data"
+  # Stub
+  vedv::vmobj_service::cache_data() {
+    assert_equal "$*" "image ${image_id}"
+  }
+  # Act
+  run vedv::image_service::cache_data "$image_id" "$data"
+  # Assert
+  assert_success
+  assert_output ""
+}

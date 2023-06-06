@@ -1035,3 +1035,195 @@ setup_file() {
   assert_success
   assert_output ''
 }
+
+# Test vedv::vmobj_entity::cache::set_environment()
+
+@test 'vedv::vmobj_entity::cache::set_environment() Should fail If __set_attribute fails' {
+  local -r type='container'
+  local -r vmobj_id='23456'
+  local -r value=2022
+
+  vedv::vmobj_entity::__set_attribute() {
+    assert_equal "$*" 'container 23456 environment 2022'
+    return 1
+  }
+
+  run vedv::vmobj_entity::cache::set_environment "$type" "$vmobj_id" "$value"
+
+  assert_failure
+  assert_output ''
+}
+
+@test 'vedv::vmobj_entity::cache::set_environment() Should succeed' {
+  local -r type='container'
+  local -r vmobj_id='23456'
+  local -r value=2022
+
+  vedv::vmobj_entity::__set_attribute() {
+    assert_equal "$*" 'container 23456 environment 2022'
+  }
+
+  run vedv::vmobj_entity::cache::set_environment "$type" "$vmobj_id" "$value"
+
+  assert_success
+  assert_output ''
+}
+
+# Test vedv::vmobj_entity::cache::get_environment()
+
+@test 'vedv::vmobj_entity::cache::get_environment() Should fail If __get_attribute fails' {
+  local -r type='container'
+  local -r vmobj_id='23456'
+
+  vedv::vmobj_entity::__get_attribute() {
+    assert_equal "$*" 'container 23456 environment'
+    return 1
+  }
+
+  run vedv::vmobj_entity::cache::get_environment "$type" "$vmobj_id"
+
+  assert_failure
+  assert_output ''
+}
+
+@test 'vedv::vmobj_entity::cache::get_environment() Should succeed' {
+  local -r type='container'
+  local -r vmobj_id='23456'
+
+  vedv::vmobj_entity::__get_attribute() {
+    assert_equal "$*" 'container 23456 environment'
+  }
+
+  run vedv::vmobj_entity::cache::get_environment "$type" "$vmobj_id"
+
+  assert_success
+  assert_output ''
+}
+
+# Test vedv::vmobj_entity::cache::set_exposed_ports()
+
+@test 'vedv::vmobj_entity::cache::set_exposed_ports() Should fail If __set_attribute fails' {
+  local -r type='container'
+  local -r vmobj_id='23456'
+  local -r value=2022
+
+  vedv::vmobj_entity::__set_attribute() {
+    assert_equal "$*" 'container 23456 exposed_ports 2022'
+    return 1
+  }
+
+  run vedv::vmobj_entity::cache::set_exposed_ports "$type" "$vmobj_id" "$value"
+
+  assert_failure
+  assert_output ''
+}
+
+@test 'vedv::vmobj_entity::cache::set_exposed_ports() Should succeed' {
+  local -r type='container'
+  local -r vmobj_id='23456'
+  local -r value=2022
+
+  vedv::vmobj_entity::__set_attribute() {
+    assert_equal "$*" 'container 23456 exposed_ports 2022'
+  }
+
+  run vedv::vmobj_entity::cache::set_exposed_ports "$type" "$vmobj_id" "$value"
+
+  assert_success
+  assert_output ''
+}
+
+# Test vedv::vmobj_entity::cache::get_exposed_ports()
+
+@test 'vedv::vmobj_entity::cache::get_exposed_ports() Should fail If __get_attribute fails' {
+  local -r type='container'
+  local -r vmobj_id='23456'
+
+  vedv::vmobj_entity::__get_attribute() {
+    assert_equal "$*" 'container 23456 exposed_ports'
+    return 1
+  }
+
+  run vedv::vmobj_entity::cache::get_exposed_ports "$type" "$vmobj_id"
+
+  assert_failure
+  assert_output ''
+}
+
+@test 'vedv::vmobj_entity::cache::get_exposed_ports() Should succeed' {
+  local -r type='container'
+  local -r vmobj_id='23456'
+
+  vedv::vmobj_entity::__get_attribute() {
+    assert_equal "$*" 'container 23456 exposed_ports'
+  }
+
+  run vedv::vmobj_entity::cache::get_exposed_ports "$type" "$vmobj_id"
+
+  assert_success
+  assert_output ''
+}
+
+# Test vedv::vmobj_entity::cache::set_shell()
+
+@test 'vedv::vmobj_entity::cache::set_shell() Should fail If __set_attribute fails' {
+  local -r type='container'
+  local -r vmobj_id='23456'
+  local -r value=2022
+
+  vedv::vmobj_entity::__set_attribute() {
+    assert_equal "$*" 'container 23456 shell 2022'
+    return 1
+  }
+
+  run vedv::vmobj_entity::cache::set_shell "$type" "$vmobj_id" "$value"
+
+  assert_failure
+  assert_output ''
+}
+
+@test 'vedv::vmobj_entity::cache::set_shell() Should succeed' {
+  local -r type='container'
+  local -r vmobj_id='23456'
+  local -r value=2022
+
+  vedv::vmobj_entity::__set_attribute() {
+    assert_equal "$*" 'container 23456 shell 2022'
+  }
+
+  run vedv::vmobj_entity::cache::set_shell "$type" "$vmobj_id" "$value"
+
+  assert_success
+  assert_output ''
+}
+
+# Test vedv::vmobj_entity::cache::get_shell()
+
+@test 'vedv::vmobj_entity::cache::get_shell() Should fail If __get_attribute fails' {
+  local -r type='container'
+  local -r vmobj_id='23456'
+
+  vedv::vmobj_entity::__get_attribute() {
+    assert_equal "$*" 'container 23456 shell'
+    return 1
+  }
+
+  run vedv::vmobj_entity::cache::get_shell "$type" "$vmobj_id"
+
+  assert_failure
+  assert_output ''
+}
+
+@test 'vedv::vmobj_entity::cache::get_shell() Should succeed' {
+  local -r type='container'
+  local -r vmobj_id='23456'
+
+  vedv::vmobj_entity::__get_attribute() {
+    assert_equal "$*" 'container 23456 shell'
+  }
+
+  run vedv::vmobj_entity::cache::get_shell "$type" "$vmobj_id"
+
+  assert_success
+  assert_output ''
+}

@@ -378,7 +378,7 @@ vedv::vmobj_entity::get_dictionary() {
     err "Error getting the description for the vm name: '${vmobj_vm_name}'"
     return "$ERR_VMOBJ_ENTITY"
   }
-  vm_description="${vm_description//\\/}"
+  # vm_description="${vm_description//\\/}"
   readonly vm_description
 
   if [[ -z "$vm_description" ]]; then
@@ -528,7 +528,7 @@ vedv::vmobj_entity::__set_attribute() {
     err "Error getting the description for the vm name: '${vmobj_vm_name}'"
     return "$ERR_VMOBJ_ENTITY"
   }
-  vm_description="${vm_description//\\/}" # remove backslashes
+  # vm_description="${vm_description//\\/}" # remove backslashes
   readonly vm_description
 
   local -A vmobj_dict
@@ -561,6 +561,56 @@ vedv::vmobj_entity::__set_attribute() {
     return "$ERR_VMOBJ_ENTITY"
   }
 }
+
+# # THIS FUNCTION IS UNTESTED
+# # Import vmobj vedv data from the filesystem
+# #
+# # Arguments:
+# #   type      string      type (e.g. 'container|image')
+# #   vmobj_id  string      vmobj id
+# #
+# # Returns:
+# #   0 on success, non-zero on error.
+# #
+# vedv::vmobj_entity::import_data() {
+#   local -r type="$1"
+#   local -r vmobj_id="$2"
+#   # validate arguments
+#   vedv::vmobj_entity::validate_type "$type" ||
+#     return "$?"
+#   utils::validate_name_or_id "$vmobj_id" ||
+#     return "$?"
+
+#   local -r mountpoint='/mnt'
+#   local -r vedv_data_dir="${mountpoint}/etc/vedv-guest/layer"
+
+#   local -rA attribute_file_map=(
+#     ['environment']="${vedv_data_dir}/env"
+#     ['exposed_ports']="${vedv_data_dir}/expose"
+#     ['workdir']="${vedv_data_dir}/workdir"
+#     ['shell']="${vedv_data_dir}/shell"
+#     ['user_name']="${vedv_data_dir}/user"
+#   )
+
+#   for attribute in "${!attribute_file_map[@]}"; do
+#     local file="${attribute_file_map["$attribute"]}"
+
+#     if [[ -f "$file" ]]; then
+#       local value
+
+#       value="$(<"$file")" || {
+#         err "Failed to read the value of the attribute '${attribute}' from the file: '${file}'"
+#         return "$ERR_VMOBJ_ENTITY"
+#       }
+
+#       vedv::vmobj_entity::__set_attribute "$type" "$vmobj_id" "$attribute" "$value" || {
+#         err "Failed to set the value of the attribute '${attribute}' from the file: '${file}'"
+#         return "$ERR_VMOBJ_ENTITY"
+#       }
+#     fi
+#   done
+
+# }
 
 #
 # Set ssh_port value
@@ -706,4 +756,145 @@ vedv::vmobj_entity::cache::get_workdir() {
     "$type" \
     "$vmobj_id" \
     'workdir'
+}
+
+#
+# Set environment
+#
+#
+# Arguments:
+#   type       string  type (e.g. 'container|image')
+#   vmobj_id   string  vmobj id
+#   environment    string  environment
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::vmobj_entity::cache::set_environment() {
+  local -r type="$1"
+  local -r vmobj_id="$2"
+  local -r value="$3"
+
+  vedv::vmobj_entity::__set_attribute \
+    "$type" \
+    "$vmobj_id" \
+    'environment' \
+    "$value"
+}
+
+#
+# Get environment
+#
+# Arguments:
+#   type      string  type (e.g. 'container|image')
+#   vmobj_id  string  vmobj id
+#
+# Output:
+#   Writes environment (string) to the stdout.
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::vmobj_entity::cache::get_environment() {
+  local -r type="$1"
+  local -r vmobj_id="$2"
+
+  vedv::vmobj_entity::__get_attribute \
+    "$type" \
+    "$vmobj_id" \
+    'environment'
+}
+
+#
+# Set exposed_ports
+#
+#
+# Arguments:
+#   type          string  type (e.g. 'container|image')
+#   vmobj_id      string  vmobj id
+#   exposed_ports text    exposed_ports
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::vmobj_entity::cache::set_exposed_ports() {
+  local -r type="$1"
+  local -r vmobj_id="$2"
+  local -r value="$3"
+
+  vedv::vmobj_entity::__set_attribute \
+    "$type" \
+    "$vmobj_id" \
+    'exposed_ports' \
+    "$value"
+}
+
+#
+# Get exposed_ports
+#
+# Arguments:
+#   type      string  type (e.g. 'container|image')
+#   vmobj_id  string  vmobj id
+#
+# Output:
+#   Writes exposed_ports (text) to the stdout.
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::vmobj_entity::cache::get_exposed_ports() {
+  local -r type="$1"
+  local -r vmobj_id="$2"
+
+  vedv::vmobj_entity::__get_attribute \
+    "$type" \
+    "$vmobj_id" \
+    'exposed_ports'
+}
+
+#
+# Set shell
+#
+#
+# Arguments:
+#   type       string  type (e.g. 'container|image')
+#   vmobj_id   string  vmobj id
+#   shell    string  shell
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::vmobj_entity::cache::set_shell() {
+  local -r type="$1"
+  local -r vmobj_id="$2"
+  local -r value="$3"
+
+  vedv::vmobj_entity::__set_attribute \
+    "$type" \
+    "$vmobj_id" \
+    'shell' \
+    "$value"
+}
+
+#
+# Get shell
+#
+# Arguments:
+#   type      string  type (e.g. 'container|image')
+#   vmobj_id  string  vmobj id
+#
+# Output:
+#   Writes shell (string) to the stdout.
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::vmobj_entity::cache::get_shell() {
+  local -r type="$1"
+  local -r vmobj_id="$2"
+
+  vedv::vmobj_entity::__get_attribute \
+    "$type" \
+    "$vmobj_id" \
+    'shell'
 }

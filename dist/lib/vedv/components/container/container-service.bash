@@ -180,7 +180,11 @@ vedv::container_service::create() {
       return "$ERR_CONTAINER_OPERATION"
     }
   fi
-
+  # UNTESTED
+  # vedv::container_entity::import_data "$container_id" || {
+  #   err "Failed to import data for container: '${container_name}'"
+  #   return "$ERR_CONTAINER_OPERATION"
+  # }
   echo "$container_name"
 }
 
@@ -209,16 +213,11 @@ vedv::container_service::__publish_exposed_ports() {
   local exp_ports_str
 
   # the function below starts the container
-  exp_ports_str="$(vedv::container_service::list_exposed_ports "$container_id")" 2>/dev/null || {
+  exp_ports_str="$(vedv::container_entity::cache::get_exposed_ports "$container_id")" 2>/dev/null || {
     err "Failed to get exposed ports for container: '${container_id}'"
     return "$ERR_CONTAINER_OPERATION"
   }
   readonly exp_ports_str
-
-  vedv::container_service::stop "$container_id" >/dev/null || {
-    err "Failed to stop container: '${container_id}'"
-    return "$ERR_CONTAINER_OPERATION"
-  }
 
   if [[ -z "$exp_ports_str" ]]; then
     return 0
@@ -787,12 +786,22 @@ vedv::container_service::copy() {
 # Returns:
 #   0 on success, non-zero on error.
 #
-vedv::container_service::list_exposed_ports() {
+vedv::container_service::cache::list_exposed_ports() {
   local -r container_name_or_id="$1"
+  # validate arguments
+  if [[ -z "$container_name_or_id" ]]; then
+    err "Invalid argument 'vmobj_name_or_id': it's empty"
+    return "$ERR_INVAL_ARG"
+  fi
 
-  vedv::vmobj_service::list_exposed_ports \
-    'container' \
-    "$container_name_or_id"
+  local container_id
+  container_id="$(vedv::vmobj_service::get_ids_from_vmobj_names_or_ids 'container' "$container_name_or_id")" || {
+    err "Failed to get id for container: '${container_name_or_id}'"
+    return "$ERR_CONTAINER_OPERATION"
+  }
+  readonly container_id
+
+  vedv::container_entity::cache::get_exposed_ports "$container_id"
 }
 
 #

@@ -877,7 +877,7 @@ vedv::container_command::__list_exposed_ports() {
     return "$ERR_INVAL_ARG"
   fi
 
-  vedv::container_service::list_exposed_ports "$container_name_or_id"
+  vedv::container_service::cache::list_exposed_ports "$container_name_or_id"
 }
 
 #

@@ -1549,10 +1549,10 @@ vedv::image_builder::__build() {
     echo "created layer '${layer_id}' for command '${cmd_name}'"
   done <<<"$cmds_to_run"
 
-  vedv::image_service::stop "$image_id" >/dev/null || {
-    err "Failed to stop the image '${image_name}'.You must stop it."
-    return "$ERR_IMAGE_BUILDER_OPERATION"
-  }
+  # vedv::image_service::stop "$image_id" >/dev/null || {
+  #   err "Failed to stop the image '${image_name}'.You must stop it."
+  #   return "$ERR_IMAGE_BUILDER_OPERATION"
+  # }
   __print_build_success_msg
 }
 
@@ -1639,6 +1639,14 @@ vedv::image_builder::build() {
   fi
 
   if [[ -n "$image_id" ]]; then
+    # cache data
+    # The cached data can not be used by the image during build.
+    # On container creation when the image is cloned this data is cloned too.
+
+    vedv::image_service::cache_data "$image_id" || {
+      err "Failed to cache data for image '${image_name}'"
+      return "$ERR_IMAGE_BUILDER_OPERATION"
+    }
     vedv::image_service::stop "$image_id" >/dev/null || {
       err "Failed to stop the image '${image_name}'.You must stop it."
       return "$ERR_IMAGE_BUILDER_OPERATION"

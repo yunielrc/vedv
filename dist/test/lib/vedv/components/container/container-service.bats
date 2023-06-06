@@ -1382,7 +1382,7 @@ Sibling containers ids: '123457 123458'"
 @test "vedv::container_service::__publish_exposed_ports() Should fail If get_expose_ports fails" {
   local -r container_id=123456
 
-  vedv::container_service::list_exposed_ports() {
+  vedv::container_entity::cache::get_exposed_ports() {
     assert_equal "$*" 123456
     return 1
   }
@@ -1393,27 +1393,10 @@ Sibling containers ids: '123457 123458'"
   assert_output "Failed to get exposed ports for container: '${container_id}'"
 }
 # bats test_tags=only
-@test "vedv::container_service::__publish_exposed_ports() Should fail If stop is empty" {
-  local -r container_id=123456
-
-  vedv::container_service::list_exposed_ports() {
-    assert_equal "$*" 123456
-  }
-  vedv::container_service::stop() {
-    assert_equal "$*" 123456
-    return 1
-  }
-
-  run vedv::container_service::__publish_exposed_ports "$container_id"
-
-  assert_failure
-  assert_output "Failed to stop container: '${container_id}'"
-}
-# bats test_tags=only
 @test "vedv::container_service::__publish_exposed_ports() Should succeed If there are no exposed ports" {
   local -r container_id=123456
 
-  vedv::container_service::list_exposed_ports() {
+  vedv::container_entity::cache::get_exposed_ports() {
     assert_equal "$*" 123456
   }
   vedv::container_service::stop() {
@@ -1429,7 +1412,7 @@ Sibling containers ids: '123457 123458'"
 @test "vedv::container_service::__publish_exposed_ports() Should fail If publish_port fails" {
   local -r container_id=123456
 
-  vedv::container_service::list_exposed_ports() {
+  vedv::container_entity::cache::get_exposed_ports() {
     assert_equal "$*" 123456
     echo "80/tcp
 81
@@ -1452,7 +1435,7 @@ Sibling containers ids: '123457 123458'"
 @test "vedv::container_service::__publish_exposed_ports() Should succeed" {
   local -r container_id=123456
 
-  vedv::container_service::list_exposed_ports() {
+  vedv::container_entity::cache::get_exposed_ports() {
     assert_equal "$*" 123456
     echo "80/tcp
 81
@@ -1591,16 +1574,20 @@ Sibling containers ids: '123457 123458'"
   assert_output "123456"
 }
 
-# Tests for vedv::container_service::list_exposed_ports()
+# Tests for vedv::container_service::cache::list_exposed_ports()
 
-@test "vedv::container_service::list_exposed_ports() Should succeed" {
+@test "vedv::container_service::cache::list_exposed_ports() Should succeed" {
   local -r container_name_or_id='12345'
 
-  vedv::vmobj_service::list_exposed_ports() {
+  vedv::vmobj_service::get_ids_from_vmobj_names_or_ids() {
     assert_equal "$*" "container 12345"
+    echo 12345
+  }
+  vedv::container_entity::cache::get_exposed_ports() {
+    assert_equal "$*" '12345'
   }
 
-  run vedv::container_service::list_exposed_ports "$container_name_or_id"
+  run vedv::container_service::cache::list_exposed_ports "$container_name_or_id"
 
   assert_success
   assert_output ""

@@ -20,7 +20,7 @@ fi
 
 readonly VEDV_CONTAINER_ENTITY_TYPE='container'
 # shellcheck disable=SC2034
-readonly VEDV_CONTAINER_ENTITY_VALID_ATTRIBUTES='parent_image_id|ssh_port|workdir|user_name'
+readonly VEDV_CONTAINER_ENTITY_VALID_ATTRIBUTES='parent_image_id|ssh_port|user_name|workdir|environment|exposed_ports|shell'
 
 # FUNCTIONS
 
@@ -267,4 +267,112 @@ vedv::container_entity::cache::set_workdir() {
   local -r value="$2"
 
   vedv::vmobj_entity::cache::set_workdir "$VEDV_CONTAINER_ENTITY_TYPE" "$container_id" "$value"
+}
+
+#
+# Get environment value
+#
+# Arguments:
+#   container_id  string  container id
+#
+# Output:
+#  Writes environment (string) to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::container_entity::cache::get_environment() {
+  local -r container_id="$1"
+
+  vedv::vmobj_entity::cache::get_environment "$VEDV_CONTAINER_ENTITY_TYPE" "$container_id"
+}
+
+#
+# Set environment value
+#
+#
+# Arguments:
+#   container_id  string  container id
+#   environment     string  user name
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::container_entity::cache::set_environment() {
+  local -r container_id="$1"
+  local -r value="$2"
+
+  vedv::vmobj_entity::cache::set_environment "$VEDV_CONTAINER_ENTITY_TYPE" "$container_id" "$value"
+}
+
+#
+# Get exposed_ports value
+#
+# Arguments:
+#   container_id  string  container id
+#
+# Output:
+#  Writes exposed_ports (text) to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::container_entity::cache::get_exposed_ports() {
+  local -r container_id="$1"
+
+  vedv::vmobj_entity::cache::get_exposed_ports "$VEDV_CONTAINER_ENTITY_TYPE" "$container_id"
+}
+
+#
+# Set exposed_ports value
+#
+#
+# Arguments:
+#   container_id  string  container id
+#   exposed_ports     string  user name
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::container_entity::cache::set_exposed_ports() {
+  local -r container_id="$1"
+  local -r value="$2"
+
+  vedv::vmobj_entity::cache::set_exposed_ports "$VEDV_CONTAINER_ENTITY_TYPE" "$container_id" "$value"
+}
+
+#
+# Get shell value
+#
+# Arguments:
+#   container_id  string  container id
+#
+# Output:
+#  Writes shell (string) to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::container_entity::cache::get_shell() {
+  local -r container_id="$1"
+
+  vedv::vmobj_entity::cache::get_shell "$VEDV_CONTAINER_ENTITY_TYPE" "$container_id"
+}
+
+#
+# Set shell value
+#
+#
+# Arguments:
+#   container_id  string  container id
+#   shell     string  user name
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::container_entity::cache::set_shell() {
+  local -r container_id="$1"
+  local -r value="$2"
+
+  vedv::vmobj_entity::cache::set_shell "$VEDV_CONTAINER_ENTITY_TYPE" "$container_id" "$value"
 }

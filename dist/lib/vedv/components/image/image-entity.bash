@@ -24,7 +24,7 @@ fi
 
 readonly VEDV_IMAGE_ENTITY_TYPE='image'
 # shellcheck disable=SC2034
-readonly VEDV_IMAGE_ENTITY_VALID_ATTRIBUTES='image_cache|ova_file_sum|ssh_port|workdir'
+readonly VEDV_IMAGE_ENTITY_VALID_ATTRIBUTES='image_cache|ova_file_sum|ssh_port|user_name|workdir|environment|exposed_ports|shell'
 
 # FUNCTIONS
 
@@ -467,4 +467,184 @@ vedv::image_entity::get_last_layer_id() {
   fi
 
   echo "${last_layer_id[-1]}"
+}
+
+#
+# Get user_name value
+#
+# Arguments:
+#   image_id  string  image id
+#
+# Output:
+#  Writes user_name (string) to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::image_entity::cache::get_user_name() {
+  local -r image_id="$1"
+
+  vedv::vmobj_entity::cache::get_user_name "$VEDV_IMAGE_ENTITY_TYPE" "$image_id"
+}
+
+#
+# Set user_name value
+#
+#
+# Arguments:
+#   image_id  string  image id
+#   user_name     string  user name
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::image_entity::cache::set_user_name() {
+  local -r image_id="$1"
+  local -r value="$2"
+
+  vedv::vmobj_entity::cache::set_user_name "$VEDV_IMAGE_ENTITY_TYPE" "$image_id" "$value"
+}
+
+#
+# Get workdir value
+#
+# Arguments:
+#   image_id  string  image id
+#
+# Output:
+#  Writes workdir (string) to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::image_entity::cache::get_workdir() {
+  local -r image_id="$1"
+
+  vedv::vmobj_entity::cache::get_workdir "$VEDV_IMAGE_ENTITY_TYPE" "$image_id"
+}
+
+#
+# Set workdir value
+#
+#
+# Arguments:
+#   image_id  string  image id
+#   workdir     string  user name
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::image_entity::cache::set_workdir() {
+  local -r image_id="$1"
+  local -r value="$2"
+
+  vedv::vmobj_entity::cache::set_workdir "$VEDV_IMAGE_ENTITY_TYPE" "$image_id" "$value"
+}
+
+#
+# Get environment value
+#
+# Arguments:
+#   image_id  string  image id
+#
+# Output:
+#  Writes environment (string) to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::image_entity::cache::get_environment() {
+  local -r image_id="$1"
+
+  vedv::vmobj_entity::cache::get_environment "$VEDV_IMAGE_ENTITY_TYPE" "$image_id"
+}
+
+#
+# Set environment value
+#
+#
+# Arguments:
+#   image_id  string  image id
+#   environment     string  user name
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::image_entity::cache::set_environment() {
+  local -r image_id="$1"
+  local -r value="$2"
+
+  vedv::vmobj_entity::cache::set_environment "$VEDV_IMAGE_ENTITY_TYPE" "$image_id" "$value"
+}
+
+#
+# Get exposed_ports value
+#
+# Arguments:
+#   image_id  string  image id
+#
+# Output:
+#  Writes exposed_ports (text) to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::image_entity::cache::get_exposed_ports() {
+  local -r image_id="$1"
+
+  vedv::vmobj_entity::cache::get_exposed_ports "$VEDV_IMAGE_ENTITY_TYPE" "$image_id"
+}
+
+#
+# Set exposed_ports value
+#
+#
+# Arguments:
+#   image_id  string  image id
+#   exposed_ports     string  user name
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::image_entity::cache::set_exposed_ports() {
+  local -r image_id="$1"
+  local -r value="$2"
+
+  vedv::vmobj_entity::cache::set_exposed_ports "$VEDV_IMAGE_ENTITY_TYPE" "$image_id" "$value"
+}
+
+#
+# Get shell value
+#
+# Arguments:
+#   image_id  string  image id
+#
+# Output:
+#  Writes shell (string) to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::image_entity::cache::get_shell() {
+  local -r image_id="$1"
+
+  vedv::vmobj_entity::cache::get_shell "$VEDV_IMAGE_ENTITY_TYPE" "$image_id"
+}
+
+#
+# Set shell value
+#
+#
+# Arguments:
+#   image_id  string  image id
+#   shell     string  user name
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::image_entity::cache::set_shell() {
+  local -r image_id="$1"
+  local -r value="$2"
+
+  vedv::vmobj_entity::cache::set_shell "$VEDV_IMAGE_ENTITY_TYPE" "$image_id" "$value"
 }

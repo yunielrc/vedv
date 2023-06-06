@@ -345,3 +345,159 @@ EOF
   skip
   # TODO: implement test
 }
+
+# Test vedv::image_entity::cache::get_user_name()
+# bats test_tags=only
+@test 'vedv::image_entity::cache::get_user_name() Should succeed' {
+  # Setup
+  local -r image_id="ct1"
+  # Mock
+  vedv::vmobj_entity::cache::get_user_name() {
+    :
+  }
+  # Act
+  run vedv::image_entity::cache::get_user_name "$image_id"
+  # Assert
+  assert_success
+  assert_output ""
+}
+
+# Test vedv::image_entity::set_user_name()
+@test 'vedv::image_entity::cache::set_user_name() Should succeed' {
+  # Setup
+  local -r image_id="ct1"
+  local -r value="val1"
+  # Mock
+  vedv::vmobj_entity::cache::set_user_name() {
+    assert_equal "$*" "image ct1 val1"
+  }
+  # Act
+  run vedv::image_entity::cache::set_user_name "$image_id" "$value"
+  # Assert
+  assert_success
+  assert_output ""
+}
+
+# Test vedv::image_entity::get_workdir()
+@test 'vedv::image_entity::cache::get_workdir() Should succeed' {
+  # Setup
+  local -r image_id="ct1"
+  # Mock
+  vedv::vmobj_entity::cache::get_workdir() {
+    assert_equal "$*" "image ct1"
+  }
+  # Act
+  run vedv::image_entity::cache::get_workdir "$image_id"
+  # Assert
+  assert_success
+  assert_output ""
+}
+
+# Test vedv::image_entity::set_workdir()
+@test 'vedv::image_entity::cache::set_workdir() Should succeed' {
+  # Setup
+  local -r image_id="ct1"
+  local -r value="val1"
+  # Mock
+  vedv::vmobj_entity::cache::set_workdir() {
+    assert_equal "$*" "image ct1 val1"
+  }
+  # Act
+  run vedv::image_entity::cache::set_workdir "$image_id" "$value"
+  # Assert
+  assert_success
+  assert_output ""
+}
+
+# Test vedv::image_entity::get_environment()
+@test 'vedv::image_entity::cache::get_environment() Should succeed' {
+  # Setup
+  local -r image_id="ct1"
+  # Mock
+  vedv::vmobj_entity::cache::get_environment() {
+    assert_equal "$*" "image ct1"
+  }
+  # Act
+  run vedv::image_entity::cache::get_environment "$image_id"
+  # Assert
+  assert_success
+  assert_output ""
+}
+
+# Test vedv::image_entity::set_environment()
+@test 'vedv::image_entity::cache::set_environment() Should succeed' {
+  # Setup
+  local -r image_id="ct1"
+  local -r value="val1"
+  # Mock
+  vedv::vmobj_entity::cache::set_environment() {
+    assert_equal "$*" "image ct1 val1"
+  }
+  # Act
+  run vedv::image_entity::cache::set_environment "$image_id" "$value"
+  # Assert
+  assert_success
+  assert_output ""
+}
+
+# Test vedv::image_entity::get_exposed_ports()
+@test 'vedv::image_entity::cache::get_exposed_ports() Should succeed' {
+  # Setup
+  local -r image_id="ct1"
+  # Mock
+  vedv::vmobj_entity::cache::get_exposed_ports() {
+    assert_equal "$*" "image ct1"
+  }
+  # Act
+  run vedv::image_entity::cache::get_exposed_ports "$image_id"
+  # Assert
+  assert_success
+  assert_output ""
+}
+
+# Test vedv::image_entity::set_exposed_ports()
+@test 'vedv::image_entity::cache::set_exposed_ports() Should succeed' {
+  # Setup
+  local -r image_id="ct1"
+  local -r value="val1"
+  # Mock
+  vedv::vmobj_entity::cache::set_exposed_ports() {
+    assert_equal "$*" "image ct1 val1"
+  }
+  # Act
+  run vedv::image_entity::cache::set_exposed_ports "$image_id" "$value"
+  # Assert
+  assert_success
+  assert_output ""
+}
+
+# Test vedv::image_entity::get_shell()
+@test 'vedv::image_entity::cache::get_shell() Should succeed' {
+  # Setup
+  local -r image_id="ct1"
+  # Mock
+  vedv::vmobj_entity::cache::get_shell() {
+    assert_equal "$*" "image ct1"
+  }
+  # Act
+  run vedv::image_entity::cache::get_shell "$image_id"
+  # Assert
+  assert_success
+  assert_output ""
+}
+
+# Test vedv::image_entity::set_shell()
+@test 'vedv::image_entity::cache::set_shell() Should succeed' {
+  # Setup
+  local -r image_id="ct1"
+  local -r value="val1"
+  # Mock
+  vedv::vmobj_entity::cache::set_shell() {
+    assert_equal "$*" "image ct1 val1"
+  }
+  # Act
+  run vedv::image_entity::cache::set_shell "$image_id" "$value"
+  # Assert
+  assert_success
+  assert_output ""
+}

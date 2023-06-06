@@ -63,8 +63,8 @@
         "container",
         "create",
         "-n",
-        "dyli1",
-        "/tmp/vedv/test/files/alpine-x86_64.ova"
+        "nalyd1",
+        "image1"
       ]
     },
     {
@@ -226,6 +226,26 @@
         "container123a",
         "echo \"E1:${E1} E2:${E2} U:${USER}\""
       ]
+    },
+    {
+      "type": "bashdb",
+      "request": "launch",
+      "name": "Bash-Debug (vedv image list-exposed-ports)",
+      "env": {
+        "VEDV_HADOLINT_ENABLED": "false"
+      },
+      "program": "${workspaceFolder}/dist/usr/bin/vedv",
+      "args": [
+        "container",
+        "list-exposed-ports",
+        "nalyd1"
+      ]
+    },
+    {
+      "type": "bashdb",
+      "request": "launch",
+      "name": "Bash-Debug (test)",
+      "program": "${workspaceFolder}/test"
     }
   ]
 }

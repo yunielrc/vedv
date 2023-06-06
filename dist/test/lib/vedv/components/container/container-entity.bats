@@ -211,3 +211,96 @@ setup() {
   assert_success
   assert_output ""
 }
+
+# Test vedv::container_entity::get_environment()
+@test 'vedv::container_entity::cache::get_environment() Should succeed' {
+  # Setup
+  local -r container_id="ct1"
+  # Mock
+  vedv::vmobj_entity::cache::get_environment() {
+    assert_equal "$*" "container ct1"
+  }
+  # Act
+  run vedv::container_entity::cache::get_environment "$container_id"
+  # Assert
+  assert_success
+  assert_output ""
+}
+
+# Test vedv::container_entity::set_environment()
+@test 'vedv::container_entity::cache::set_environment() Should succeed' {
+  # Setup
+  local -r container_id="ct1"
+  local -r value="val1"
+  # Mock
+  vedv::vmobj_entity::cache::set_environment() {
+    assert_equal "$*" "container ct1 val1"
+  }
+  # Act
+  run vedv::container_entity::cache::set_environment "$container_id" "$value"
+  # Assert
+  assert_success
+  assert_output ""
+}
+
+# Test vedv::container_entity::get_exposed_ports()
+@test 'vedv::container_entity::cache::get_exposed_ports() Should succeed' {
+  # Setup
+  local -r container_id="ct1"
+  # Mock
+  vedv::vmobj_entity::cache::get_exposed_ports() {
+    assert_equal "$*" "container ct1"
+  }
+  # Act
+  run vedv::container_entity::cache::get_exposed_ports "$container_id"
+  # Assert
+  assert_success
+  assert_output ""
+}
+
+# Test vedv::container_entity::set_exposed_ports()
+@test 'vedv::container_entity::cache::set_exposed_ports() Should succeed' {
+  # Setup
+  local -r container_id="ct1"
+  local -r value="val1"
+  # Mock
+  vedv::vmobj_entity::cache::set_exposed_ports() {
+    assert_equal "$*" "container ct1 val1"
+  }
+  # Act
+  run vedv::container_entity::cache::set_exposed_ports "$container_id" "$value"
+  # Assert
+  assert_success
+  assert_output ""
+}
+
+# Test vedv::container_entity::get_shell()
+@test 'vedv::container_entity::cache::get_shell() Should succeed' {
+  # Setup
+  local -r container_id="ct1"
+  # Mock
+  vedv::vmobj_entity::cache::get_shell() {
+    assert_equal "$*" "container ct1"
+  }
+  # Act
+  run vedv::container_entity::cache::get_shell "$container_id"
+  # Assert
+  assert_success
+  assert_output ""
+}
+
+# Test vedv::container_entity::set_shell()
+@test 'vedv::container_entity::cache::set_shell() Should succeed' {
+  # Setup
+  local -r container_id="ct1"
+  local -r value="val1"
+  # Mock
+  vedv::vmobj_entity::cache::set_shell() {
+    assert_equal "$*" "container ct1 val1"
+  }
+  # Act
+  run vedv::container_entity::cache::set_shell "$container_id" "$value"
+  # Assert
+  assert_success
+  assert_output ""
+}

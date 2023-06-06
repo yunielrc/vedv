@@ -667,7 +667,7 @@ vedv container list-exposed-ports CONTAINER"
   # Arrange
   local container_name_or_id='container1'
 
-  vedv::container_service::list_exposed_ports() {
+  vedv::container_service::cache::list_exposed_ports() {
     assert_equal "$*" 'container1'
   }
   # Act

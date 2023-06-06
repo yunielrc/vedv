@@ -1534,3 +1534,89 @@ vedv::vmobj_service::list_exposed_ports() {
 
   vedv::vmobj_service::list_exposed_ports_by_id "$type" "$vmobj_id"
 }
+
+#
+# Set vmobj vedv data on filesystem to vmobj entity
+#
+# Arguments:
+#   type      string    type (e.g. 'container|image')
+#   vmobj_id  string    vmobj id
+#
+# Output:
+#   writes process result
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::vmobj_service::cache_data() {
+  local -r type="$1"
+  local -r vmobj_id="$2"
+  # validate arguments
+  vedv::vmobj_entity::validate_type "$type" ||
+    return "$?"
+
+  if [[ -z "$vmobj_id" ]]; then
+    err "Invalid argument 'vmobj_id': it's empty"
+    return "$ERR_INVAL_ARG"
+  fi
+
+  local user_name
+  user_name="$(vedv::vmobj_service::get_user "$type" "$vmobj_id")" || {
+    err "Failed to get user name for ${type}"
+    return "$ERR_VMOBJ_OPERATION"
+  }
+  readonly user_name
+
+  vedv::vmobj_entity::cache::set_user_name "$type" "$vmobj_id" "$user_name" || {
+    err "Failed to set user name for ${type}"
+    return "$ERR_VMOBJ_OPERATION"
+  }
+
+  local workdir
+  workdir="$(vedv::vmobj_service::get_workdir "$type" "$vmobj_id")" || {
+    err "Failed to get workdir for ${type}"
+    return "$ERR_VMOBJ_OPERATION"
+  }
+  readonly workdir
+
+  vedv::vmobj_entity::cache::set_workdir "$type" "$vmobj_id" "$workdir" || {
+    err "Failed to set workdir for ${type}"
+    return "$ERR_VMOBJ_OPERATION"
+  }
+
+  local shell
+  shell="$(vedv::vmobj_service::get_shell "$type" "$vmobj_id")" || {
+    err "Failed to get shell for ${type}"
+    return "$ERR_VMOBJ_OPERATION"
+  }
+  readonly shell
+
+  vedv::vmobj_entity::cache::set_shell "$type" "$vmobj_id" "$shell" || {
+    err "Failed to set shell for ${type}"
+    return "$ERR_VMOBJ_OPERATION"
+  }
+
+  local env
+  env="$(vedv::vmobj_service::get_environment_vars "$type" "$vmobj_id")" || {
+    err "Failed to get env for ${type}"
+    return "$ERR_VMOBJ_OPERATION"
+  }
+  readonly env
+
+  vedv::vmobj_entity::cache::set_environment "$type" "$vmobj_id" "$env" || {
+    err "Failed to set env for ${type}"
+    return "$ERR_VMOBJ_OPERATION"
+  }
+
+  local eports
+  eports="$(vedv::vmobj_service::list_exposed_ports "$type" "$vmobj_id")" || {
+    err "Failed to get exposed ports for ${type}"
+    return "$ERR_VMOBJ_OPERATION"
+  }
+  readonly eports
+
+  vedv::vmobj_entity::cache::set_exposed_ports "$type" "$vmobj_id" "$eports" || {
+    err "Failed to set exposed ports for ${type}"
+    return "$ERR_VMOBJ_OPERATION"
+  }
+}

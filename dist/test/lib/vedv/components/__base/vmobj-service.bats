@@ -5,7 +5,7 @@ load test_helper
 setup_file() {
   vedv::vmobj_entity::constructor \
     'container|image' \
-    '([image]="image_cache|ova_file_sum|ssh_port" [container]="parent_vmobj_id|ssh_port|workdir|user_name")'
+    '([image]="image_cache|ova_file_sum|ssh_port|user_name|workdir|environment|exposed_ports|shell" [container]="parent_image_id|ssh_port|user_name|workdir|environment|exposed_ports|shell")'
   export __VEDV_VMOBJ_ENTITY_TYPE
   export __VEDV_VMOBJ_ENTITY_VALID_ATTRIBUTES_DICT_STR
   # shellcheck disable=SC2034
@@ -2445,7 +2445,7 @@ Failed to get default workdir for container: 12345"
 }
 
 # Tests for vedv::vmobj_service::add_exposed_ports()
-# bats test_tags=only
+
 @test "vedv::vmobj_service::add_exposed_ports() Should fail With empty type" {
   local -r type=""
   local -r vmobj_id="22345"
@@ -2456,7 +2456,7 @@ Failed to get default workdir for container: 12345"
   assert_failure
   assert_output "Argument 'type' must not be empty"
 }
-# bats test_tags=only
+
 @test "vedv::vmobj_service::add_exposed_ports() Should fail With empty vmobj_id" {
   local -r type="container"
   local -r vmobj_id=""
@@ -2467,7 +2467,7 @@ Failed to get default workdir for container: 12345"
   assert_failure
   assert_output "Invalid argument 'vmobj_id': it's empty"
 }
-# bats test_tags=only
+
 @test "vedv::vmobj_service::add_exposed_ports() Should fail With empty ports" {
   local -r type="container"
   local -r vmobj_id="22345"
@@ -2478,7 +2478,7 @@ Failed to get default workdir for container: 12345"
   assert_failure
   assert_output "Invalid argument 'ports': it's empty"
 }
-# bats test_tags=only
+
 @test "vedv::vmobj_service::add_exposed_ports() Should fail With invalid ports" {
   local -r type="container"
   local -r vmobj_id="22345"
@@ -2489,7 +2489,7 @@ Failed to get default workdir for container: 12345"
   assert_failure
   assert_output "Invalid argument 'ports': it's invalid"
 }
-# bats test_tags=only
+
 @test "vedv::vmobj_service::add_exposed_ports() Should fail If execute_cmd_by_id fails" {
   local -r type="container"
   local -r vmobj_id="22345"
@@ -2505,7 +2505,7 @@ Failed to get default workdir for container: 12345"
   assert_failure
   assert_output "Failed to add expose ports '8081/udp' to container: 22345"
 }
-# bats test_tags=only
+
 @test "vedv::vmobj_service::add_exposed_ports() Should succeed" {
   local -r type="container"
   local -r vmobj_id="22345"
@@ -2522,7 +2522,7 @@ Failed to get default workdir for container: 12345"
 }
 
 # Tests for vedv::vmobj_service::list_exposed_ports_by_id()
-# bats test_tags=only
+
 @test "vedv::vmobj_service::list_exposed_ports_by_id() Should fail If execute_cmd_by_id fails" {
   local -r type="container"
   local -r vmobj_id="22345"
@@ -2537,7 +2537,7 @@ Failed to get default workdir for container: 12345"
   assert_failure
   assert_output "Failed to list exposed ports of container: 22345"
 }
-# bats test_tags=only
+
 @test "vedv::vmobj_service::list_exposed_ports_by_id() Should succeed" {
   local -r type="container"
   local -r vmobj_id="22345"
@@ -2553,7 +2553,7 @@ Failed to get default workdir for container: 12345"
 }
 
 # Tests for vedv::vmobj_service::list_exposed_ports()
-# bats test_tags=only
+
 @test "vedv::vmobj_service::list_exposed_ports() Should fail With empty vmobj_id" {
   local -r type="container"
   local -r vmobj_name_or_id=""
@@ -2563,7 +2563,7 @@ Failed to get default workdir for container: 12345"
   assert_failure
   assert_output "Invalid argument 'vmobj_name_or_id': it's empty"
 }
-# bats test_tags=only
+
 @test "vedv::vmobj_service::list_exposed_ports() Should fail If get_ids_from_vmobj_names_or_ids fails" {
   local -r type="container"
   local -r vmobj_name_or_id="container1"
@@ -2578,7 +2578,7 @@ Failed to get default workdir for container: 12345"
   assert_failure
   assert_output "Failed to get id for container: 'container1'"
 }
-# bats test_tags=only
+
 @test "vedv::vmobj_service::list_exposed_ports() Should succeed" {
   local -r type="container"
   local -r vmobj_name_or_id="container1"
@@ -2592,6 +2592,74 @@ Failed to get default workdir for container: 12345"
   }
 
   run vedv::vmobj_service::list_exposed_ports "$type" "$vmobj_name_or_id"
+
+  assert_success
+  assert_output ""
+}
+
+# Tests for vedv::vmobj_service::cache_data()
+
+@test "vedv::vmobj_service::cache_data() Should fail With empty type" {
+  local -r type=""
+  local -r vmobj_id="12345"
+
+  run vedv::vmobj_service::cache_data "$type" "$vmobj_id"
+
+  assert_failure
+  assert_output "Argument 'type' must not be empty"
+}
+
+@test "vedv::vmobj_service::cache_data() Should fail With empty vmobj_id" {
+  local -r type="container"
+  local -r vmobj_id=""
+
+  run vedv::vmobj_service::cache_data "$type" "$vmobj_id"
+
+  assert_failure
+  assert_output "Invalid argument 'vmobj_id': it's empty"
+}
+# bats test_tags=only
+@test "vedv::vmobj_service::cache_data() Should succeed" {
+  local -r type="container"
+  local -r vmobj_id="12345"
+
+  vedv::vmobj_service::get_user() {
+    assert_equal "$*" "container 12345"
+    echo "vedv"
+  }
+  vedv::vmobj_entity::cache::set_user_name() {
+    assert_equal "$*" "container 12345 vedv"
+  }
+  vedv::vmobj_service::get_workdir() {
+    assert_equal "$*" "container 12345"
+    echo "/home/vedv"
+  }
+  vedv::vmobj_entity::cache::set_workdir() {
+    assert_equal "$*" "container 12345 /home/vedv"
+  }
+  vedv::vmobj_service::get_shell() {
+    assert_equal "$*" "container 12345"
+    echo "bash"
+  }
+  vedv::vmobj_entity::cache::set_shell() {
+    assert_equal "$*" "container 12345 bash"
+  }
+  vedv::vmobj_service::get_environment_vars() {
+    assert_equal "$*" "container 12345"
+    echo "VAR1=VAL1 VAR2=VAL2"
+  }
+  vedv::vmobj_entity::cache::set_environment() {
+    assert_equal "$*" "container 12345 VAR1=VAL1 VAR2=VAL2"
+  }
+  vedv::vmobj_service::list_exposed_ports() {
+    assert_equal "$*" "container 12345"
+    echo "80/tcp 443/tcp"
+  }
+  vedv::vmobj_entity::cache::set_exposed_ports() {
+    assert_equal "$*" "container 12345 80/tcp 443/tcp"
+  }
+
+  run vedv::vmobj_service::cache_data "$type" "$vmobj_id"
 
   assert_success
   assert_output ""

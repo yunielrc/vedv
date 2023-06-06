@@ -2192,78 +2192,78 @@ Build finished
 image-id my-image-name"
 }
 
-@test "vedv::image_builder::__build() Should fail stopping image" {
-  # Arrange
-  local -r vedvfile="dist/test/lib/vedv/components/image/fixtures/Vedvfile"
-  local -r image_name="my-image-name"
-  # commands without 'FROM' command
-  local -r from_cmd="1 FROM my_image"
-  local -r cmds="1 FROM /tmp/alpine-x86_64.ova
-2 COPY homefs/* /home/vedv/
-3 COPY home.config /home/vedv/
-4 RUN ls -la /home/vedv/"
+# @test "vedv::image_builder::__build() Should fail stopping image" {
+#   # Arrange
+#   local -r vedvfile="dist/test/lib/vedv/components/image/fixtures/Vedvfile"
+#   local -r image_name="my-image-name"
+#   # commands without 'FROM' command
+#   local -r from_cmd="1 FROM my_image"
+#   local -r cmds="1 FROM /tmp/alpine-x86_64.ova
+# 2 COPY homefs/* /home/vedv/
+# 3 COPY home.config /home/vedv/
+# 4 RUN ls -la /home/vedv/"
 
-  local -r image_id="image-id"
-  # Stub
+#   local -r image_id="image-id"
+#   # Stub
 
-  petname() {
-    assert_equal "$*" "INVALID_CALL"
-  }
-  utils::str_encode_vars() {
-    assert_equal "$*" "$cmds"
-    echo "$cmds"
-  }
-  vedv::image_vedvfile_service::get_commands() {
-    assert_equal "$*" "$vedvfile"
-    echo "$cmds"
-  }
-  vedv::image_entity::get_id_by_image_name() {
-    assert_equal "$*" "$image_name"
-    echo 'image-id'
-  }
-  vedv::image_builder::__validate_layer_from() {
-    assert_equal "$*" "${image_id} ${from_cmd}"
-    echo 'valid'
-  }
-  vedv::image_service::remove() {
-    assert_equal "$*" "INVALID_CALL"
-  }
-  vedv::image_builder::__layer_from() {
-    assert_equal "$*" "INVALID_CALL"
-  }
-  vedv::image_service::restore_last_layer() {
-    assert_equal "$*" "$image_id"
-  }
-  vedv::image_builder::__delete_invalid_layers() {
-    assert_equal "$*" "${image_id} ${cmds}"
-    echo 2
-  }
-  vedv::image_service::start() {
-    assert_equal "$*" "$image_id"
-  }
-  vedv::image_builder::__save_environment_vars_to_local_file() {
-    assert_equal "$*" "$image_id"
-  }
-  vedv::image_builder::__layer_run() {
-    assert_equal "$*" "${image_id} 4 RUN ls -la /home/vedv/"
-    echo 'layer_id_4'
-  }
-  vedv::image_builder::__layer_copy() {
-    assert_equal "$*" "${image_id} 3 COPY home.config /home/vedv/"
-    echo 'layer_id_5'
-  }
-  vedv::image_service::stop() {
-    assert_equal "$*" "$image_id"
-    return 1
-  }
-  # Act
-  run vedv::image_builder::__build "$vedvfile" "$image_name"
-  # Assert
-  assert_failure
-  assert_output "created layer 'layer_id_5' for command 'COPY'
-created layer 'layer_id_4' for command 'RUN'
-Failed to stop the image 'my-image-name'.You must stop it."
-}
+#   petname() {
+#     assert_equal "$*" "INVALID_CALL"
+#   }
+#   utils::str_encode_vars() {
+#     assert_equal "$*" "$cmds"
+#     echo "$cmds"
+#   }
+#   vedv::image_vedvfile_service::get_commands() {
+#     assert_equal "$*" "$vedvfile"
+#     echo "$cmds"
+#   }
+#   vedv::image_entity::get_id_by_image_name() {
+#     assert_equal "$*" "$image_name"
+#     echo 'image-id'
+#   }
+#   vedv::image_builder::__validate_layer_from() {
+#     assert_equal "$*" "${image_id} ${from_cmd}"
+#     echo 'valid'
+#   }
+#   vedv::image_service::remove() {
+#     assert_equal "$*" "INVALID_CALL"
+#   }
+#   vedv::image_builder::__layer_from() {
+#     assert_equal "$*" "INVALID_CALL"
+#   }
+#   vedv::image_service::restore_last_layer() {
+#     assert_equal "$*" "$image_id"
+#   }
+#   vedv::image_builder::__delete_invalid_layers() {
+#     assert_equal "$*" "${image_id} ${cmds}"
+#     echo 2
+#   }
+#   vedv::image_service::start() {
+#     assert_equal "$*" "$image_id"
+#   }
+#   vedv::image_builder::__save_environment_vars_to_local_file() {
+#     assert_equal "$*" "$image_id"
+#   }
+#   vedv::image_builder::__layer_run() {
+#     assert_equal "$*" "${image_id} 4 RUN ls -la /home/vedv/"
+#     echo 'layer_id_4'
+#   }
+#   vedv::image_builder::__layer_copy() {
+#     assert_equal "$*" "${image_id} 3 COPY home.config /home/vedv/"
+#     echo 'layer_id_5'
+#   }
+#   vedv::image_service::stop() {
+#     assert_equal "$*" "$image_id"
+#     return 1
+#   }
+#   # Act
+#   run vedv::image_builder::__build "$vedvfile" "$image_name"
+#   # Assert
+#   assert_failure
+#   assert_output "created layer 'layer_id_5' for command 'COPY'
+# created layer 'layer_id_4' for command 'RUN'
+# Failed to stop the image 'my-image-name'.You must stop it."
+# }
 
 @test '__restore_last_layer()' { :; }
 @test '__calc_item_id_from_arr_cmds()' { :; }
@@ -2377,6 +2377,39 @@ Failed to stop the image 'my-image-name'.You must stop it."
   assert_output "Failed to remove image '${image_name}'"
 }
 
+@test 'vedv::image_builder::build() Should fail If cache_data fails' {
+  local -r vedvfile='dist/test/lib/vedv/components/image/fixtures/Vedvfile'
+  local -r image_name="image1"
+  local -r force=false
+  local -r no_cache=false
+
+  vedv::image_entity::get_id_by_image_name() {
+    assert_equal "$*" "image1"
+    echo "22345"
+  }
+  vedv::image_entity::has_containers() {
+    assert_equal "$*" "22345"
+    echo false
+  }
+  vedv::image_service::delete_layer_cache() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::image_builder::__build() {
+    assert_equal "$*" "${vedvfile} ${image_name}"
+    return 1
+  }
+  vedv::image_service::cache_data() {
+    assert_equal "$*" "22345"
+    return 1
+  }
+
+  run vedv::image_builder::build "$vedvfile" "$image_name" "$force" "$no_cache"
+
+  assert_failure
+  assert_output "The build proccess has failed.
+Failed to cache data for image '${image_name}'"
+}
+
 @test 'vedv::image_builder::build() Should fail If stop fails' {
   local -r vedvfile='dist/test/lib/vedv/components/image/fixtures/Vedvfile'
   local -r image_name="image1"
@@ -2397,6 +2430,9 @@ Failed to stop the image 'my-image-name'.You must stop it."
   vedv::image_builder::__build() {
     assert_equal "$*" "${vedvfile} ${image_name}"
     return 1
+  }
+  vedv::image_service::cache_data() {
+    assert_equal "$*" "22345"
   }
   vedv::image_service::stop() {
     assert_equal "$*" "22345"
@@ -2429,6 +2465,9 @@ Failed to stop the image 'image1'.You must stop it."
   }
   vedv::image_builder::__build() {
     assert_equal "$*" "${vedvfile} ${image_name}"
+  }
+  vedv::image_service::cache_data() {
+    assert_equal "$*" "22345"
   }
   vedv::image_service::stop() {
     assert_equal "$*" "22345"

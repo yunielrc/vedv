@@ -928,3 +928,23 @@ vedv::image_service::list_exposed_ports() {
     'image' \
     "$image_name_or_id"
 }
+
+#
+# Set image filesystem vedv data to image entity
+#
+# Arguments:
+#   image_id  string    image id
+#
+# Output:
+#   writes process result
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::image_service::cache_data() {
+  local -r image_id="$1"
+
+  vedv::vmobj_service::cache_data \
+    'image' \
+    "$image_id"
+}
