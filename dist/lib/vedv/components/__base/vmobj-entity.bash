@@ -26,15 +26,19 @@ vedv::vmobj_entity::constructor() {
   # This doesn't work on tests
   # declare -rn __VEDV_VMOBJ_ENTITY_VALID_ATTRIBUTES_DICT="$2"
   readonly __VEDV_VMOBJ_ENTITY_VALID_ATTRIBUTES_DICT_STR="$2"
+  readonly __VEDV_DEFAULT_USER="${3:-vedv}"
 
   # validate arguments
   if [[ -z "$__VEDV_VMOBJ_ENTITY_TYPE" ]]; then
     err "Argument 'type' must not be empty"
     return "$ERR_INVAL_ARG"
   fi
-
   if [[ -z "$__VEDV_VMOBJ_ENTITY_VALID_ATTRIBUTES_DICT_STR" ]]; then
     err "Argument 'valid_attributes' must not be empty"
+    return "$ERR_INVAL_ARG"
+  fi
+  if [[ -z "$__VEDV_DEFAULT_USER" ]]; then
+    err "Argument 'default_user' must not be empty"
     return "$ERR_INVAL_ARG"
   fi
 }
@@ -705,10 +709,18 @@ vedv::vmobj_entity::cache::get_user_name() {
   local -r type="$1"
   local -r vmobj_id="$2"
 
-  vedv::vmobj_entity::__get_attribute \
-    "$type" \
-    "$vmobj_id" \
-    'user_name'
+  local user_name=''
+  user_name="$(vedv::vmobj_entity::__get_attribute "$type" "$vmobj_id" 'user_name')" || {
+    err "Failed to get user name of the vmobj: ${vmobj_id}"
+    return "$ERR_VMOBJ_ENTITY"
+  }
+
+  if [[ -z "$user_name" ]]; then
+    echo "$__VEDV_DEFAULT_USER"
+    return 0
+  fi
+
+  echo "$user_name"
 }
 
 #

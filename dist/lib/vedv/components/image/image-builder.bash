@@ -905,7 +905,7 @@ vedv::image_builder::__layer_user() {
   shift 2 # skip command id and name
 
   local -r user_name="$1"
-  local -r exec_func="vedv::image_service::set_user '${image_id}' '${user_name}'"
+  local -r exec_func="vedv::image_service::fs::set_user '${image_id}' '${user_name}'"
 
   vedv::image_builder::__layer_execute_cmd "$image_id" "$cmd" "USER" "$exec_func"
 }
@@ -975,7 +975,7 @@ vedv::image_builder::__layer_shell() {
   shift 2 # skip command id and name
 
   local -r shell="$1"
-  local -r exec_func="vedv::image_service::set_shell '${image_id}' '${shell}'"
+  local -r exec_func="vedv::image_service::fs::set_shell '${image_id}' '${shell}'"
 
   vedv::image_builder::__layer_execute_cmd "$image_id" "$cmd" "SHELL" "$exec_func"
 }
@@ -1048,7 +1048,7 @@ vedv::image_builder::__layer_workdir() {
   shift 2 # skip command id and name
 
   local -r workdir="$1"
-  local -r exec_func="vedv::image_service::set_workdir '${image_id}' '${workdir}' >/dev/null"
+  local -r exec_func="vedv::image_service::fs::set_workdir '${image_id}' '${workdir}' >/dev/null"
 
   vedv::image_builder::__layer_execute_cmd "$image_id" "$cmd" "WORKDIR" "$exec_func"
 }
@@ -1128,7 +1128,7 @@ vedv::image_builder::__layer_env() {
   }
   readonly env_encoded
 
-  local -r exec_func="vedv::image_service::add_environment_var '${image_id}' '${env_encoded}'"
+  local -r exec_func="vedv::image_service::fs::add_environment_var '${image_id}' '${env_encoded}'"
 
   vedv::image_builder::__layer_execute_cmd "$image_id" "$cmd" "ENV" "$exec_func"
 }
@@ -1198,7 +1198,7 @@ vedv::image_builder::__layer_expose() {
   shift 2 # skip command id and name
 
   local -r ports="$*"
-  local -r exec_func="vedv::image_service::add_exposed_ports '${image_id}' '${ports}'"
+  local -r exec_func="vedv::image_service::fs::add_exposed_ports '${image_id}' '${ports}'"
 
   vedv::image_builder::__layer_execute_cmd "$image_id" "$cmd" "EXPOSE" "$exec_func"
 }
@@ -1326,7 +1326,7 @@ vedv::image_builder::__save_environment_vars_to_local_file() {
   fi
   # create a new temporary file to store the environment variables for the substitution
   local env_vars
-  env_vars="$(vedv::image_service::get_environment_vars "$image_id")" || {
+  env_vars="$(vedv::image_service::fs::list_environment_vars "$image_id")" || {
     err "Failed to get environment variables for image '${image_id}'"
     return "$ERR_IMAGE_BUILDER_OPERATION"
   }
@@ -1630,6 +1630,14 @@ vedv::image_builder::build() {
     image_name="$(petname)"
   fi
 
+  # During image build the image data cache can not be used because on layer
+  # deletion the data cache will be outdated.
+  # Moreover, the data cache only is updated when the image build is finished.
+  # So, the image data cache, included in the created containers, will be used
+  # on any other context except this.
+
+  vedv::image_service::set_use_cache 'false'
+
   vedv::image_builder::__build "$vedvfile" "$image_name" || {
     err "The build proccess has failed."
   }
@@ -1642,7 +1650,6 @@ vedv::image_builder::build() {
     # cache data
     # The cached data can not be used by the image during build.
     # On container creation when the image is cloned this data is cloned too.
-
     vedv::image_service::cache_data "$image_id" || {
       err "Failed to cache data for image '${image_name}'"
       return "$ERR_IMAGE_BUILDER_OPERATION"

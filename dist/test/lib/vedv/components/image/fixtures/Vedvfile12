@@ -1,0 +1,11 @@
+# lang: dockerfile
+FROM /tmp/vedv/test/files/alpine-x86_64.ova
+
+USER nalyd
+WORKDIR /app
+COPY rootfs/ .
+SHELL bash
+RUN echo "\$SHELL" >shell; cat shell
+ENV E1=V1
+ENV E2=V2
+EXPOSE 80/udp 22

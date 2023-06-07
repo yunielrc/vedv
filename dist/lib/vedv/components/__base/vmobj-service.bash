@@ -3,7 +3,6 @@
 #
 # It provides a common base for VMObj Services
 #
-
 # this is only for code completion
 if false; then
   . './../../utils.bash'
@@ -32,7 +31,7 @@ vedv::vmobj_service::constructor() {
   readonly __VEDV_VMOBJ_SERVICE_SSH_IP="$1"
   readonly __VEDV_VMOBJ_SERVICE_SSH_USER="$2"
   readonly __VEDV_VMOBJ_SERVICE_SSH_PASSWORD="$3"
-  readonly __VEDV_VMOBJ_SERVICE_USE_CACHE_DICT="${4:-}"
+  __VEDV_VMOBJ_SERVICE_USE_CACHE_DICT="${4:-}"
 }
 
 #
@@ -46,15 +45,15 @@ vedv::vmobj_service::constructor() {
 #
 # Returns:
 #   0 on success, non-zero on error.
-vedv::vmobj_service::use_cache() {
+vedv::vmobj_service::get_use_cache() {
   local -r type="$1"
   # validate argument
   vedv::vmobj_entity::validate_type "$type" ||
     return "$?"
 
   if [[ -z "$__VEDV_VMOBJ_SERVICE_USE_CACHE_DICT" ]]; then
-    echo false
-    return 0
+    err "Use cache dict is not set"
+    return "$ERR_INVAL_VALUE"
   fi
 
   eval local -rA use_cache_dict="$__VEDV_VMOBJ_SERVICE_USE_CACHE_DICT"
@@ -64,6 +63,39 @@ vedv::vmobj_service::use_cache() {
   else
     echo false
   fi
+}
+
+#
+# Set use cache for a given vmobj type
+#
+# Arguments:
+#  type      string   type (e.g. 'container|image')
+#  value     bool     use cache value
+#
+# Returns:
+#   0 on success, non-zero on error.
+vedv::vmobj_service::set_use_cache() {
+  local -r type="$1"
+  local -r value="$2"
+  # validate argument
+  vedv::vmobj_entity::validate_type "$type" ||
+    return "$?"
+
+  if [[ -z "$value" ]]; then
+    err "Argument 'value' is required"
+    return "$ERR_INVAL_ARG"
+  fi
+
+  if [[ -z "$__VEDV_VMOBJ_SERVICE_USE_CACHE_DICT" ]]; then
+    err "Use cache dict is not set"
+    return "$ERR_INVAL_VALUE"
+  fi
+
+  eval local -A use_cache_dict="$__VEDV_VMOBJ_SERVICE_USE_CACHE_DICT"
+
+  use_cache_dict["$type"]="$value"
+
+  __VEDV_VMOBJ_SERVICE_USE_CACHE_DICT="$(arr2str use_cache_dict)"
 }
 
 #
@@ -726,7 +758,7 @@ vedv::vmobj_service::__exec_ssh_func() {
     return "$ERR_INVAL_ARG"
   fi
   if [[ -z "$user" ]]; then
-    user="$(vedv::vmobj_service::get_user "$type" "$vmobj_id")" || {
+    user="$(vedv::vmobj_service::fs::get_user "$type" "$vmobj_id")" || {
       err "Failed to get default user for ${type}"
       return "$ERR_VMOBJ_OPERATION"
     }
@@ -812,7 +844,7 @@ vedv::vmobj_service::execute_cmd_by_id() {
     if [[ -n "$workdir" ]]; then
       _workdir="$workdir"
     else
-      _workdir="$(vedv::vmobj_service::get_workdir "$type" "$vmobj_id")" || {
+      _workdir="$(vedv::vmobj_service::fs::get_workdir "$type" "$vmobj_id")" || {
         err "Failed to get default workdir for ${type}"
         return "$ERR_VMOBJ_OPERATION"
       }
@@ -999,7 +1031,7 @@ vedv::vmobj_service::copy_by_id() {
     if [[ -n "$workdir" ]]; then
       _workdir="$workdir"
     else
-      _workdir="$(vedv::vmobj_service::get_workdir "$type" "$vmobj_id")" || {
+      _workdir="$(vedv::vmobj_service::fs::get_workdir "$type" "$vmobj_id")" || {
         err "Failed to get default workdir for ${type}"
         return "$ERR_VMOBJ_OPERATION"
       }
@@ -1081,7 +1113,7 @@ vedv::vmobj_service::copy() {
 # Returns:
 #   0 on success, non-zero on error.
 #
-vedv::vmobj_service::set_user() {
+vedv::vmobj_service::fs::set_user() {
   local -r type="$1"
   local -r vmobj_id="$2"
   local -r user_name="$3"
@@ -1099,7 +1131,7 @@ vedv::vmobj_service::set_user() {
   fi
 
   local cur_user_name
-  cur_user_name="$(vedv::vmobj_service::get_user "$type" "$vmobj_id")" || {
+  cur_user_name="$(vedv::vmobj_service::fs::get_user "$type" "$vmobj_id")" || {
     err "Error getting attribute user name from the ${type} '${vmobj_id}'"
     return "$ERR_VMOBJ_OPERATION"
   }
@@ -1115,26 +1147,15 @@ vedv::vmobj_service::set_user() {
     err "Failed to set user '${user_name}' to ${type}: ${vmobj_id}"
     return "$ERR_VMOBJ_OPERATION"
   }
-
-  local use_cache
-  use_cache="$(vedv::vmobj_service::use_cache "$type")"
-  readonly use_cache
-
-  if [[ "$use_cache" == true ]]; then
-    vedv::vmobj_entity::cache::set_user_name "$type" "$vmobj_id" "$user_name" || {
-      err "Failed to make user cache for ${type}: ${vmobj_id}"
-      return "$ERR_VMOBJ_OPERATION"
-    }
-  fi
 }
 
 #
-# Get default vedv user
+# Get default vedv user from the vmobj filesystem
 #
 # Arguments:
 #   type            string    type (e.g. 'container|image')
 #   vmobj_id        string    vmobj id
-#   [force_nocache] bool      force no cache, default: false
+#   [use_cache]     bool      use cache
 #
 # Output:
 #  writes command output to the stdout
@@ -1142,38 +1163,17 @@ vedv::vmobj_service::set_user() {
 # Returns:
 #   0 on success, non-zero on error.
 #
-vedv::vmobj_service::get_user() {
+vedv::vmobj_service::fs::get_user() {
   local -r type="$1"
   local -r vmobj_id="$2"
-  local -r force_nocache="${3:-false}"
+  local -r use_cache="${3:-"$(vedv::vmobj_service::get_use_cache "$type")"}"
 
-  local use_cache
-  use_cache="$(vedv::vmobj_service::use_cache "$type")"
-  readonly use_cache
+  if [[ "$use_cache" == true ]]; then
 
-  if [[ "$force_nocache" == false && "$use_cache" == true ]]; then
-
-    local cached_user=''
-
-    cached_user="$(vedv::vmobj_entity::cache::get_user_name "$type" "$vmobj_id")" || {
+    vedv::vmobj_entity::cache::get_user_name "$type" "$vmobj_id" || {
       err "Failed to get cached user for ${type}: ${vmobj_id}"
       return "$ERR_VMOBJ_OPERATION"
     }
-
-    if [[ -n "$cached_user" ]]; then
-      echo "$cached_user"
-      return 0
-    fi
-
-    cached_user="$(vedv::vmobj_service::get_user "$type" "$vmobj_id" 'true')" || {
-      err "Failed to get default user for ${type}: ${vmobj_id}"
-      return "$ERR_VMOBJ_OPERATION"
-    }
-    vedv::vmobj_entity::cache::set_user_name "$type" "$vmobj_id" "$cached_user" || {
-      err "Failed to make user cache for ${type}: ${vmobj_id}"
-      return "$ERR_VMOBJ_OPERATION"
-    }
-    echo "$cached_user"
     return 0
   fi
 
@@ -1199,7 +1199,7 @@ vedv::vmobj_service::get_user() {
 # Returns:
 #   0 on success, non-zero on error.
 #
-vedv::vmobj_service::set_workdir() {
+vedv::vmobj_service::fs::set_workdir() {
   local -r type="$1"
   local -r vmobj_id="$2"
   local -r workdir="$3"
@@ -1217,7 +1217,7 @@ vedv::vmobj_service::set_workdir() {
   fi
 
   local cur_workdir
-  cur_workdir="$(vedv::vmobj_service::get_workdir "$type" "$vmobj_id")" || {
+  cur_workdir="$(vedv::vmobj_service::fs::get_workdir "$type" "$vmobj_id")" || {
     err "Error getting attribute workdir name from the ${type} '${vmobj_id}'"
     return "$ERR_VMOBJ_OPERATION"
   }
@@ -1228,7 +1228,7 @@ vedv::vmobj_service::set_workdir() {
   fi
 
   local user_name
-  user_name="$(vedv::vmobj_service::get_user "$type" "$vmobj_id")" || {
+  user_name="$(vedv::vmobj_service::fs::get_user "$type" "$vmobj_id")" || {
     err "Error getting attribute user name from the ${type} '${vmobj_id}'"
     return "$ERR_VMOBJ_OPERATION"
   }
@@ -1240,27 +1240,15 @@ vedv::vmobj_service::set_workdir() {
     err "Failed to set workdir '${workdir}' to ${type}: ${vmobj_id}"
     return "$ERR_VMOBJ_OPERATION"
   }
-
-  local use_cache
-  use_cache="$(vedv::vmobj_service::use_cache "$type")"
-  readonly use_cache
-
-  if [[ "$use_cache" == true ]]; then
-    vedv::vmobj_entity::cache::set_workdir "$type" "$vmobj_id" "$workdir" || {
-      err "Failed to make workdir cache for ${type}: ${vmobj_id}"
-      return "$ERR_VMOBJ_OPERATION"
-    }
-  fi
-
 }
 
 #
-# Get workdir
+# Get workdir from the vmobj filesystem
 #
 # Arguments:
-#   type       string     type (e.g. 'container|image')
-#   vmobj_id   string     vmobj id
-#   [force_nocache] bool      force no cache, default: false
+#   type        string     type (e.g. 'container|image')
+#   vmobj_id    string     vmobj id
+#   [use_cache] bool       use cache
 #
 # Output:
 #  writes command output to the stdout
@@ -1268,43 +1256,17 @@ vedv::vmobj_service::set_workdir() {
 # Returns:
 #   0 on success, non-zero on error.
 #
-vedv::vmobj_service::get_workdir() {
+vedv::vmobj_service::fs::get_workdir() {
   local -r type="$1"
   local -r vmobj_id="$2"
-  local -r force_nocache="${3:-false}"
+  local -r use_cache="${3:-"$(vedv::vmobj_service::get_use_cache "$type")"}"
 
-  local use_cache
-  use_cache="$(vedv::vmobj_service::use_cache "$type")"
-  readonly use_cache
+  if [[ "$use_cache" == true ]]; then
 
-  if [[ "$force_nocache" == false && "$use_cache" == true ]]; then
-
-    local cached_workdir=''
-
-    cached_workdir="$(vedv::vmobj_entity::cache::get_workdir "$type" "$vmobj_id")" || {
+    vedv::vmobj_entity::cache::get_workdir "$type" "$vmobj_id" || {
       err "Failed to get cached workdir for ${type}: ${vmobj_id}"
       return "$ERR_VMOBJ_OPERATION"
     }
-
-    if [[ -n "$cached_workdir" ]]; then
-      echo "$cached_workdir"
-      return 0
-    fi
-
-    cached_workdir="$(vedv::vmobj_service::get_workdir "$type" "$vmobj_id" 'true')" || {
-      err "Failed to get default workdir for ${type}: ${vmobj_id}"
-      return "$ERR_VMOBJ_OPERATION"
-    }
-
-    if [[ -z "$cached_workdir" ]]; then
-      cached_workdir='.'
-    fi
-
-    vedv::vmobj_entity::cache::set_workdir "$type" "$vmobj_id" "$cached_workdir" || {
-      err "Failed to make workdir cache for ${type}: ${vmobj_id}"
-      return "$ERR_VMOBJ_OPERATION"
-    }
-    echo "$cached_workdir"
     return 0
   fi
 
@@ -1330,7 +1292,7 @@ vedv::vmobj_service::get_workdir() {
 # Returns:
 #   0 on success, non-zero on error.
 #
-vedv::vmobj_service::set_shell() {
+vedv::vmobj_service::fs::set_shell() {
   local -r type="$1"
   local -r vmobj_id="$2"
   local -r shell="$3"
@@ -1344,11 +1306,12 @@ vedv::vmobj_service::set_shell() {
 }
 
 #
-# Get shell
+# Get shell from the vmobj filesystem
 #
 # Arguments:
-#   type       string     type (e.g. 'container|image')
-#   vmobj_id   string     vmobj id
+#   type        string     type (e.g. 'container|image')
+#   vmobj_id    string     vmobj id
+#   [use_cache] bool       use cache
 #
 # Output:
 #  writes command output to the stdout
@@ -1356,9 +1319,19 @@ vedv::vmobj_service::set_shell() {
 # Returns:
 #   0 on success, non-zero on error.
 #
-vedv::vmobj_service::get_shell() {
+vedv::vmobj_service::fs::get_shell() {
   local -r type="$1"
   local -r vmobj_id="$2"
+  local -r use_cache="${3:-"$(vedv::vmobj_service::get_use_cache "$type")"}"
+
+  if [[ "$use_cache" == true ]]; then
+
+    vedv::vmobj_entity::cache::get_shell "$type" "$vmobj_id" || {
+      err "Failed to get cached shell for ${type}: ${vmobj_id}"
+      return "$ERR_VMOBJ_OPERATION"
+    }
+    return 0
+  fi
 
   local -r cmd='vedv-getshell'
 
@@ -1382,7 +1355,7 @@ vedv::vmobj_service::get_shell() {
 # Returns:
 #   0 on success, non-zero on error.
 #
-vedv::vmobj_service::add_environment_var() {
+vedv::vmobj_service::fs::add_environment_var() {
   local -r type="$1"
   local -r vmobj_id="$2"
   local -r env_var="$3"
@@ -1408,11 +1381,12 @@ vedv::vmobj_service::add_environment_var() {
 }
 
 #
-# Get environment variables from vmobj filesystem
+# List environment variables from vmobj filesystem
 #
 # Arguments:
-#   type      string     type (e.g. 'container|image')
-#   vmobj_id  string     vmobj id
+#   type        string     type (e.g. 'container|image')
+#   vmobj_id    string     vmobj id
+#   [use_cache] bool       use cache
 #
 # Output:
 #  writes environment variables (text) to the stdout
@@ -1420,14 +1394,24 @@ vedv::vmobj_service::add_environment_var() {
 # Returns:
 #   0 on success, non-zero on error.
 #
-vedv::vmobj_service::get_environment_vars() {
+vedv::vmobj_service::fs::list_environment_vars() {
   local -r type="$1"
   local -r vmobj_id="$2"
+  local -r use_cache="${3:-"$(vedv::vmobj_service::get_use_cache "$type")"}"
+
+  if [[ "$use_cache" == true ]]; then
+
+    vedv::vmobj_entity::cache::get_environment "$type" "$vmobj_id" || {
+      err "Failed to get cached environment for ${type}: ${vmobj_id}"
+      return "$ERR_VMOBJ_OPERATION"
+    }
+    return 0
+  fi
 
   local -r cmd='vedv-getenv_vars'
 
   vedv::vmobj_service::execute_cmd_by_id "$type" "$vmobj_id" "$cmd" 'root' '<none>' || {
-    err "Failed to get environment variables of ${type}: ${vmobj_id}"
+    err "Failed to list environment variables of ${type}: ${vmobj_id}"
     return "$ERR_VMOBJ_OPERATION"
   }
 }
@@ -1446,10 +1430,10 @@ vedv::vmobj_service::get_environment_vars() {
 # Returns:
 #   0 on success, non-zero on error.
 #
-vedv::vmobj_service::add_exposed_ports() {
+vedv::vmobj_service::fs::add_exposed_ports() {
   local -r type="$1"
   local -r vmobj_id="$2"
-  local -r ports="$3"
+  local -r eports="$3"
   # validate arguments
   vedv::vmobj_entity::validate_type "$type" ||
     return "$?"
@@ -1458,22 +1442,22 @@ vedv::vmobj_service::add_exposed_ports() {
     err "Invalid argument 'vmobj_id': it's empty"
     return "$ERR_INVAL_ARG"
   fi
-  if [[ -z "$ports" ]]; then
-    err "Invalid argument 'ports': it's empty"
+  if [[ -z "$eports" ]]; then
+    err "Invalid argument 'eports': it's empty"
     return "$ERR_INVAL_ARG"
   fi
 
-  readonly ports_regex='^[[:digit:]]+(/(tcp|udp))?([[:space:]]+[[:digit:]]+(/(tcp|udp))?)*$'
+  readonly eports_regex='^[[:digit:]]+(/(tcp|udp))?([[:space:]]+[[:digit:]]+(/(tcp|udp))?)*$'
 
-  if [[ ! "$ports" =~ $ports_regex ]]; then
+  if [[ ! "$eports" =~ $eports_regex ]]; then
     err "Invalid argument 'ports': it's invalid"
     return "$ERR_INVAL_ARG"
   fi
 
-  local -r cmd="vedv-addexpose_ports $'${ports}'"
+  local -r cmd="vedv-addexpose_ports $'${eports}'"
 
   vedv::vmobj_service::execute_cmd_by_id "$type" "$vmobj_id" "$cmd" 'root' '<none>' || {
-    err "Failed to add expose ports '${ports}' to ${type}: ${vmobj_id}"
+    err "Failed to add expose ports '${eports}' to ${type}: ${vmobj_id}"
     return "$ERR_VMOBJ_OPERATION"
   }
 }
@@ -1491,9 +1475,19 @@ vedv::vmobj_service::add_exposed_ports() {
 # Returns:
 #   0 on success, non-zero on error.
 #
-vedv::vmobj_service::list_exposed_ports_by_id() {
+vedv::vmobj_service::fs::list_exposed_ports_by_id() {
   local -r type="$1"
   local -r vmobj_id="$2"
+  local -r use_cache="${3:-"$(vedv::vmobj_service::get_use_cache "$type")"}"
+
+  if [[ "$use_cache" == true ]]; then
+
+    vedv::vmobj_entity::cache::get_exposed_ports "$type" "$vmobj_id" || {
+      err "Failed to get cached exposed ports for ${type}: ${vmobj_id}"
+      return "$ERR_VMOBJ_OPERATION"
+    }
+    return 0
+  fi
 
   local -r cmd='vedv-getexpose_ports'
 
@@ -1516,7 +1510,7 @@ vedv::vmobj_service::list_exposed_ports_by_id() {
 # Returns:
 #   0 on success, non-zero on error.
 #
-vedv::vmobj_service::list_exposed_ports() {
+vedv::vmobj_service::fs::list_exposed_ports() {
   local -r type="$1"
   local -r vmobj_name_or_id="$2"
   # validate arguments
@@ -1532,11 +1526,17 @@ vedv::vmobj_service::list_exposed_ports() {
   }
   readonly vmobj_id
 
-  vedv::vmobj_service::list_exposed_ports_by_id "$type" "$vmobj_id"
+  vedv::vmobj_service::fs::list_exposed_ports_by_id "$type" "$vmobj_id"
 }
 
 #
-# Set vmobj vedv data on filesystem to vmobj entity
+# Save vmobj data on filesystem to vmobj entity.
+#
+# This function should be called after every image
+# build to save the filesystem data to the vmobj
+# entity for faster access in any context except
+# during image build.
+#
 #
 # Arguments:
 #   type      string    type (e.g. 'container|image')
@@ -1561,7 +1561,7 @@ vedv::vmobj_service::cache_data() {
   fi
 
   local user_name
-  user_name="$(vedv::vmobj_service::get_user "$type" "$vmobj_id")" || {
+  user_name="$(vedv::vmobj_service::fs::get_user "$type" "$vmobj_id")" || {
     err "Failed to get user name for ${type}"
     return "$ERR_VMOBJ_OPERATION"
   }
@@ -1573,7 +1573,7 @@ vedv::vmobj_service::cache_data() {
   }
 
   local workdir
-  workdir="$(vedv::vmobj_service::get_workdir "$type" "$vmobj_id")" || {
+  workdir="$(vedv::vmobj_service::fs::get_workdir "$type" "$vmobj_id")" || {
     err "Failed to get workdir for ${type}"
     return "$ERR_VMOBJ_OPERATION"
   }
@@ -1585,7 +1585,7 @@ vedv::vmobj_service::cache_data() {
   }
 
   local shell
-  shell="$(vedv::vmobj_service::get_shell "$type" "$vmobj_id")" || {
+  shell="$(vedv::vmobj_service::fs::get_shell "$type" "$vmobj_id")" || {
     err "Failed to get shell for ${type}"
     return "$ERR_VMOBJ_OPERATION"
   }
@@ -1597,7 +1597,7 @@ vedv::vmobj_service::cache_data() {
   }
 
   local env
-  env="$(vedv::vmobj_service::get_environment_vars "$type" "$vmobj_id")" || {
+  env="$(vedv::vmobj_service::fs::list_environment_vars "$type" "$vmobj_id")" || {
     err "Failed to get env for ${type}"
     return "$ERR_VMOBJ_OPERATION"
   }
@@ -1609,7 +1609,7 @@ vedv::vmobj_service::cache_data() {
   }
 
   local eports
-  eports="$(vedv::vmobj_service::list_exposed_ports "$type" "$vmobj_id")" || {
+  eports="$(vedv::vmobj_service::fs::list_exposed_ports "$type" "$vmobj_id")" || {
     err "Failed to get exposed ports for ${type}"
     return "$ERR_VMOBJ_OPERATION"
   }

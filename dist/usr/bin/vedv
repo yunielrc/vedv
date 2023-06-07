@@ -133,9 +133,10 @@ vedv::__run_cmd() {
 
   vedv::vmobj_entity::constructor \
     "$vmobj_types" \
-    "$(arr2str vmobj_types_attributes_dict)"
+    "$(arr2str vmobj_types_attributes_dict)" \
+    "$VEDV_SSH_USER"
   # shellcheck disable=SC2034
-  local -rA vedv_vmobj_service_use_cache_dict=([container]=true)
+  local -rA vedv_vmobj_service_use_cache_dict=([container]=true [image]=true)
 
   vedv::vmobj_service::constructor \
     "$VEDV_SSH_IP" \

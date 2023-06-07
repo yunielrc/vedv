@@ -4,10 +4,12 @@ load test_helper
 setup_file() {
   vedv::vmobj_entity::constructor \
     'container|image' \
-    '([image]="image_cache|ova_file_sum|ssh_port" [container]="parent_image_id|ssh_port")'
+    '([image]="image_cache|ova_file_sum|ssh_port" [container]="parent_image_id|ssh_port")' \
+    "$TEST_SSH_USER"
 
   export __VEDV_VMOBJ_ENTITY_TYPE
   export __VEDV_VMOBJ_ENTITY_VALID_ATTRIBUTES_DICT_STR
+  export __VEDV_DEFAULT_USER
 
   vedv::vmobj_service::constructor \
     "$TEST_SSH_IP" \
@@ -1588,6 +1590,32 @@ Sibling containers ids: '123457 123458'"
   }
 
   run vedv::container_service::cache::list_exposed_ports "$container_name_or_id"
+
+  assert_success
+  assert_output ""
+}
+
+# Tests for vedv::container_service::cache::get_use_cache()
+@test "vedv::container_service::cache::get_use_cache() Should succeed" {
+
+  vedv::vmobj_service::get_use_cache() {
+    assert_equal "$*" 'container'
+  }
+
+  run vedv::container_service::get_use_cache
+
+  assert_success
+  assert_output ""
+}
+
+# Tests for vedv::container_service::cache::set_use_cache()
+@test "vedv::container_service::cache::set_use_cache() Should succeed" {
+
+  vedv::vmobj_service::set_use_cache() {
+    assert_equal "$*" 'container true'
+  }
+
+  run vedv::container_service::set_use_cache 'true'
 
   assert_success
   assert_output ""

@@ -2272,7 +2272,7 @@ image-id my-image-name"
 @test '__print_build_success_msg()' { :; }
 @test '__stop_vm()' { :; }
 
-# Test vedv::image_builder::build()
+# Tests for vedv::image_builder::build()
 
 @test 'vedv::image_builder::build() with an empty vedvfile should return an error' {
   local -r vedvfile=''
@@ -2398,6 +2398,9 @@ image-id my-image-name"
     assert_equal "$*" "${vedvfile} ${image_name}"
     return 1
   }
+  vedv::image_service::set_use_cache() {
+    assert_equal "$*" "false"
+  }
   vedv::image_service::cache_data() {
     assert_equal "$*" "22345"
     return 1
@@ -2430,6 +2433,9 @@ Failed to cache data for image '${image_name}'"
   vedv::image_builder::__build() {
     assert_equal "$*" "${vedvfile} ${image_name}"
     return 1
+  }
+  vedv::image_service::set_use_cache() {
+    assert_equal "$*" "false"
   }
   vedv::image_service::cache_data() {
     assert_equal "$*" "22345"
@@ -2465,6 +2471,9 @@ Failed to stop the image 'image1'.You must stop it."
   }
   vedv::image_builder::__build() {
     assert_equal "$*" "${vedvfile} ${image_name}"
+  }
+  vedv::image_service::set_use_cache() {
+    assert_equal "$*" "false"
   }
   vedv::image_service::cache_data() {
     assert_equal "$*" "22345"
@@ -2548,7 +2557,7 @@ Failed to stop the image 'image1'.You must stop it."
   local -r cmd="1 USER nalyd"
 
   vedv::image_builder::__layer_execute_cmd() {
-    assert_equal "$*" "12345 1 USER nalyd USER vedv::image_service::set_user '12345' 'nalyd'"
+    assert_equal "$*" "12345 1 USER nalyd USER vedv::image_service::fs::set_user '12345' 'nalyd'"
     return 1
   }
 
@@ -2563,7 +2572,7 @@ Failed to stop the image 'image1'.You must stop it."
   local -r cmd="1 USER nalyd"
 
   vedv::image_builder::__layer_execute_cmd() {
-    assert_equal "$*" "12345 1 USER nalyd USER vedv::image_service::set_user '12345' 'nalyd'"
+    assert_equal "$*" "12345 1 USER nalyd USER vedv::image_service::fs::set_user '12345' 'nalyd'"
   }
 
   run vedv::image_builder::__layer_user "$image_id" "$cmd"
@@ -2625,7 +2634,7 @@ Failed to stop the image 'image1'.You must stop it."
   local -r cmd="1 WORKDIR /home/nalyd"
 
   vedv::image_builder::__layer_execute_cmd() {
-    assert_equal "$*" "12345 1 WORKDIR /home/nalyd WORKDIR vedv::image_service::set_workdir '12345' '/home/nalyd' >/dev/null"
+    assert_equal "$*" "12345 1 WORKDIR /home/nalyd WORKDIR vedv::image_service::fs::set_workdir '12345' '/home/nalyd' >/dev/null"
     return 1
   }
 
@@ -2640,7 +2649,7 @@ Failed to stop the image 'image1'.You must stop it."
   local -r cmd="1 WORKDIR /home/nalyd"
 
   vedv::image_builder::__layer_execute_cmd() {
-    assert_equal "$*" "12345 1 WORKDIR /home/nalyd WORKDIR vedv::image_service::set_workdir '12345' '/home/nalyd' >/dev/null"
+    assert_equal "$*" "12345 1 WORKDIR /home/nalyd WORKDIR vedv::image_service::fs::set_workdir '12345' '/home/nalyd' >/dev/null"
   }
 
   run vedv::image_builder::__layer_workdir "$image_id" "$cmd"
@@ -2748,7 +2757,7 @@ Failed to stop the image 'image1'.You must stop it."
     echo "TEST=123"
   }
   vedv::image_builder::__layer_execute_cmd() {
-    assert_equal "$*" "12345 1 ENV TEST=123 ENV vedv::image_service::add_environment_var '12345' 'TEST=123'"
+    assert_equal "$*" "12345 1 ENV TEST=123 ENV vedv::image_service::fs::add_environment_var '12345' 'TEST=123'"
     return 1
   }
 
@@ -2771,7 +2780,7 @@ Failed to stop the image 'image1'.You must stop it."
     echo "TEST=123"
   }
   vedv::image_builder::__layer_execute_cmd() {
-    assert_equal "$*" "12345 1 ENV TEST=123 ENV vedv::image_service::add_environment_var '12345' 'TEST=123'"
+    assert_equal "$*" "12345 1 ENV TEST=123 ENV vedv::image_service::fs::add_environment_var '12345' 'TEST=123'"
   }
 
   run vedv::image_builder::__layer_env "$image_id" "$cmd"
@@ -2856,7 +2865,7 @@ echo "var2 var2:var3 var3"'
 @test "vedv::image_builder::__save_environment_vars_to_local_file() Should fail If get_environment_vars fails" {
   local -r image_id="12345"
 
-  vedv::image_service::get_environment_vars() {
+  vedv::image_service::fs::list_environment_vars() {
     assert_equal "$*" "12345"
     return 1
   }
@@ -2870,7 +2879,7 @@ echo "var2 var2:var3 var3"'
 @test "vedv::image_builder::__save_environment_vars_to_local_file() Should succeed" {
   local -r image_id="12345"
 
-  vedv::image_service::get_environment_vars() {
+  vedv::image_service::fs::list_environment_vars() {
     assert_equal "$*" "12345"
     cat <<'EOF'
 VAR1=var1
@@ -2948,7 +2957,7 @@ local -r var_9f57a558b3_VAR23=\"var3 var3\""
   local -r cmd="1 SHELL nalyd"
 
   vedv::image_builder::__layer_execute_cmd() {
-    assert_equal "$*" "12345 1 SHELL nalyd SHELL vedv::image_service::set_shell '12345' 'nalyd'"
+    assert_equal "$*" "12345 1 SHELL nalyd SHELL vedv::image_service::fs::set_shell '12345' 'nalyd'"
     return 1
   }
 
@@ -2963,7 +2972,7 @@ local -r var_9f57a558b3_VAR23=\"var3 var3\""
   local -r cmd="1 SHELL nalyd"
 
   vedv::image_builder::__layer_execute_cmd() {
-    assert_equal "$*" "12345 1 SHELL nalyd SHELL vedv::image_service::set_shell '12345' 'nalyd'"
+    assert_equal "$*" "12345 1 SHELL nalyd SHELL vedv::image_service::fs::set_shell '12345' 'nalyd'"
   }
 
   run vedv::image_builder::__layer_shell "$image_id" "$cmd"
@@ -3025,7 +3034,7 @@ local -r var_9f57a558b3_VAR23=\"var3 var3\""
   local -r cmd="1 EXPOSE 8080"
 
   vedv::image_builder::__layer_execute_cmd() {
-    assert_equal "$*" "12345 1 EXPOSE 8080 EXPOSE vedv::image_service::add_exposed_ports '12345' '8080'"
+    assert_equal "$*" "12345 1 EXPOSE 8080 EXPOSE vedv::image_service::fs::add_exposed_ports '12345' '8080'"
     return 1
   }
 
@@ -3040,7 +3049,7 @@ local -r var_9f57a558b3_VAR23=\"var3 var3\""
   local -r cmd="1 EXPOSE 8080"
 
   vedv::image_builder::__layer_execute_cmd() {
-    assert_equal "$*" "12345 1 EXPOSE 8080 EXPOSE vedv::image_service::add_exposed_ports '12345' '8080'"
+    assert_equal "$*" "12345 1 EXPOSE 8080 EXPOSE vedv::image_service::fs::add_exposed_ports '12345' '8080'"
   }
 
   run vedv::image_builder::__layer_expose "$image_id" "$cmd"

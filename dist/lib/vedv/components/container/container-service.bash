@@ -34,6 +34,33 @@ readonly VEDV_CONTAINER_SERVICE_STANDALONE='STANDALONE'
 # }
 
 #
+# Return if use cache for containers
+#
+# Output:
+#  writes true if use cache otherwise false to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::container_service::get_use_cache() {
+  vedv::vmobj_service::get_use_cache 'container'
+}
+
+#
+# Set use cache for containers
+#
+# Arguments:
+#  value     bool     use cache value
+#
+# Returns:
+#   0 on success, non-zero on error.
+vedv::container_service::set_use_cache() {
+  local -r value="$1"
+
+  vedv::vmobj_service::set_use_cache 'container' "$value"
+}
+
+#
 # Create a new container
 #
 # Arguments:

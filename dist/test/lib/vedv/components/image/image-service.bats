@@ -6,10 +6,12 @@ load test_helper
 setup_file() {
   vedv::vmobj_entity::constructor \
     'container|image' \
-    '([image]="image_cache|ova_file_sum|ssh_port" [container]="parent_image_id|ssh_port")'
+    '([image]="image_cache|ova_file_sum|ssh_port" [container]="parent_image_id|ssh_port")' \
+    "$TEST_SSH_USER"
 
   export __VEDV_VMOBJ_ENTITY_TYPE
   export __VEDV_VMOBJ_ENTITY_VALID_ATTRIBUTES_DICT_STR
+  export __VEDV_DEFAULT_USER
 
   vedv::vmobj_service::constructor \
     "$TEST_SSH_IP" \
@@ -1343,48 +1345,48 @@ EOF
   assert_output ""
 }
 
-# Tests for vedv::image_service::set_workdir()
+# Tests for vedv::image_service::fs::set_workdir()
 
-@test "vedv::image_service::set_workdir(): Should succeed" {
+@test "vedv::image_service::fs::set_workdir(): Should succeed" {
   local -r image_id="12345"
   local -r workdir="/home/vedv"
 
-  vedv::vmobj_service::set_workdir() {
+  vedv::vmobj_service::fs::set_workdir() {
     assert_equal "$*" "image 12345 /home/vedv"
   }
 
-  run vedv::image_service::set_workdir "$image_id" "$workdir"
+  run vedv::image_service::fs::set_workdir "$image_id" "$workdir"
 
   assert_success
   assert_output ""
 }
 
-# Tests for vedv::image_service::add_environment_var()
+# Tests for vedv::image_service::fs::add_environment_var()
 
-@test "vedv::image_service::add_environment_var() Should succeed" {
+@test "vedv::image_service::fs::add_environment_var() Should succeed" {
   local -r image_id="12345"
   local -r env_var="TEST_ENV=123"
 
-  vedv::vmobj_service::add_environment_var() {
+  vedv::vmobj_service::fs::add_environment_var() {
     assert_equal "$*" "image 12345 TEST_ENV=123"
   }
 
-  run vedv::image_service::add_environment_var "$image_id" "$env_var"
+  run vedv::image_service::fs::add_environment_var "$image_id" "$env_var"
 
   assert_success
   assert_output ""
 }
 
-# Tests for vedv::image_service::get_environment_vars()
+# Tests for vedv::image_service::fs::list_environment_vars()
 
-@test "vedv::image_service::get_environment_vars() Should succeed" {
+@test "vedv::image_service::fs::list_environment_vars() Should succeed" {
   local -r image_id="12345"
 
-  vedv::vmobj_service::get_environment_vars() {
+  vedv::vmobj_service::fs::list_environment_vars() {
     assert_equal "$*" "image 12345"
   }
 
-  run vedv::image_service::get_environment_vars "$image_id"
+  run vedv::image_service::fs::list_environment_vars "$image_id"
 
   assert_success
   assert_output ""
@@ -1455,17 +1457,17 @@ EOF
   assert_output "Failed to restore last layer '${last_layer_id}'"
 }
 
-# Tests for vedv::image_service::set_shell()
+# Tests for vedv::image_service::fs::set_shell()
 
-@test "vedv::image_service::set_shell(): Should succeed" {
+@test "vedv::image_service::fs::set_shell(): Should succeed" {
   local -r image_id=23456
   local -r shell='sh'
 
-  vedv::vmobj_service::set_shell() {
+  vedv::vmobj_service::fs::set_shell() {
     assert_equal "$*" 'image 23456 sh'
   }
 
-  run vedv::image_service::set_shell "$image_id" "$shell"
+  run vedv::image_service::fs::set_shell "$image_id" "$shell"
 
   assert_success
   assert_output ''
@@ -1580,36 +1582,23 @@ EOF
   assert_output ""
 }
 
-# Tests for vedv::image_service::add_exposed_ports()
+# Tests for vedv::image_service::fs::add_exposed_ports()
 # bats test_tags=only
-@test "vedv::image_service::add_exposed_ports() Should fail With empty image_id" {
+@test "vedv::image_service::fs::add_exposed_ports() Should fail With empty image_id" {
   # Arrange
   local -r image_id=""
   local -r ports="1234 1235"
   # Stubs
-  vedv::vmobj_service::add_exposed_ports() {
+  vedv::vmobj_service::fs::add_exposed_ports() {
     assert_equal "$*" "image ${image_id} ${ports}"
   }
   # Act
-  run vedv::image_service::add_exposed_ports "$image_id" "$ports"
+  run vedv::image_service::fs::add_exposed_ports "$image_id" "$ports"
   # Assert
   assert_success
   assert_output ""
 }
 
-# Tests for vedv::image_service::list_exposed_ports()
-@test "vedv::image_service::list_exposed_ports() Should succeed" {
-  local -r image_name_or_id='12345'
-
-  vedv::vmobj_service::list_exposed_ports() {
-    assert_equal "$*" "image 12345"
-  }
-
-  run vedv::image_service::list_exposed_ports "$image_name_or_id"
-
-  assert_success
-  assert_output ""
-}
 # Tests for vedv::image_service::cache_data()
 @test "vedv::image_service::cache_data() Should succeed" {
   # Arrange
@@ -1622,6 +1611,48 @@ EOF
   # Act
   run vedv::image_service::cache_data "$image_id" "$data"
   # Assert
+  assert_success
+  assert_output ""
+}
+
+# Tests for vedv::image_service::fs::set_user()
+@test "vedv::image_service::fs::set_user() Should succeed" {
+  # Arrange
+  local -r image_id="12345"
+  local -r user="user"
+  # Stub
+  vedv::vmobj_service::fs::set_user() {
+    assert_equal "$*" "image ${image_id} ${user}"
+  }
+  # Act
+  run vedv::image_service::fs::set_user "$image_id" "$user"
+  # Assert
+  assert_success
+  assert_output ""
+}
+
+# Tests for vedv::image_service::cache::get_use_cache()
+@test "vedv::image_service::cache::get_use_cache() Should succeed" {
+
+  vedv::vmobj_service::get_use_cache() {
+    assert_equal "$*" 'image'
+  }
+
+  run vedv::image_service::get_use_cache
+
+  assert_success
+  assert_output ""
+}
+
+# Tests for vedv::image_service::cache::set_use_cache()
+@test "vedv::image_service::cache::set_use_cache() Should succeed" {
+
+  vedv::vmobj_service::set_use_cache() {
+    assert_equal "$*" 'image true'
+  }
+
+  run vedv::image_service::set_use_cache 'true'
+
   assert_success
   assert_output ""
 }

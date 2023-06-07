@@ -100,8 +100,8 @@
         "create",
         "-P",
         "-n",
-        "dyli126",
-        "image123"
+        "dyli1",
+        "image1"
       ]
     },
     {
@@ -188,15 +188,16 @@
       "args": [
         "image",
         "build",
+        "--force",
         "-t",
-        "image123",
-        "expose.vedvfile"
+        "image1",
+        "Vedvfile12"
       ]
     },
     {
       "type": "bashdb",
       "request": "launch",
-      "name": "Bash-Debug (vedv image login)",
+      "name": "Bash-Debug (vedv container login)",
       "env": {
         "VEDV_HADOLINT_ENABLED": "false"
       },
@@ -204,7 +205,7 @@
       "args": [
         "container",
         "login",
-        "nalyd1",
+        "dyli1",
         "<<<'echo $0'",
       ]
     },
@@ -230,7 +231,7 @@
     {
       "type": "bashdb",
       "request": "launch",
-      "name": "Bash-Debug (vedv image list-exposed-ports)",
+      "name": "Bash-Debug (vedv container list-exposed-ports)",
       "env": {
         "VEDV_HADOLINT_ENABLED": "false"
       },

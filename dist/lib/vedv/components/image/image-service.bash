@@ -19,6 +19,33 @@ fi
 # FUNCTIONS
 
 #
+# Return if use cache for images
+#
+# Output:
+#  writes true if use cache otherwise false to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::image_service::get_use_cache() {
+  vedv::vmobj_service::get_use_cache 'image'
+}
+
+#
+# Set use cache for images
+#
+# Arguments:
+#  value     bool     use cache value
+#
+# Returns:
+#   0 on success, non-zero on error.
+vedv::image_service::set_use_cache() {
+  local -r value="$1"
+
+  vedv::vmobj_service::set_use_cache 'image' "$value"
+}
+
+#
 # Constructor
 #
 # Arguments:
@@ -711,11 +738,11 @@ vedv::image_service::copy() {
 # Returns:
 #   0 on success, non-zero on error.
 #
-vedv::image_service::set_user() {
+vedv::image_service::fs::set_user() {
   local -r image_id="$1"
   local -r user_name="$2"
 
-  vedv::vmobj_service::set_user \
+  vedv::vmobj_service::fs::set_user \
     'image' \
     "$image_id" \
     "$user_name"
@@ -734,11 +761,11 @@ vedv::image_service::set_user() {
 # Returns:
 #   0 on success, non-zero on error.
 #
-vedv::image_service::set_workdir() {
+vedv::image_service::fs::set_workdir() {
   local -r image_id="$1"
   local -r workdir="$2"
 
-  vedv::vmobj_service::set_workdir \
+  vedv::vmobj_service::fs::set_workdir \
     'image' \
     "$image_id" \
     "$workdir"
@@ -757,11 +784,11 @@ vedv::image_service::set_workdir() {
 # Returns:
 #   0 on success, non-zero on error.
 #
-vedv::image_service::set_shell() {
+vedv::image_service::fs::set_shell() {
   local -r image_id="$1"
   local -r shell="$2"
 
-  vedv::vmobj_service::set_shell \
+  vedv::vmobj_service::fs::set_shell \
     'image' \
     "$image_id" \
     "$shell"
@@ -779,11 +806,11 @@ vedv::image_service::set_shell() {
 #
 # Returns:
 #   0 on success, non-zero on error.
-vedv::image_service::add_environment_var() {
+vedv::image_service::fs::add_environment_var() {
   local -r image_id="$1"
   local -r env_var="$2"
 
-  vedv::vmobj_service::add_environment_var \
+  vedv::vmobj_service::fs::add_environment_var \
     'image' \
     "$image_id" \
     "$env_var"
@@ -801,10 +828,10 @@ vedv::image_service::add_environment_var() {
 # Returns:
 #   0 on success, non-zero on error.
 #
-vedv::image_service::get_environment_vars() {
+vedv::image_service::fs::list_environment_vars() {
   local -r image_id="$1"
 
-  vedv::vmobj_service::get_environment_vars \
+  vedv::vmobj_service::fs::list_environment_vars \
     'image' \
     "$image_id"
 }
@@ -899,34 +926,14 @@ vedv::image_service::build() {
 # Returns:
 #   0 on success, non-zero on error.
 #
-vedv::image_service::add_exposed_ports() {
+vedv::image_service::fs::add_exposed_ports() {
   local -r image_id="$1"
   local -r ports="$2"
 
-  vedv::vmobj_service::add_exposed_ports \
+  vedv::vmobj_service::fs::add_exposed_ports \
     'image' \
     "$image_id" \
     "$ports"
-}
-
-#
-# Get expose ports from image
-#
-# Arguments:
-#   image_name_or_id  string    image id
-#
-# Output:
-#   writes expose ports (text) to the stdout
-#
-# Returns:
-#   0 on success, non-zero on error.
-#
-vedv::image_service::list_exposed_ports() {
-  local -r image_name_or_id="$1"
-
-  vedv::vmobj_service::list_exposed_ports \
-    'image' \
-    "$image_name_or_id"
 }
 
 #

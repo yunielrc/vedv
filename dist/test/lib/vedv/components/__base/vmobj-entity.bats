@@ -5,10 +5,12 @@ load test_helper
 setup_file() {
   vedv::vmobj_entity::constructor \
     'container|image' \
-    '([image]="image_cache|ova_file_sum|ssh_port" [container]="parent_image_id|ssh_port")'
+    '([image]="image_cache|ova_file_sum|ssh_port" [container]="parent_image_id|ssh_port")' \
+    "$TEST_SSH_USER"
 
   export __VEDV_VMOBJ_ENTITY_TYPE
   export __VEDV_VMOBJ_ENTITY_VALID_ATTRIBUTES_DICT_STR
+  export __VEDV_DEFAULT_USER
 }
 
 # Test vedv::vmobj_entity::constructor()
@@ -955,7 +957,7 @@ setup_file() {
   run vedv::vmobj_entity::cache::get_user_name "$type" "$vmobj_id"
 
   assert_failure
-  assert_output ''
+  assert_output "Failed to get user name of the vmobj: ${vmobj_id}"
 }
 
 @test 'vedv::vmobj_entity::cache::get_user_name() Should succeed' {
@@ -969,7 +971,7 @@ setup_file() {
   run vedv::vmobj_entity::cache::get_user_name "$type" "$vmobj_id"
 
   assert_success
-  assert_output ''
+  assert_output 'vedv'
 }
 
 # Test vedv::vmobj_entity::cache::set_workdir()
