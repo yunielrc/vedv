@@ -53,11 +53,6 @@ vedv:image_vedvfile_service::get_vedvfileignore_path() {
   local -r image_id="123"
   local -r cmd="1 RUN echo hello"
 
-  utils::get_arg_from_string() {
-    assert_equal "$*" "${cmd} 2"
-    echo 'RUN'
-    return 0
-  }
   vedv::image_entity::get_vm_name() {
     assert_equal "$*" "$image_id"
     return 1
@@ -73,11 +68,6 @@ vedv:image_vedvfile_service::get_vedvfileignore_path() {
   local -r image_id="123"
   local -r cmd="1 RUN echo hello"
 
-  utils::get_arg_from_string() {
-    assert_equal "$*" "${cmd} 2"
-    echo 'RUN'
-    return 0
-  }
   vedv::image_entity::get_vm_name() {
     assert_equal "$*" "$image_id"
     echo ''
@@ -94,11 +84,6 @@ vedv:image_vedvfile_service::get_vedvfileignore_path() {
   local -r image_id="123"
   local -r cmd="1 RUN echo hello"
 
-  utils::get_arg_from_string() {
-    assert_equal "$*" "${cmd} 2"
-    echo 'RUN'
-    return 0
-  }
   vedv::image_entity::get_vm_name() {
     assert_equal "$*" "$image_id"
     echo "image:image1|crc:${1}|"
@@ -118,11 +103,6 @@ vedv:image_vedvfile_service::get_vedvfileignore_path() {
   local -r image_id="image_id"
   local -r cmd="1 RUN echo hello"
 
-  utils::get_arg_from_string() {
-    assert_equal "$*" "${cmd} 2"
-    echo 'RUN'
-    return 0
-  }
   vedv::image_entity::get_vm_name() {
     assert_equal "$*" "$image_id"
     echo "image:image1|crc:${1}|"
@@ -148,11 +128,6 @@ vedv:image_vedvfile_service::get_vedvfileignore_path() {
   local -r image_id="image_id"
   local -r cmd="1 RUN echo hello"
 
-  utils::get_arg_from_string() {
-    assert_equal "$*" "${cmd} 2"
-    echo 'RUN'
-    return 0
-  }
   vedv::image_entity::get_vm_name() {
     assert_equal "$*" "$image_id"
     echo "image:image1|crc:${1}|"
@@ -214,10 +189,6 @@ vedv:image_vedvfile_service::get_vedvfileignore_path() {
 @test "vedv::image_builder::__calc_command_layer_id() Should fails If __layer_run_calc_id fails" {
   local -r cmd="1 RUN echo hello"
 
-  utils::get_arg_from_string() {
-    assert_equal "$*" "${cmd} 2"
-    echo 'RUN'
-  }
   vedv::image_builder::__layer_run_calc_id() {
     assert_equal "$*" "$cmd"
     return 1
@@ -232,10 +203,6 @@ vedv:image_vedvfile_service::get_vedvfileignore_path() {
 @test "vedv::image_builder::__calc_command_layer_id() Should fails If calc_layer_id is empty" {
   local -r cmd="1 RUN echo hello"
 
-  utils::get_arg_from_string() {
-    assert_equal "$*" "${cmd} 2"
-    echo 'RUN'
-  }
   vedv::image_builder::__layer_run_calc_id() {
     assert_equal "$*" "$cmd"
   }
@@ -249,10 +216,6 @@ vedv:image_vedvfile_service::get_vedvfileignore_path() {
 @test "vedv::image_builder::__calc_command_layer_id() Should success" {
   local -r cmd="1 RUN echo hello"
 
-  utils::get_arg_from_string() {
-    assert_equal "$*" "${cmd} 2"
-    echo 'RUN'
-  }
   vedv::image_builder::__layer_run_calc_id() {
     assert_equal "$*" "$cmd"
     echo 'layer_id'
@@ -336,11 +299,6 @@ vedv:image_vedvfile_service::get_vedvfileignore_path() {
   local -r cmd="1 RUN dummy_source dummy_dest"
   local -r caller_command='COPY'
   local -r exec_func=':'
-  # Stub
-  utils::get_arg_from_string() {
-    assert_equal "$*" "${cmd} 2"
-    echo "RUN"
-  }
 
   run vedv::image_builder::__layer_execute_cmd "$image_id" "$cmd" "$caller_command" "$exec_func"
 
@@ -354,10 +312,6 @@ vedv:image_vedvfile_service::get_vedvfileignore_path() {
   local -r caller_command='COPY'
   local -r exec_func=false
 
-  utils::get_arg_from_string() {
-    assert_equal "$*" "${cmd} 2"
-    echo "COPY"
-  }
   vedv::image_service::is_started() {
     assert_equal "$*" "$image_id"
     echo true
@@ -383,10 +337,6 @@ Previous layer restored"
   local -r caller_command='COPY'
   local -r exec_func=false
   # Stub
-  utils::get_arg_from_string() {
-    assert_equal "$*" "${cmd} 2"
-    echo "COPY"
-  }
   vedv::image_service::is_started() {
     assert_equal "$*" "$image_id"
     echo true
@@ -409,10 +359,6 @@ Failed to restore last layer for image 'dummy_id'"
   local -r caller_command='COPY'
   local -r exec_func=true
   # Stub
-  utils::get_arg_from_string() {
-    assert_equal "$*" "${cmd} 2"
-    echo "COPY"
-  }
   vedv::image_service::is_started() {
     assert_equal "$*" "$image_id"
     echo true
@@ -438,10 +384,6 @@ Previous layer restored"
   local -r caller_command='COPY'
   local -r exec_func=':'
 
-  utils::get_arg_from_string() {
-    assert_equal "$*" "${cmd} 2"
-    echo "COPY"
-  }
   vedv::image_service::is_started() {
     assert_equal "$*" "$image_id"
     echo true
@@ -719,11 +661,6 @@ Previous layer restored"
 @test "vedv::image_builder::__layer_copy_calc_id(), Should return error if cmd name is not 'COPY'" {
   # Arrange
   local -r cmd="1 RUN source/ dest/"
-  # Stub
-  utils::get_arg_from_string() {
-    assert_equal "$*" "${cmd} 2"
-    echo 'RUN'
-  }
   # Act
   run vedv::image_builder::__layer_copy_calc_id "$cmd"
   # Assert
@@ -743,17 +680,34 @@ Previous layer restored"
     fi
     echo "1234"
   }
-  utils::get_arg_from_string() {
-    if [[ "$*" == "${cmd} 2" ]]; then
-      echo "COPY"
-      return 0
-    fi
-  }
   # Act
   run vedv::image_builder::__layer_copy_calc_id "$cmd"
   # Assert
   assert_failure
   assert_output "Invalid number of arguments, expected at least 4, got 3"
+}
+
+@test "vedv::image_builder::__layer_copy_calc_id() Should fail If get_joined_vedvfileignore fails" {
+  # Arrange
+  local -r src="$(mktemp)"
+  local -r cmd="1 COPY --root ${src} dest/"
+  # Stub
+  utils::crc_sum() {
+    if [[ ! -t 0 ]]; then
+      assert_equal "$(cat -)" "$cmd"
+    else
+      assert_equal "$*" "$cmd"
+    fi
+    echo "1234"
+  }
+  vedv:image_vedvfile_service::get_joined_vedvfileignore() {
+    return 1
+  }
+  # Act
+  run vedv::image_builder::__layer_copy_calc_id "$cmd"
+  # Assert
+  assert_failure
+  assert_output "Failed to get joined vedvfileignore"
 }
 
 @test "vedv::image_builder::__layer_copy_calc_id(), Should write copy layer id to stdout" {
@@ -768,6 +722,7 @@ Previous layer restored"
       echo "$*"
     fi
   }
+  vedv:image_vedvfile_service::get_joined_vedvfileignore() { :; }
   utils::crc_file_sum() { crc_sum "$@"; }
   # Act
   run vedv::image_builder::__layer_copy_calc_id "$cmd"
@@ -937,10 +892,6 @@ Previous layer restored"
   # Arrange
   local -r cmd="1 RUN source/ dest/"
   # Stub
-  utils::get_arg_from_string() {
-    assert_equal "$*" "${cmd} 2"
-    echo 'RUN'
-  }
   utils::crc_sum() {
     if [[ ! -t 0 ]]; then
       cat -

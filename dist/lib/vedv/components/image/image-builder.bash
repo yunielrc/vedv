@@ -499,7 +499,15 @@ vedv::image_builder::__layer_copy_calc_id() {
   local crc_sum_source=''
 
   if [[ -e "$src" ]]; then
-    crc_sum_source="$(utils::crc_file_sum "$src")" || {
+
+    local vedvfileignore
+    vedvfileignore="$(vedv:image_vedvfile_service::get_joined_vedvfileignore)" || {
+      err "Failed to get joined vedvfileignore"
+      return "$ERR_VMOBJ_OPERATION"
+    }
+    readonly vedvfileignore
+
+    crc_sum_source="$(utils::crc_file_sum "$src" "$vedvfileignore")" || {
       err "Failed getting 'crc_sum_source' for src: '${src}'"
       return "$ERR_IMAGE_BUILDER_OPERATION"
     }

@@ -368,7 +368,7 @@ World!"
   assert_success
 }
 
-# Test utils::crc_sum function
+# Tests for utils::crc_sum()
 
 @test "utils::crc_file_sum(), Should fail When the file does not exist" {
   run utils::crc_file_sum '/no_file/exists'

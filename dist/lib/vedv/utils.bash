@@ -66,10 +66,36 @@ utils::crc_sum() {
 }
 crc_sum() { utils::crc_sum "${1:-}"; }
 
+#
+# calc crc sum for a file, a set of files, or a files inside a directory
+#
+# Arguments:
+#  source               string    file or directory
+#  [exclude_file_path]  string    file with a list of files to exclude
+#
+# Output:
+#  writes file crc sum to stdout
+#
+# Returns:
+#  0 on success, non-zero on error.
+#
 utils::crc_file_sum() {
-  # with eval and quoting $1 its posible to find files with spaces and wildcards
-  # shellcheck disable=SC2086
-  IFS='' eval find "$1" -type f -exec cksum {} + | LC_ALL=C sort | cksum | cut -d' ' -f1
+  local -r source="$1"
+  local -r exclude_file_path="${2:-}"
+
+  rsync -azv \
+    --info=FLIST0,STATS0 \
+    --relative \
+    --dry-run \
+    --exclude-from "${exclude_file_path}" \
+    "$source" "$(mktemp -d)" |
+    sed '/\/$/d' |
+    tr '\n' '\0' |
+    xargs -0 cksum |
+    LC_ALL=C sort |
+    cksum |
+    cut -d' ' -f1
+  # IFS='' eval find "$1" -type f -exec cksum {} + | LC_ALL=C sort | cksum | cut -d' ' -f1
   return "${PIPESTATUS[0]}"
 }
 crc_file_sum() { utils::crc_file_sum "$1"; }
