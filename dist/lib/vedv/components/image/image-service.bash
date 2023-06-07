@@ -937,6 +937,36 @@ vedv::image_service::fs::add_exposed_ports() {
 }
 
 #
+# List exposed ports from image filesystem
+#
+# Arguments:
+#   image_name_or_id  string    image name or id
+#
+# Output:
+#   writes exposed ports (text) to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::image_service::cache::list_exposed_ports() {
+  local -r image_name_or_id="$1"
+  # validate arguments
+  if [[ -z "$image_name_or_id" ]]; then
+    err "Invalid argument 'vmobj_name_or_id': it's empty"
+    return "$ERR_INVAL_ARG"
+  fi
+
+  local image_id
+  image_id="$(vedv::vmobj_service::get_ids_from_vmobj_names_or_ids 'image' "$image_name_or_id")" || {
+    err "Failed to get id for image: '${image_name_or_id}'"
+    return "$ERR_CONTAINER_OPERATION"
+  }
+  readonly image_id
+
+  vedv::image_entity::cache::get_exposed_ports "$image_id"
+}
+
+#
 # Set image filesystem vedv data to image entity
 #
 # Arguments:

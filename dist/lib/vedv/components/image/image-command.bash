@@ -336,6 +336,68 @@ HELPMSG
 }
 
 #
+# List exposed ports
+#
+# Flags:
+#   [-h | --help]		show help
+#
+# Arguments:
+#   IMAGE			image name or id
+#
+# Output:
+#   writes port mappings (text) to stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::image_command::__list_exposed_ports() {
+  local image_name_or_id=''
+
+  if [[ $# == 0 ]]; then set -- '-h'; fi
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+    -h | --help)
+      vedv::image_command::__list_exposed_ports_help
+      return 0
+      ;;
+    *)
+      readonly image_name_or_id="$1"
+      break
+      ;;
+    esac
+  done
+
+  if [[ -z "$image_name_or_id" ]]; then
+    err "Missing argument 'IMAGE'\n"
+    vedv::image_command::__list_exposed_ports_help
+    return "$ERR_INVAL_ARG"
+  fi
+
+  vedv::image_service::cache::list_exposed_ports "$image_name_or_id"
+}
+
+#
+# Show help for __list_exposed_ports command
+#
+# Output:
+#  Writes the help to the stdout
+#
+vedv::image_command::__list_exposed_ports_help() {
+  cat <<-HELPMSG
+Usage:
+${__VED_IMAGE_COMMAND_SCRIPT_NAME} image list-exposed-ports IMAGE
+
+List port mappings for the image
+
+Aliases:
+  eports, list-exposed-ports
+
+Flags:
+  -h, --help          show help
+HELPMSG
+}
+#
 # Show help
 #
 # Options:
@@ -364,6 +426,7 @@ Commands:
   list             list images
   remove           remove one or more images
   remove-cache     remove unused cache images
+  eports           list exposed ports for the image
 
 Run '${__VED_IMAGE_COMMAND_SCRIPT_NAME} image COMMAND --help' for more information on a command.
 HELPMSG
@@ -401,6 +464,11 @@ vedv::image_command::run_cmd() {
     build)
       shift
       vedv::image_command::__build "$@"
+      return $?
+      ;;
+    eports | list-exposed-ports)
+      shift
+      vedv::image_command::__list_exposed_ports "$@"
       return $?
       ;;
     *)

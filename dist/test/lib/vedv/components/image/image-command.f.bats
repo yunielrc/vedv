@@ -381,7 +381,7 @@ Build finished
   assert_line --index 0 "Build finished"
   assert_line --index 1 --regexp ".* image123"
 }
-# bats test_tags=only
+
 @test "vedv image build -t 'image123' ./expose.vedvfile, Should succeed" {
   cd "${BATS_TEST_DIRNAME}/fixtures"
 
@@ -410,4 +410,31 @@ Build finished
 8080/tcp
 8081/udp
 81/tcp"
+}
+
+# Tests for vedv image list-exposed-ports ..
+# bats test_tags=only
+@test "vedv image list-exposed-ports image123, Should succeed" {
+
+  run vedv image build \
+    -t 'image123' \
+    "${BATS_TEST_DIRNAME}/fixtures/expose1.vedvfile"
+
+  assert_success
+  assert_output --regexp "created layer '.*' for command 'FROM'
+created layer '.*' for command 'EXPOSE'
+created layer '.*' for command 'EXPOSE'
+created layer '.*' for command 'EXPOSE'
+
+Build finished
+.* image123"
+
+  run vedv image list-exposed-ports 'image123'
+
+  assert_success
+  assert_output '2300/tcp
+3000/udp
+5000/tcp
+8080/tcp
+8081/udp'
 }

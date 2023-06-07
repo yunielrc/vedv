@@ -845,7 +845,7 @@ HELPMSG
 #   [-h | --help]		show help
 #
 # Arguments:
-#   CONTAINER			container name or id
+#   CONTAINER string    container name or id
 #
 # Output:
 #   writes port mappings (text) to stdout

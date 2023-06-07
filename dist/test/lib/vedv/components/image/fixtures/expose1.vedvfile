@@ -1,0 +1,6 @@
+# lang: dockerfile
+FROM /tmp/vedv/test/files/alpine-x86_64.ova
+
+EXPOSE 8080
+EXPOSE 8081/udp
+EXPOSE 5000 3000/udp 2300/tcp

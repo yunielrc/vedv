@@ -235,3 +235,41 @@ Build an image from a Vedvfile"
 @test "vedv::image_command::__build_help()" {
   :
 }
+
+# Tests for vedv::image_command::__list_exposed_ports()
+# bats test_tags=only
+@test "vedv::image_command::__list_exposed_ports() Should show help with no args" {
+
+  # Act
+  run vedv::image_command::__list_exposed_ports
+  # Assert
+  assert_success
+  assert_output --partial "Usage:
+vedv image list-exposed-ports IMAGE"
+}
+# bats test_tags=only
+@test "vedv::image_command::__list_exposed_ports() Should show help" {
+
+  for arg in '-h' '--help'; do
+    # Act
+    run vedv::image_command::__list_exposed_ports "$arg"
+    # Assert
+    assert_success
+    assert_output --partial "Usage:
+vedv image list-exposed-ports IMAGE"
+  done
+}
+# bats test_tags=only
+@test "vedv::image_command::__list_exposed_ports() Should suceed" {
+  # Arrange
+  local image_name_or_id='image1'
+
+  vedv::image_service::cache::list_exposed_ports() {
+    assert_equal "$*" 'image1'
+  }
+  # Act
+  run vedv::image_command::__list_exposed_ports "$image_name_or_id"
+  # Assert
+  assert_success
+  assert_output ""
+}

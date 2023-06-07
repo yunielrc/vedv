@@ -559,7 +559,7 @@ Build finished
 
 # Tests for vedv container list-exposed-ports ..
 # bats test_tags=only
-@test "vedv container list-exposed-ports container123" {
+@test "vedv container list-exposed-ports container123,  Should succeed" {
   local -r container_id='container123'
 
   run vedv image build \
