@@ -774,7 +774,7 @@ Failed to remove image: '1234567890'"
   local -r image_id='1234567890'
 
   vedv::vmobj_service::exec_func_on_many_vmobj() {
-    assert_equal "$*" "image vedv::image_service::remove_one_batch true 1234567890"
+    assert_equal "$*" "image vedv::image_service::remove_one_batch 'true' 1234567890"
   }
 
   run vedv::image_service::remove "$force" "$image_id"
@@ -930,7 +930,7 @@ EOF
   local -r image_id='1234567890'
 
   vedv::vmobj_service::start_one() {
-    assert_equal "$*" "image true 1234567890"
+    assert_equal "$*" "image 1234567890 true"
   }
 
   run vedv::image_service::start "$image_id"

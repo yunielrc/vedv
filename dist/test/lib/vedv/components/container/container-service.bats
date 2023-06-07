@@ -702,12 +702,17 @@ setup_file() {
 # Tests for vedv::container_service::start()
 @test "vedv::container_service::start() Should succeed" {
   local -r container_id=123456
+  local -r wait_for_ssh=false
+  local -r show=true
 
   vedv::vmobj_service::start() {
-    assert_equal "$*" 'container true 123456'
+    assert_equal "$*" 'container 123456 false true'
   }
 
-  run vedv::container_service::start "$container_id"
+  run vedv::container_service::start \
+    "$container_id" \
+    "$wait_for_ssh" \
+    "$show"
 
   assert_success
   assert_output ''

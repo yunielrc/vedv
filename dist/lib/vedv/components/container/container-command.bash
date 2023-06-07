@@ -146,6 +146,7 @@ HELPMSG
 # Flags:
 #   [-h | --help]          show help
 #   [-w | --wait]          wait for SSH
+#   [--show]               show container gui on supported desktop platforms
 #
 # Arguments:
 #   CONTAINER  [CONTAINER...]     one or more container name or id
@@ -157,8 +158,9 @@ HELPMSG
 #   0 on success, non-zero on error.
 #
 vedv::container_command::__start() {
+  local container_names_or_ids=''
   local wait_for_ssh=false
-  local -a container_names_or_ids=()
+  local show=false
 
   if [[ $# == 0 ]]; then set -- '-h'; fi
 
@@ -173,25 +175,28 @@ vedv::container_command::__start() {
       readonly wait_for_ssh=true
       shift
       ;;
+    --show)
+      readonly show=true
+      shift
+      ;;
     # arguments
     *)
-      readonly container_names_or_ids=("$@")
+      readonly container_names_or_ids="$*"
       break
       ;;
     esac
   done
 
-  if [[ ${#container_names_or_ids[@]} == 0 ]]; then
+  if [[ -z "$container_names_or_ids" ]]; then
     err "Missing argument 'CONTAINER'\n"
     vedv::container_command::__start_help
     return "$ERR_INVAL_ARG"
   fi
 
-  if [[ "$wait_for_ssh" == false ]]; then
-    vedv::container_service::start_no_wait_ssh "${container_names_or_ids[@]}"
-  else
-    vedv::container_service::start "${container_names_or_ids[@]}"
-  fi
+  vedv::container_service::start \
+    "$container_names_or_ids" \
+    "$wait_for_ssh" \
+    "$show"
 }
 
 #
@@ -210,6 +215,7 @@ Start one or more stopped containers
 Flags:
   -h, --help          show help
   -w, --wait          wait for SSH
+  --show              show container gui on supported desktop platforms
 HELPMSG
 }
 

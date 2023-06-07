@@ -403,7 +403,10 @@ vedv::container_service::is_started() {
 # Start one or more containers by name or id
 #
 # Arguments:
-#   containers_name_or_ids  @string    containers name or id
+#   container_names_or_ids  string[]  vmobj name or id
+#   [wait_for_ssh]          bool      wait for ssh (default: true)
+#   [show]                  bool      show container gui on supported desktop platforms (default: false)
+#
 #
 # Output:
 #  writes started containers name or id to the stdout
@@ -412,24 +415,7 @@ vedv::container_service::is_started() {
 #   0 on success, non-zero on error.
 #
 vedv::container_service::start() {
-  vedv::vmobj_service::start 'container' 'true' "$@"
-}
-
-#
-# Start one or more containers by name or id
-# without waiting for ssh to be started
-#
-# Arguments:
-#   containers_name_or_ids  @string     containers name or id
-#
-# Output:
-#  writes started containers name or id to the stdout
-#
-# Returns:
-#   0 on success, non-zero on error.
-#
-vedv::container_service::start_no_wait_ssh() {
-  vedv::vmobj_service::start 'container' 'false' "$@"
+  vedv::vmobj_service::start 'container' "$@"
 }
 
 #
@@ -683,8 +669,8 @@ vedv::container_service::remove() {
 
   vedv::vmobj_service::exec_func_on_many_vmobj \
     'container' \
-    "vedv::container_service::remove_one_batch ${force}" \
-    "$@"
+    "vedv::container_service::remove_one_batch '${force}'" \
+    "$*"
 }
 
 #

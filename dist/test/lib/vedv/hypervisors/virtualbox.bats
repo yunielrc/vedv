@@ -482,7 +482,7 @@ ${snapshot_name2}"
 }
 
 # Tests for vedv::hypervisor::get_forwarding_ports()
-# bats test_tags=only
+
 @test "vedv::hypervisor::get_forwarding_ports(): Should fail With empty vm_name" {
   local -r vm_name=""
 
@@ -491,7 +491,7 @@ ${snapshot_name2}"
   assert_failure "$ERR_INVAL_ARG"
   assert_output "Argument 'vm_name' must not be empty"
 }
-# bats test_tags=only
+
 @test "vedv::hypervisor::get_forwarding_ports(): Should fail With vm_name that doesn't exist" {
   local -r vm_name="vm_name"
 
@@ -504,7 +504,7 @@ ${snapshot_name2}"
   assert_failure "$ERR_VIRTUALBOX_OPERATION"
   assert_output "Error getting forwarding ports of vm: vm_name"
 }
-# bats test_tags=only
+
 @test "vedv::hypervisor::get_forwarding_ports(): Should succeed" {
   local -r vm_name="vm_name"
 
@@ -520,4 +520,44 @@ EOF
   assert_success
   assert_output 'ssh,tcp,,2022,,22
 http,tcp,,8080,,80'
+}
+
+# Tests for vedv::hypervisor::start()
+# bats test_tags=only
+@test "vedv::hypervisor::start(): Should fail With empty vm_name" {
+  local -r vm_name=""
+
+  run vedv::hypervisor::start "$vm_name"
+
+  assert_failure "$ERR_INVAL_ARG"
+  assert_output "Argument 'vm_name' must not be empty"
+}
+# bats test_tags=only
+@test "vedv::hypervisor::start(): Should fail With vm_name that doesn't exist" {
+  local -r vm_name="vm_name1"
+
+  VBoxManage() {
+    # assert_equal "$*" "startvm vm_name1 --type headless"
+    return 1
+  }
+
+  run vedv::hypervisor::start "$vm_name"
+
+  assert_failure
+  assert_output "Failed to start VM ${vm_name}"
+}
+# bats test_tags=only
+@test "vedv::hypervisor::start(): Should succeed" {
+  local -r vm_name="vm_name1"
+  local -r show_gui='true'
+
+  VBoxManage() {
+    # assert_equal "$*" "startvm vm_name1 --type gui"
+    :
+  }
+
+  run vedv::hypervisor::start "$vm_name" "$show_gui"
+
+  assert_success
+  assert_output ""
 }

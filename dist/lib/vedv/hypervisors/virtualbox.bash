@@ -348,6 +348,7 @@ vedv::hypervisor::delete_snapshot() {
   VBoxManage snapshot "$vm_name" delete "$snapshot_name"
 }
 vedv::virtualbox::delete_snapshot() { vedv::hypervisor::delete_snapshot "$@"; }
+
 #
 # Start a virtual machine
 #
@@ -362,8 +363,24 @@ vedv::virtualbox::delete_snapshot() { vedv::hypervisor::delete_snapshot "$@"; }
 #
 vedv::hypervisor::start() {
   local -r vm_name="$1"
+  local -r show_gui="${2:-false}"
+  # validate arguments
+  if [[ -z "$vm_name" ]]; then
+    err "Argument 'vm_name' must not be empty"
+    return "$ERR_INVAL_ARG"
+  fi
 
-  VBoxManage startvm "$vm_name" --type "$__VEDV_HYPERVISOR_FRONTEND"
+  local front_end="$__VEDV_HYPERVISOR_FRONTEND"
+
+  if [[ "$show_gui" == true ]]; then
+    front_end='gui'
+  fi
+  readonly front_end
+
+  VBoxManage startvm "$vm_name" --type "$front_end" || {
+    err "Failed to start VM ${vm_name}"
+    return "$ERR_VIRTUALBOX_OPERATION"
+  }
 }
 vedv::virtualbox::start() { vedv::hypervisor::start "$@"; }
 

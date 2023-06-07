@@ -115,12 +115,16 @@ Flags:
 @test 'vedv::container_command::__start(), should start a container' {
   local -r container_name_or_id='container_name1 container_name2'
 
-  run vedv::container_command::__start "$container_name_or_id"
+  run vedv::container_command::__start \
+    --wait \
+    --show \
+    "$container_name_or_id"
 
   assert_success
-  assert_output "${container_name_or_id}"
+  assert_output "${container_name_or_id} true true"
 }
 
+# Tests for vedv::container_command::__stop()
 @test "vedv::container_command::__stop(), with arg '-h|--help|help' should show help" {
   local -r help_output='vedv container stop CONTAINER [CONTAINER...]'
 
@@ -144,6 +148,7 @@ Flags:
   assert_output "${container_name_or_id}"
 }
 
+# Tests for vedv::container_command::__rm()
 @test "vedv::container_command::__rm(), with arg '-h|--help|help' should show help" {
   local -r help_output="Usage:
 vedv container rm [FLAGS] CONTAINER [CONTAINER...]
@@ -177,6 +182,7 @@ Flags:
   assert_output "false ${container_name_or_id}"
 }
 
+# Tests for vedv::container_command::__list()
 @test "vedv::container_command::__list(), with arg '-h|--help|help' should show help" {
   local -r help_output="Usage:
 vedv container ls [FLAGS] [CONTAINER PARTIAL NAME]
@@ -215,6 +221,7 @@ Flags:
   assert_output "include stopped containers: true"
 }
 
+# Tests for vedv::container_command::run_cmd()
 @test "vedv::container_command::run_cmd(), with arg '-h|--help|help' should show help" {
   local -r help_output='vedv container COMMAND'
 

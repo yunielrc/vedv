@@ -171,7 +171,7 @@ Error getting vmobj id for containers: 'name1' 'id1' 'name2' 'id2' "
   local -r exec_func='func1'
   local -r vmobj_ids_or_names='name1 id2 name3 id4'
   # shellcheck disable=SC2086
-  run vedv::vmobj_service::exec_func_on_many_vmobj "$type" "$exec_func" $vmobj_ids_or_names
+  run vedv::vmobj_service::exec_func_on_many_vmobj "$type" "$exec_func" "$vmobj_ids_or_names"
 
   assert_failure
   assert_output "Invalid type: invalid, valid types are: container|image"
@@ -182,7 +182,7 @@ Error getting vmobj id for containers: 'name1' 'id1' 'name2' 'id2' "
   local -r exec_func=''
   local -r vmobj_ids_or_names='name1 id2 name3 id4'
   # shellcheck disable=SC2086
-  run vedv::vmobj_service::exec_func_on_many_vmobj "$type" "$exec_func" $vmobj_ids_or_names
+  run vedv::vmobj_service::exec_func_on_many_vmobj "$type" "$exec_func" "$vmobj_ids_or_names"
 
   assert_failure
   assert_output "Invalid argument 'exec_func': it's empty"
@@ -198,7 +198,7 @@ Error getting vmobj id for containers: 'name1' 'id1' 'name2' 'id2' "
     return 1
   }
   # shellcheck disable=SC2086
-  run vedv::vmobj_service::exec_func_on_many_vmobj "$type" "$exec_func" $vmobj_ids_or_names
+  run vedv::vmobj_service::exec_func_on_many_vmobj "$type" "$exec_func" "$vmobj_ids_or_names"
 
   assert_failure
   assert_output "Error getting vmobj ids"
@@ -219,7 +219,7 @@ Error getting vmobj id for containers: 'name1' 'id1' 'name2' 'id2' "
     echo 'id1 id2 id3 id4'
   }
   # shellcheck disable=SC2086
-  run vedv::vmobj_service::exec_func_on_many_vmobj "$type" "$exec_func" $vmobj_ids_or_names
+  run vedv::vmobj_service::exec_func_on_many_vmobj "$type" "$exec_func" "$vmobj_ids_or_names"
 
   assert_failure
   assert_output "Failed to execute function on containers: 'id1''id2''id3''id4'"
@@ -239,7 +239,7 @@ Error getting vmobj id for containers: 'name1' 'id1' 'name2' 'id2' "
     echo 'id1 id2 id3 id4'
   }
   # shellcheck disable=SC2086
-  run vedv::vmobj_service::exec_func_on_many_vmobj "$type" "$exec_func" $vmobj_ids_or_names
+  run vedv::vmobj_service::exec_func_on_many_vmobj "$type" "$exec_func" "$vmobj_ids_or_names"
 
   assert_success
   assert_output ""
@@ -251,8 +251,9 @@ Error getting vmobj id for containers: 'name1' 'id1' 'name2' 'id2' "
   local -r type=""
   local -r vmobj_id="12345"
   local -r wait_for_ssh=true
+  local -r show=false
 
-  run vedv::vmobj_service::start_one "$type" "$wait_for_ssh" "$vmobj_id"
+  run vedv::vmobj_service::start_one "$type" "$vmobj_id" "$wait_for_ssh" "$show"
 
   assert_failure
   assert_output "Argument 'type' must not be empty"
@@ -262,8 +263,9 @@ Error getting vmobj id for containers: 'name1' 'id1' 'name2' 'id2' "
   local -r type="container"
   local -r vmobj_id=""
   local -r wait_for_ssh=true
+  local -r show=false
 
-  run vedv::vmobj_service::start_one "$type" "$wait_for_ssh" "$vmobj_id"
+  run vedv::vmobj_service::start_one "$type" "$vmobj_id" "$wait_for_ssh" "$show"
 
   assert_failure
   assert_output "Invalid argument 'vmobj_id': it's empty"
@@ -273,6 +275,7 @@ Error getting vmobj id for containers: 'name1' 'id1' 'name2' 'id2' "
   local -r type="container"
   local -r vmobj_id="12345"
   local -r wait_for_ssh=true
+  local -r show=false
 
   vedv::vmobj_service::exists_with_id() {
     echo true
@@ -282,7 +285,7 @@ Error getting vmobj id for containers: 'name1' 'id1' 'name2' 'id2' "
     return 1
   }
 
-  run vedv::vmobj_service::start_one "$type" "$wait_for_ssh" "$vmobj_id"
+  run vedv::vmobj_service::start_one "$type" "$vmobj_id" "$wait_for_ssh" "$show"
 
   assert_failure
   assert_output "Failed to get start status for container: '12345'"
@@ -292,6 +295,7 @@ Error getting vmobj id for containers: 'name1' 'id1' 'name2' 'id2' "
   local -r type="container"
   local -r vmobj_id="12345"
   local -r wait_for_ssh=true
+  local -r show=false
 
   vedv::vmobj_service::exists_with_id() {
     echo true
@@ -301,7 +305,7 @@ Error getting vmobj id for containers: 'name1' 'id1' 'name2' 'id2' "
     echo true
   }
 
-  run vedv::vmobj_service::start_one "$type" "$wait_for_ssh" "$vmobj_id"
+  run vedv::vmobj_service::start_one "$type" "$vmobj_id" "$wait_for_ssh" "$show"
 
   assert_success
   assert_output "12345"
@@ -311,6 +315,7 @@ Error getting vmobj id for containers: 'name1' 'id1' 'name2' 'id2' "
   local -r type="container"
   local -r vmobj_id="12345"
   local -r wait_for_ssh=true
+  local -r show=false
 
   vedv::vmobj_service::exists_with_id() {
     echo true
@@ -324,7 +329,7 @@ Error getting vmobj id for containers: 'name1' 'id1' 'name2' 'id2' "
     return 1
   }
 
-  run vedv::vmobj_service::start_one "$type" "$wait_for_ssh" "$vmobj_id"
+  run vedv::vmobj_service::start_one "$type" "$vmobj_id" "$wait_for_ssh" "$show"
 
   assert_failure
   assert_output "Failed to get vm name for container: '12345'"
@@ -334,6 +339,7 @@ Error getting vmobj id for containers: 'name1' 'id1' 'name2' 'id2' "
   local -r type="container"
   local -r vmobj_id="12345"
   local -r wait_for_ssh=true
+  local -r show=false
 
   vedv::vmobj_service::exists_with_id() {
     echo true
@@ -346,7 +352,7 @@ Error getting vmobj id for containers: 'name1' 'id1' 'name2' 'id2' "
     assert_equal "$*" "container 12345"
   }
 
-  run vedv::vmobj_service::start_one "$type" "$wait_for_ssh" "$vmobj_id"
+  run vedv::vmobj_service::start_one "$type" "$vmobj_id" "$wait_for_ssh" "$show"
 
   assert_failure
   assert_output "There is no vm name for container: '12345'"
@@ -356,6 +362,7 @@ Error getting vmobj id for containers: 'name1' 'id1' 'name2' 'id2' "
   local -r type="container"
   local -r vmobj_id="12345"
   local -r wait_for_ssh=true
+  local -r show=false
 
   vedv::vmobj_service::exists_with_id() {
     echo true
@@ -373,7 +380,7 @@ Error getting vmobj id for containers: 'name1' 'id1' 'name2' 'id2' "
     return 1
   }
 
-  run vedv::vmobj_service::start_one "$type" "$wait_for_ssh" "$vmobj_id"
+  run vedv::vmobj_service::start_one "$type" "$vmobj_id" "$wait_for_ssh" "$show"
 
   assert_failure
   assert_output "Failed to assign random host forwarding port to container: '12345'"
@@ -383,6 +390,7 @@ Error getting vmobj id for containers: 'name1' 'id1' 'name2' 'id2' "
   local -r type="container"
   local -r vmobj_id="12345"
   local -r wait_for_ssh=true
+  local -r show=false
 
   vedv::vmobj_service::exists_with_id() {
     echo true
@@ -399,7 +407,7 @@ Error getting vmobj id for containers: 'name1' 'id1' 'name2' 'id2' "
     assert_equal "$*" "container:foo-bar|crc:12345| ssh 22"
   }
 
-  run vedv::vmobj_service::start_one "$type" "$wait_for_ssh" "$vmobj_id"
+  run vedv::vmobj_service::start_one "$type" "$vmobj_id" "$wait_for_ssh" "$show"
 
   assert_failure
   assert_output "Empty ssh port for container: 12345"
@@ -409,6 +417,7 @@ Error getting vmobj id for containers: 'name1' 'id1' 'name2' 'id2' "
   local -r type="container"
   local -r vmobj_id="12345"
   local -r wait_for_ssh=true
+  local -r show=false
 
   vedv::vmobj_service::exists_with_id() {
     echo true
@@ -430,7 +439,7 @@ Error getting vmobj id for containers: 'name1' 'id1' 'name2' 'id2' "
     return 1
   }
 
-  run vedv::vmobj_service::start_one "$type" "$wait_for_ssh" "$vmobj_id"
+  run vedv::vmobj_service::start_one "$type" "$vmobj_id" "$wait_for_ssh" "$show"
 
   assert_failure
   assert_output "Failed to set ssh port 2022 to container: 12345"
@@ -440,6 +449,7 @@ Error getting vmobj id for containers: 'name1' 'id1' 'name2' 'id2' "
   local -r type="container"
   local -r vmobj_id="12345"
   local -r wait_for_ssh=true
+  local -r show=false
 
   vedv::vmobj_service::exists_with_id() {
     echo true
@@ -460,11 +470,11 @@ Error getting vmobj id for containers: 'name1' 'id1' 'name2' 'id2' "
     assert_equal "$*" "container 12345 2022"
   }
   vedv::hypervisor::start() {
-    assert_equal "$*" "container:foo-bar|crc:12345|"
+    assert_equal "$*" "container:foo-bar|crc:12345| false"
     return 1
   }
 
-  run vedv::vmobj_service::start_one "$type" "$wait_for_ssh" "$vmobj_id"
+  run vedv::vmobj_service::start_one "$type" "$vmobj_id" "$wait_for_ssh" "$show"
 
   assert_failure
   assert_output "Failed to start container: 12345"
@@ -474,6 +484,7 @@ Error getting vmobj id for containers: 'name1' 'id1' 'name2' 'id2' "
   local -r type="container"
   local -r vmobj_id="12345"
   local -r wait_for_ssh=true
+  local -r show=false
 
   vedv::vmobj_service::exists_with_id() {
     echo true
@@ -494,14 +505,14 @@ Error getting vmobj id for containers: 'name1' 'id1' 'name2' 'id2' "
     assert_equal "$*" "container 12345 2022"
   }
   vedv::hypervisor::start() {
-    assert_equal "$*" "container:foo-bar|crc:12345|"
+    assert_equal "$*" "container:foo-bar|crc:12345| false"
   }
   vedv::ssh_client::wait_for_ssh_service() {
     assert_equal "$*" "${TEST_SSH_IP} 2022"
     return 1
   }
 
-  run vedv::vmobj_service::start_one "$type" "$wait_for_ssh" "$vmobj_id"
+  run vedv::vmobj_service::start_one "$type" "$vmobj_id" "$wait_for_ssh" "$show"
 
   assert_failure
   assert_output "12345
@@ -1179,7 +1190,7 @@ EOF
     echo "vedv"
   }
   vedv::vmobj_service::start_one() {
-    assert_equal "$*" "container true 12345"
+    assert_equal "$*" "container 12345 true"
     return 1
   }
 
@@ -1199,7 +1210,7 @@ EOF
     echo "vedv"
   }
   vedv::vmobj_service::start_one() {
-    assert_equal "$*" "container true 12345"
+    assert_equal "$*" "container 12345 true"
   }
   vedv::vmobj_entity::get_ssh_port() {
     assert_equal "$*" "container 12345"
@@ -1222,7 +1233,7 @@ EOF
     echo "vedv"
   }
   vedv::vmobj_service::start_one() {
-    assert_equal "$*" "container true 12345"
+    assert_equal "$*" "container 12345 true"
   }
   vedv::vmobj_entity::get_ssh_port() {
     assert_equal "$*" "container 12345"
@@ -1249,7 +1260,7 @@ EOF
     echo "vedv"
   }
   vedv::vmobj_service::start_one() {
-    assert_equal "$*" "container true 12345"
+    assert_equal "$*" "container 12345 true"
   }
   vedv::vmobj_entity::get_ssh_port() {
     assert_equal "$*" "container 12345"
@@ -2293,7 +2304,7 @@ EOF
   assert_failure
   assert_output "Argument 'value' is required"
 }
-# bats test_tags=only
+
 @test "vedv::vmobj_service::set_use_cache() Success" {
   local -r type='container'
   local -r use_cache='false'
@@ -2706,4 +2717,74 @@ EOF
 
   assert_success
   assert_output ""
+}
+
+# Tests for vedv::vmobj_service::start_one_batch()
+# bats test_tags=only
+@test "vedv::vmobj_service::start_one_batch() Should succeed" {
+  local -r type="container"
+  local -r wait_for_ssh="false"
+  local -r show="true"
+  local -r vmobj_id="12345"
+
+  vedv::vmobj_service::start_one() {
+    assert_equal "$*" "container 12345 false true"
+  }
+
+  run vedv::vmobj_service::start_one_batch "$type" "$wait_for_ssh" "$show" "$vmobj_id"
+
+  assert_success
+  assert_output ""
+}
+
+# Tests for vedv::vmobj_service::start()
+# bats test_tags=only
+@test "vedv::vmobj_service::start() Should succeed" {
+  local -r type="container"
+  local -r vmobj_names_or_ids="container1 container2"
+  local -r wait_for_ssh="false"
+  local -r show="true"
+
+  vedv::vmobj_service::exec_func_on_many_vmobj() {
+    assert_equal "$*" "container vedv::vmobj_service::start_one_batch 'container' 'false' 'true' container1 container2"
+    echo "12345 123456"
+  }
+
+  run vedv::vmobj_service::start "$type" "$vmobj_names_or_ids" "$wait_for_ssh" "$show"
+
+  assert_success
+  assert_output "12345 123456"
+}
+# Tests for vedv::vmobj_service::stop() {
+# bats test_tags=only
+@test "vedv::vmobj_service::stop() Should succeed" {
+  local -r type="container"
+  local -r save_state="false"
+  local -r vmobj_names_or_ids="container1 container2"
+
+  vedv::vmobj_service::exec_func_on_many_vmobj() {
+    assert_equal "$*" "container vedv::vmobj_service::stop_one 'container' 'false' container1 container2"
+    echo "12345 123456"
+  }
+
+  run vedv::vmobj_service::stop "$type" "$save_state" "$vmobj_names_or_ids"
+
+  assert_success
+  assert_output "12345 123456"
+}
+# Tests for vedv::vmobj_service::secure_stop() {
+# bats test_tags=only
+@test "vedv::vmobj_service::secure_stop() Should succeed" {
+  local -r type="container"
+  local -r vmobj_names_or_ids="container1 container2"
+
+  vedv::vmobj_service::exec_func_on_many_vmobj() {
+    assert_equal "$*" "container vedv::vmobj_service::secure_stop_one 'container' container1 container2"
+    echo "12345 123456"
+  }
+
+  run vedv::vmobj_service::secure_stop "$type" "$vmobj_names_or_ids"
+
+  assert_success
+  assert_output "12345 123456"
 }

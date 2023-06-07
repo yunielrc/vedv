@@ -167,6 +167,7 @@ vedv::vmobj_service::is_started() {
 vedv::vmobj_service::get_ids_from_vmobj_names_or_ids() {
   local -r type="$1"
   shift
+  # TODO: refactor, don't use $@
   local -ra vmobj_ids_or_names=("$@")
   # validate arguments
   vedv::vmobj_entity::validate_type "$type" ||
@@ -207,9 +208,9 @@ vedv::vmobj_service::get_ids_from_vmobj_names_or_ids() {
 #  Execute a function on many vmobj by name or id
 #
 # Arguments:
-#   type                string   type (e.g. 'container|image')
-#   exec_func           string   function name to execute
-#   vmobj_names_or_ids  string   vmobj name or id
+#   type                string    type (e.g. 'container|image')
+#   exec_func           string    function name to execute
+#   vmobj_names_or_ids  string[]  vmobj name or id
 #
 # Output:
 #  writes the processed vmobj ids to the stdout
@@ -220,8 +221,9 @@ vedv::vmobj_service::get_ids_from_vmobj_names_or_ids() {
 vedv::vmobj_service::exec_func_on_many_vmobj() {
   local -r type="$1"
   local -r exec_func="$2"
-  shift 2
-  local -ra names_or_ids=("$@")
+  local -a vmobj_names_or_ids
+  IFS=' ' read -r -a vmobj_names_or_ids <<<"$3"
+  readonly vmobj_names_or_ids
   # validate arguments
   vedv::vmobj_entity::validate_type "$type" ||
     return "$?"
@@ -231,9 +233,14 @@ vedv::vmobj_service::exec_func_on_many_vmobj() {
     return "$ERR_INVAL_ARG"
   fi
 
+  if [[ ${#vmobj_names_or_ids[@]} -eq 0 ]]; then
+    err "At least one ${type} is required"
+    return "$ERR_INVAL_ARG"
+  fi
+
   local -a vmobj_ids
   # shellcheck disable=SC2207
-  vmobj_ids=($(vedv::vmobj_service::get_ids_from_vmobj_names_or_ids "$type" "${names_or_ids[@]}")) || {
+  vmobj_ids=($(vedv::vmobj_service::get_ids_from_vmobj_names_or_ids "$type" "${vmobj_names_or_ids[@]}")) || {
     err 'Error getting vmobj ids'
     return "$ERR_VMOBJ_OPERATION"
   }
@@ -258,9 +265,10 @@ vedv::vmobj_service::exec_func_on_many_vmobj() {
 #  Start a vmobj
 #
 # Arguments:
-#   type         string   type (e.g. 'container|image')
-#   wait_for_ssh bool     wait for ssh (true|false)
-#   vmobj_id     string   vmobj id
+#   type            string    type (e.g. 'container|image')
+#   vmobj_id        string    vmobj name or id
+#   [wait_for_ssh]  bool      wait for ssh (default: true)
+#   [show]          bool      show container gui on supported desktop platforms (default: false)
 #
 # Output:
 #  writes started vmobj id to the stdout
@@ -270,8 +278,9 @@ vedv::vmobj_service::exec_func_on_many_vmobj() {
 #
 vedv::vmobj_service::start_one() {
   local -r type="$1"
-  local -r wait_for_ssh="$2"
-  local -r vmobj_id="$3"
+  local -r vmobj_id="$2"
+  local -r wait_for_ssh="${3:-true}"
+  local -r show="${4:-false}"
   # validate arguments
   vedv::vmobj_entity::validate_type "$type" ||
     return "$?"
@@ -334,7 +343,7 @@ vedv::vmobj_service::start_one() {
     return "$ERR_VMOBJ_OPERATION"
   }
 
-  vedv::hypervisor::start "$vmobj_vm_name" &>/dev/null || {
+  vedv::hypervisor::start "$vmobj_vm_name" "$show" &>/dev/null || {
     err "Failed to start ${type}: ${vmobj_id}"
     return "$ERR_VMOBJ_OPERATION"
   }
@@ -352,12 +361,37 @@ vedv::vmobj_service::start_one() {
 }
 
 #
+#  Start a vmobj
+#
+# Arguments:
+#   type            string    type (e.g. 'container|image')
+#   [wait_for_ssh]  bool      wait for ssh (default: true)
+#   [show]          bool      show container gui on supported desktop platforms (default: false)
+#   vmobj_id        string    vmobj name or id
+#
+# Output:
+#  writes started vmobj id to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::vmobj_service::start_one_batch() {
+  local -r type="$1"
+  local -r wait_for_ssh="$2"
+  local -r show="$3"
+  local -r vmobj_id="$4"
+
+  vedv::vmobj_service::start_one "$type" "$vmobj_id" "$wait_for_ssh" "$show"
+}
+
+#
 #  Start one or more vmobj by name or id
 #
 # Arguments:
 #   type                string    type (e.g. 'container|image')
-#   wait_for_ssh        bool      wait for ssh (true|false)
-#   vmobj_names_or_ids  @string   vmobj name or id
+#   vmobj_names_or_ids  string[]  vmobj name or id
+#   [wait_for_ssh]      bool      wait for ssh (default: true)
+#   [show]              bool      show container gui on supported desktop platforms (default: false)
 #
 # Output:
 #  writes started vmobj ids to the stdout
@@ -367,13 +401,14 @@ vedv::vmobj_service::start_one() {
 #
 vedv::vmobj_service::start() {
   local -r type="$1"
-  local -r wait_for_ssh="$2"
-  shift 2
+  local -r vmobj_names_or_ids="$2"
+  local -r wait_for_ssh="${3:-true}"
+  local -r show="${4:-false}"
 
   vedv::vmobj_service::exec_func_on_many_vmobj \
     "$type" \
-    "vedv::vmobj_service::start_one '${type}' ${wait_for_ssh}" \
-    "$@"
+    "vedv::vmobj_service::start_one_batch '${type}' '${wait_for_ssh}' '${show}'" \
+    "$vmobj_names_or_ids"
 }
 
 #
@@ -477,8 +512,8 @@ vedv::vmobj_service::stop() {
 
   vedv::vmobj_service::exec_func_on_many_vmobj \
     "$type" \
-    "vedv::vmobj_service::stop_one '${type}' ${save_state}" \
-    "$@"
+    "vedv::vmobj_service::stop_one '${type}' '${save_state}'" \
+    "$*"
 }
 
 #
@@ -591,7 +626,7 @@ vedv::vmobj_service::secure_stop() {
   vedv::vmobj_service::exec_func_on_many_vmobj \
     "$type" \
     "vedv::vmobj_service::secure_stop_one '${type}'" \
-    "$@"
+    "$*"
 }
 
 #
@@ -774,7 +809,7 @@ vedv::vmobj_service::__exec_ssh_func() {
   # because the minimum time to start a vmobj with a ready ssh service is 10 seconds,
   # so it's better to leave it running and stop from a higher level function
   # that knows the context of the operation and when to stop it.
-  vedv::vmobj_service::start_one "$type" 'true' "$vmobj_id" >/dev/null || {
+  vedv::vmobj_service::start_one "$type" "$vmobj_id" 'true' >/dev/null || {
     err "Failed to start ${type}: ${vmobj_id}"
     return "$ERR_VMOBJ_OPERATION"
   }

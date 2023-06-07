@@ -351,8 +351,8 @@ vedv::image_service::remove() {
 
   vedv::vmobj_service::exec_func_on_many_vmobj \
     'image' \
-    "vedv::image_service::remove_one_batch ${force}" \
-    "$@"
+    "vedv::image_service::remove_one_batch '${force}'" \
+    "$*"
 }
 
 #
@@ -442,7 +442,7 @@ vedv::image_service::is_started() {
 #   0 on success, non-zero on error.
 #
 vedv::image_service::start() {
-  vedv::vmobj_service::start_one 'image' 'true' "$@"
+  vedv::vmobj_service::start_one 'image' "$1" 'true'
 }
 
 #
