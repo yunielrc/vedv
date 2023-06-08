@@ -413,7 +413,7 @@ Build finished
 }
 
 # Tests for vedv image list-exposed-ports ..
-# bats test_tags=only
+
 @test "vedv image list-exposed-ports image123, Should succeed" {
 
   run vedv image build \
@@ -437,4 +437,31 @@ Build finished
 5000/tcp
 8080/tcp
 8081/udp'
+}
+# bats test_tags=only
+@test "vedv image build -t image123 ./varsub.vedvfile, Should succeed" {
+  cd "${BATS_TEST_DIRNAME}/fixtures"
+
+  run vedv image build -t 'image123' ./varsub.vedvfile
+
+  assert_success
+  assert_output --regexp "created layer '.*' for command 'FROM'
+created layer '.*' for command 'ENV'
+created layer '.*' for command 'ENV'
+created layer '.*' for command 'RUN'
+created layer '.*' for command 'RUN'
+created layer '.*' for command 'ENV'
+created layer '.*' for command 'RUN'
+created layer '.*' for command 'COPY'
+created layer '.*' for command 'ENV'
+created layer '.*' for command 'ENV'
+created layer '.*' for command 'ENV'
+created layer '.*' for command 'WORKDIR'
+created layer '.*' for command 'RUN'
+created layer '.*' for command 'COPY'
+created layer '.*' for command 'COPY'
+created layer '.*' for command 'COPY'
+
+Build finished
+.* image1"
 }

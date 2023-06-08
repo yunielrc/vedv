@@ -1,0 +1,29 @@
+# lang: dockerfile
+FROM /tmp/vedv/test/files/alpine-x86_64.ova
+
+ENV ECHO_FILE="user1"
+ENV SRC=homefs
+# RUN echo vedv >user1
+RUN --user vedv echo '$ECHO_FILE' >"hello world"
+RUN echo \$USER >"${ECHO_FILE}2"
+
+ENV ECHO_FILE2="user2 user3"
+
+# execute this vedvfile with ...>"hello world1"
+RUN echo "Hello world!" >"hello world1"
+COPY --user vedv "$SRC" "$ECHO_FILE2"
+
+ENV DEST=dest_copy
+ENV DEST1=workdir1
+
+ENV WD="/${DEST1}/"
+# WORKDIR /workdir1
+WORKDIR ${WD}
+
+# COPY homefs dest_copy
+RUN echo '\$USER' >user2
+COPY "${SRC}/" $DEST
+# RUN echo '\$USER' >user2
+# RUN echo '$USER' >user3
+COPY --user root rootfs /
+COPY ${SRC} '$ECHO_FILE'
