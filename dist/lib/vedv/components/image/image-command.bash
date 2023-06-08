@@ -78,9 +78,9 @@ vedv::image_command::__pull() {
 vedv::image_command::__pull_help() {
   cat <<-HELPMSG
 Usage:
-${__VED_IMAGE_COMMAND_SCRIPT_NAME} image pull IMAGE
+${__VED_IMAGE_COMMAND_SCRIPT_NAME} image pull IMAGE_FILE
 
-Pull an image or a repository from a registry
+Pull an image from a file
 HELPMSG
 }
 
@@ -197,8 +197,8 @@ Aliases:
   rm, remove
 
 Flags:
-  -h, --help          show help
-  --force             force remove
+  -h, --help    show help
+  --force       force remove
 HELPMSG
 }
 
@@ -321,17 +321,17 @@ vedv::image_command::__build() {
 vedv::image_command::__build_help() {
   cat <<-HELPMSG
 Usage:
-${__VED_IMAGE_COMMAND_SCRIPT_NAME} image build [FLAGS] [OPTIONS] PATH
+${__VED_IMAGE_COMMAND_SCRIPT_NAME} image build [FLAGS] [OPTIONS] VEDVFILE
 
 Build an image from a Vedvfile
 
 Flags:
-  -h, --help        show the help
-  --force           force the build removing the image containers
-  --no-cache        do not use cache when building the image
+  -h, --help          show the help
+  --force             force the build removing the image containers
+  --no-cache          do not use cache when building the image
 
 Options:
-  -n, --name, -t    image name
+  -n, --name <name>   image name
 HELPMSG
 }
 
@@ -388,13 +388,13 @@ vedv::image_command::__list_exposed_ports_help() {
 Usage:
 ${__VED_IMAGE_COMMAND_SCRIPT_NAME} image list-exposed-ports IMAGE
 
-List port mappings for the image
+List exposed ports for the image
 
 Aliases:
   eports, list-exposed-ports
 
 Flags:
-  -h, --help          show help
+  -h, --help    show help
 HELPMSG
 }
 #
@@ -418,15 +418,15 @@ ${__VED_IMAGE_COMMAND_SCRIPT_NAME} image COMMAND
 Manage images
 
 Flags:
-  -h, --help       show this help
+  -h, --help      show this help
 
 Commands:
-  build            build an image from a Vedvfile
-  pull             pull an image from a registry or file
-  list             list images
-  remove           remove one or more images
-  remove-cache     remove unused cache images
-  eports           list exposed ports for the image
+  build           build an image from a Vedvfile
+  pull            pull an image from a registry or file
+  list            list images
+  remove          remove one or more images
+  remove-cache    remove unused cache images
+  eports          list exposed ports for the image
 
 Run '${__VED_IMAGE_COMMAND_SCRIPT_NAME} image COMMAND --help' for more information on a command.
 HELPMSG

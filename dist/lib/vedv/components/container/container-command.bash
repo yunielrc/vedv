@@ -129,14 +129,14 @@ ${__VED_CONTAINER_COMMAND_SCRIPT_NAME} container create [FLAGS] [OPTIONS] IMAGE
 Create a new container
 
 Flags:
-  -h, --help                                  show help
-  -s, --standalone                            create a standalone container
-  -P, --publish-all                           publish all exposed ports to random ports
+  -h, --help                                show help
+  -s, --standalone                          create a standalone container
+  -P, --publish-all                         publish all exposed ports to random ports
 
 Options:
-  -n, --name <name>                           assign a name to the container
-  -p, --publish <host-port>:<port>[/proto]    publish a container's port(s) to the host.
-                                              proto is tcp or udp (default tcp)
+  -n, --name <name>                         assign a name to the container
+  -p, --publish <host-port>:<port>[/proto]  publish a container's port(s) to the host.
+                                            proto is tcp or udp (default tcp)
 HELPMSG
 }
 
@@ -213,9 +213,9 @@ ${__VED_CONTAINER_COMMAND_SCRIPT_NAME} container start [FLAGS] CONTAINER [CONTAI
 Start one or more stopped containers
 
 Flags:
-  -h, --help          show help
-  -w, --wait          wait for SSH
-  --show              show container gui on supported desktop platforms
+  -h, --help    show help
+  -w, --wait    wait for SSH
+  --show        show container gui on supported desktop platforms
 HELPMSG
 }
 
@@ -284,8 +284,8 @@ Aliases:
   rm, remove
 
 Flags:
-  -h, --help          show help
-  --force             force remove
+  -h, --help    show help
+  --force       force remove
 HELPMSG
 }
 
@@ -345,7 +345,7 @@ ${__VED_CONTAINER_COMMAND_SCRIPT_NAME} container stop CONTAINER [CONTAINER...]
 Stop one or more running containers
 
 Flags:
-  -h, --help          show help
+  -h, --help    show help
 HELPMSG
 }
 
@@ -403,8 +403,8 @@ Aliases:
   ls, ps, list
 
 Flags:
-  -h, --help      show help
-  -a, --all       show all containers (default shows just running)
+  -h, --help    show help
+  -a, --all     show all containers (default shows just running)
 HELPMSG
 }
 
@@ -897,7 +897,7 @@ vedv::container_command::__list_exposed_ports_help() {
 Usage:
 ${__VED_CONTAINER_COMMAND_SCRIPT_NAME} container list-exposed-ports CONTAINER
 
-List port mappings for the container
+List exposed ports for the container
 
 Aliases:
   eports, list-exposed-ports
@@ -928,19 +928,19 @@ ${__VED_CONTAINER_COMMAND_SCRIPT_NAME} container COMMAND
 Manage containers
 
 Flags:
-  -h, --help       show this help
+  -h, --help    show this help
 
 Commands:
-  create           create a new container
-  start            start one or more containers
-  remove           remove one or more containers
-  stop             stop one or more containers
-  list             list containers
-  login            login to a container
-  exec             execute a command in a container
-  copy             copy files from local filesystem to a container
-  ports            list port mappings for the container
-  eports           list exposed ports for the container
+  create        create a new container
+  start         start one or more containers
+  remove        remove one or more containers
+  stop          stop one or more containers
+  list          list containers
+  login         login to a container
+  exec          execute a command in a container
+  copy          copy files from local filesystem to a container
+  ports         list port mappings for the container
+  eports        list exposed ports for the container
 
 Run '${__VED_CONTAINER_COMMAND_SCRIPT_NAME} container COMMAND --help' for more information on a command.
 HELPMSG

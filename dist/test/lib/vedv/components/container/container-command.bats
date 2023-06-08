@@ -21,14 +21,14 @@ vedv container create [FLAGS] [OPTIONS] IMAGE
 Create a new container
 
 Flags:
-  -h, --help                                  show help
-  -s, --standalone                            create a standalone container
-  -P, --publish-all                           publish all exposed ports to random ports
+  -h, --help                                show help
+  -s, --standalone                          create a standalone container
+  -P, --publish-all                         publish all exposed ports to random ports
 
 Options:
-  -n, --name <name>                           assign a name to the container
-  -p, --publish <host-port>:<port>[/proto]    publish a container's port(s) to the host.
-                                              proto is tcp or udp (default tcp)"
+  -n, --name <name>                         assign a name to the container
+  -p, --publish <host-port>:<port>[/proto]  publish a container's port(s) to the host.
+                                            proto is tcp or udp (default tcp)"
 
   run vedv::container_command::__create -h
 
@@ -98,8 +98,8 @@ vedv container start [FLAGS] CONTAINER [CONTAINER...]
 Start one or more stopped containers
 
 Flags:
-  -h, --help          show help
-  -w, --wait          wait for SSH"
+  -h, --help    show help
+  -w, --wait    wait for SSH"
 
   run vedv::container_command::__start -h
 
@@ -159,8 +159,8 @@ Aliases:
   rm, remove
 
 Flags:
-  -h, --help          show help
-  --force             force remove"
+  -h, --help    show help
+  --force       force remove"
 
   run vedv::container_command::__rm -h
 
@@ -193,8 +193,8 @@ Aliases:
   ls, ps, list
 
 Flags:
-  -h, --help      show help
-  -a, --all       show all containers (default shows just running)"
+  -h, --help    show help
+  -a, --all     show all containers (default shows just running)"
 
   run vedv::container_command::__list -h
 

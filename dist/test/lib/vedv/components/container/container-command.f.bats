@@ -29,14 +29,14 @@ vedv container create [FLAGS] [OPTIONS] IMAGE
 Create a new container
 
 Flags:
-  -h, --help                                  show help
-  -s, --standalone                            create a standalone container
-  -P, --publish-all                           publish all exposed ports to random ports
+  -h, --help                                show help
+  -s, --standalone                          create a standalone container
+  -P, --publish-all                         publish all exposed ports to random ports
 
 Options:
-  -n, --name <name>                           assign a name to the container
-  -p, --publish <host-port>:<port>[/proto]    publish a container's port(s) to the host.
-                                              proto is tcp or udp (default tcp)"
+  -n, --name <name>                         assign a name to the container
+  -p, --publish <host-port>:<port>[/proto]  publish a container's port(s) to the host.
+                                            proto is tcp or udp (default tcp)"
 }
 
 @test "vedv container create -h , Should show help" {
@@ -51,14 +51,14 @@ vedv container create [FLAGS] [OPTIONS] IMAGE
 Create a new container
 
 Flags:
-  -h, --help                                  show help
-  -s, --standalone                            create a standalone container
-  -P, --publish-all                           publish all exposed ports to random ports
+  -h, --help                                show help
+  -s, --standalone                          create a standalone container
+  -P, --publish-all                         publish all exposed ports to random ports
 
 Options:
-  -n, --name <name>                           assign a name to the container
-  -p, --publish <host-port>:<port>[/proto]    publish a container's port(s) to the host.
-                                              proto is tcp or udp (default tcp)"
+  -n, --name <name>                         assign a name to the container
+  -p, --publish <host-port>:<port>[/proto]  publish a container's port(s) to the host.
+                                            proto is tcp or udp (default tcp)"
   done
 }
 
@@ -75,14 +75,14 @@ vedv container create [FLAGS] [OPTIONS] IMAGE
 Create a new container
 
 Flags:
-  -h, --help                                  show help
-  -s, --standalone                            create a standalone container
-  -P, --publish-all                           publish all exposed ports to random ports
+  -h, --help                                show help
+  -s, --standalone                          create a standalone container
+  -P, --publish-all                         publish all exposed ports to random ports
 
 Options:
-  -n, --name <name>                           assign a name to the container
-  -p, --publish <host-port>:<port>[/proto]    publish a container's port(s) to the host.
-                                              proto is tcp or udp (default tcp)"
+  -n, --name <name>                         assign a name to the container
+  -p, --publish <host-port>:<port>[/proto]  publish a container's port(s) to the host.
+                                            proto is tcp or udp (default tcp)"
 }
 
 @test "vedv container create --name, Should throw error Without container name value" {
@@ -157,8 +157,8 @@ vedv container start [FLAGS] CONTAINER [CONTAINER...]
 Start one or more stopped containers
 
 Flags:
-  -h, --help          show help
-  -w, --wait          wait for SSH"
+  -h, --help    show help
+  -w, --wait    wait for SSH"
 }
 
 @test "vedv container start -h , Should show help" {
@@ -173,8 +173,8 @@ vedv container start [FLAGS] CONTAINER [CONTAINER...]
 Start one or more stopped containers
 
 Flags:
-  -h, --help          show help
-  -w, --wait          wait for SSH"
+  -h, --help    show help
+  -w, --wait    wait for SSH"
   done
 }
 
@@ -204,8 +204,8 @@ Aliases:
   rm, remove
 
 Flags:
-  -h, --help          show help
-  --force             force remove"
+  -h, --help    show help
+  --force       force remove"
 }
 
 @test "vedv container rm -h , Should show help" {
@@ -223,8 +223,8 @@ Aliases:
   rm, remove
 
 Flags:
-  -h, --help          show help
-  --force             force remove"
+  -h, --help    show help
+  --force       force remove"
   done
 }
 
@@ -251,7 +251,7 @@ vedv container stop CONTAINER [CONTAINER...]
 Stop one or more running containers
 
 Flags:
-  -h, --help          show help"
+  -h, --help    show help"
 }
 
 @test "vedv container stop -h , Should show help" {
@@ -266,7 +266,7 @@ vedv container stop CONTAINER [CONTAINER...]
 Stop one or more running containers
 
 Flags:
-  -h, --help          show help"
+  -h, --help    show help"
   done
 }
 
@@ -299,8 +299,8 @@ Aliases:
   ls, ps, list
 
 Flags:
-  -h, --help      show help
-  -a, --all       show all containers (default shows just running)"
+  -h, --help    show help
+  -a, --all     show all containers (default shows just running)"
   done
 }
 

@@ -153,7 +153,7 @@ vedv::image_service::remove() {
 @test "vedv::image_command::__build() shows help" {
   # Arrange
   local expected_output="Usage:
-vedv image build [FLAGS] [OPTIONS] PATH
+vedv image build [FLAGS] [OPTIONS] VEDVFILE
 
 Build an image from a Vedvfile"
   # Act

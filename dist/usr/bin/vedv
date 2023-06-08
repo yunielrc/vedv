@@ -62,11 +62,11 @@ ${__VEDV_SCRIPT_NAME} [HYPERVISOR] COMMAND
 A tool for developing in a secure and reproducible environment
 
 Flags:
-  -h, --help       show this help
+  -h, --help    show this help
 
-Commands:
-  container        manage containers
-  image            manage images
+Management Commands:
+  container     manage containers
+  image         manage images
 
 Run '${__VEDV_SCRIPT_NAME} COMMAND --help' for more information on a command.
 HELPMSG
@@ -166,7 +166,7 @@ vedv::__run_cmd() {
     *)
       err "Invalid argument: ${1}\n"
       vedv::__help
-      return 10
+      return "$ERR_INVAL_ARG"
       ;;
     esac
   done

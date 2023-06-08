@@ -23,9 +23,9 @@ teardown() {
 
   assert_success
   assert_output "Usage:
-vedv image pull IMAGE
+vedv image pull IMAGE_FILE
 
-Pull an image or a repository from a registry"
+Pull an image from a file"
 }
 
 @test "vedv image pull -h , Should show help" {
@@ -35,9 +35,9 @@ Pull an image or a repository from a registry"
 
     assert_success
     assert_output "Usage:
-vedv image pull IMAGE
+vedv image pull IMAGE_FILE
 
-Pull an image or a repository from a registry"
+Pull an image from a file"
   done
 }
 
@@ -57,9 +57,9 @@ Pull an image or a repository from a registry"
   assert_output 'Invalid argument: invalid_arg
 
 Usage:
-vedv image pull IMAGE
+vedv image pull IMAGE_FILE
 
-Pull an image or a repository from a registry'
+Pull an image from a file'
 }
 
 # Tests for 'vedv image list'
@@ -112,8 +112,8 @@ Aliases:
   rm, remove
 
 Flags:
-  -h, --help          show help
-  --force             force remove"
+  -h, --help    show help
+  --force       force remove"
   done
 }
 
@@ -141,8 +141,8 @@ Aliases:
   rm, remove
 
 Flags:
-  -h, --help          show help
-  --force             force remove'
+  -h, --help    show help
+  --force       force remove'
 }
 
 # Tests for 'vedv image remove-cache'
@@ -183,17 +183,17 @@ Remove unused cache images"
 
     assert_success
     assert_output "Usage:
-vedv image build [FLAGS] [OPTIONS] PATH
+vedv image build [FLAGS] [OPTIONS] VEDVFILE
 
 Build an image from a Vedvfile
 
 Flags:
-  -h, --help        show the help
-  --force           force the build removing the image containers
-  --no-cache        do not use cache when building the image
+  -h, --help          show the help
+  --force             force the build removing the image containers
+  --no-cache          do not use cache when building the image
 
 Options:
-  -n, --name, -t    image name"
+  -n, --name <name>   image name"
   done
 }
 
