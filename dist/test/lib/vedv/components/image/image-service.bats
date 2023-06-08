@@ -757,27 +757,16 @@ Failed to remove image: '1234567890'"
   assert_output "1234567890"
 }
 
-# Tests for vedv::image_service::list()
-
-@test 'vedv::image_service::remove() Should fail If force is empty' {
-  local -r force=''
-  local -r image_id='1234567890'
-
-  run vedv::image_service::remove "$force" "$image_id"
-
-  assert_failure
-  assert_output "Invalid argument 'force': it's empty"
-}
-
+# Tests for vedv::image_service::remove()
 @test 'vedv::image_service::remove() Should succeed' {
-  local -r force='true'
   local -r image_id='1234567890'
+  local -r force='true'
 
   vedv::vmobj_service::exec_func_on_many_vmobj() {
     assert_equal "$*" "image vedv::image_service::remove_one_batch 'true' 1234567890"
   }
 
-  run vedv::image_service::remove "$force" "$image_id"
+  run vedv::image_service::remove "$image_id" "$force"
 
   assert_success
   assert_output ""
@@ -944,7 +933,7 @@ EOF
   local -r image_id='1234567890'
 
   vedv::vmobj_service::stop() {
-    assert_equal "$*" "image true 1234567890"
+    assert_equal "$*" "image 1234567890 true"
   }
 
   run vedv::image_service::stop "$image_id"
@@ -1672,6 +1661,24 @@ EOF
 
   run vedv::image_service::cache::list_exposed_ports "$image_name_or_id"
 
+  assert_success
+  assert_output ""
+}
+
+# Tests for vedv::image_service::build()
+@test "vedv::image_service::build() Should succeed" {
+  # Arrange
+  local -r vedvfile="vedvfile1"
+  local -r image_name="image1"
+  local -r force="true"
+  local -r no_cache="true"
+  # Stub
+  vedv::image_builder::build() {
+    assert_equal "$*" "${vedvfile} ${image_name} ${force} ${no_cache}"
+  }
+  # Act
+  run vedv::image_service::build "$vedvfile" "$image_name" "$force" "$no_cache"
+  # Assert
   assert_success
   assert_output ""
 }

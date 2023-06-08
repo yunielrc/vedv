@@ -156,7 +156,7 @@ vedv::vmobj_service::is_started() {
 #
 # Arguments:
 #   type                string  type (e.g. 'container|image')
-#   vmobj_ids_or_names  @string  vmobj ids or names
+#   vmobj_ids_or_names  string[]  vmobj ids or names
 #
 # Output:
 #  writes vmobj_ids (string) to the stdout
@@ -166,9 +166,10 @@ vedv::vmobj_service::is_started() {
 #
 vedv::vmobj_service::get_ids_from_vmobj_names_or_ids() {
   local -r type="$1"
-  shift
-  # TODO: refactor, don't use $@
-  local -ra vmobj_ids_or_names=("$@")
+  local -a vmobj_ids_or_names
+  IFS=' ' read -r -a vmobj_ids_or_names <<<"$2"
+  readonly vmobj_ids_or_names
+
   # validate arguments
   vedv::vmobj_entity::validate_type "$type" ||
     return "$?"
@@ -221,9 +222,7 @@ vedv::vmobj_service::get_ids_from_vmobj_names_or_ids() {
 vedv::vmobj_service::exec_func_on_many_vmobj() {
   local -r type="$1"
   local -r exec_func="$2"
-  local -a vmobj_names_or_ids
-  IFS=' ' read -r -a vmobj_names_or_ids <<<"$3"
-  readonly vmobj_names_or_ids
+  local -r vmobj_names_or_ids="$3"
   # validate arguments
   vedv::vmobj_entity::validate_type "$type" ||
     return "$?"
@@ -233,14 +232,14 @@ vedv::vmobj_service::exec_func_on_many_vmobj() {
     return "$ERR_INVAL_ARG"
   fi
 
-  if [[ ${#vmobj_names_or_ids[@]} -eq 0 ]]; then
+  if [[ -z "$vmobj_names_or_ids" ]]; then
     err "At least one ${type} is required"
     return "$ERR_INVAL_ARG"
   fi
 
   local -a vmobj_ids
   # shellcheck disable=SC2207
-  vmobj_ids=($(vedv::vmobj_service::get_ids_from_vmobj_names_or_ids "$type" "${vmobj_names_or_ids[@]}")) || {
+  vmobj_ids=($(vedv::vmobj_service::get_ids_from_vmobj_names_or_ids "$type" "$vmobj_names_or_ids")) || {
     err 'Error getting vmobj ids'
     return "$ERR_VMOBJ_OPERATION"
   }
@@ -426,10 +425,33 @@ vedv::vmobj_service::start() {
 # Returns:
 #   0 on success, non-zero on error.
 #
-vedv::vmobj_service::stop_one() {
+vedv::vmobj_service::stop_one_batch() {
   local -r type="$1"
   local -r save_state="$2"
   local -r vmobj_id="$3"
+
+  vedv::vmobj_service::stop_one "$type" "$vmobj_id" "$save_state"
+}
+
+#
+#  Stop a running vmobj
+#  Warning: stopping vmobj without saving the state may lead to data loss
+#
+# Arguments:
+#   type        string    type (e.g. 'container|image')
+#   vmobj_id    string    vmobj id
+#   save_state  bool      save state before stopping (default: true)
+#
+# Output:
+#  writes stopped vmobj id to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::vmobj_service::stop_one() {
+  local -r type="$1"
+  local -r vmobj_id="$2"
+  local -r save_state="${3:-true}"
   # validate arguments
   vedv::vmobj_entity::validate_type "$type" ||
     return "$?"
@@ -495,9 +517,9 @@ vedv::vmobj_service::stop_one() {
 #  Warning: stopping vmobj without saving state may lead to data loss
 #
 # Arguments:
-#   type                string    type (e.g. 'container|image')
-#   save_state          bool      save state before stop
-#   vmobj_names_or_ids  @string   vmobj name or id
+#   type                string     type (e.g. 'container|image')
+#   vmobj_names_or_ids  string[]   vmobj name or id
+#   save_state          bool       save state before stop (default: true)
 #
 # Output:
 #  writes stopped vmobj ids to the stdout
@@ -507,20 +529,20 @@ vedv::vmobj_service::stop_one() {
 #
 vedv::vmobj_service::stop() {
   local -r type="$1"
-  local -r save_state="$2"
-  shift 2
+  local -r vmobj_names_or_ids="$2"
+  local -r save_state="${3:-true}"
 
   vedv::vmobj_service::exec_func_on_many_vmobj \
     "$type" \
-    "vedv::vmobj_service::stop_one '${type}' '${save_state}'" \
-    "$*"
+    "vedv::vmobj_service::stop_one_batch '${type}' '${save_state}'" \
+    "$vmobj_names_or_ids"
 }
 
 #
 #  Stop one wmobj
 #
 # Arguments:
-#   type string          type (e.g. 'container|image')
+#   type      string     type (e.g. 'container|image')
 #   vmobj_id  string     vmobj id
 #
 # Output:
@@ -611,8 +633,8 @@ vedv::vmobj_service::secure_stop_one() {
 #  Stop securely one or more running vmobj by name or id
 #
 # Arguments:
-#   type                string    type (e.g. 'container|image')
-#   vmobj_names_or_ids  @string   vmobj name or id
+#   type                string     type (e.g. 'container|image')
+#   vmobj_names_or_ids  string[]   vmobj name or id
 #
 # Output:
 #  writes stopped vmobj ids to the stdout
@@ -622,11 +644,12 @@ vedv::vmobj_service::secure_stop_one() {
 #
 vedv::vmobj_service::secure_stop() {
   local -r type="$1"
-  shift
+  local -r vmobj_names_or_ids="$2"
+
   vedv::vmobj_service::exec_func_on_many_vmobj \
     "$type" \
     "vedv::vmobj_service::secure_stop_one '${type}'" \
-    "$*"
+    "$vmobj_names_or_ids"
 }
 
 #
@@ -701,12 +724,12 @@ vedv::vmobj_service::exists_with_name() {
 #  List vmobj
 #
 # Arguments:
-#   type                     string    type (e.g. 'container|image')
-#   [list_all]               default: false, list running vmobj
-#   [partial_name]           name of the vmobj
+#   type            string    type (e.g. 'container|image')
+#   [list_all]      bool      include stopped vmobj (default: false)
+#   [partial_name]  string    name of the vmobj
 #
 # Output:
-#  writes 'vmobj_id vmobj_name' to the stdout
+#  writes vmobj_id vmobj_name (text) to the stdout
 #
 # Returns:
 #   0 on success, non-zero on error.

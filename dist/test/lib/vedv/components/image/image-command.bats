@@ -101,7 +101,7 @@ vedv::image_service::remove() {
   run vedv::image_command::__rm "$image_name_or_id"
 
   assert_success
-  assert_output "vedv::image_service::__rm false ${image_name_or_id}"
+  assert_output "vedv::image_service::__rm ${image_name_or_id} false"
 }
 
 @test "vedv::image_command::run_cmd, with invalid arg throw an error" {

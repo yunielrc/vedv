@@ -1414,7 +1414,7 @@ vedv::image_builder::__build() {
 
     err "The image '${image_name}' is corrupted and its going to be deleted."
 
-    vedv::image_service::remove 'true' "$image_name" >/dev/null || {
+    vedv::image_service::remove "$image_name" 'true' >/dev/null || {
       err "Failed to remove the image '${image_name}'.\nIt must be deleted manually."
       return "$ERR_IMAGE_BUILDER_OPERATION"
     }
@@ -1457,7 +1457,7 @@ vedv::image_builder::__build() {
     readonly from_val_res
 
     if [[ "$from_val_res" == 'invalid' ]]; then
-      vedv::image_service::remove 'true' "$image_id" >/dev/null || {
+      vedv::image_service::remove "$image_id" 'true' >/dev/null || {
         err "Failed to remove image '${image_name}'"
         return "$ERR_IMAGE_BUILDER_OPERATION"
       }

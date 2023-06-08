@@ -723,7 +723,7 @@ setup_file() {
   local -r container_id=123456
 
   vedv::vmobj_service::stop() {
-    assert_equal "$*" 'container true 123456'
+    assert_equal "$*" 'container 123456 true'
   }
 
   run vedv::container_service::stop "$container_id"
@@ -1005,14 +1005,52 @@ Sibling containers ids: '123457 123458'"
   assert_output "123456"
 }
 
+# Tests for vedv::container_service::remove_one_batch()
+@test "vedv::container_service::remove_one_batch() Should succeed" {
+  local -r force="true"
+  local -r container_id="container1"
+
+  vedv::container_service::remove_one() {
+    assert_equal "$*" "container1 true"
+    echo "container1"
+  }
+
+  run vedv::container_service::remove_one_batch "$force" "$container_id"
+
+  assert_success
+  assert_output "container1"
+}
+
 # Tests for vedv::container_service::remove()
 @test "vedv::container_service::remove() Should succeed" {
-  :
+  local -r containers_names_or_ids="container1 container2"
+  local -r force="true"
+
+  vedv::vmobj_service::exec_func_on_many_vmobj() {
+    assert_equal "$*" "container vedv::container_service::remove_one_batch 'true' container1 container2"
+    echo "container1 container2"
+  }
+
+  run vedv::container_service::remove "$containers_names_or_ids" "$force"
+
+  assert_success
+  assert_output "container1 container2"
 }
 
 # Tests for vedv::container_service::list()
 @test "vedv::container_service::list() Should succeed" {
-  :
+  local -r list_all="false"
+  local -r partial_name="partial1"
+
+  vedv::vmobj_service::list() {
+    assert_equal "$*" "container false partial1"
+    echo "container1 container2"
+  }
+
+  run vedv::container_service::list "$list_all" "$partial_name"
+
+  assert_success
+  assert_output "container1 container2"
 }
 
 # Tests for vedv::container_service::__get_running_siblings_ids()

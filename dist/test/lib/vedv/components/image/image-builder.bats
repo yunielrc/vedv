@@ -1384,7 +1384,7 @@ Previous layer restored"
     echo 'invalid'
   }
   vedv::image_service::remove() {
-    assert_equal "$*" "true $image_id"
+    assert_equal "$*" "${image_id} true"
     false
   }
   # Act
@@ -1423,7 +1423,7 @@ Previous layer restored"
     echo 'invalid'
   }
   vedv::image_service::remove() {
-    assert_equal "$*" "true $image_id"
+    assert_equal "$*" "${image_id} true"
   }
   vedv::image_vedvfile_service::get_cmd_body() {
     assert_equal "$*" "$from_cmd"
@@ -1465,7 +1465,7 @@ Previous layer restored"
     echo 'invalid'
   }
   vedv::image_service::remove() {
-    assert_regex "$*" "true (${image_name}|${image_id})"
+    assert_regex "$*" "(${image_name}|${image_id}) true"
   }
   vedv::image_vedvfile_service::get_cmd_body() {
     assert_equal "$*" "$from_cmd"
@@ -1514,7 +1514,7 @@ The image 'my-image-name' was removed."
     echo 'invalid'
   }
   vedv::image_service::remove() {
-    assert_regex "$*" "true (${image_name}|${image_id})"
+    assert_regex "$*" "(${image_name}|${image_id}) true"
   }
   vedv::image_vedvfile_service::get_cmd_body() {
     assert_equal "$*" "$from_cmd"
@@ -1613,7 +1613,7 @@ The image 'my-image-name' was removed."
     assert_equal "$*" "INVALID_CALL"
   }
   vedv::image_service::remove() {
-    assert_equal "$*" "true my-image-name"
+    assert_equal "$*" "my-image-name true"
   }
   vedv::image_vedvfile_service::get_cmd_body() {
     assert_equal "$*" "$from_cmd"

@@ -106,7 +106,7 @@ setup_file() {
   local -r type='invalid'
   local -r vmobj_ids_or_names='name1 id1 name2 id2'
   # shellcheck disable=SC2086
-  run vedv::vmobj_service::get_ids_from_vmobj_names_or_ids "$type" $vmobj_ids_or_names
+  run vedv::vmobj_service::get_ids_from_vmobj_names_or_ids "$type" "$vmobj_ids_or_names"
 
   assert_failure
   assert_output "Invalid type: invalid, valid types are: container|image"
@@ -116,7 +116,7 @@ setup_file() {
   local -r type='container'
   local -r vmobj_ids_or_names=''
   # shellcheck disable=SC2086
-  run vedv::vmobj_service::get_ids_from_vmobj_names_or_ids "$type" $vmobj_ids_or_names
+  run vedv::vmobj_service::get_ids_from_vmobj_names_or_ids "$type" "$vmobj_ids_or_names"
 
   assert_failure
   assert_output 'At least one container is required'
@@ -131,7 +131,7 @@ setup_file() {
     return 1
   }
   # shellcheck disable=SC2086
-  run vedv::vmobj_service::get_ids_from_vmobj_names_or_ids "$type" $vmobj_ids_or_names
+  run vedv::vmobj_service::get_ids_from_vmobj_names_or_ids "$type" "$vmobj_ids_or_names"
 
   assert_failure
   assert_output "name1 id1 name2 id2
@@ -158,7 +158,7 @@ Error getting vmobj id for containers: 'name1' 'id1' 'name2' 'id2' "
     esac
   }
   # shellcheck disable=SC2086
-  run vedv::vmobj_service::get_ids_from_vmobj_names_or_ids "$type" $vmobj_ids_or_names
+  run vedv::vmobj_service::get_ids_from_vmobj_names_or_ids "$type" "$vmobj_ids_or_names"
 
   assert_success
   assert_output "id1 id2 id3 id4"
@@ -526,7 +526,7 @@ Failed to wait for ssh service on port 2022"
   local -r vmobj_id="12345"
   local -r save_state=false
 
-  run vedv::vmobj_service::stop_one "$type" "$save_state" "$vmobj_id"
+  run vedv::vmobj_service::stop_one "$type" "$vmobj_id" "$save_state"
 
   assert_failure
   assert_output "Argument 'type' must not be empty"
@@ -537,7 +537,7 @@ Failed to wait for ssh service on port 2022"
   local -r save_state=false
   local -r vmobj_id=""
 
-  run vedv::vmobj_service::stop_one "$type" "$save_state" "$vmobj_id"
+  run vedv::vmobj_service::stop_one "$type" "$vmobj_id" "$save_state"
 
   assert_failure
   assert_output "Invalid argument 'vmobj_id': it's empty"
@@ -556,7 +556,7 @@ Failed to wait for ssh service on port 2022"
     return 1
   }
 
-  run vedv::vmobj_service::stop_one "$type" "$save_state" "$vmobj_id"
+  run vedv::vmobj_service::stop_one "$type" "$vmobj_id" "$save_state"
 
   assert_failure
   assert_output "Failed to get start status for container: '12345'"
@@ -575,7 +575,7 @@ Failed to wait for ssh service on port 2022"
     echo false
   }
 
-  run vedv::vmobj_service::stop_one "$type" "$save_state" "$vmobj_id"
+  run vedv::vmobj_service::stop_one "$type" "$vmobj_id" "$save_state"
 
   assert_success
   assert_output "12345"
@@ -598,7 +598,7 @@ Failed to wait for ssh service on port 2022"
     return 1
   }
 
-  run vedv::vmobj_service::stop_one "$type" "$save_state" "$vmobj_id"
+  run vedv::vmobj_service::stop_one "$type" "$vmobj_id" "$save_state"
 
   assert_failure
   assert_output "Failed to get vm name for container: '12345'"
@@ -620,7 +620,7 @@ Failed to wait for ssh service on port 2022"
     assert_equal "$*" "container 12345"
   }
 
-  run vedv::vmobj_service::stop_one "$type" "$save_state" "$vmobj_id"
+  run vedv::vmobj_service::stop_one "$type" "$vmobj_id" "$save_state"
 
   assert_failure
   assert_output "There is no vm name for container: '12345'"
@@ -647,7 +647,7 @@ Failed to wait for ssh service on port 2022"
     return 1
   }
 
-  run vedv::vmobj_service::stop_one "$type" "$save_state" "$vmobj_id"
+  run vedv::vmobj_service::stop_one "$type" "$vmobj_id" "$save_state"
 
   assert_failure
   assert_output "Failed to stop container: '12345'"
@@ -673,7 +673,7 @@ Failed to wait for ssh service on port 2022"
     assert_equal "$*" "container:foo-bar|crc:12345|"
   }
 
-  run vedv::vmobj_service::stop_one "$type" "$save_state" "$vmobj_id"
+  run vedv::vmobj_service::stop_one "$type" "$vmobj_id" "$save_state"
 
   assert_success
   assert_output "12345"
@@ -2763,11 +2763,11 @@ EOF
   local -r vmobj_names_or_ids="container1 container2"
 
   vedv::vmobj_service::exec_func_on_many_vmobj() {
-    assert_equal "$*" "container vedv::vmobj_service::stop_one 'container' 'false' container1 container2"
+    assert_equal "$*" "container vedv::vmobj_service::stop_one_batch 'container' 'false' container1 container2"
     echo "12345 123456"
   }
 
-  run vedv::vmobj_service::stop "$type" "$save_state" "$vmobj_names_or_ids"
+  run vedv::vmobj_service::stop "$type" "$vmobj_names_or_ids" "$save_state"
 
   assert_success
   assert_output "12345 123456"
@@ -2787,4 +2787,21 @@ EOF
 
   assert_success
   assert_output "12345 123456"
+}
+
+# Tests for vedv::vmobj_service::stop_one_batch()
+@test "vedv::vmobj_service::stop_one_batch() Should succeed" {
+  local -r type="container"
+  local -r save_state="false"
+  local -r vmobj_id="12345"
+
+  vedv::vmobj_service::stop_one() {
+    assert_equal "$*" "container 12345 false"
+    echo "12345"
+  }
+
+  run vedv::vmobj_service::stop_one_batch "$type" "$save_state" "$vmobj_id"
+
+  assert_success
+  assert_output "12345"
 }

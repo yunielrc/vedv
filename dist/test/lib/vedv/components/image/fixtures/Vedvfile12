@@ -3,7 +3,7 @@ FROM /tmp/vedv/test/files/alpine-x86_64.ova
 
 USER nalyd
 WORKDIR /app
-COPY rootfs/ .
+COPY . .
 SHELL bash
 RUN echo "\$SHELL" >shell; cat shell
 ENV E1=V1

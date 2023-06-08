@@ -149,8 +149,8 @@ HELPMSG
 #   0 on success, non-zero on error.
 #
 vedv::image_command::__rm() {
+  local image_names_or_ids=''
   local force=false
-  local -a image_names_or_ids=()
 
   if [[ $# == 0 ]]; then set -- '-h'; fi
 
@@ -165,19 +165,19 @@ vedv::image_command::__rm() {
       shift
       ;;
     *)
-      readonly image_names_or_ids=("$@")
+      readonly image_names_or_ids="$*"
       break
       ;;
     esac
   done
 
-  if [[ ${#image_names_or_ids[@]} == 0 ]]; then
+  if [[ -z "$image_names_or_ids" ]]; then
     err "Missing argument 'IMAGE'\n"
     vedv::image_command::__rm_help
     return "$ERR_INVAL_ARG"
   fi
 
-  vedv::image_service::remove "$force" "${image_names_or_ids[@]}"
+  vedv::image_service::remove "$image_names_or_ids" "$force"
 }
 
 #

@@ -331,8 +331,8 @@ vedv::image_service::remove_one_batch() {
 # Remove one or more images
 #
 # Arguments:
+#   image_ids_or_names  string[]  image ids or names
 #   force               bool      force the remove, removing child containers if the image has
-#   image_ids_or_names  @string   image ids or names
 #
 # Output:
 #  writes deleted image_ids (string) to the stdout
@@ -341,18 +341,13 @@ vedv::image_service::remove_one_batch() {
 #   0 on success, non-zero on error.
 #
 vedv::image_service::remove() {
-  local -r force="$1"
-  # validate arguments
-  if [[ -z "$force" ]]; then
-    err "Invalid argument 'force': it's empty"
-    return "$ERR_INVAL_ARG"
-  fi
-  shift
+  local -r image_ids_or_names="$1"
+  local -r force="${2:-false}"
 
   vedv::vmobj_service::exec_func_on_many_vmobj \
     'image' \
     "vedv::image_service::remove_one_batch '${force}'" \
-    "$*"
+    "$image_ids_or_names"
 }
 
 #
@@ -426,7 +421,9 @@ vedv::image_service::remove_unused_cache() {
 #   0 if running, 1 otherwise
 #
 vedv::image_service::is_started() {
-  vedv::vmobj_service::is_started 'image' "$@"
+  local -r image_id="$1"
+
+  vedv::vmobj_service::is_started 'image' "$image_id"
 }
 
 #
@@ -442,7 +439,9 @@ vedv::image_service::is_started() {
 #   0 on success, non-zero on error.
 #
 vedv::image_service::start() {
-  vedv::vmobj_service::start_one 'image' "$1" 'true'
+  local -r image_id="$1"
+
+  vedv::vmobj_service::start_one 'image' "$image_id" 'true'
 }
 
 #
@@ -458,8 +457,9 @@ vedv::image_service::start() {
 #   0 on success, non-zero on error.
 #
 vedv::image_service::stop() {
-  vedv::vmobj_service::stop 'image' 'true' "$@"
-  # vedv::vmobj_service::secure_stop_one 'image' "$@"
+  local -r image_id="$1"
+
+  vedv::vmobj_service::stop 'image' "$image_id" 'true'
 }
 
 #
@@ -902,6 +902,7 @@ vedv::image_service::delete_layer_cache() {
 #   vedvfile      string  Vedvfile full path
 #   [image_name]  string  name of the image
 #   [force]       bool    force the build, removing child containers if the image has
+#   [no_cache]    bool    do not use cache when building the image
 #
 # Output:
 #   writes process result
@@ -910,7 +911,12 @@ vedv::image_service::delete_layer_cache() {
 #   0 on success, non-zero on error.
 #
 vedv::image_service::build() {
-  vedv::image_builder::build "$@"
+  local -r vedvfile="$1"
+  local -r image_name="${2:-}"
+  local -r force="${3:-false}"
+  local -r no_cache="${4:-false}"
+
+  vedv::image_builder::build "$vedvfile" "$image_name" "$force" "$no_cache"
 }
 
 #

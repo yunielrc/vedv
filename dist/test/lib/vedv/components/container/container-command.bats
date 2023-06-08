@@ -179,7 +179,7 @@ Flags:
   run vedv::container_command::__rm "$container_name_or_id"
 
   assert_success
-  assert_output "false ${container_name_or_id}"
+  assert_output "${container_name_or_id} false"
 }
 
 # Tests for vedv::container_command::__list()

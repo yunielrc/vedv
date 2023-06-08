@@ -236,8 +236,8 @@ HELPMSG
 #   0 on success, non-zero on error.
 #
 vedv::container_command::__rm() {
+  local container_names_or_ids=''
   local force=false
-  local -a container_names_or_ids=()
 
   if [[ $# == 0 ]]; then set -- '-h'; fi
 
@@ -252,19 +252,19 @@ vedv::container_command::__rm() {
       shift
       ;;
     *)
-      readonly container_names_or_ids=("$@")
+      readonly container_names_or_ids="$*"
       break
       ;;
     esac
   done
 
-  if [[ ${#container_names_or_ids[@]} == 0 ]]; then
+  if [[ -z "$container_names_or_ids" ]]; then
     err "Missing argument 'CONTAINER'\n"
     vedv::container_command::__rm_help
     return "$ERR_INVAL_ARG"
   fi
 
-  vedv::container_service::remove "$force" "${container_names_or_ids[@]}"
+  vedv::container_service::remove "$container_names_or_ids" "$force"
 }
 
 #
@@ -305,7 +305,7 @@ HELPMSG
 #   0 on success, non-zero on error.
 #
 vedv::container_command::__stop() {
-  local -a container_names_or_ids=()
+  local container_names_or_ids=''
 
   if [[ $# == 0 ]]; then set -- '-h'; fi
 
@@ -316,19 +316,19 @@ vedv::container_command::__stop() {
       return 0
       ;;
     *)
-      readonly container_names_or_ids=("$@")
+      readonly container_names_or_ids="$*"
       break
       ;;
     esac
   done
 
-  if [[ ${#container_names_or_ids[@]} == 0 ]]; then
+  if [[ -z "$container_names_or_ids" ]]; then
     err "Missing argument 'CONTAINER'\n"
     vedv::container_command::__stop_help
     return "$ERR_INVAL_ARG"
   fi
 
-  vedv::container_service::stop "${container_names_or_ids[@]}"
+  vedv::container_service::stop "$container_names_or_ids"
 }
 
 #

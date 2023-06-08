@@ -396,7 +396,9 @@ vedv::container_service::__publish_port() {
 #   0 on success, non-zero on error.
 #
 vedv::container_service::is_started() {
-  vedv::vmobj_service::is_started 'container' "$@"
+  local -r container_id="$1"
+
+  vedv::vmobj_service::is_started 'container' "$container_id"
 }
 
 #
@@ -415,14 +417,22 @@ vedv::container_service::is_started() {
 #   0 on success, non-zero on error.
 #
 vedv::container_service::start() {
-  vedv::vmobj_service::start 'container' "$@"
+  local -r container_names_or_ids="$1"
+  local -r wait_for_ssh="${2:-true}"
+  local -r show="${3:-false}"
+
+  vedv::vmobj_service::start \
+    'container' \
+    "$container_names_or_ids" \
+    "$wait_for_ssh" \
+    "$show"
 }
 
 #
 #  Stop securely one or more running containers by name or id
 #
 # Arguments:
-#   containers_name_or_ids  @string     containers name or id
+#   containers_name_or_ids  string[]     containers name or id
 #
 # Output:
 #  writes stopped containers name or id to the stdout
@@ -431,7 +441,9 @@ vedv::container_service::start() {
 #   0 on success, non-zero on error.
 #
 vedv::container_service::stop() {
-  vedv::vmobj_service::stop 'container' 'true' "$@"
+  local -r container_names_or_ids="$1"
+
+  vedv::vmobj_service::stop 'container' "$container_names_or_ids" 'true'
 }
 
 #
@@ -439,7 +451,7 @@ vedv::container_service::stop() {
 #
 # Arguments:
 #   container_id  string     container id
-#   force         bool       force remove container
+#   force         bool       force remove container (default: false)
 #
 # Output:
 #  writes removed container id to the stdout
@@ -531,7 +543,7 @@ vedv::container_service::remove_one() {
       return "$ERR_CONTAINER_OPERATION"
     fi
     # shellcheck disable=SC2086
-    vedv::container_service::stop $running_siblings_ids >/dev/null || {
+    vedv::container_service::stop "$running_siblings_ids" >/dev/null || {
       err "Failed to stop some sibling container"
       return "$ERR_CONTAINER_OPERATION"
     }
@@ -649,8 +661,8 @@ vedv::container_service::__get_running_siblings_ids() {
 # Remove one or more containers by name or id
 #
 # Arguments:
-#   force                   bool      force remove container (true|false)
-#   containers_name_or_ids  @string    containers name or id
+#   containers_names_or_ids  string[]  containers name or id
+#   force                    bool      force remove container (default: false)
 #
 # Output:
 #  writes removed containers name or id to the stdout
@@ -659,18 +671,13 @@ vedv::container_service::__get_running_siblings_ids() {
 #   0 on success, non-zero on error.
 #
 vedv::container_service::remove() {
-  local -r force="$1"
-  # validate arguments
-  if [[ -z "$force" ]]; then
-    err "Invalid argument 'force': it's empty"
-    return "$ERR_INVAL_ARG"
-  fi
-  shift
+  local -r containers_names_or_ids="$1"
+  local -r force="${2:-false}"
 
   vedv::vmobj_service::exec_func_on_many_vmobj \
     'container' \
     "vedv::container_service::remove_one_batch '${force}'" \
-    "$*"
+    "$containers_names_or_ids"
 }
 
 #
