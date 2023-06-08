@@ -8,7 +8,7 @@
 
 ## About <a name = "about"></a>
 
-A tool for developing with reproducible virtual machines environments
+A tool for developing in a secure and reproducible environment
 
 ## Getting Started <a name = "getting_started"></a>
 

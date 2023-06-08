@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #
-# A tool for developing with reproducible virtual machines environments
+# A tool for developing in a secure and reproducible environment
 #
 
 set -eu
@@ -59,7 +59,7 @@ vedv::__help() {
 Usage:
 ${__VEDV_SCRIPT_NAME} [HYPERVISOR] COMMAND
 
-A tool for developing with reproducible virtual machines environments
+A tool for developing in a secure and reproducible environment
 
 Flags:
   -h, --help       show this help
