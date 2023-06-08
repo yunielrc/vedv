@@ -277,12 +277,15 @@ GuestMemoryBalloon=0'
 }
 
 @test "utils::get_a_dynamic_port() Should return a dynamic port" {
+  local _min _man
+  read -r _min _max </proc/sys/net/ipv4/ip_local_port_range
+  readonly _min _max
   # shellcheck disable=SC2034
   for i in {1..100}; do
     run utils::get_a_dynamic_port
 
     assert_success
-    assert [ "$output" -ge 49152 -a "$output" -le 65535 ]
+    assert [ "$output" -ge "$_min" -a "$output" -le "$_max" ]
   done
 }
 

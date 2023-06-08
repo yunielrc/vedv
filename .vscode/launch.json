@@ -191,7 +191,7 @@
         "--force",
         "-t",
         "image1",
-        "Vedvfile12"
+        "./varsub.vedvfile"
       ]
     },
     {

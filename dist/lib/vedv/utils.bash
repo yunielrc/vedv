@@ -151,7 +151,11 @@ fix_var_names() { utils::fix_var_names "$@"; }
 #   0 on success, non-zero on error.
 #
 utils::get_a_dynamic_port() {
-  __random_port() { shuf -i 49152-65535 -n 1; }
+  local min man
+  read -r min max </proc/sys/net/ipv4/ip_local_port_range
+  readonly min max
+
+  __random_port() { shuf -i "${min}-${max}" -n 1; }
   local -i port="$(__random_port)"
 
   while nc -z localhost $port &>/dev/null; do

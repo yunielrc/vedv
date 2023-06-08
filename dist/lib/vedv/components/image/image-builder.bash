@@ -15,6 +15,7 @@ if false; then
 fi
 
 # CONSTANTS
+# a file is used because the variable is modified in a subshell
 readonly __VEDV_IMAGE_BUILDER_ENV_VARS_FILE="$(mktemp)"
 
 #
