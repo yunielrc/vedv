@@ -299,9 +299,7 @@ vedv::image_service::remove_one() {
   }
 
   vedv::hypervisor::delete_snapshot "$image_cache_vm_name" "$vm_name" &>/dev/null || {
-    err "Error deleting snapshot for image: '${image_id}'"
-    ___echo_remove_image_failed
-    return "$ERR_IMAGE_OPERATION"
+    err "Warning, not deleted snapshot on image cache for image: '${image_id}'. The snapshot will be deleted when the image cache is removed, so no need to worry."
   }
 
   echo "$image_id"
@@ -377,27 +375,63 @@ vedv::image_service::remove_unused_cache() {
 
   local failed_remove=''
 
-  for vm_name in "${image_cache_vm_names_arr[@]}"; do
+  for im_cache_vm_name in "${image_cache_vm_names_arr[@]}"; do
+
     local snapshots
-    snapshots="$(vedv::hypervisor::show_snapshots "$vm_name")" || {
-      err "Error getting snapshots for vm: '$vm_name'"
+    snapshots="$(vedv::hypervisor::show_snapshots "$im_cache_vm_name")" || {
+      err "Error getting snapshots for vm: '$im_cache_vm_name'"
       return "$ERR_IMAGE_OPERATION"
     }
 
-    if [[ -z "$snapshots" ]]; then
-      local image_id
-      image_id="$(vedv::image_cache_entity::get_image_id_by_vm_name "$vm_name")" || {
-        err "Error getting image id by vm name: '$vm_name'"
-        return "$ERR_IMAGE_OPERATION"
-      }
+    if [[ -n "$snapshots" ]]; then
 
-      vedv::hypervisor::rm "$vm_name" &>/dev/null || {
-        failed_remove+="$image_id "
-        continue
-      }
+      local -a snapshots_arr
+      readarray -t snapshots_arr <<<"$snapshots"
 
-      echo -n "$image_id "
+      local -a orphaned_snapshots=()
+
+      for im_vm_name in "${snapshots_arr[@]}"; do
+
+        local exists_im=true
+        exists_im="$(vedv::hypervisor::exists_vm_with_partial_name "$im_vm_name")" || {
+          err "Error checking if vm exists: '$im_vm_name'"
+          return "$ERR_IMAGE_OPERATION"
+        }
+
+        if [[ "$exists_im" == true ]]; then
+          # The snapshot in the image cache is not orphaned, so it belongs to
+          # an a existing image, therefore the image cache is in use and
+          # should not be removed
+
+          # but before going to the next image cache, it check if there are
+          # orphaned snapshots found out the way up to this point and it try
+          # to remove each one
+          if [[ "${#orphaned_snapshots[@]}" -gt 0 ]]; then
+
+            for orphaned_snapshot in "${orphaned_snapshots[@]}"; do
+              vedv::hypervisor::delete_snapshot "$im_cache_vm_name" "$orphaned_snapshot" &>/dev/null || {
+                err "Warning, not deleted orphaned snapshot: '${orphaned_snapshot}' on image cache: '$im_cache_vm_name'"
+              }
+            done
+          fi
+          continue 2
+        else
+          orphaned_snapshots+=("$im_vm_name")
+        fi
+      done
     fi
+    # at this point the image cache is not in use, so it can be removed
+    local image_id
+    image_id="$(vedv::image_cache_entity::get_image_id_by_vm_name "$im_cache_vm_name")" || {
+      err "Error getting image id by vm name: '$im_cache_vm_name'"
+      return "$ERR_IMAGE_OPERATION"
+    }
+    vedv::hypervisor::rm "$im_cache_vm_name" &>/dev/null || {
+      failed_remove+="$image_id "
+      continue
+    }
+
+    echo -n "$image_id "
   done
   echo
 

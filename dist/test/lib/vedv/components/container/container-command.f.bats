@@ -116,7 +116,7 @@ Options:
   assert_failure
   assert_output "Image: 'image1' does not exist"
 }
-# bats test_tags=only
+
 @test "vedv container create --name container123 image, Should create a container" {
 
   run vedv container create --name 'container123' "$TEST_OVA_FILE"
@@ -558,7 +558,7 @@ Build finished
 }
 
 # Tests for vedv container list-exposed-ports ..
-
+# bats test_tags=only
 @test "vedv container list-exposed-ports container123,  Should succeed" {
   local -r container_id='container123'
 

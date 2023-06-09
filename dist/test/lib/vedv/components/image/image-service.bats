@@ -725,9 +725,9 @@ Failed to remove image: '1234567890'"
 
   run vedv::image_service::remove_one "$image_id"
 
-  assert_failure
-  assert_output "Error deleting snapshot for image: '1234567890'
-Failed to remove image: '1234567890'"
+  assert_success
+  assert_output "Warning, not deleted snapshot on image cache for image: '1234567890'. The snapshot will be deleted when the image cache is removed, so no need to worry.
+1234567890"
 }
 
 @test 'vedv::image_service::remove_one() Should succeed' {
@@ -842,6 +842,95 @@ EOF
 
   assert_failure
   assert_output "Error getting image id by vm name: 'image-cache|crc:1234567890|'"
+}
+
+# bats test_tags=only
+@test 'vedv::image_service::remove_unused_cache(), Should fail If exists_vm_with_partial_name fails' {
+
+  vedv::hypervisor::list_vms_by_partial_name() {
+    assert_equal "$*" "image-cache|"
+    cat <<EOF
+image-cache|crc:1234567890|
+image-cache|crc:1334567890|
+image-cache|crc:1434567890|
+EOF
+  }
+  vedv::hypervisor::show_snapshots() {
+    assert_equal "$*" "image-cache|crc:1234567890|"
+    cat <<EOF
+image:image1|crc:2234567890|
+image:image2|crc:2334567890|
+image:image3|crc:2434567890|
+EOF
+  }
+  vedv::hypervisor::exists_vm_with_partial_name() {
+    assert_equal "$*" "image:image1|crc:2234567890|"
+    return 1
+  }
+
+  run vedv::image_service::remove_unused_cache
+
+  assert_failure
+  assert_output "Error checking if vm exists: 'image:image1|crc:2234567890|'"
+}
+# bats test_tags=only
+@test 'vedv::image_service::remove_unused_cache(), Should show error If delete_snapshot fails' {
+
+  vedv::hypervisor::list_vms_by_partial_name() {
+    assert_equal "$*" "image-cache|"
+    cat <<EOF
+image-cache|crc:1234567890|
+image-cache|crc:1334567890|
+
+EOF
+  }
+  vedv::hypervisor::show_snapshots() {
+    if [ "$*" == "image-cache|crc:1334567890|" ]; then
+      return 1
+    fi
+
+    assert_equal "$*" "image-cache|crc:1234567890|"
+    cat <<EOF
+image:image1|crc:2234567890|
+image:image2|crc:2334567890|
+image:image3|crc:2434567890|
+EOF
+  }
+  vedv::hypervisor::exists_vm_with_partial_name() {
+    case "$1" in
+    "image:image1|crc:2234567890|" | "image:image2|crc:2334567890|")
+      echo false
+      return 0
+      ;;
+    "image:image3|crc:2434567890|")
+      echo true
+      return 0
+      ;;
+    *)
+      return 2
+      ;;
+    esac
+  }
+  vedv::hypervisor::delete_snapshot() {
+    assert_equal "$1" "image-cache|crc:1234567890|"
+    case "$2" in
+    "image:image1|crc:2234567890|")
+      return 1
+      ;;
+    "image:image2|crc:2334567890|")
+      return 0
+      ;;
+    *)
+      return 2
+      ;;
+    esac
+  }
+
+  run vedv::image_service::remove_unused_cache
+
+  assert_failure
+  assert_output "Warning, not deleted orphaned snapshot: 'image:image1|crc:2234567890|' on image cache: 'image-cache|crc:1234567890|'
+Error getting snapshots for vm: 'image-cache|crc:1334567890|'"
 }
 
 @test 'vedv::image_service::remove_unused_cache(), Should fail If hypervisor::rm fails' {
@@ -1572,7 +1661,7 @@ EOF
 }
 
 # Tests for vedv::image_service::fs::add_exposed_ports()
-# bats test_tags=only
+
 @test "vedv::image_service::fs::add_exposed_ports() Should fail With empty image_id" {
   # Arrange
   local -r image_id=""
