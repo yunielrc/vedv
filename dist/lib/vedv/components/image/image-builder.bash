@@ -18,17 +18,18 @@ fi
 # a file is used because the variable is modified in a subshell
 readonly __VEDV_IMAGE_BUILDER_ENV_VARS_FILE="$(mktemp)"
 
-#
 # Constructor
 #
 # Arguments:
+#  __VEDV_IMAGE_BUILDER_NO_WAIT_AFTER_BUILD  bool    if true, it will not wait for the
+#                                                    image to save data cache and stopping
 #
 # Returns:
 #   0 on success, non-zero on error.
 #
-# vedv::image_builder::constructor() {
-
-# }
+vedv::image_builder::constructor() {
+  readonly __VEDV_IMAGE_BUILDER_NO_WAIT_AFTER_BUILD="${1:-false}"
+}
 
 #
 # Create layer
@@ -1575,6 +1576,8 @@ vedv::image_builder::__build() {
 #   [image_name]  string  name of the image
 #   [force]       bool    force the build removing the image containers
 #   [no_cache]    bool    do not use cache when building the image
+#   [no_wait_after_build] bool    if true, it will not wait for the
+#                                 image to save data cache and stopping
 #
 # Output:
 #  Writes image_id (string) image_name (string) and build proccess #  output to the stdout
@@ -1587,6 +1590,7 @@ vedv::image_builder::build() {
   local image_name="${2:-}"
   local -r force="${3:-false}"
   local -r no_cache="${4:-false}"
+  local -r no_wait_after_build="${5:-"$__VEDV_IMAGE_BUILDER_NO_WAIT_AFTER_BUILD"}"
   # validate arguments
   if [[ -z "$vedvfile" ]]; then
     err "Argument 'vedvfile' is required"
@@ -1656,17 +1660,26 @@ vedv::image_builder::build() {
   fi
 
   if [[ -n "$image_id" ]]; then
-    # cache data
-    # The cached data can not be used by the image during build.
-    # On container creation when the image is cloned this data is cloned too.
-    vedv::image_service::cache_data "$image_id" || {
-      err "Failed to cache data for image '${image_name}'"
-      return "$ERR_IMAGE_BUILDER_OPERATION"
+    ___on_build_ends_64695() {
+      # cache data
+      # The cached data can not be used by the image during build.
+      # On container creation when the image is cloned this data is cloned too.
+      vedv::image_service::cache_data "$image_id" || {
+        err "Failed to cache data for image '${image_name}'"
+        return "$ERR_IMAGE_BUILDER_OPERATION"
+      }
+      vedv::image_service::stop "$image_id" >/dev/null || {
+        err "Failed to stop the image '${image_name}'.You must stop it."
+        return "$ERR_IMAGE_BUILDER_OPERATION"
+      }
+
     }
-    vedv::image_service::stop "$image_id" >/dev/null || {
-      err "Failed to stop the image '${image_name}'.You must stop it."
-      return "$ERR_IMAGE_BUILDER_OPERATION"
-    }
+
+    if [[ "$no_wait_after_build" == true ]]; then
+      ___on_build_ends_64695 &
+    else
+      ___on_build_ends_64695 || return $?
+    fi
   fi
 
   return 0

@@ -1,6 +1,11 @@
 # shellcheck disable=SC2317,SC2034,SC2031,SC2030,SC2016
 load test_helper
 
+setup_file() {
+  vedv::image_builder::constructor 'false'
+  export __VEDV_IMAGE_BUILDER_NO_WAIT_AFTER_BUILD
+}
+
 @test 'vedv::image_builder::constructor() Should succeed' {
   :
 }

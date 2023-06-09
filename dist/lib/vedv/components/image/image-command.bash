@@ -247,8 +247,10 @@ HELPMSG
 # Build an image from a Vedvfile
 #
 # Flags:
-#   [-h | --help]       show help
-#   [--force]           force the build removing the image containers
+#   [-h | --help]             show help
+#   [--force]                 force the build removing the image containers
+#   [--no-cache]              do not use cache when building the image
+#   [--no-wait-after-build]   do not wait after build
 #
 # Options:
 #   [-n | --name | -t]  image name
@@ -267,6 +269,7 @@ vedv::image_command::__build() {
   local image_name=''
   local force=false
   local no_cache=false
+  local no_wait_after_build=''
 
   while [[ $# -gt 0 ]]; do
 
@@ -282,6 +285,10 @@ vedv::image_command::__build() {
       ;;
     --no-cache)
       readonly no_cache=true
+      shift
+      ;;
+    --no-wait-after-build)
+      readonly no_wait_after_build=true
       shift
       ;;
     # Options
@@ -309,7 +316,12 @@ vedv::image_command::__build() {
     return "$ERR_INVAL_ARG"
   fi
 
-  vedv::image_service::build "$vedvfile" "$image_name" "$force" "$no_cache"
+  vedv::image_service::build \
+    "$vedvfile" \
+    "$image_name" \
+    "$force" \
+    "$no_cache" \
+    "$no_wait_after_build"
 }
 
 #
@@ -326,9 +338,11 @@ ${__VED_IMAGE_COMMAND_SCRIPT_NAME} image build [FLAGS] [OPTIONS] VEDVFILE
 Build an image from a Vedvfile
 
 Flags:
-  -h, --help          show the help
-  --force             force the build removing the image containers
-  --no-cache          do not use cache when building the image
+  -h, --help              show the help
+  --force                 force the build removing the image containers
+  --no-cache              do not use cache when building the image
+  --no-wait-after-build   it will not wait for the image to save data cache
+                          and stopping.
 
 Options:
   -n, --name <name>   image name

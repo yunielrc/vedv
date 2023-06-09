@@ -220,16 +220,36 @@ Build an image from a Vedvfile"
   local custom_vedvfile="MyVedvfile"
   # Stub
   vedv::image_service::build() {
-    assert_regex "$*" '^MyVedvfile my-image\s* false false$'
-    echo "${FUNCNAME[0]} $*"
+    assert_equal "$*" 'MyVedvfile my-image false false '
   }
   for arg in '-n' '--name' '-t'; do
     # Act
     run vedv::image_command::__build "$arg" "$custom_image_name" "$custom_vedvfile"
     # Assert
     assert_success
-    assert_output 'vedv::image_service::build MyVedvfile my-image false false'
+    assert_output ''
   done
+}
+
+@test "vedv::image_command::__build() Should succeed" {
+  # Arrange
+  # Use variables for custom image name and Vedvfile name
+  local vedvfile="MyVedvfile"
+  local image_name="my-image"
+  # Stub
+  vedv::image_service::build() {
+    assert_equal "$*" 'MyVedvfile my-image true true true'
+  }
+  # Act
+  run vedv::image_command::__build \
+    --no-wait-after-build \
+    --force \
+    --no-cache \
+    --name "$image_name" \
+    "$vedvfile"
+  # Assert
+  assert_success
+  assert_output ''
 }
 
 @test "vedv::image_command::__build_help()" {

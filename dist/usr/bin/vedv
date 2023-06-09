@@ -46,6 +46,7 @@ readonly VEDV_SSH_IP="${VEDV_SSH_IP:-"${SSH_IP:-127.0.0.1}"}"
 readonly VEDV_BASE_VEDVFILEIGNORE="${VEDV_BASE_VEDVFILEIGNORE:-"${BASE_VEDVFILEIGNORE:-"${__VEDV_CONFIG_DIR}/vedvfileignore"}"}"
 readonly VEDV_HYPERVISOR_FRONTEND="${VEDV_HYPERVISOR_FRONTEND:-"${HYPERVISOR_FRONTEND:-headless}"}"
 readonly VEDV_DEFAULT_HYPERVISOR="${VEDV_DEFAULT_HYPERVISOR:-"${DEFAULT_HYPERVISOR:-virtualbox}"}"
+readonly VEDV_NO_WAIT_AFTER_BUILD="${VEDV_NO_WAIT_AFTER_BUILD:-"${NO_WAIT_AFTER_BUILD:-false}"}"
 
 # INCLUDE
 . "${__VEDV_LIB_PATH}/utils.bash"
@@ -143,6 +144,8 @@ vedv::__run_cmd() {
     "$VEDV_SSH_USER" \
     "$VEDV_SSH_PASSWORD" \
     "$(arr2str vedv_vmobj_service_use_cache_dict)"
+
+  vedv::image_builder::constructor "$VEDV_NO_WAIT_AFTER_BUILD"
 
   vedv::image_command::constructor "$__VEDV_SCRIPT_NAME"
 

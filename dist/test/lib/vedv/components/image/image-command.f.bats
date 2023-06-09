@@ -6,6 +6,8 @@ setup_file() {
   export VED_HADOLINT_CONFIG="$TEST_HADOLINT_CONFIG"
   VEDV_HADOLINT_ENABLED=false
   export VEDV_HADOLINT_ENABLED
+  vedv::image_builder::constructor 'false'
+  export __VEDV_IMAGE_BUILDER_NO_WAIT_AFTER_BUILD
 }
 
 teardown() {
@@ -188,9 +190,11 @@ vedv image build [FLAGS] [OPTIONS] VEDVFILE
 Build an image from a Vedvfile
 
 Flags:
-  -h, --help          show the help
-  --force             force the build removing the image containers
-  --no-cache          do not use cache when building the image
+  -h, --help              show the help
+  --force                 force the build removing the image containers
+  --no-cache              do not use cache when building the image
+  --no-wait-after-build   it will not wait for the image to save data cache
+                          and stopping.
 
 Options:
   -n, --name <name>   image name"
@@ -301,7 +305,7 @@ total 2
 dr-xr-xr-x    2 vedv     vedv .* d1
 -r-xr-xr-x    1 vedv     vedv .* f2"
 }
-
+# bats test_tags=only
 @test "vedv image build --no-cache -t image123 Vedvfile2" {
   cd "${BATS_TEST_DIRNAME}/fixtures"
 
@@ -322,7 +326,7 @@ dr-xr-xr-x    2 vedv     vedv .* d1
   assert_line --index 1 --regexp ".* image123"
 
   __run_cmd_wrapper() {
-    vedv image build --no-cache -t 'image123' ./Vedvfile2 2>/dev/null
+    vedv image build --no-wait-after-build --no-cache -t 'image123' ./Vedvfile2 2>/dev/null
   }
 
   run __run_cmd_wrapper
@@ -438,7 +442,7 @@ Build finished
 8080/tcp
 8081/udp'
 }
-# bats test_tags=only
+
 @test "vedv image build -t image123 ./varsub.vedvfile, Should succeed" {
   cd "${BATS_TEST_DIRNAME}/fixtures"
 
