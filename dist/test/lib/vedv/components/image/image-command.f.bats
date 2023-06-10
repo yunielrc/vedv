@@ -193,7 +193,7 @@ Flags:
   -h, --help              show the help
   --force                 force the build removing the image containers
   --no-cache              do not use cache when building the image
-  --no-wait-after-build   it will not wait for the image to save data cache
+  --no-wait   it will not wait for the image to save data cache
                           and stopping.
 
 Options:
@@ -326,7 +326,7 @@ dr-xr-xr-x    2 vedv     vedv .* d1
   assert_line --index 1 --regexp ".* image123"
 
   __run_cmd_wrapper() {
-    vedv image build --no-wait-after-build --no-cache -t 'image123' ./Vedvfile2 2>/dev/null
+    vedv image build --no-wait --no-cache -t 'image123' ./Vedvfile2 2>/dev/null
   }
 
   run __run_cmd_wrapper

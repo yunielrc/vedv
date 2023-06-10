@@ -356,16 +356,17 @@ HELPMSG
 # Build an image from a Vedvfile
 #
 # Flags:
-#   [-h | --help]             show help
-#   [--force]                 force the build removing the image containers
-#   [--no-cache]              do not use cache when building the image
-#   [--no-wait-after-build]   do not wait after build
+# -h, --help                  show the help
+# --force                     force the build removing the image containers
+# --no-cache                  do not use cache when building the image
+# --no-wait                   it will not wait for the image to save data cache
+#                             and stopping.
 #
 # Options:
-#   [-n | --name | -t]  image name
+#  -n, --name <name>  string  image name
 #
 # Arguments:
-#   [VEDV_FILE]              Vedvfile (default is 'Vedvfile')
+#   [VEDV_FILE]               Vedvfile (default is 'Vedvfile')
 #
 # Output:
 #   writes process result
@@ -396,7 +397,7 @@ vedv::image_command::__build() {
       readonly no_cache=true
       shift
       ;;
-    --no-wait-after-build)
+    --no-wait)
       readonly no_wait_after_build=true
       shift
       ;;
@@ -447,11 +448,11 @@ ${__VED_IMAGE_COMMAND_SCRIPT_NAME} image build [FLAGS] [OPTIONS] VEDVFILE
 Build an image from a Vedvfile
 
 Flags:
-  -h, --help              show the help
-  --force                 force the build removing the image containers
-  --no-cache              do not use cache when building the image
-  --no-wait-after-build   it will not wait for the image to save data cache
-                          and stopping.
+  -h, --help    show the help
+  --force       force the build removing the image containers
+  --no-cache    do not use cache when building the image
+  --no-wait     it will not wait for the image to save data cache
+                and stopping.
 
 Options:
   -n, --name <name>   image name

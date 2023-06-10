@@ -242,7 +242,7 @@ Build an image from a Vedvfile"
   }
   # Act
   run vedv::image_command::__build \
-    --no-wait-after-build \
+    --no-wait \
     --force \
     --no-cache \
     --name "$image_name" \
