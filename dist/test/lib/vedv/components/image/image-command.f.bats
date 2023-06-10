@@ -305,7 +305,7 @@ total 2
 dr-xr-xr-x    2 vedv     vedv .* d1
 -r-xr-xr-x    1 vedv     vedv .* f2"
 }
-# bats test_tags=only
+
 @test "vedv image build --no-cache -t image123 Vedvfile2" {
   cd "${BATS_TEST_DIRNAME}/fixtures"
 
@@ -468,4 +468,47 @@ created layer '.*' for command 'COPY'
 
 Build finished
 .* image1"
+}
+
+# Tests for vedv image import
+@test "vedv image import --help, Should show help" {
+
+  for flag in '' '-h' '--help'; do
+    run vedv image import $flag
+
+    assert_success
+    assert_output --partial "Usage:
+vedv image import IMAGE_FILE"
+  done
+}
+
+@test "vedv image import --name, Should fail if missing image name" {
+
+  run vedv image import --name
+
+  assert_failure
+  assert_output --partial 'No image name specified'
+}
+# bats test_tags=only
+@test "vedv image import --check -n image123, Should check the image file without argument value" {
+
+  run vedv image import --check --name image123 "$TEST_OVA_FILE"
+
+  assert_success
+  assert_output 'image123'
+}
+# bats test_tags=only
+@test "vedv image import --check-file -n image123, Should check the image file" {
+
+  run vedv image import --check-file "${TEST_OVA_FILE}.sha256sum" --name image123 "$TEST_OVA_FILE"
+
+  assert_success
+  assert_output 'image123'
+}
+@test "vedv image import -n image123 image_file, Should succeed" {
+
+  run vedv image import -n 'image123' "$TEST_OVA_FILE"
+
+  assert_success
+  assert_output 'image123'
 }

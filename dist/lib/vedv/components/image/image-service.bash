@@ -60,12 +60,13 @@ vedv::image_service::set_use_cache() {
 # }
 
 #
-# Import an OVA image from file
+# Import an image from a file
 #
 # Arguments:
-#   image_file      OVF file image
-#   [image_name]    image name (default: OVF file name + random id)
-#   [return_image_id]  print the image id instead image name
+#   image_file        string  image file
+#   [image_name]      string  image name (default: file name)
+#   [return_image_id] bool    print the image id instead image name
+#   [checksum_file]   string  check sum of the image file (default: sha256sum)
 #
 # Output:
 #  Writes image name or image id to the stdout
@@ -73,14 +74,18 @@ vedv::image_service::set_use_cache() {
 # Returns:
 #   0 on success, non-zero on error.
 #
-vedv::image_service::__pull_from_file() {
+vedv::image_service::import() {
   local -r image_file="$1"
   local -r custom_image_name="${2:-}"
   local -r return_image_id="${3:-false}"
-
+  local -r checksum_file="${4:-}"
+  # validate arguments
   if [[ ! -f "$image_file" ]]; then
-    err "OVA file image doesn't exist"
+    err "image file doesn't exist"
     return "$ERR_NOFILE"
+  fi
+  if [[ -n "$checksum_file" ]]; then
+    utils::sha256sum_check "$checksum_file" || return $?
   fi
 
   local vm_name
@@ -164,6 +169,7 @@ vedv::image_service::__pull_from_file() {
 
   return 0
 }
+vedv::image_service::__pull_from_file() { vedv::image_service::import "$@"; }
 
 # Pull an OVF file from a registry or file
 # and create an image

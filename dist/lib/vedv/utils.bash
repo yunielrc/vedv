@@ -21,6 +21,7 @@ readonly ERR_IMAGE_ENTITY=89
 readonly ERR_CONTAINER_ENTITY=90
 readonly ERR_VMOBJ_ENTITY=91
 readonly ERR_VMOBJ_OPERATION=92
+readonly ERR_CHECKSUM=93
 # This error code can only be throwed by vedv::image_builder::__layer_execute_cmd()
 readonly ERR_IMAGE_BUILDER_LAYER_CREATION_FAILURE_PREV_RESTORATION_FAIL=100
 #
@@ -670,4 +671,39 @@ utils::str_escape_double_quotes() {
   local -r str="$1"
 
   echo "${str//\"/\\\"}"
+}
+
+#
+# sha256sum check
+#
+# Arguments:
+#   checksum_file   string    file with the checksum
+#
+# Returns:
+#   0 if the checksum is correct
+utils::sha256sum_check() {
+  local -r checksum_file="$1"
+  # validate arguments
+  if [[ -z "$checksum_file" ]]; then
+    err "checksum_file is required"
+    return "$ERR_INVAL_ARG"
+  fi
+  if [[ ! -f "$checksum_file" ]]; then
+    err "checksum file doesn't exist"
+    return "$ERR_NOFILE"
+  fi
+
+  (
+    local -r file_dir="${checksum_file%/*}"
+
+    cd "$file_dir" || {
+      err "Error changing directory to '${file_dir}'"
+      return "$ERR_NOFILE"
+    }
+    # check the checksum
+    sha256sum --status --check "$checksum_file" &>/dev/null || {
+      err "checksum doesn't match"
+      return "$ERR_CHECKSUM"
+    }
+  )
 }

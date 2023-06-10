@@ -862,3 +862,41 @@ calc_item_id_from_array_b() { echo "$1"; }
 3 COPY . \$HOME
 4 RUN ls -l ${HOME}'
 }
+
+# Tests for utils::sha256sum_check()
+# bats test_tags=only
+@test "utils::sha256sum_check() Should fail With empty file_path" {
+  local -r checksum_file=""
+
+  run utils::sha256sum_check "$checksum_file"
+
+  assert_failure
+  assert_output "checksum_file is required"
+}
+# bats test_tags=only
+@test "utils::sha256sum_check() Should fail If checksum_file does not exist" {
+  local -r checksum_file="sdjfkljewlijflsa.sha256sum"
+
+  run utils::sha256sum_check "$checksum_file"
+
+  assert_failure
+  assert_output "checksum file doesn't exist"
+}
+# bats test_tags=only
+@test "utils::sha256sum_check() Should fail If checksum fail" {
+  local -r checksum_file="$(mktemp)"
+
+  run utils::sha256sum_check "$checksum_file"
+
+  assert_failure
+  assert_output "checksum doesn't match"
+}
+# bats test_tags=only
+@test "utils::sha256sum_check() Should succeed If checksum success" {
+  local -r checksum_file="${TEST_OVA_FILE}.sha256sum"
+
+  run utils::sha256sum_check "$checksum_file"
+
+  assert_success
+  assert_output ""
+}

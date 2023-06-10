@@ -23,17 +23,38 @@ setup_file() {
   export __VEDV_VMOBJ_SERVICE_SSH_PASSWORD
 }
 
-# Tests for vedv::image_service::__pull_from_file()
-@test "vedv::image_service::__pull_from_file() Should throw an error If 'image_file' doesn't exist" {
+# Tests for vedv::image_service::import()
+@test "vedv::image_service::import() Should throw an error If 'image_file' doesn't exist" {
   local -r image_file="/tmp/feacd213baf31d50798a.ova"
 
-  run vedv::image_service::__pull_from_file "$image_file"
+  run vedv::image_service::import "$image_file"
 
   assert_failure
-  assert_output "OVA file image doesn't exist"
+  assert_output "image file doesn't exist"
+}
+# bats test_tags=only
+@test "vedv::image_service::import() Should fail If sha256sum_check fails" {
+  local -r image_file="$TEST_OVA_FILE"
+  local -r custom_image_name="image1"
+  local -r return_image_id="false"
+  local -r checksum_file="/tmp/f31d50798a.ova.sha256sum"
+
+  utils::sha256sum_check() {
+    assert_equal "$*" "$checksum_file"
+    return 1
+  }
+
+  run vedv::image_service::import \
+    "$image_file" \
+    "$custom_image_name" \
+    "$return_image_id" \
+    "$checksum_file"
+
+  assert_failure
+  assert_output ""
 }
 
-@test "vedv::image_service::__pull_from_file() Should fail If gen_vm_name_from_ova_file fails" {
+@test "vedv::image_service::import() Should fail If gen_vm_name_from_ova_file fails" {
   local -r image_file="$TEST_OVA_FILE"
 
   vedv::image_entity::gen_vm_name_from_ova_file() {
@@ -41,13 +62,13 @@ setup_file() {
     return 1
   }
 
-  run vedv::image_service::__pull_from_file "$image_file"
+  run vedv::image_service::import "$image_file"
 
   assert_failure
   assert_output "Error generating vm_name from ova_file '${TEST_OVA_FILE}'"
 }
 
-@test "vedv::image_service::__pull_from_file() Should fail If get_id_by_vm_name fails" {
+@test "vedv::image_service::import() Should fail If get_id_by_vm_name fails" {
   local -r image_file="$TEST_OVA_FILE"
 
   vedv::image_entity::gen_vm_name_from_ova_file() {
@@ -59,13 +80,13 @@ setup_file() {
     return 1
   }
 
-  run vedv::image_service::__pull_from_file "$image_file"
+  run vedv::image_service::import "$image_file"
 
   assert_failure
   assert_output "Error getting image_id by vm_name 'image:image1|crc:1234567890|'"
 }
 
-@test "vedv::image_service::__pull_from_file() Should fail If get_image_name_by_vm_name fails" {
+@test "vedv::image_service::import() Should fail If get_image_name_by_vm_name fails" {
   local -r image_file="$TEST_OVA_FILE"
 
   vedv::image_entity::gen_vm_name_from_ova_file() {
@@ -81,13 +102,13 @@ setup_file() {
     return 1
   }
 
-  run vedv::image_service::__pull_from_file "$image_file"
+  run vedv::image_service::import "$image_file"
 
   assert_failure
   assert_output "Error getting image_name by vm_name 'image:image1|crc:1234567890|'"
 }
 
-@test "vedv::image_service::__pull_from_file() Should fail If gen_vm_name fails" {
+@test "vedv::image_service::import() Should fail If gen_vm_name fails" {
   local -r image_file="$TEST_OVA_FILE"
   local -r custom_image_name="custom_image1"
 
@@ -108,13 +129,13 @@ setup_file() {
     return 1
   }
 
-  run vedv::image_service::__pull_from_file "$image_file" "$custom_image_name"
+  run vedv::image_service::import "$image_file" "$custom_image_name"
 
   assert_failure
   assert_output "Error generating vm_name from image_name: 'custom_image1'"
 }
 
-@test "vedv::image_service::__pull_from_file() Should fail If get_id_by_vm_name with custom_image_name fails" {
+@test "vedv::image_service::import() Should fail If get_id_by_vm_name with custom_image_name fails" {
   local -r image_file="$TEST_OVA_FILE"
   local -r custom_image_name="custom_image1"
 
@@ -139,13 +160,13 @@ setup_file() {
     echo "image:${custom_image_name}|crc:1334567890|"
   }
 
-  run vedv::image_service::__pull_from_file "$image_file" "$custom_image_name"
+  run vedv::image_service::import "$image_file" "$custom_image_name"
 
   assert_failure
   assert_output "Error getting image_id by vm_name 'image:custom_image1|crc:1334567890|'"
 }
 
-@test "vedv::image_service::__pull_from_file() Should fail If list_vms_by_partial_name with vm_name fails" {
+@test "vedv::image_service::import() Should fail If list_vms_by_partial_name with vm_name fails" {
   local -r image_file="$TEST_OVA_FILE"
   local -r custom_image_name="custom_image1"
 
@@ -175,13 +196,13 @@ setup_file() {
     return 1
   }
 
-  run vedv::image_service::__pull_from_file "$image_file" "$custom_image_name"
+  run vedv::image_service::import "$image_file" "$custom_image_name"
 
   assert_failure
   assert_output "Error getting virtual machine with name: 'image:custom_image1|crc:1334567890|'"
 }
 
-@test "vedv::image_service::__pull_from_file() Should fail If there is another vm with the same name" {
+@test "vedv::image_service::import() Should fail If there is another vm with the same name" {
   local -r image_file="$TEST_OVA_FILE"
   local -r custom_image_name="custom_image1"
 
@@ -211,13 +232,13 @@ setup_file() {
     echo "image:image2|crc:1434567890|"
   }
 
-  run vedv::image_service::__pull_from_file "$image_file" "$custom_image_name"
+  run vedv::image_service::import "$image_file" "$custom_image_name"
 
   assert_failure
   assert_output "There is another image with the same name: custom_image1, you must delete it or use another name"
 }
 
-@test "vedv::image_service::__pull_from_file() Should fail If list_vms_by_partial_name for image_cache fails" {
+@test "vedv::image_service::import() Should fail If list_vms_by_partial_name for image_cache fails" {
   local -r image_file="$TEST_OVA_FILE"
   local -r custom_image_name="custom_image1"
 
@@ -250,13 +271,13 @@ setup_file() {
     assert_equal "$*" "image:${custom_image_name}|crc:1334567890|"
   }
 
-  run vedv::image_service::__pull_from_file "$image_file" "$custom_image_name"
+  run vedv::image_service::import "$image_file" "$custom_image_name"
 
   assert_failure
   assert_output "Error getting virtual machine with name: 'image-cache|crc:12345678900|'"
 }
 
-@test "vedv::image_service::__pull_from_file() Should fail If hypervisor::import fails" {
+@test "vedv::image_service::import() Should fail If hypervisor::import fails" {
   local -r image_file="$TEST_OVA_FILE"
   local -r custom_image_name="custom_image1"
 
@@ -292,13 +313,13 @@ setup_file() {
     return 1
   }
 
-  run vedv::image_service::__pull_from_file "$image_file" "$custom_image_name"
+  run vedv::image_service::import "$image_file" "$custom_image_name"
 
   assert_failure
   assert_output "Error creating image cache 'image-cache|crc:12345678900|' vm from ova file '${TEST_OVA_FILE}'"
 }
 
-@test "vedv::image_service::__pull_from_file() Should fail If hypervisor::clonevm_link fails" {
+@test "vedv::image_service::import() Should fail If hypervisor::clonevm_link fails" {
   local -r image_file="$TEST_OVA_FILE"
   local -r custom_image_name="custom_image1"
 
@@ -337,13 +358,13 @@ setup_file() {
     return 1
   }
 
-  run vedv::image_service::__pull_from_file "$image_file" "$custom_image_name"
+  run vedv::image_service::import "$image_file" "$custom_image_name"
 
   assert_failure
   assert_output "Error cloning image cache 'image-cache|crc:12345678900|' to the image vm 'image:custom_image1|crc:1334567890|'"
 }
 
-@test "vedv::image_service::__pull_from_file() Should fail If set_image_cache fails" {
+@test "vedv::image_service::import() Should fail If set_image_cache fails" {
   local -r image_file="$TEST_OVA_FILE"
   local -r custom_image_name="custom_image1"
 
@@ -385,13 +406,13 @@ setup_file() {
     return 1
   }
 
-  run vedv::image_service::__pull_from_file "$image_file" "$custom_image_name"
+  run vedv::image_service::import "$image_file" "$custom_image_name"
 
   assert_failure
   assert_output "Error setting attribute image cache 'image-cache|crc:12345678900|' to the image vm 'image:custom_image1|crc:1334567890|'"
 }
 
-@test "vedv::image_service::__pull_from_file() Should fail If set_ova_file_sum fails" {
+@test "vedv::image_service::import() Should fail If set_ova_file_sum fails" {
   local -r image_file="$TEST_OVA_FILE"
   local -r custom_image_name="custom_image1"
 
@@ -436,13 +457,13 @@ setup_file() {
     return 1
   }
 
-  run vedv::image_service::__pull_from_file "$image_file" "$custom_image_name"
+  run vedv::image_service::import "$image_file" "$custom_image_name"
 
   assert_failure
   assert_output "Error setting attribute ova file sum '1234567890' to the image vm 'image:custom_image1|crc:1334567890|'"
 }
 
-@test "vedv::image_service::__pull_from_file() Should succeed" {
+@test "vedv::image_service::import() Should succeed" {
   local -r image_file="$TEST_OVA_FILE"
   local -r custom_image_name="custom_image1"
 
@@ -486,13 +507,13 @@ setup_file() {
     assert_equal "$*" "1334567890 1234567890"
   }
 
-  run vedv::image_service::__pull_from_file "$image_file" "$custom_image_name"
+  run vedv::image_service::import "$image_file" "$custom_image_name"
 
   assert_success
   assert_output "custom_image1"
 }
 
-@test "vedv::image_service::__pull_from_file() Should succeed and echo image_id" {
+@test "vedv::image_service::import() Should succeed and echo image_id" {
   local -r image_file="$TEST_OVA_FILE"
   local -r custom_image_name="custom_image1"
 
@@ -536,7 +557,7 @@ setup_file() {
     assert_equal "$*" "1334567890 1234567890"
   }
 
-  run vedv::image_service::__pull_from_file "$image_file" "$custom_image_name" true
+  run vedv::image_service::import "$image_file" "$custom_image_name" true
 
   assert_success
   assert_output "1334567890"
@@ -844,7 +865,6 @@ EOF
   assert_output "Error getting image id by vm name: 'image-cache|crc:1234567890|'"
 }
 
-# bats test_tags=only
 @test 'vedv::image_service::remove_unused_cache(), Should fail If exists_vm_with_partial_name fails' {
 
   vedv::hypervisor::list_vms_by_partial_name() {
@@ -873,7 +893,7 @@ EOF
   assert_failure
   assert_output "Error checking if vm exists: 'image:image1|crc:2234567890|'"
 }
-# bats test_tags=only
+
 @test 'vedv::image_service::remove_unused_cache(), Should show error If delete_snapshot fails' {
 
   vedv::hypervisor::list_vms_by_partial_name() {

@@ -257,7 +257,7 @@ Build an image from a Vedvfile"
 }
 
 # Tests for vedv::image_command::__list_exposed_ports()
-# bats test_tags=only
+
 @test "vedv::image_command::__list_exposed_ports() Should show help with no args" {
 
   # Act
@@ -267,7 +267,7 @@ Build an image from a Vedvfile"
   assert_output --partial "Usage:
 vedv image list-exposed-ports IMAGE"
 }
-# bats test_tags=only
+
 @test "vedv::image_command::__list_exposed_ports() Should show help" {
 
   for arg in '-h' '--help'; do
@@ -279,7 +279,7 @@ vedv image list-exposed-ports IMAGE"
 vedv image list-exposed-ports IMAGE"
   done
 }
-# bats test_tags=only
+
 @test "vedv::image_command::__list_exposed_ports() Should suceed" {
   # Arrange
   local image_name_or_id='image1'
@@ -292,4 +292,74 @@ vedv image list-exposed-ports IMAGE"
   # Assert
   assert_success
   assert_output ""
+}
+
+# Tests for vedv::image_command::__import()
+# bats test_tags=only
+@test "vedv::image_command::__import() Should show help" {
+
+  for flag in '' '-h' '--help'; do
+    run vedv::image_command::__import $flag
+
+    assert_success
+    assert_output --partial "Usage:
+vedv image import IMAGE_FILE"
+  done
+}
+# bats test_tags=only
+@test "vedv::image_command::__import() Should fail if missing image name" {
+
+  run vedv::image_command::__import --name
+
+  assert_failure
+  assert_output --partial 'No image name specified'
+}
+# bats test_tags=only
+@test "vedv::image_command::__import() Should check the image file without argument value" {
+  vedv::image_service::import() {
+    assert_equal "$*" "${TEST_OVA_FILE} image123 false ${TEST_OVA_FILE}.sha256sum"
+    echo 'image123'
+  }
+
+  run vedv::image_command::__import --check --name image123 "$TEST_OVA_FILE"
+
+  assert_success
+  assert_output 'image123'
+}
+# bats test_tags=only
+@test "vedv::image_command::__import() Should fail if check file argument is missing" {
+  vedv::image_service::import() {
+    assert_equal "$*" "${TEST_OVA_FILE} image123 false ${TEST_OVA_FILE}.sha256sum"
+    echo 'image123'
+  }
+
+  run vedv::image_command::__import --check-file
+
+  assert_failure
+  assert_output --partial 'No checksum file specified'
+}
+# bats test_tags=only
+@test "vedv::image_command::__import() Should check the image file" {
+  vedv::image_service::import() {
+    assert_equal "$*" "${TEST_OVA_FILE} image123 false ${TEST_OVA_FILE}.sha256sum"
+    echo 'image123'
+  }
+
+  run vedv::image_command::__import --check-file "${TEST_OVA_FILE}.sha256sum" --name image123 "$TEST_OVA_FILE"
+
+  assert_success
+  assert_output 'image123'
+}
+# bats test_tags=only
+@test "vedv::image_command::__import() Should succeed" {
+
+  vedv::image_service::import() {
+    assert_equal "$*" "${TEST_OVA_FILE} image123 false "
+    echo 'image123'
+  }
+
+  run vedv::image_command::__import -n 'image123' "$TEST_OVA_FILE"
+
+  assert_success
+  assert_output 'image123'
 }

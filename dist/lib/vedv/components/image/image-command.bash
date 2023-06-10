@@ -28,6 +28,115 @@ vedv::image_command::constructor() {
 }
 
 #
+# Import an image from a file
+#
+# Flags:
+#   -h, --help                  show help
+#   --check                     the checksum is readed from a file with the same name
+#                               as the image file and the extension .sha256sum.
+#
+# Options:
+#   -n, --name  <name>  string  image name
+#   --check-file <FILE> string  read the checksum from the FILE and check it using
+#                               sha256sum algorithm.
+#
+# Arguments:
+#   IMAGE_FILE    string  image file
+#
+# Output:
+#  Writes image name to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::image_command::__import() {
+  local image_file=''
+  local image_name=''
+  local check=false
+  local checksum_file=''
+
+  if [[ $# == 0 ]]; then set -- '-h'; fi
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+    -h | --help)
+      vedv::image_command::__import_help
+      return 0
+      ;;
+    -n | --name)
+      image_name="${2:-}"
+      # validate argument
+      if [[ -z "$image_name" ]]; then
+        err "No image name specified\n"
+        vedv::image_command::__import_help
+        return "$ERR_INVAL_ARG"
+      fi
+      shift 2
+      ;;
+    --check)
+      readonly check=true
+      shift
+      ;;
+    --check-file)
+      readonly checksum_file="${2:-}"
+      # validate argument
+      if [[ -z "$checksum_file" ]]; then
+        err "No checksum file specified\n"
+        vedv::image_command::__import_help
+        return "$ERR_INVAL_ARG"
+      fi
+      shift 2
+      ;;
+    *)
+      readonly image_file="$1"
+      break
+      ;;
+    esac
+  done
+
+  if [[ -z "$image_file" ]]; then
+    err "Missing argument 'IMAGE_FILE'\n"
+    vedv::image_command::__import_help
+    return "$ERR_INVAL_ARG"
+  fi
+
+  if [[ "$check" == true && -z "$checksum_file" ]]; then
+    checksum_file="${image_file}.sha256sum"
+  fi
+
+  vedv::image_service::import \
+    "$image_file" \
+    "$image_name" \
+    'false' \
+    "$checksum_file"
+}
+
+#
+# Show help for __pull command
+#
+# Output:
+#  Writes the help to the stdout
+#
+vedv::image_command::__import_help() {
+  cat <<-HELPMSG
+Usage:
+${__VED_IMAGE_COMMAND_SCRIPT_NAME} image import IMAGE_FILE
+
+Import an image from a file
+
+Flags:
+  -h, --help            show help
+  --check               the checksum is readed from a file with the same name
+                        as the image file and the extension .sha256sum.
+
+Options:
+  -n, --name <name>     image name
+  --check-file <FILE>   read the checksum from the FILE and check it using
+                        sha256sum algorithm.
+HELPMSG
+}
+
+#
 # Pull an image from a registry or file
 #
 # Flags:
@@ -435,6 +544,7 @@ Flags:
   -h, --help      show this help
 
 Commands:
+  import          import an image from a file
   build           build an image from a Vedvfile
   pull            pull an image from a registry or file
   list            list images
@@ -483,6 +593,11 @@ vedv::image_command::run_cmd() {
     eports | list-exposed-ports)
       shift
       vedv::image_command::__list_exposed_ports "$@"
+      return $?
+      ;;
+    import)
+      shift
+      vedv::image_command::__import "$@"
       return $?
       ;;
     *)

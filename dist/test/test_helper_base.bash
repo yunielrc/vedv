@@ -30,9 +30,9 @@ if [[ ! -f "$TEST_OVA_FILE" ]]; then
 
     cd "${TEST_OVA_FILE%/*}" || exit
     wget -O "${TEST_OVA_FILE##*/}" "https://onedrive.live.com/download?cid=DBA0B75F07574EAA&resid=DBA0B75F07574EAA%21218&authkey=AE2HmKsFmd56A1g"
-    wget -O "${TEST_OVA_FILE##*/}.sha256" "https://onedrive.live.com/download?cid=DBA0B75F07574EAA&resid=DBA0B75F07574EAA%21217&authkey=AGI-xmawbzY_qK0"
+    wget -O "${TEST_OVA_FILE##*/}.sha256sum" "https://onedrive.live.com/download?cid=DBA0B75F07574EAA&resid=DBA0B75F07574EAA%21217&authkey=AGI-xmawbzY_qK0"
 
-    sha256sum -c "${TEST_OVA_FILE##*/}.sha256"
+    sha256sum -c "${TEST_OVA_FILE##*/}.sha256sum"
   )
 fi
 
