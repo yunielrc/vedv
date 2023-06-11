@@ -666,6 +666,7 @@ Flags:
 
 Commands:
   import          import an image from a file
+  from-url        import an image from a url
   build           build an image from a Vedvfile
   pull            pull an image from a registry or file
   list            list images
