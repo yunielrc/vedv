@@ -179,14 +179,12 @@ vedv::hypervisor::list_vms_by_partial_name() {
     return "$ERR_INVAL_ARG"
   fi
 
-  local vms
-  vms=$(VBoxManage list vms) || {
-    err "Failed to list vms"
-    return "$ERR_VIRTUALBOX_OPERATION"
-  }
-  readonly vms
+  VBoxManage list vms |
+    grep "$vm_partial_name" |
+    cut -d' ' -f1 |
+    sed 's/"//g' || :
 
-  echo "$vms" | grep "$vm_partial_name" | cut -d' ' -f1 | sed 's/"//g' || :
+  return "${PIPESTATUS[0]}"
 }
 vedv::virtualbox::list_wms_by_partial_name() { vedv::hypervisor::list_vms_by_partial_name "$@"; }
 
