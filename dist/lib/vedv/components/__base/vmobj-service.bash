@@ -754,7 +754,7 @@ vedv::vmobj_service::list() {
     err "Error getting virtual machines names"
     return "$ERR_VMOBJ_OPERATION"
   }
-  vm_names="$(grep "${type}:${partial_name}.*|" <<<"$vm_names" || :)"
+  vm_names="$(grep "${type}:.*${partial_name}.*|" <<<"$vm_names" || :)"
   readonly vm_names
 
   if [[ -z "$vm_names" ]]; then

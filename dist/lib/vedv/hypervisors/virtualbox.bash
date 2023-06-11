@@ -179,6 +179,18 @@ vedv::hypervisor::list_vms_by_partial_name() {
     return "$ERR_INVAL_ARG"
   fi
 
+  # while read -r __vm_name _; do
+  #   if [[ "$__vm_name" == *"$vm_partial_name"* ]]; then
+  #     eval echo "$__vm_name"
+  #   fi
+  # done < <(VBoxManage list vms)
+
+  # The code below is by average faster that the commented builtin version,
+  # at least in a machine with:
+  # i5-12400F, 32GB DDR4 3200MHz RAM, 970 EVO Plus 500GB NVMe SSD PCIe Gen 3.0 x 4
+  #
+  # The importance of the performance here is that this function is called
+  # many times during the execution of the script.
   VBoxManage list vms |
     grep "$vm_partial_name" |
     cut -d' ' -f1 |

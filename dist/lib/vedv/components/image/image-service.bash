@@ -248,11 +248,10 @@ vedv::image_service::import_from_url() {
 
     local original_file_name=''
     # shellcheck disable=SC2034
-    IFS=' ' read -r checksum original_file_name 2>/dev/null <"$checksum_file" || {
+    IFS=' ' read -r _ original_file_name 2>/dev/null <"$checksum_file" || {
       err "Error reading checksum file: '${checksum_file}'"
       return "$ERR_IMAGE_OPERATION"
     }
-    unset checksum
     readonly original_file_name
 
     local -r original_file="${download_dir}/${original_file_name}"
