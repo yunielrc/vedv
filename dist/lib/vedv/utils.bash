@@ -22,6 +22,8 @@ readonly ERR_CONTAINER_ENTITY=90
 readonly ERR_VMOBJ_ENTITY=91
 readonly ERR_VMOBJ_OPERATION=92
 readonly ERR_CHECKSUM=93
+readonly ERR_FILE_EXISTS=94
+readonly ERR_DOWNLOAD=95
 # This error code can only be throwed by vedv::image_builder::__layer_execute_cmd()
 readonly ERR_IMAGE_BUILDER_LAYER_CREATION_FAILURE_PREV_RESTORATION_FAIL=100
 #
@@ -30,6 +32,16 @@ readonly UTILS_ENCODED_ESCVAR_PREFIX='escvar_fc064fcc7e_'
 
 # REGEX
 readonly UTILS_REGEX_NAME='[[:alnum:]]+((-|_)[[:alnum:]]+)*'
+
+#
+# Constructor
+#
+# Arguments:
+#  tmp_dir  string  temporary directory
+#
+utils::constructor() {
+  readonly __VEDV_UTILS_TMP_DIR="$1"
+}
 
 err() {
   echo -e "$*" >&2
@@ -91,6 +103,7 @@ utils::crc_file_sum() {
     --exclude-from "${exclude_file_path}" \
     "$source" "$(mktemp -d)" |
     sed '/\/$/d' |
+    sed 's/ ->.*$//' |
     tr '\n' '\0' |
     xargs -0 cksum |
     LC_ALL=C sort |
@@ -104,35 +117,6 @@ crc_file_sum() { utils::crc_file_sum "$1"; }
 utils::valid_ip() {
   [[ "$1" =~ ^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$ ]]
 }
-
-#
-# Fix invalid variable names in a given text
-#
-# Arguments
-# Output:
-#   writes text with fixed variable names to stdout
-#
-# Returns:
-#   0 on success, non-zero on error.
-#
-utils::fix_var_names() {
-  local -r vars="$1"
-
-  while read -r line; do
-    if echo "$line" | grep -qP '^[^=]+='; then
-      local name="$(echo "$line" | cut -d'=' -f1 | tr -d '"' | tr -d ' ' | tr '-' '_')"
-      local value="$(echo "$line" | sed -e 's/^[^=]\+=//' -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
-      echo "${name}=${value}"
-    elif echo "$line" | grep -qP '^[^:]+:'; then
-      local name="$(echo "$line" | cut -d':' -f1 | tr -d '"' | tr -d ' ' | tr '-' '_')"
-      local value="$(echo "$line" | sed -e 's/^[^:]\+://' -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
-      echo "${name}=${value}"
-    else
-      echo "$line"
-    fi
-  done <<<"$vars"
-}
-fix_var_names() { utils::fix_var_names "$@"; }
 
 #
 # Return an available dynamic port (49152-65535)
@@ -680,7 +664,8 @@ utils::str_escape_double_quotes() {
 #   checksum_file   string    file with the checksum
 #
 # Returns:
-#   0 if the checksum is correct
+#   0 if the checksum is correct or 1 otherwise
+#
 utils::sha256sum_check() {
   local -r checksum_file="$1"
   # validate arguments
@@ -706,4 +691,101 @@ utils::sha256sum_check() {
       return "$ERR_CHECKSUM"
     }
   )
+}
+
+#
+# Check if a string is a valid URL
+#
+# Arguments:
+#   url   string    string to check
+#
+# Returns:
+#   0 if the string is a valid URL or 1 otherwise
+#
+utils::is_url() {
+  local -r url="$1"
+  [[ $url =~ ^https?://[-a-zA-Z0-9+\&@\#/%?=~_|!:,.\;]*$ ]]
+}
+
+#
+# Make a temporary directory
+#
+# Arguments:
+#   [tmp_dir]   string    base directory (default: __VEDV_UTILS_TMP_DIR)
+#
+# Output:
+#   Writes the path of the temporary directory (string) to stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+utils::mktmp_dir() {
+  local -r tmp_dir="${1:-"$__VEDV_UTILS_TMP_DIR"}"
+  mktemp -p "$tmp_dir" -d
+}
+
+#
+# Download a file
+#
+# Arguments:
+#   url   string    url to download
+#   file  string    file to save the download
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+utils::download_file() {
+  local -r url="$1"
+  local -r file="$2"
+
+  if [[ -z "$url" ]]; then
+    err "url is required"
+    return "$ERR_INVAL_ARG"
+  fi
+  if ! utils::is_url "$url"; then
+    err "url is not valid"
+    return "$ERR_INVAL_ARG"
+  fi
+  if [[ -z "$file" ]]; then
+    err "file is required"
+    return "$ERR_INVAL_ARG"
+  fi
+
+  wget -qO "$file" "$url" || {
+    err "error downloading file"
+    return "$ERR_DOWNLOAD"
+  }
+}
+
+#
+# Validate the format of a sha256sum file
+#
+# Arguments:
+#   checksum_file   string    file with the checksum
+#
+# Returns:
+#   0 if the checksum file is valid or 1 otherwise
+#
+utils::validate_sha256sum_format() {
+  local checksum_file="$1"
+  # validate arguments
+  if [[ -z "$checksum_file" ]]; then
+    err "checksum_file is required"
+    return "$ERR_INVAL_ARG"
+  fi
+  if [[ ! -f "$checksum_file" ]]; then
+    err "checksum file doesn't exist"
+    return "$ERR_NOFILE"
+  fi
+
+  while read -r line; do
+    if [[ -z "$line" ]]; then
+      continue
+    fi
+    if [[ ! $line =~ ^[a-f0-9]{64}[[:space:]]+.+$ ]]; then
+      return 1
+    fi
+  done <"$checksum_file"
+
+  return 0
 }

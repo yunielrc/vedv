@@ -29,8 +29,8 @@ if [[ ! -f "$TEST_OVA_FILE" ]]; then
       mkdir -p "${TEST_OVA_FILE%/*}"
 
     cd "${TEST_OVA_FILE%/*}" || exit
-    wget -O "${TEST_OVA_FILE##*/}" "https://onedrive.live.com/download?cid=DBA0B75F07574EAA&resid=DBA0B75F07574EAA%21218&authkey=AE2HmKsFmd56A1g"
-    wget -O "${TEST_OVA_FILE##*/}.sha256sum" "https://onedrive.live.com/download?cid=DBA0B75F07574EAA&resid=DBA0B75F07574EAA%21217&authkey=AGI-xmawbzY_qK0"
+    wget -O "${TEST_OVA_FILE##*/}" "$TEST_OVA_URL"
+    wget -O "${TEST_OVA_FILE##*/}.sha256sum" "$TEST_OVA_CHECKSUM"
 
     sha256sum -c "${TEST_OVA_FILE##*/}.sha256sum"
   )
@@ -207,3 +207,12 @@ SSHEOF
 }
 
 # cd "$BATS_TEST_DIRNAME" || exit
+
+[[ -d "$TEST_TMP_DIR" ]] ||
+  mkdir -p "$TEST_TMP_DIR"
+
+if [[ -d "$TEST_IMAGE_CACHE_DIR" &&
+  "$TEST_IMAGE_CACHE_DIR" =~ ^/tmp/ ]]; then
+  rm -rf "$TEST_IMAGE_CACHE_DIR"
+fi
+mkdir -p "$TEST_IMAGE_CACHE_DIR"

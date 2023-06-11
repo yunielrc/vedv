@@ -13,7 +13,9 @@ load test_helper
 
 @test "vedv::image_entity::gen_vm_name_from_ova_file(), should write the generated vm name" {
   local -r image_file="$TEST_OVA_FILE"
-
+  petname() {
+    echo 'alpine-x86_64'
+  }
   run vedv::image_entity::gen_vm_name_from_ova_file "$image_file"
 
   assert_success

@@ -37,7 +37,7 @@ vedv::image_command::constructor() {
 #
 # Options:
 #   -n, --name  <name>  string  image name
-#   --check-file <FILE> string  read the checksum from the FILE and check it using
+#   --check-file <file> string  read the checksum from the FILE and check it using
 #                               sha256sum algorithm.
 #
 # Arguments:
@@ -64,7 +64,7 @@ vedv::image_command::__import() {
       return 0
       ;;
     -n | --name)
-      image_name="${2:-}"
+      readonly image_name="${2:-}"
       # validate argument
       if [[ -z "$image_name" ]]; then
         err "No image name specified\n"
@@ -112,7 +112,7 @@ vedv::image_command::__import() {
 }
 
 #
-# Show help for __pull command
+# Show help for __import command
 #
 # Output:
 #  Writes the help to the stdout
@@ -131,7 +131,127 @@ Flags:
 
 Options:
   -n, --name <name>     image name
-  --check-file <FILE>   read the checksum from the FILE and check it using
+  --check-file <file>   read the checksum from the FILE and check it using
+                        sha256sum algorithm.
+HELPMSG
+}
+
+#
+# Import an image from a url
+#
+# Flags:
+#   -h, --help          show help
+#   --check             the checksum is downloaded from the same url as the image
+#                       suffixed with .sha256sum
+#   --no-cache          do not use cache when downloading the image
+#
+# Options:
+#   -n, --name <name>   image name
+#   --checksum-url <url>   download the checksum from the URL and check it using
+#                       sha256sum algorithm.
+#
+#
+# Arguments:
+#   IMAGE_URL         string  image url
+#
+# Output:
+#  Writes image name to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::image_command::__import_from_url() {
+  local image_url=''
+  local image_name=''
+  local check=false
+  local checksum_url=''
+  local no_cache=false
+
+  if [[ $# == 0 ]]; then set -- '-h'; fi
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+    # flags
+    -h | --help)
+      vedv::image_command::__import_from_url_help
+      return 0
+      ;;
+    -n | --name)
+      readonly image_name="${2:-}"
+      # validate argument
+      if [[ -z "$image_name" ]]; then
+        err "No image name specified\n"
+        vedv::image_command::__import_from_url_help
+        return "$ERR_INVAL_ARG"
+      fi
+      shift 2
+      ;;
+    --check)
+      readonly check=true
+      shift
+      ;;
+    --no-cache)
+      readonly no_cache=true
+      shift
+      ;;
+    # options
+    --checksum-url)
+      readonly checksum_url="${2:-}"
+      # validate argument
+      if [[ -z "$checksum_url" ]]; then
+        err "No checksum url specified\n"
+        vedv::image_command::__import_help
+        return "$ERR_INVAL_ARG"
+      fi
+      shift 2
+      ;;
+    # arguments
+    *)
+      readonly image_url="$1"
+      break
+      ;;
+    esac
+  done
+
+  if [[ -z "$image_url" ]]; then
+    err "Missing argument 'IMAGE_URL'\n"
+    vedv::image_command::__import_from_url_help
+    return "$ERR_INVAL_ARG"
+  fi
+
+  if [[ "$check" == true && -z "$checksum_url" ]]; then
+    checksum_url="${image_url}.sha256sum"
+  fi
+
+  vedv::image_service::import_from_url \
+    "$image_url" \
+    "$image_name" \
+    "$checksum_url" \
+    "$no_cache"
+}
+
+#
+# Show help for __pull command
+#
+# Output:
+#  Writes the help to the stdout
+#
+vedv::image_command::__import_from_url_help() {
+  cat <<-HELPMSG
+Usage:
+${__VED_IMAGE_COMMAND_SCRIPT_NAME} image from-url URL
+
+Import an image from a url
+
+Flags:
+  -h, --help            show help
+  --check               the checksum is downloaded from the same url as the image
+                        suffixed with .sha256sum
+  --no-cache            do not use cache when downloading the image
+
+Options:
+  -n, --name <name>     image name
+  --checksum-url <url>  download the checksum from the URL and check it using
                         sha256sum algorithm.
 HELPMSG
 }
@@ -599,6 +719,11 @@ vedv::image_command::run_cmd() {
     import)
       shift
       vedv::image_command::__import "$@"
+      return $?
+      ;;
+    from-url)
+      shift
+      vedv::image_command::__import_from_url "$@"
       return $?
       ;;
     *)

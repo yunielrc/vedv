@@ -353,7 +353,7 @@ vedv::image_builder::__layer_from_calc_id() {
   fi
 
   if [[ -f "$cmd_body" ]]; then
-    utils::crc_file_sum "$cmd_body"
+    utils::crc_sum "$cmd_body"
   else
     err "Not implemented yet"
     return "$ERR_NOT_IMPLEMENTED"
@@ -525,7 +525,7 @@ vedv::image_builder::__layer_copy_calc_id() {
   fi
 
   local crc_sum_base_vedvfileignore
-  crc_sum_base_vedvfileignore="$(utils::crc_file_sum "$base_vedvfileignore_path")" || {
+  crc_sum_base_vedvfileignore="$(utils::crc_sum "$base_vedvfileignore_path")" || {
     err "Failed to calc 'crc_sum_base_vedvfileignore'"
     return "$ERR_IMAGE_BUILDER_OPERATION"
   }
@@ -534,7 +534,7 @@ vedv::image_builder::__layer_copy_calc_id() {
   local crc_sum_vedvfileignore=''
 
   if [[ -f "$vedvfileignore_path" ]]; then
-    crc_sum_vedvfileignore="$(utils::crc_file_sum "$vedvfileignore_path")" || {
+    crc_sum_vedvfileignore="$(utils::crc_sum "$vedvfileignore_path")" || {
       err "Failed to calc 'crc_sum_vedvfileignore'"
       return "$ERR_IMAGE_BUILDER_OPERATION"
     }

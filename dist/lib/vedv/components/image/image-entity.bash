@@ -48,11 +48,8 @@ vedv::image_entity::gen_vm_name_from_ova_file() {
     return "$ERR_INVAL_ARG"
   fi
 
-  local vm_name="${image_file,,}"
-  vm_name="${vm_name%.ova}"
-
-  local -r crc_sum="$(utils::crc_file_sum "$image_file")"
-  vm_name="image:${vm_name##*/}|crc:${crc_sum}|"
+  local -r crc_sum="$(utils::crc_sum "$image_file")"
+  vm_name="image:$(petname)|crc:${crc_sum}|"
 
   echo "$vm_name"
 }

@@ -19,6 +19,19 @@ fi
 # FUNCTIONS
 
 #
+# Constructor
+#
+# Arguments:
+#   image_cache_dir   string    path to the image cache directory
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::image_service::constructor() {
+  readonly __VEDV_IMAGE_SERVICE_IMAGE_CACHE_DIR="$1"
+}
+
+#
 # Return if use cache for images
 #
 # Output:
@@ -46,27 +59,13 @@ vedv::image_service::set_use_cache() {
 }
 
 #
-# Constructor
-#
-# Arguments:
-#   hypervisor  string       name of the script
-#   ssh_ip  string           ssh ip
-#
-# Returns:
-#   0 on success, non-zero on error.
-#
-# vedv::image_service::constructor() {
-
-# }
-
-#
 # Import an image from a file
 #
 # Arguments:
 #   image_file        string  image file
-#   [image_name]      string  image name (default: file name)
+#   [image_name]      string  image name
 #   [return_image_id] bool    print the image id instead image name
-#   [checksum_file]   string  check sum of the image file (default: sha256sum)
+#   [checksum_file]   string  check sum file (algorithm: sha256sum)
 #
 # Output:
 #  Writes image name or image id to the stdout
@@ -75,6 +74,7 @@ vedv::image_service::set_use_cache() {
 #   0 on success, non-zero on error.
 #
 vedv::image_service::import() {
+  # TODO: REFACTOR THIS FUNCTION
   local -r image_file="$1"
   local -r custom_image_name="${2:-}"
   local -r return_image_id="${3:-false}"
@@ -171,6 +171,112 @@ vedv::image_service::import() {
 }
 vedv::image_service::__pull_from_file() { vedv::image_service::import "$@"; }
 
+#
+# Import an image from a url
+#
+# Arguments:
+#   image_url           string  image url
+#   [image_name]        string  image name
+#   [checksum_url]      string  checksum url (algorithm: sha256sum)
+#   [return_image_id]   bool    print the image id instead image name
+#
+# Output:
+#  Writes image name or image id to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::image_service::import_from_url() {
+  local -r image_url="$1"
+  local -r image_name="${2:-}"
+  local -r checksum_url="${3:-}"
+  local -r no_cache="${4:-false}"
+  local -r return_image_id="${5:-false}"
+  # validate arguments
+  if [[ -z "$image_url" ]]; then
+    err "image_url is required"
+    return "$ERR_INVAL_ARG"
+  fi
+  # validate url
+  if ! utils::is_url "$image_url"; then
+    err "image_url is not valid"
+    return "$ERR_INVAL_ARG"
+  fi
+  if [[ -n "$checksum_url" ]] && ! utils::is_url "$checksum_url"; then
+    err "checksum_url is not valid"
+    return "$ERR_INVAL_ARG"
+  fi
+
+  local -r im_cache_dir="$__VEDV_IMAGE_SERVICE_IMAGE_CACHE_DIR"
+
+  local download_dir=''
+  download_dir="${im_cache_dir}/$(md5sum <<<"$image_url" | cut -d' ' -f1)" ||
+    return $?
+  readonly download_dir
+
+  if [[ ! -d "$download_dir" ]]; then
+    mkdir "$download_dir" || {
+      err "Error creating download directory: '${download_dir}'"
+      return "$ERR_IMAGE_OPERATION"
+    }
+  fi
+
+  local image_file="${download_dir}/image-ef5f3566ea.ova"
+  local checksum_file=''
+
+  if [[ "$no_cache" == true || ! -f "$image_file" ]]; then
+    utils::download_file "$image_url" "$image_file" || {
+      err "Error downloading image from url: '${image_url}'"
+      return "$ERR_IMAGE_OPERATION"
+    }
+  fi
+
+  if [[ -n "$checksum_url" ]]; then
+    checksum_file="${download_dir}/checksum.sha256sum"
+
+    if [[ "$no_cache" == true || ! -f "$checksum_file" ]]; then
+      utils::download_file "$checksum_url" "$checksum_file" || {
+        err "Error downloading checksum from url: '${checksum_url}'"
+        return "$ERR_IMAGE_OPERATION"
+      }
+    fi
+    # validate sha256 checksum file
+    if ! utils::validate_sha256sum_format "$checksum_file"; then
+      err "Bad checksum file format: '${checksum_file}'"
+      return "$ERR_IMAGE_OPERATION"
+    fi
+
+    local original_file_name=''
+    # shellcheck disable=SC2034
+    IFS=' ' read -r checksum original_file_name 2>/dev/null <"$checksum_file" || {
+      err "Error reading checksum file: '${checksum_file}'"
+      return "$ERR_IMAGE_OPERATION"
+    }
+    unset checksum
+    readonly original_file_name
+
+    local -r original_file="${download_dir}/${original_file_name}"
+
+    ln -sf "$image_file" "$original_file" 2>/dev/null || {
+      err "Error creating symbolic link to image file: '${image_file}' to '${original_file_name}'"
+      return "$ERR_IMAGE_OPERATION"
+    }
+
+    image_file="$original_file"
+  fi
+  readonly image_file checksum_file
+
+  vedv::image_service::import \
+    "$image_file" \
+    "$image_name" \
+    "$return_image_id" \
+    "$checksum_file" || {
+    err "Error importing image from file: '${image_file}'"
+    return "$ERR_IMAGE_OPERATION"
+  }
+}
+
+#
 # Pull an OVF file from a registry or file
 # and create an image
 #

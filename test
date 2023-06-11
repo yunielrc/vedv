@@ -1,0 +1,24 @@
+utils::validate_sha256sum_format() {
+  local checksum_file="$1"
+  # validate arguments
+  if [[ -z "$checksum_file" ]]; then
+    err "checksum_file is required"
+    return "$ERR_INVAL_ARG"
+  fi
+  if [[ ! -f "$checksum_file" ]]; then
+    err "checksum file doesn't exist"
+    return "$ERR_NOFILE"
+  fi
+
+  while read -r line; do
+    if [[ -z "$line" ]]; then
+      continue
+    fi
+    if [[ ! $line =~ ^[a-f0-9]{64}[[:space:]]+.+$ ]]; then
+      echo "invalid checksum file format" >&2
+      return 1
+    fi
+  done <"$checksum_file"
+
+  return 0
+}

@@ -295,7 +295,7 @@ vedv image list-exposed-ports IMAGE"
 }
 
 # Tests for vedv::image_command::__import()
-# bats test_tags=only
+
 @test "vedv::image_command::__import() Should show help" {
 
   for flag in '' '-h' '--help'; do
@@ -306,7 +306,7 @@ vedv image list-exposed-ports IMAGE"
 vedv image import IMAGE_FILE"
   done
 }
-# bats test_tags=only
+
 @test "vedv::image_command::__import() Should fail if missing image name" {
 
   run vedv::image_command::__import --name
@@ -314,7 +314,7 @@ vedv image import IMAGE_FILE"
   assert_failure
   assert_output --partial 'No image name specified'
 }
-# bats test_tags=only
+
 @test "vedv::image_command::__import() Should check the image file without argument value" {
   vedv::image_service::import() {
     assert_equal "$*" "${TEST_OVA_FILE} image123 false ${TEST_OVA_FILE}.sha256sum"
@@ -326,7 +326,7 @@ vedv image import IMAGE_FILE"
   assert_success
   assert_output 'image123'
 }
-# bats test_tags=only
+
 @test "vedv::image_command::__import() Should fail if check file argument is missing" {
   vedv::image_service::import() {
     assert_equal "$*" "${TEST_OVA_FILE} image123 false ${TEST_OVA_FILE}.sha256sum"
@@ -338,7 +338,7 @@ vedv image import IMAGE_FILE"
   assert_failure
   assert_output --partial 'No checksum file specified'
 }
-# bats test_tags=only
+
 @test "vedv::image_command::__import() Should check the image file" {
   vedv::image_service::import() {
     assert_equal "$*" "${TEST_OVA_FILE} image123 false ${TEST_OVA_FILE}.sha256sum"
@@ -350,7 +350,7 @@ vedv image import IMAGE_FILE"
   assert_success
   assert_output 'image123'
 }
-# bats test_tags=only
+
 @test "vedv::image_command::__import() Should succeed" {
 
   vedv::image_service::import() {
@@ -362,4 +362,90 @@ vedv image import IMAGE_FILE"
 
   assert_success
   assert_output 'image123'
+}
+
+# Tests for vedv::image_command::__import_from_url()
+# bats test_tags=only
+@test "vedv::image_command::__import_from_url() Should show help" {
+
+  for flag in '' '-h' '--help'; do
+    run vedv::image_command::__import_from_url $flag
+
+    assert_success
+    assert_output --partial "Usage:
+vedv image from-url URL"
+  done
+}
+# bats test_tags=only
+@test "vedv::image_command::__import_from_url() Should fail if missing image name" {
+
+  run vedv::image_command::__import_from_url --name
+
+  assert_failure
+  assert_output --partial 'No image name specified'
+}
+# bats test_tags=only
+@test "vedv::image_command::__import_from_url() Should fail if missing sum url" {
+
+  run vedv::image_command::__import_from_url \
+    --check \
+    --no-cache \
+    --checksum-url
+
+  assert_failure
+  assert_output --partial 'No checksum url specified'
+}
+# bats test_tags=only
+@test "vedv::image_command::__import_from_url() Should fail if missing image url" {
+
+  run vedv::image_command::__import_from_url \
+    --check \
+    --no-cache \
+    --checksum-url 'http://example.com'
+
+  assert_failure
+  assert_output --partial "Missing argument 'IMAGE_URL'"
+}
+# bats test_tags=only
+@test "vedv::image_command::__import_from_url() Should succeed with all args" {
+  vedv::image_service::import_from_url() {
+    assert_equal "$*" "http://files.get/image image123 http://files.get/sum true"
+  }
+
+  run vedv::image_command::__import_from_url \
+    --name image123 \
+    --no-cache \
+    --checksum-url 'http://files.get/sum' \
+    'http://files.get/image'
+
+  assert_success
+  assert_output ""
+}
+# bats test_tags=only
+@test "vedv::image_command::__import_from_url() Should succeed with check" {
+  vedv::image_service::import_from_url() {
+    assert_equal "$*" "http://files.get/image image123 http://files.get/image.sha256sum true"
+  }
+
+  run vedv::image_command::__import_from_url \
+    --name image123 \
+    --check \
+    --no-cache \
+    'http://files.get/image'
+
+  assert_success
+  assert_output ""
+}
+# bats test_tags=only
+@test "vedv::image_command::__import_from_url() Should succeed with name" {
+  vedv::image_service::import_from_url() {
+    assert_equal "$*" "http://files.get/image image123  false"
+  }
+
+  run vedv::image_command::__import_from_url \
+    --name image123 \
+    'http://files.get/image'
+
+  assert_success
+  assert_output ""
 }

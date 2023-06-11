@@ -351,7 +351,6 @@ ${snapshot_name2}"
 
 @test "vedv::hypervisor::get_description(): Should succeed" {
   (
-    fix_var_names() { echo "$*"; }
     VBoxManage() {
       echo 'image_cache=value1 ova_file_sum=value2'
     }

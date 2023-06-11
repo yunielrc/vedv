@@ -1,279 +1,9 @@
 # shellcheck disable=SC2016
 load test_helper
 
-@test "fix_var_names(): Should succeed" {
-  local -r vars='name="manjaro-gnome-x64-full-clean"
-Encryption:     disabled
-groups="/"
-ostype="Arch Linux (64-bit)"
-UUID="19e117b3-06f4-4a1e-851d-47336ad6a142"
-CfgFile="/home/user/VirtualBox VMs/manjaro-gnome-x64-full-clean/manjaro-gnome-x64-full-clean.vbox"
-SnapFldr="/home/user/VirtualBox VMs/manjaro-gnome-x64-full-clean/Snapshots"
-LogFldr="/home/user/VirtualBox VMs/manjaro-gnome-x64-full-clean/Logs"
-hardwareuuid="19e117b3-06f4-4a1e-851d-47336ad6a142"
-memory=4096
-pagefusion="off"
-vram=64
-cpuexecutioncap=100
-hpet="off"
-cpu-profile="host"
-chipset="piix3"
-firmware="BIOS"
-cpus=4
-pae="off"
-longmode="on"
-triplefaultreset="off"
-apic="on"
-x2apic="on"
-nested-hw-virt="off"
-cpuid-portability-level=0
-bootmenu="messageandmenu"
-boot1="dvd"
-boot2="disk"
-boot3="none"
-boot4="none"
-acpi="on"
-ioapic="on"
-biosapic="apic"
-biossystemtimeoffset=0
-BIOS NVRAM File="/home/user/VirtualBox VMs/manjaro-gnome-x64-full-clean/manjaro-gnome-x64-full-clean.nvram"
-rtcuseutc="on"
-hwvirtex="on"
-nestedpaging="on"
-largepages="on"
-vtxvpid="on"
-vtxux="on"
-virtvmsavevmload="on"
-iommu="none"
-paravirtprovider="default"
-effparavirtprovider="kvm"
-VMState="poweroff"
-VMStateChangeTime="2023-02-06T02:18:47.191000000"
-graphicscontroller="vmsvga"
-monitorcount=1
-accelerate3d="off"
-accelerate2dvideo="off"
-teleporterenabled="off"
-teleporterport=0
-teleporteraddress=""
-teleporterpassword=""
-tracing-enabled="off"
-tracing-allow-vm-access="off"
-tracing-config=""
-autostart-enabled="off"
-autostart-delay=0
-defaultfrontend=""
-vmprocpriority="default"
-storagecontrollername0="IDE"
-storagecontrollertype0="PIIX4"
-storagecontrollerinstance0="0"
-storagecontrollermaxportcount0="2"
-storagecontrollerportcount0="2"
-storagecontrollerbootable0="on"
-storagecontrollername1="SATA"
-storagecontrollertype1="IntelAhci"
-storagecontrollerinstance1="0"
-storagecontrollermaxportcount1="30"
-storagecontrollerportcount1="1"
-storagecontrollerbootable1="on"
-"IDE-0-0"="none"
-"IDE-0-1"="none"
-"IDE-1-0"="emptydrive"
-"IDE-IsEjected-1-0"="off"
-"IDE-1-1"="none"
-"SATA-0-0"="/home/user/VirtualBox VMs/manjaro-gnome-x64-full-clean/manjaro-gnome-x64-full-clean-disk001.vdi"
-"SATA-ImageUUID-0-0"="37a0bb6b-4292-464e-b766-1e8b7101ec94"
-"SATA-hot-pluggable-0-0"="off"
-"SATA-nonrotational-0-0"="off"
-"SATA-discard-0-0"="off"
-natnet1="nat"
-macaddress1="08002744D7F6"
-cableconnected1="on"
-nic1="nat"
-nictype1="82540EM"
-nicspeed1="0"
-mtu="0"
-sockSnd="64"
-sockRcv="64"
-tcpWndSnd="64"
-tcpWndRcv="64"
-nic2="none"
-nic3="none"
-nic4="none"
-nic5="none"
-nic6="none"
-nic7="none"
-nic8="none"
-hidpointing="usbtablet"
-hidkeyboard="ps2kbd"
-uart1="off"
-uart2="off"
-uart3="off"
-uart4="off"
-lpt1="off"
-lpt2="off"
-audio="default"
-audio_out="on"
-audio_in="off"
-clipboard="bidirectional"
-draganddrop="bidirectional"
-vrde="off"
-usb="on"
-ehci="on"
-xhci="off"
-recording_enabled="off"
-recording_screens=1
- rec_screen0
-rec_screen_enabled="on"
-rec_screen_id=0
-rec_screen_video_enabled="on"
-rec_screen_dest="File"
-rec_screen_dest_filename="/home/user/VirtualBox VMs/manjaro-gnome-x64-full-clean/manjaro-gnome-x64-full-clean-screen0.webm"
-rec_screen_opts="vc_enabled=true,ac_enabled=false,ac_profile=med"
-rec_screen_video_res_xy="1024x768"
-rec_screen_video_rate_kbps=512
-rec_screen_video_fps=25
-description="name1=value1
-name2=value2"
-GuestMemoryBalloon=0'
-
-  run fix_var_names "$vars"
-
-  assert_success
-  assert_output 'name="manjaro-gnome-x64-full-clean"
-Encryption=disabled
-groups="/"
-ostype="Arch Linux (64-bit)"
-UUID="19e117b3-06f4-4a1e-851d-47336ad6a142"
-CfgFile="/home/user/VirtualBox VMs/manjaro-gnome-x64-full-clean/manjaro-gnome-x64-full-clean.vbox"
-SnapFldr="/home/user/VirtualBox VMs/manjaro-gnome-x64-full-clean/Snapshots"
-LogFldr="/home/user/VirtualBox VMs/manjaro-gnome-x64-full-clean/Logs"
-hardwareuuid="19e117b3-06f4-4a1e-851d-47336ad6a142"
-memory=4096
-pagefusion="off"
-vram=64
-cpuexecutioncap=100
-hpet="off"
-cpu_profile="host"
-chipset="piix3"
-firmware="BIOS"
-cpus=4
-pae="off"
-longmode="on"
-triplefaultreset="off"
-apic="on"
-x2apic="on"
-nested_hw_virt="off"
-cpuid_portability_level=0
-bootmenu="messageandmenu"
-boot1="dvd"
-boot2="disk"
-boot3="none"
-boot4="none"
-acpi="on"
-ioapic="on"
-biosapic="apic"
-biossystemtimeoffset=0
-BIOSNVRAMFile="/home/user/VirtualBox VMs/manjaro-gnome-x64-full-clean/manjaro-gnome-x64-full-clean.nvram"
-rtcuseutc="on"
-hwvirtex="on"
-nestedpaging="on"
-largepages="on"
-vtxvpid="on"
-vtxux="on"
-virtvmsavevmload="on"
-iommu="none"
-paravirtprovider="default"
-effparavirtprovider="kvm"
-VMState="poweroff"
-VMStateChangeTime="2023-02-06T02:18:47.191000000"
-graphicscontroller="vmsvga"
-monitorcount=1
-accelerate3d="off"
-accelerate2dvideo="off"
-teleporterenabled="off"
-teleporterport=0
-teleporteraddress=""
-teleporterpassword=""
-tracing_enabled="off"
-tracing_allow_vm_access="off"
-tracing_config=""
-autostart_enabled="off"
-autostart_delay=0
-defaultfrontend=""
-vmprocpriority="default"
-storagecontrollername0="IDE"
-storagecontrollertype0="PIIX4"
-storagecontrollerinstance0="0"
-storagecontrollermaxportcount0="2"
-storagecontrollerportcount0="2"
-storagecontrollerbootable0="on"
-storagecontrollername1="SATA"
-storagecontrollertype1="IntelAhci"
-storagecontrollerinstance1="0"
-storagecontrollermaxportcount1="30"
-storagecontrollerportcount1="1"
-storagecontrollerbootable1="on"
-IDE_0_0="none"
-IDE_0_1="none"
-IDE_1_0="emptydrive"
-IDE_IsEjected_1_0="off"
-IDE_1_1="none"
-SATA_0_0="/home/user/VirtualBox VMs/manjaro-gnome-x64-full-clean/manjaro-gnome-x64-full-clean-disk001.vdi"
-SATA_ImageUUID_0_0="37a0bb6b-4292-464e-b766-1e8b7101ec94"
-SATA_hot_pluggable_0_0="off"
-SATA_nonrotational_0_0="off"
-SATA_discard_0_0="off"
-natnet1="nat"
-macaddress1="08002744D7F6"
-cableconnected1="on"
-nic1="nat"
-nictype1="82540EM"
-nicspeed1="0"
-mtu="0"
-sockSnd="64"
-sockRcv="64"
-tcpWndSnd="64"
-tcpWndRcv="64"
-nic2="none"
-nic3="none"
-nic4="none"
-nic5="none"
-nic6="none"
-nic7="none"
-nic8="none"
-hidpointing="usbtablet"
-hidkeyboard="ps2kbd"
-uart1="off"
-uart2="off"
-uart3="off"
-uart4="off"
-lpt1="off"
-lpt2="off"
-audio="default"
-audio_out="on"
-audio_in="off"
-clipboard="bidirectional"
-draganddrop="bidirectional"
-vrde="off"
-usb="on"
-ehci="on"
-xhci="off"
-recording_enabled="off"
-recording_screens=1
-rec_screen0
-rec_screen_enabled="on"
-rec_screen_id=0
-rec_screen_video_enabled="on"
-rec_screen_dest="File"
-rec_screen_dest_filename="/home/user/VirtualBox VMs/manjaro-gnome-x64-full-clean/manjaro-gnome-x64-full-clean-screen0.webm"
-rec_screen_opts="vc_enabled=true,ac_enabled=false,ac_profile=med"
-rec_screen_video_res_xy="1024x768"
-rec_screen_video_rate_kbps=512
-rec_screen_video_fps=25
-description="name1=value1
-name2=value2"
-GuestMemoryBalloon=0'
+setup() {
+  utils::constructor "$TEST_TMP_DIR"
+  export __VEDV_UTILS_TMP_DIR
 }
 
 @test "utils::get_a_dynamic_port() Should return a dynamic port" {
@@ -864,7 +594,7 @@ calc_item_id_from_array_b() { echo "$1"; }
 }
 
 # Tests for utils::sha256sum_check()
-# bats test_tags=only
+
 @test "utils::sha256sum_check() Should fail With empty file_path" {
   local -r checksum_file=""
 
@@ -873,7 +603,7 @@ calc_item_id_from_array_b() { echo "$1"; }
   assert_failure
   assert_output "checksum_file is required"
 }
-# bats test_tags=only
+
 @test "utils::sha256sum_check() Should fail If checksum_file does not exist" {
   local -r checksum_file="sdjfkljewlijflsa.sha256sum"
 
@@ -882,7 +612,7 @@ calc_item_id_from_array_b() { echo "$1"; }
   assert_failure
   assert_output "checksum file doesn't exist"
 }
-# bats test_tags=only
+
 @test "utils::sha256sum_check() Should fail If checksum fail" {
   local -r checksum_file="$(mktemp)"
 
@@ -891,11 +621,246 @@ calc_item_id_from_array_b() { echo "$1"; }
   assert_failure
   assert_output "checksum doesn't match"
 }
-# bats test_tags=only
+
 @test "utils::sha256sum_check() Should succeed If checksum success" {
   local -r checksum_file="${TEST_OVA_FILE}.sha256sum"
 
   run utils::sha256sum_check "$checksum_file"
+
+  assert_success
+  assert_output ""
+}
+
+# Tests for utils::is_url()
+
+@test "utils::is_url() Should fail With empty url" {
+  local -r url=""
+
+  run utils::is_url "$url"
+
+  assert_failure
+  assert_output ""
+}
+
+@test "utils::is_url() Should fail With invalid url" {
+  local -r url="foo"
+
+  run utils::is_url "$url"
+
+  assert_failure
+  assert_output ""
+}
+
+@test "utils::is_url() Should succeed With valid url" {
+  local -r url="https://www.google.com"
+
+  run utils::is_url "$url"
+
+  assert_success
+  assert_output ""
+}
+
+@test "utils::is_url() Should succeed With valid url with port" {
+  local -r url="https://www.google.com:8080"
+
+  run utils::is_url "$url"
+
+  assert_success
+  assert_output ""
+}
+
+@test "utils::is_url() Should succeed With valid url with path" {
+  local -r url="https://www.google.com/foo/bar"
+
+  run utils::is_url "$url"
+
+  assert_success
+  assert_output ""
+}
+
+@test "utils::is_url() Should succeed With valid url with query" {
+  local -r url="https://www.google.com?foo=bar"
+
+  run utils::is_url "$url"
+
+  assert_success
+  assert_output ""
+}
+
+@test "utils::is_url() Should succeed With valid url with fragment" {
+  local -r url="https://www.google.com#foo"
+
+  run utils::is_url "$url"
+
+  assert_success
+  assert_output ""
+}
+
+@test "utils::is_url() Should succeed With valid url with user" {
+  local -r url="https://user@localhost"
+
+  run utils::is_url "$url"
+
+  assert_success
+  assert_output ""
+}
+
+@test "utils::is_url() Should succeed With valid url with user and password" {
+  local -r url="https://user:password@localhost"
+
+  run utils::is_url "$url"
+
+  assert_success
+  assert_output ""
+}
+
+@test "utils::is_url() Should succeed With valid url with user and password and port" {
+  local -r url="https://user:password@localhost:8080"
+
+  run utils::is_url "$url"
+
+  assert_success
+  assert_output ""
+}
+
+@test "utils::is_url() Should succeed With valid url with user and password and port and path" {
+  local -r url="https://user:password@localhost:8080/foo/bar"
+
+  run utils::is_url "$url"
+
+  assert_success
+  assert_output ""
+}
+
+@test "utils::is_url() Should succeed With valid url with user and password and port and path and query" {
+  local -r url="https://user:password@localhost:8080/foo/bar?foo=bar"
+
+  run utils::is_url "$url"
+
+  assert_success
+  assert_output ""
+}
+
+@test "utils::is_url() Should succeed With valid url with user and password and port and path and query and fragment" {
+  local -r url="https://user:password@localhost:8080/foo/bar?foo=bar#foo"
+
+  run utils::is_url "$url"
+
+  assert_success
+  assert_output ""
+}
+
+@test "utils::is_url() Should fail With valid url with user and password and port and path and query and fragment and invalid scheme" {
+  local -r url="foo://user:password@localhost:8080/foo/bar?foo=bar#foo"
+
+  run utils::is_url "$url"
+
+  assert_failure
+  assert_output ""
+}
+
+@test "utils::is_url() Should succeed" {
+  local -r url="https://www.google.com/search?q=regular+expresion+to+validate+an+url+in+BASH&biw=1463&bih=760&sxsrf=APwXEdd1cZuaNKYRftKufCdN9QgG6QeXwQ%3A1686364282081&ei=euCDZNPMBLyGwbkPm8u-2AM&ved=0ahUKEwjT8fq_1Lf_AhU8QzABHZulDzsQ4dUDCBE&uact=5&oq=regular+expresion+to+validate+an+url+in+BASH&gs_lcp=Cgxnd3Mtd2lzIHCCEQoAEQCjIHCCEQoAEQCjoECCMQJzoHCCMQigUQJzoHCC4QigUQJzoHCAAQigUQQzoICAAQigUQkQI6CwgAEIAEELEDEIMBOggILhCAgUQsQMQgwEQQzoICAAQgAQQsQM6BQgAEIAEOgoIABCAgjELACECc6CAgAEAgQBxAeOggIABAFEB4QDToICAAQigUQhgM6BQgAEKIEOgQIIRAKOgcIIRCrAhAKOgoIIRAWEB4QHRAKSgQIQRgAUABYjGpg-m1oAHABeAGAAbQBiAHcIJIBBTI5LjE1mAEAoAEBwAEB&sclient=gws-wiz-serp"
+
+  run utils::is_url "$url"
+
+  assert_success
+  assert_output ""
+}
+
+# Tests for utils::mktmp_dir()
+
+@test "utils::mktmp_dir() Should succeed" {
+
+  local dir="$(utils::mktmp_dir)"
+
+  assert [ -d "$dir" ]
+}
+
+# Tests for utils::download_file()
+
+@test "utils::download_file() Should fail With empty url" {
+  local -r url=""
+
+  run utils::download_file "$url" "$TEST_OVA_FILE"
+
+  assert_failure
+  assert_output "url is required"
+}
+
+@test "utils::download_file() Should fail With invalid url" {
+  local -r url="https:www.google.com"
+
+  run utils::download_file "$url" ""
+
+  assert_failure
+  assert_output "url is not valid"
+}
+
+@test "utils::download_file() Should fail With empty destination" {
+  local -r url="https://www.google.com"
+
+  run utils::download_file "$url" ""
+
+  assert_failure
+  assert_output "file is required"
+}
+
+@test "utils::download_file() Should fail If download fails" {
+  local -r url="http://f2c2b9201b6edf4d7e5ef219c540a744.get"
+  local -r file="$(mktemp)"
+
+  run utils::download_file "$url" "$file"
+
+  assert_failure
+  assert_output "error downloading file"
+}
+
+@test "utils::download_file() Should succeed" {
+  local -r url="$TEST_OVA_CHECKSUM"
+  local -r file="$(mktemp)"
+
+  run utils::download_file "$url" "$file"
+
+  assert_success
+  assert_output ""
+}
+
+# Tests for utils::validate_sha256sum_format()
+# bats test_tags=only
+@test "utils::validate_sha256sum_format() Should fail With empty sha256sum" {
+  local -r sha256sum=""
+
+  run utils::validate_sha256sum_format "$sha256sum"
+
+  assert_failure
+  assert_output "checksum_file is required"
+}
+# bats test_tags=only
+@test "utils::validate_sha256sum_format() Should if file does not exist" {
+  local -r sha256sum="/tmp/f18c7b0d63"
+
+  run utils::validate_sha256sum_format "$sha256sum"
+
+  assert_failure
+  assert_output "checksum file doesn't exist"
+}
+# bats test_tags=only
+@test "utils::validate_sha256sum_format() Should checksum format is invalid" {
+  local -r sha256sum="$(mktemp)"
+  echo "f18c7b0d63" >"$sha256sum"
+
+  run utils::validate_sha256sum_format "$sha256sum"
+
+  assert_failure
+  assert_output ""
+}
+# bats test_tags=only
+@test "utils::validate_sha256sum_format() Should succeed" {
+  local -r sha256sum="$(mktemp)"
+  echo "83a0bbec167c280145ffafc6df65ec5fd74dec864c18535d71abfa3bb64c2663  /tmp/ova.ova" >"$sha256sum"
+
+  run utils::validate_sha256sum_format "$sha256sum"
 
   assert_success
   assert_output ""

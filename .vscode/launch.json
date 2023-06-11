@@ -179,7 +179,34 @@
     {
       "type": "bashdb",
       "request": "launch",
-      "name": "Bash-Debug (vedv image build)",
+      "name": "Bash-Debug (vedv image from-url --checksum-url ...)",
+      "cwd": "${workspaceFolder}",
+      "program": "${workspaceFolder}/dist/usr/bin/vedv",
+      "args": [
+        "image",
+        "from-url",
+        "--checksum-url",
+        "https://onedrive.live.com/download?cid=DBA0B75F07574EAA&resid=DBA0B75F07574EAA%21217&authkey=AGI-xmawbzY_qK0",
+        "https://onedrive.live.com/download?cid=DBA0B75F07574EAA&resid=DBA0B75F07574EAA%21218&authkey=AE2HmKsFmd56A1g"
+      ]
+    },
+    {
+      "type": "bashdb",
+      "request": "launch",
+      "name": "Bash-Debug (vedv image from-url --check ...)",
+      "cwd": "${workspaceFolder}",
+      "program": "${workspaceFolder}/dist/usr/bin/vedv",
+      "args": [
+        "image",
+        "from-url",
+        "--check",
+        "https://onedrive.live.com/download?cid=DBA0B75F07574EAA&resid=DBA0B75F07574EAA%21218&authkey=AE2HmKsFmd56A1g"
+      ]
+    },
+    {
+      "type": "bashdb",
+      "request": "launch",
+      "name": "Bash-Debug (vedv image build ...)",
       "cwd": "${workspaceFolder}/dist/test/lib/vedv/components/image/fixtures",
       "env": {
         "VEDV_HADOLINT_ENABLED": "false"
@@ -190,8 +217,8 @@
         "build",
         "--force",
         "-t",
-        "image1",
-        "./varsub.vedvfile"
+        "image123",
+        "./Vedvfile2"
       ]
     },
     {

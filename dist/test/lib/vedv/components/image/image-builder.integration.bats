@@ -19,7 +19,7 @@ teardown_file() {
 
 teardown() {
   delete_vms_by_partial_vm_name "$VM_TAG"
-  delete_vms_by_partial_vm_name 'image:alpine-x86_64'
+  delete_vms_by_partial_vm_name 'image:'
 }
 
 @test "vedv::image_builder::__build() Should succeed" {

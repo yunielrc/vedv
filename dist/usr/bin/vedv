@@ -47,6 +47,23 @@ readonly VEDV_BASE_VEDVFILEIGNORE="${VEDV_BASE_VEDVFILEIGNORE:-"${BASE_VEDVFILEI
 readonly VEDV_HYPERVISOR_FRONTEND="${VEDV_HYPERVISOR_FRONTEND:-"${HYPERVISOR_FRONTEND:-headless}"}"
 readonly VEDV_DEFAULT_HYPERVISOR="${VEDV_DEFAULT_HYPERVISOR:-"${DEFAULT_HYPERVISOR:-virtualbox}"}"
 readonly VEDV_NO_WAIT_AFTER_BUILD="${VEDV_NO_WAIT_AFTER_BUILD:-"${NO_WAIT_AFTER_BUILD:-false}"}"
+readonly VEDV_TMP_DIR="${VEDV_TMP_DIR:-"${TMP_DIR:-"/var/tmp/vedv"}"}"
+readonly VEDV_CACHE_DIR="${VEDV_CACHE_DIR:-"${CACHE_DIR:-"/home/${USER}/.var/cache/vedv"}"}"
+readonly VEDV_IMAGE_CACHE_DIR="${VEDV_IMAGE_CACHE_DIR:-"${IMAGE_CACHE_DIR:-"/home/${USER}/.var/cache/vedv/images"}"}"
+
+# CREATE DIRECTORIES
+
+readonly -a VEDV_DIRS_ARR=(
+  "$VEDV_TMP_DIR"
+  "$VEDV_CACHE_DIR"
+  "$VEDV_IMAGE_CACHE_DIR"
+)
+
+for dir in "${VEDV_DIRS_ARR[@]}"; do
+  if [[ ! -d "$dir" ]]; then
+    mkdir -p "$dir" || return $?
+  fi
+done
 
 # INCLUDE
 . "${__VEDV_LIB_PATH}/utils.bash"
@@ -110,6 +127,8 @@ vedv::__run_cmd() {
   . "${__VEDV_HYPERVISORS_PATH}/${hypervisor}.bash"
 
   # initialize components
+  utils::constructor "$VEDV_TMP_DIR"
+
   vedv::hypervisor::constructor "$VEDV_HYPERVISOR_FRONTEND"
 
   local vedvfileignore_path=''
@@ -144,6 +163,8 @@ vedv::__run_cmd() {
     "$VEDV_SSH_USER" \
     "$VEDV_SSH_PASSWORD" \
     "$(arr2str vedv_vmobj_service_use_cache_dict)"
+
+  vedv::image_service::constructor "$VEDV_IMAGE_CACHE_DIR"
 
   vedv::image_builder::constructor "$VEDV_NO_WAIT_AFTER_BUILD"
 

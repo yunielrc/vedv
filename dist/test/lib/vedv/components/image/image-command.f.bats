@@ -1,20 +1,18 @@
-# shellcheck disable=SC2016
+# shellcheck disable=SC2016,SC2317
 load test_helper
 
 setup_file() {
   delete_vms_directory
   export VED_HADOLINT_CONFIG="$TEST_HADOLINT_CONFIG"
-  VEDV_HADOLINT_ENABLED=false
-  export VEDV_HADOLINT_ENABLED
-  vedv::image_builder::constructor 'false'
-  export __VEDV_IMAGE_BUILDER_NO_WAIT_AFTER_BUILD
+  export VEDV_HADOLINT_ENABLED=false
+  export VEDV_IMAGE_CACHE_DIR="$TEST_IMAGE_CACHE_DIR"
 }
 
 teardown() {
   delete_vms_by_partial_vm_name 'container123'
   delete_vms_by_partial_vm_name 'container124'
   delete_vms_by_partial_vm_name 'image123'
-  delete_vms_by_partial_vm_name 'image:alpine-x86_64'
+  delete_vms_by_partial_vm_name 'image:'
   delete_vms_by_partial_vm_name 'image-cache|'
 }
 
@@ -47,8 +45,10 @@ Pull an image from a file"
 
   run vedv image pull "$TEST_OVA_FILE"
 
+  local -r image_name="$(vedv image list | head -n 1 | awk '{print $2}')"
+
   assert_success
-  assert_output 'alpine-x86_64'
+  assert_output "$image_name"
 }
 
 @test "vedv image pull, Should show error with invalid argument" {
@@ -95,7 +95,7 @@ Aliases:
   run vedv image list
 
   assert_success
-  assert_output --regexp '^[[:digit:]]+ alpine-x86_64'
+  assert_output --regexp '^[[:digit:]]+ .+'
 }
 
 # Tests for 'vedv image rm'
@@ -122,7 +122,10 @@ Flags:
 @test "vedv image rm, Should remove the image" {
 
   vedv image pull "$TEST_OVA_FILE"
-  run vedv image rm 'alpine-x86_64'
+
+  local -r image_name="$(vedv image list | head -n 1 | awk '{print $2}')"
+
+  run vedv image rm "$image_name"
 
   assert_success
   assert_output --regexp '^[0-9]+\s*$'
@@ -164,12 +167,13 @@ Remove unused cache images"
 @test "vedv image remove-cache, Should remove unused caches" {
 
   vedv image pull "$TEST_OVA_FILE"
+  local -r image_name="$(vedv image list | head -n 1 | awk '{print $2}')"
 
   run vedv image remove-cache
   assert_success
   assert_output ''
 
-  vedv image rm 'alpine-x86_64'
+  vedv image rm "$image_name"
 
   run vedv image remove-cache
   assert_success
@@ -184,20 +188,8 @@ Remove unused cache images"
     run vedv image build "$arg"
 
     assert_success
-    assert_output "Usage:
-vedv image build [FLAGS] [OPTIONS] VEDVFILE
-
-Build an image from a Vedvfile
-
-Flags:
-  -h, --help              show the help
-  --force                 force the build removing the image containers
-  --no-cache              do not use cache when building the image
-  --no-wait   it will not wait for the image to save data cache
-                          and stopping.
-
-Options:
-  -n, --name <name>   image name"
+    assert_output --partial "Usage:
+vedv image build [FLAGS] [OPTIONS] VEDVFILE"
   done
 }
 
@@ -489,7 +481,7 @@ vedv image import IMAGE_FILE"
   assert_failure
   assert_output --partial 'No image name specified'
 }
-# bats test_tags=only
+
 @test "vedv image import --check -n image123, Should check the image file without argument value" {
 
   run vedv image import --check --name image123 "$TEST_OVA_FILE"
@@ -497,7 +489,7 @@ vedv image import IMAGE_FILE"
   assert_success
   assert_output 'image123'
 }
-# bats test_tags=only
+
 @test "vedv image import --check-file -n image123, Should check the image file" {
 
   run vedv image import --check-file "${TEST_OVA_FILE}.sha256sum" --name image123 "$TEST_OVA_FILE"
@@ -511,4 +503,67 @@ vedv image import IMAGE_FILE"
 
   assert_success
   assert_output 'image123'
+}
+
+# Tests for vedv image from-url
+# bats test_tags=only
+@test "vedv image from-url --help, Should show help" {
+
+  for flag in '' '-h' '--help'; do
+    run vedv image from-url $flag
+
+    assert_success
+    assert_output --partial "Usage:
+vedv image from-url URL"
+  done
+}
+# bats test_tags=only
+@test "vedv image from-url --name, Should fail if missing image name" {
+
+  run vedv image from-url --name
+
+  assert_failure
+  assert_output --partial 'No image name specified'
+}
+# bats test_tags=only
+@test "vedv image from-url --name image123 ..., Should import the image file" {
+
+  run vedv image from-url --name image123 "$TEST_OVA_URL"
+
+  assert_success
+  assert_output 'image123'
+
+  __run_cmd2_wrapper() {
+    vedv image ls | grep 'image123'
+  }
+
+  run __run_cmd2_wrapper
+
+  assert_success
+  assert_output --regexp '.* image123'
+}
+# bats test_tags=only
+@test "vedv image from-url -n image123 --checksum-url ..., Should check the image file" {
+
+  run vedv image from-url -n image123 --checksum-url "$TEST_OVA_CHECKSUM" "$TEST_OVA_URL"
+
+  assert_success
+  assert_output 'image123'
+
+  __run_cmd2_wrapper() {
+    vedv image ls | grep 'image123'
+  }
+
+  run __run_cmd2_wrapper
+
+  assert_success
+  assert_output --regexp '.* image123'
+}
+# bats test_tags=only
+@test "vedv image from-url -n image123 --check ..., Should fail If checksum does not exist on remote server" {
+
+  run vedv image from-url --no-cache -n image123 --check "$TEST_OVA_URL"
+
+  assert_failure
+  assert_output --regexp 'Bad checksum file format: .*/checksum.sha256sum'
 }

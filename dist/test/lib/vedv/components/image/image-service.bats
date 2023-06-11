@@ -1,4 +1,4 @@
-# shellcheck disable=SC2016,SC2140,SC2317
+# shellcheck disable=SC2016,SC2140,SC2317,SC2031,SC2030,SC2317
 # copilot, generate tests using the functions in: "${workspaceFolder}/dist/lib/vedv/components/image/image-service.bash"
 # copilot: suggest the comment '' right before each test declaration, DO THIS FOREVER
 load test_helper
@@ -21,6 +21,16 @@ setup_file() {
   export __VEDV_VMOBJ_SERVICE_SSH_IP
   export __VEDV_VMOBJ_SERVICE_SSH_USER
   export __VEDV_VMOBJ_SERVICE_SSH_PASSWORD
+
+  vedv::image_service::constructor "$TEST_IMAGE_CACHE_DIR"
+  export __VEDV_IMAGE_SERVICE_IMAGE_CACHE_DIR
+}
+
+teardown() {
+  if [[ -d "$TEST_IMAGE_CACHE_DIR" &&
+    "$TEST_IMAGE_CACHE_DIR" =~ ^/tmp/ ]]; then
+    rm -rf "$TEST_IMAGE_CACHE_DIR"
+  fi
 }
 
 # Tests for vedv::image_service::import()
@@ -32,7 +42,7 @@ setup_file() {
   assert_failure
   assert_output "image file doesn't exist"
 }
-# bats test_tags=only
+
 @test "vedv::image_service::import() Should fail If sha256sum_check fails" {
   local -r image_file="$TEST_OVA_FILE"
   local -r custom_image_name="image1"
@@ -1788,6 +1798,432 @@ EOF
   }
   # Act
   run vedv::image_service::build "$vedvfile" "$image_name" "$force" "$no_cache" "$no_wait_after_build"
+  # Assert
+  assert_success
+  assert_output ""
+}
+
+# Tests for vedv::image_service::import_from_url()
+# bats test_tags=only
+@test "vedv::image_service::import_from_url() Should fail If image_url is empty" {
+  # Arrange
+  local -r image_url=""
+  local -r image_name=""
+  local -r checksum_url=""
+  local -r no_cache=""
+  local -r return_image_id=""
+  # Stub
+  # Act
+  run vedv::image_service::import_from_url \
+    "$image_url" \
+    "$image_name" \
+    "$checksum_url" \
+    "$no_cache" \
+    "$return_image_id"
+
+  # Assert
+  assert_failure
+  assert_output "image_url is required"
+}
+# bats test_tags=only
+@test "vedv::image_service::import_from_url() Should fail If image_url is not valid" {
+  # Arrange
+  local -r image_url="http:files.get/image"
+  local -r image_name=""
+  local -r checksum_url=""
+  local -r no_cache=""
+  local -r return_image_id=""
+  # Stub
+  utils::is_url() {
+    assert_equal "$*" "$image_url"
+    return 1
+  }
+  # Act
+  run vedv::image_service::import_from_url \
+    "$image_url" \
+    "$image_name" \
+    "$checksum_url" \
+    "$no_cache" \
+    "$return_image_id"
+
+  # Assert
+  assert_failure
+  assert_output "image_url is not valid"
+}
+# bats test_tags=only
+@test "vedv::image_service::import_from_url() Should fail If checksum_url is not valid" {
+  # Arrange
+  local -r image_url="http://files.get/image"
+  local -r image_name=""
+  local -r checksum_url="http://files.get/checksum"
+  local -r no_cache=""
+  local -r return_image_id=""
+  # Stub
+  utils::is_url() {
+    case "$*" in
+    "$image_url") return 0 ;;
+    "$checksum_url") return 1 ;;
+    *) return 2 ;;
+    esac
+  }
+  # Act
+  run vedv::image_service::import_from_url \
+    "$image_url" \
+    "$image_name" \
+    "$checksum_url" \
+    "$no_cache" \
+    "$return_image_id"
+
+  # Assert
+  assert_failure
+  assert_output "checksum_url is not valid"
+}
+# bats test_tags=only
+@test "vedv::image_service::import_from_url() Should fail If mkdir fail" {
+  # Arrange
+  local -r image_url="http://files.get/image"
+  local -r image_name=""
+  local -r checksum_url="http://files.get/checksum"
+  local -r no_cache=""
+  local -r return_image_id=""
+  # Stub
+  utils::is_url() {
+    case "$*" in
+    "$image_url") return 0 ;;
+    "$checksum_url") return 0 ;;
+    *) return 2 ;;
+    esac
+  }
+  mkdir() {
+    assert_regex "$*" "${TEST_IMAGE_CACHE_DIR}/.*"
+    return 1
+  }
+  # Act
+  run vedv::image_service::import_from_url \
+    "$image_url" \
+    "$image_name" \
+    "$checksum_url" \
+    "$no_cache" \
+    "$return_image_id"
+
+  # Assert
+  assert_failure
+  assert_output --partial "Error creating download directory: '${TEST_IMAGE_CACHE_DIR}/"
+}
+# bats test_tags=only
+@test "vedv::image_service::import_from_url() Should fail If download_file fail" {
+  # Arrange
+  local -r image_url="http://files.get/image"
+  local -r image_name=""
+  local -r checksum_url="http://files.get/checksum"
+  local -r no_cache="true"
+  local -r return_image_id=""
+  # Stub
+  utils::is_url() {
+    case "$*" in
+    "$image_url") return 0 ;;
+    "$checksum_url") return 0 ;;
+    *) return 2 ;;
+    esac
+  }
+  mkdir() {
+    assert_regex "$*" "${TEST_IMAGE_CACHE_DIR}/.*"
+  }
+  utils::download_file() {
+    assert_regex "$*" "${image_url} ${TEST_IMAGE_CACHE_DIR}/.*/image-ef5f3566ea.ova"
+    return 1
+  }
+  # Act
+  run vedv::image_service::import_from_url \
+    "$image_url" \
+    "$image_name" \
+    "$checksum_url" \
+    "$no_cache" \
+    "$return_image_id"
+
+  # Assert
+  assert_failure
+  assert_output "Error downloading image from url: 'http://files.get/image'"
+}
+# bats test_tags=only
+@test "vedv::image_service::import_from_url() Should fail If download_file for checksum fails" {
+  # Arrange
+  local -r image_url="http://files.get/image"
+  local -r image_name=""
+  local -r checksum_url="http://files.get/checksum"
+  local -r no_cache="true"
+  local -r return_image_id=""
+  # Stub
+  utils::is_url() {
+    case "$*" in
+    "$image_url") return 0 ;;
+    "$checksum_url") return 0 ;;
+    *) return 2 ;;
+    esac
+  }
+  mkdir() {
+    assert_regex "$*" "${TEST_IMAGE_CACHE_DIR}/.*"
+  }
+  utils::download_file() {
+    case "$*" in
+    "$image_url"*) return 0 ;;
+    "$checksum_url"*) return 1 ;;
+    *) return 2 ;;
+    esac
+  }
+  # Act
+  run vedv::image_service::import_from_url \
+    "$image_url" \
+    "$image_name" \
+    "$checksum_url" \
+    "$no_cache" \
+    "$return_image_id"
+
+  # Assert
+  assert_failure
+  assert_output "Error downloading checksum from url: '${checksum_url}'"
+}
+# bats test_tags=only
+@test "vedv::image_service::import_from_url() Should fail If validate_sha256sum_format fails" {
+  # Arrange
+  local -r image_url="http://files.get/image"
+  local -r image_name=""
+  local -r checksum_url="http://files.get/checksum"
+  local -r no_cache="true"
+  local -r return_image_id=""
+  # Stub
+  utils::is_url() {
+    case "$*" in
+    "$image_url") return 0 ;;
+    "$checksum_url") return 0 ;;
+    *) return 2 ;;
+    esac
+  }
+  mkdir() {
+    assert_regex "$*" "${TEST_IMAGE_CACHE_DIR}/.*"
+  }
+  utils::download_file() {
+    case "$*" in
+    "$image_url"*) return 0 ;;
+    "$checksum_url"*) return 0 ;;
+    *) return 1 ;;
+    esac
+  }
+  utils::validate_sha256sum_format() {
+    assert_equal "$*" "$checksum_file"
+    return 1
+  }
+  # Act
+  run vedv::image_service::import_from_url \
+    "$image_url" \
+    "$image_name" \
+    "$checksum_url" \
+    "$no_cache" \
+    "$return_image_id"
+
+  # Assert
+  assert_failure
+  assert_output --partial "Bad checksum file format: "
+}
+# bats test_tags=only
+@test "vedv::image_service::import_from_url() Should fail If read fails" {
+  # Arrange
+  local -r image_url="http://files.get/image"
+  local -r image_name=""
+  local -r checksum_url="http://files.get/checksum"
+  local -r no_cache="true"
+  local -r return_image_id=""
+
+  # Stub
+  local -r download_dir="${TEST_IMAGE_CACHE_DIR}/$(md5sum <<<"$image_url" | cut -d' ' -f1)"
+  local -r image_file="${download_dir}/image-ef5f3566ea.ova"
+  local -r checksum_file="${download_dir}/checksum.sha256sum"
+
+  utils::is_url() {
+    case "$*" in
+    "$image_url") return 0 ;;
+    "$checksum_url") return 0 ;;
+    *) return 2 ;;
+    esac
+  }
+  utils::download_file() {
+    case "$*" in
+    "$image_url"*)
+      echo 'image.ova content' >"$image_file"
+      return 0
+      ;;
+    "$checksum_url"*)
+      return 0
+      ;;
+    *) return 1 ;;
+    esac
+  }
+  utils::validate_sha256sum_format() {
+    assert_equal "$*" "$checksum_file"
+  }
+  # Act
+  run vedv::image_service::import_from_url \
+    "$image_url" \
+    "$image_name" \
+    "$checksum_url" \
+    "$no_cache" \
+    "$return_image_id"
+
+  # Assert
+  assert_failure
+  assert_output --partial "Error reading checksum file: '/tmp/vedv/images/"
+}
+# bats test_tags=only
+@test "vedv::image_service::import_from_url() Should fail If ln fails" {
+  # Arrange
+  local -r image_url="http://files.get/image"
+  local -r image_name=""
+  local -r checksum_url="http://files.get/checksum"
+  local -r no_cache="true"
+  local -r return_image_id=""
+
+  # Stub
+  local -r download_dir="${TEST_IMAGE_CACHE_DIR}/$(md5sum <<<"$image_url" | cut -d' ' -f1)"
+  local -r image_file="${download_dir}/image-ef5f3566ea.ova"
+  local -r checksum_file="${download_dir}/checksum.sha256sum"
+
+  utils::is_url() {
+    case "$*" in
+    "$image_url") return 0 ;;
+    "$checksum_url") return 0 ;;
+    *) return 2 ;;
+    esac
+  }
+  utils::download_file() {
+    case "$*" in
+    "$image_url"*)
+      echo 'image.ova content' >"$image_file"
+      return 0
+      ;;
+    "$checksum_url"*)
+      echo '123245677 image-ef5f3566ea.ova' >"$checksum_file"
+      return 0
+      ;;
+    *) return 1 ;;
+    esac
+  }
+  utils::validate_sha256sum_format() {
+    assert_equal "$*" "$checksum_file"
+  }
+
+  # Act
+  run vedv::image_service::import_from_url \
+    "$image_url" \
+    "$image_name" \
+    "$checksum_url" \
+    "$no_cache" \
+    "$return_image_id"
+
+  # Assert
+  assert_failure
+  assert_output --partial "Error creating symbolic link to image file: '/tmp/vedv/images/"
+}
+# bats test_tags=only
+@test "vedv::image_service::import_from_url() Should fail If import fails" {
+  # Arrange
+  local -r image_url="http://files.get/image"
+  local -r image_name="image1"
+  local -r checksum_url="http://files.get/checksum"
+  local -r no_cache="true"
+  local -r return_image_id="true"
+
+  # Stub
+  local -r download_dir="${TEST_IMAGE_CACHE_DIR}/$(md5sum <<<"$image_url" | cut -d' ' -f1)"
+  local -r image_file="${download_dir}/image-ef5f3566ea.ova"
+  local -r checksum_file="${download_dir}/checksum.sha256sum"
+
+  utils::is_url() {
+    case "$*" in
+    "$image_url") return 0 ;;
+    "$checksum_url") return 0 ;;
+    *) return 2 ;;
+    esac
+  }
+  utils::download_file() {
+    case "$*" in
+    "$image_url"*)
+      echo 'image.ova content' >"$image_file"
+      return 0
+      ;;
+    "$checksum_url"*)
+      echo '123245677 image.ova' >"$checksum_file"
+      return 0
+      ;;
+    *) return 1 ;;
+    esac
+  }
+  utils::validate_sha256sum_format() {
+    assert_equal "$*" "$checksum_file"
+  }
+  vedv::image_service::import() {
+    assert_equal "$*" "${image_file} ${image_name} ${return_image_id} ${checksum_file}"
+    return 1
+  }
+  # Act
+  run vedv::image_service::import_from_url \
+    "$image_url" \
+    "$image_name" \
+    "$checksum_url" \
+    "$no_cache" \
+    "$return_image_id"
+
+  # Assert
+  assert_failure
+  assert_output --partial "Error importing image from file: '/tmp/vedv/images/"
+}
+# bats test_tags=only
+@test "vedv::image_service::import_from_url() Should succeed" {
+  # Arrange
+  local -r image_url="http://files.get/image"
+  local -r image_name="image1"
+  local -r checksum_url="http://files.get/checksum"
+  local -r no_cache="true"
+  local -r return_image_id="true"
+
+  # Stub
+  local -r download_dir="${TEST_IMAGE_CACHE_DIR}/$(md5sum <<<"$image_url" | cut -d' ' -f1)"
+  local -r image_file="${download_dir}/image-ef5f3566ea.ova"
+  local -r checksum_file="${download_dir}/checksum.sha256sum"
+
+  utils::is_url() {
+    case "$*" in
+    "$image_url") return 0 ;;
+    "$checksum_url") return 0 ;;
+    *) return 2 ;;
+    esac
+  }
+  utils::download_file() {
+    case "$*" in
+    "$image_url"*)
+      echo 'image.ova content' >"$image_file"
+      return 0
+      ;;
+    "$checksum_url"*)
+      echo '123245677 image.ova' >"$checksum_file"
+      return 0
+      ;;
+    *) return 1 ;;
+    esac
+  }
+  utils::validate_sha256sum_format() {
+    assert_equal "$*" "$checksum_file"
+  }
+  vedv::image_service::import() {
+    assert_equal "$*" "${image_file} ${image_name} ${return_image_id} ${checksum_file}"
+  }
+  # Act
+  run vedv::image_service::import_from_url \
+    "$image_url" \
+    "$image_name" \
+    "$checksum_url" \
+    "$no_cache" \
+    "$return_image_id"
+
   # Assert
   assert_success
   assert_output ""
