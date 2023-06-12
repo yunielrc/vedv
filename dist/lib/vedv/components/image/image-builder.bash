@@ -277,11 +277,14 @@ vedv::image_builder::__layer_from() {
     return "$ERR_INVAL_ARG"
   fi
 
-  local image_id
-  image_id="$(vedv::image_service::pull "$image" "$image_name" true)" || {
+  local image_id_name
+  image_id_name="$(vedv::image_service::pull "$image" "$image_name")" || {
     err "Failed to pull image '${image}'"
     return "$ERR_IMAGE_BUILDER_OPERATION"
   }
+  readonly image_id_name
+
+  local -r image_id="${image_id_name%%' '*}"
 
   local -r cmd="1 FROM ${image}"
   # create layer

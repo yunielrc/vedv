@@ -64,110 +64,104 @@ vedv::image_service::set_use_cache() {
 # Arguments:
 #   image_file        string  image file
 #   [image_name]      string  image name
-#   [return_image_id] bool    print the image id instead image name
 #   [checksum_file]   string  check sum file (algorithm: sha256sum)
 #
 # Output:
-#  Writes image name or image id to the stdout
+#  Writes image id and name (string) to the stdout
 #
 # Returns:
 #   0 on success, non-zero on error.
 #
 vedv::image_service::import() {
-  # TODO: REFACTOR THIS FUNCTION
   local -r image_file="$1"
-  local -r custom_image_name="${2:-}"
-  local -r return_image_id="${3:-false}"
-  local -r checksum_file="${4:-}"
+  local image_name="${2:-}"
+  local -r checksum_file="${3:-}"
   # validate arguments
   if [[ ! -f "$image_file" ]]; then
     err "image file doesn't exist"
     return "$ERR_NOFILE"
   fi
+  if [[ -n "$image_name" ]]; then
+    local exists_image
+    exists_image="$(vedv::vmobj_service::exists_with_name 'image' "$image_name")" || {
+      err "Failed to check if image with name: '${image_name}' already exist"
+      return "$ERR_IMAGE_OPERATION"
+    }
+    readonly exists_image
+
+    if [[ "$exists_image" == true ]]; then
+      err "Image with name: '${image_name}' already exist, you can delete it or use another name"
+      return "$ERR_IMAGE_OPERATION"
+    fi
+  fi
   if [[ -n "$checksum_file" ]]; then
-    utils::sha256sum_check "$checksum_file" || return $?
-  fi
-
-  local vm_name
-  vm_name="$(vedv::image_entity::gen_vm_name_from_ova_file "$image_file")" || {
-    err "Error generating vm_name from ova_file '${image_file}'"
-    return "$ERR_IMAGE_OPERATION"
-  }
-  local image_id
-  image_id="$(vedv::image_entity::get_id_by_vm_name "$vm_name")" || {
-    err "Error getting image_id by vm_name '${vm_name}'"
-    return "$ERR_IMAGE_OPERATION"
-  }
-  local -r _ova_file_sum="$image_id"
-  local image_name
-  image_name="$(vedv::image_entity::get_image_name_by_vm_name "$vm_name")" || {
-    err "Error getting image_name by vm_name '${vm_name}'"
-    return "$ERR_IMAGE_OPERATION"
-  }
-  local -r image_cache_vm_name="image-cache|crc:${image_id}0|"
-
-  if [[ -n "$custom_image_name" ]]; then
-    vm_name="$(vedv::image_entity::gen_vm_name "$custom_image_name")" || {
-      err "Error generating vm_name from image_name: '${custom_image_name}'"
+    utils::sha256sum_check "$checksum_file" || {
+      err "Failed to check sha256sum for image file: '${image_file}'"
       return "$ERR_IMAGE_OPERATION"
     }
-    image_id="$(vedv::image_entity::get_id_by_vm_name "$vm_name")" || {
-      err "Error getting image_id by vm_name '${vm_name}'"
-      return "$ERR_IMAGE_OPERATION"
-    }
-    image_name="$custom_image_name"
   fi
-  readonly vm_name image_id image_name
 
-  local image_exists
-  image_exists="$(vedv::hypervisor::list_vms_by_partial_name "$vm_name")" || {
-    err "Error getting virtual machine with name: '${vm_name}'"
+  # Data gathering
+  local _ova_file_sum
+  _ova_file_sum="$(utils::crc_sum "$image_file")" || {
+    err "Failed to calculate crc sum for image file: '${image_file}'"
     return "$ERR_IMAGE_OPERATION"
   }
-  readonly image_exists
+  readonly _ova_file_sum
+  local -r image_cache_vm_name="$(vedv::image_cache_entity::get_vm_name "$_ova_file_sum")"
 
-  if [[ -n "$image_exists" ]]; then
-    err "There is another image with the same name: ${image_name}, you must delete it or use another name"
-    return "$ERR_IMAGE_OPERATION"
-  fi
-
-  # Import an OVF from a file
   local image_cache_exists
-  image_cache_exists="$(vedv::hypervisor::list_vms_by_partial_name "$image_cache_vm_name")" || {
+  image_cache_exists="$(vedv::hypervisor::exists_vm_with_partial_name "$image_cache_vm_name")" || {
     err "Error getting virtual machine with name: '${image_cache_vm_name}'"
     return "$ERR_IMAGE_OPERATION"
   }
   readonly image_cache_exists
-
-  if [[ -z "$image_cache_exists" ]]; then
+  # Execution
+  if [[ "$image_cache_exists" == false ]]; then
     vedv::hypervisor::import "$image_file" "$image_cache_vm_name" &>/dev/null || {
       err "Error creating image cache '${image_cache_vm_name}' vm from ova file '${image_file}'"
       return "$ERR_IMAGE_OPERATION"
     }
   fi
-
-  vedv::hypervisor::clonevm_link "$image_cache_vm_name" "$vm_name" &>/dev/null || {
-    err "Error cloning image cache '${image_cache_vm_name}' to the image vm '${vm_name}'"
+  # Data gathering
+  local image_vm_name
+  image_vm_name="$(vedv::image_entity::gen_vm_name "$image_name")" || {
+    err "Failed to generate image vm name for image: '${image_name}'"
     return "$ERR_IMAGE_OPERATION"
   }
+  readonly image_vm_name
+  # Execution
+  vedv::hypervisor::clonevm_link "$image_cache_vm_name" "$image_vm_name" &>/dev/null || {
+    err "Failed to clone vm: '${image_cache_vm_name}' to: '${image_vm_name}'"
+    return "$ERR_IMAGE_OPERATION"
+  }
+  # Data gathering
+  if [[ -z "$image_name" ]]; then
+    image_name="$(vedv::image_entity::get_image_name_by_vm_name "$image_vm_name")" || {
+      err "Error getting image_name for vm_name '${image_vm_name}'"
+      return "$ERR_IMAGE_OPERATION"
+    }
+  fi
+  readonly image_name
 
+  local image_id
+  image_id="$(vedv::image_entity::get_id_by_vm_name "$image_vm_name")" || {
+    err "Error getting image_id for vm_name '${image_vm_name}'"
+    return "$ERR_IMAGE_OPERATION"
+  }
+  readonly image_id
+  # Execution
   vedv::image_entity::set_image_cache "$image_id" "$image_cache_vm_name" || {
-    err "Error setting attribute image cache '${image_cache_vm_name}' to the image vm '${vm_name}'"
+    err "Error setting attribute image cache '${image_cache_vm_name}' to the image '${image_name}'"
     return "$ERR_IMAGE_OPERATION"
   }
 
   vedv::image_entity::set_ova_file_sum "$image_id" "$_ova_file_sum" || {
-    err "Error setting attribute ova file sum '${_ova_file_sum}' to the image vm '${vm_name}'"
+    err "Error setting attribute ova file sum '${_ova_file_sum}' to the image '${image_name}'"
     return "$ERR_IMAGE_OPERATION"
   }
-
-  if [[ "$return_image_id" != true ]]; then
-    echo "$image_name"
-  else
-    echo "$image_id"
-  fi
-
-  return 0
+  # Output
+  echo "${image_id} ${image_name}"
 }
 vedv::image_service::__pull_from_file() { vedv::image_service::import "$@"; }
 
@@ -178,7 +172,6 @@ vedv::image_service::__pull_from_file() { vedv::image_service::import "$@"; }
 #   image_url           string  image url
 #   [image_name]        string  image name
 #   [checksum_url]      string  checksum url (algorithm: sha256sum)
-#   [return_image_id]   bool    print the image id instead image name
 #
 # Output:
 #  Writes image name or image id to the stdout
@@ -191,7 +184,6 @@ vedv::image_service::import_from_url() {
   local -r image_name="${2:-}"
   local -r checksum_url="${3:-}"
   local -r no_cache="${4:-false}"
-  local -r return_image_id="${5:-false}"
   # validate arguments
   if [[ -z "$image_url" ]]; then
     err "image_url is required"
@@ -268,7 +260,6 @@ vedv::image_service::import_from_url() {
   vedv::image_service::import \
     "$image_file" \
     "$image_name" \
-    "$return_image_id" \
     "$checksum_file" || {
     err "Error importing image from file: '${image_file}'"
     return "$ERR_IMAGE_OPERATION"
@@ -280,9 +271,8 @@ vedv::image_service::import_from_url() {
 # and create an image
 #
 # Arguments:
-#   image string               image name or an OVF file that  #                              will be pulled
-#   [image_name string]        image name (default: OVF file name)
-#   [return_image_id bool]   print the image id
+#   image         string  image name or an OVF file that will be pulled
+#   [image_name]  string  image name (default: OVF file name)
 #
 # Output:
 #  Writes image name to the stdout
@@ -295,10 +285,9 @@ vedv::image_service::pull() {
   # TODO: validate fields and test
   local -r image="$1"
   local -r image_name="${2:-}"
-  local -r return_image_id="${3:-false}"
 
   if [[ -f "$image" ]]; then
-    vedv::image_service::__pull_from_file "$image" "$image_name" "$return_image_id" || {
+    vedv::image_service::__pull_from_file "$image" "$image_name" || {
       err "Error pulling image '${image}' from file"
       return "$ERR_IMAGE_OPERATION"
     }

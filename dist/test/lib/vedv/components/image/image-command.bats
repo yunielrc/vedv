@@ -317,7 +317,7 @@ vedv image import IMAGE_FILE"
 
 @test "vedv::image_command::__import() Should check the image file without argument value" {
   vedv::image_service::import() {
-    assert_equal "$*" "${TEST_OVA_FILE} image123 false ${TEST_OVA_FILE}.sha256sum"
+    assert_equal "$*" "${TEST_OVA_FILE} image123 ${TEST_OVA_FILE}.sha256sum"
     echo 'image123'
   }
 
@@ -329,7 +329,7 @@ vedv image import IMAGE_FILE"
 
 @test "vedv::image_command::__import() Should fail if check file argument is missing" {
   vedv::image_service::import() {
-    assert_equal "$*" "${TEST_OVA_FILE} image123 false ${TEST_OVA_FILE}.sha256sum"
+    assert_equal "$*" "${TEST_OVA_FILE} image123 ${TEST_OVA_FILE}.sha256sum"
     echo 'image123'
   }
 
@@ -341,7 +341,7 @@ vedv image import IMAGE_FILE"
 
 @test "vedv::image_command::__import() Should check the image file" {
   vedv::image_service::import() {
-    assert_equal "$*" "${TEST_OVA_FILE} image123 false ${TEST_OVA_FILE}.sha256sum"
+    assert_equal "$*" "${TEST_OVA_FILE} image123 ${TEST_OVA_FILE}.sha256sum"
     echo 'image123'
   }
 
@@ -354,7 +354,7 @@ vedv image import IMAGE_FILE"
 @test "vedv::image_command::__import() Should succeed" {
 
   vedv::image_service::import() {
-    assert_equal "$*" "${TEST_OVA_FILE} image123 false "
+    assert_equal "$*" "${TEST_OVA_FILE} image123 "
     echo 'image123'
   }
 

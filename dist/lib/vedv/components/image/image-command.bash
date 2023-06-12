@@ -107,7 +107,6 @@ vedv::image_command::__import() {
   vedv::image_service::import \
     "$image_file" \
     "$image_name" \
-    'false' \
     "$checksum_file"
 }
 

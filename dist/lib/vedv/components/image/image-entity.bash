@@ -29,39 +29,13 @@ readonly VEDV_IMAGE_ENTITY_VALID_ATTRIBUTES='image_cache|ova_file_sum|ssh_port|u
 # FUNCTIONS
 
 #
-# Generate a vm name from OVA image file
-#
-# Arguments:
-#   image_file string      OVA file image
-#
-# Output:
-#  Writes generated vm_name (string) to the stdout
-#
-# Returns:
-#   0 on success, non-zero on error.
-#
-vedv::image_entity::gen_vm_name_from_ova_file() {
-  local -r image_file="$1"
-
-  if [[ -z "$image_file" ]]; then
-    err "Invalid argument 'image_file': ${image_file}"
-    return "$ERR_INVAL_ARG"
-  fi
-
-  local -r crc_sum="$(utils::crc_sum "$image_file")"
-  vm_name="image:$(petname)|crc:${crc_sum}|"
-
-  echo "$vm_name"
-}
-
-#
 # Generate image vm name
 #
 # Arguments:
-#   [image_name string]       image name
+#   [image_name]  string  image name
 #
 # Output:
-#  Writes generated name to the stdout
+#  Writes generated vm_name (string) to the stdout
 #
 # Returns:
 #   0 on success, non-zero on error.

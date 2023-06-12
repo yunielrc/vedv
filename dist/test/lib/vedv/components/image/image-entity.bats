@@ -2,26 +2,6 @@
 
 load test_helper
 
-# Tests for vedv::image_entity::gen_vm_name_from_ova_file()
-@test "vedv::image_entity::gen_vm_name_from_ova_file(), with 'image_file' unset should throw an error" {
-  run vedv::image_entity::gen_vm_name_from_ova_file
-
-  assert_failure 1
-  # shellcheck disable=SC2016
-  assert_output --partial '$1: unbound variable'
-}
-
-@test "vedv::image_entity::gen_vm_name_from_ova_file(), should write the generated vm name" {
-  local -r image_file="$TEST_OVA_FILE"
-  petname() {
-    echo 'alpine-x86_64'
-  }
-  run vedv::image_entity::gen_vm_name_from_ova_file "$image_file"
-
-  assert_success
-  assert_output --regexp '^image:alpine-x86_64\|crc:.*\|$'
-}
-
 # Tests for vedv::image_entity::gen_vm_name()
 @test "vedv::image_entity::gen_vm_name() Should succeed" {
   :

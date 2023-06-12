@@ -429,7 +429,7 @@ Previous layer restored"
   local -r image_name='image_name'
   # Stub
   vedv::image_service::pull() {
-    assert_equal "$*" "${image} ${image_name} true"
+    assert_equal "$*" "${image} ${image_name}"
     return 1
   }
 
@@ -446,7 +446,7 @@ Previous layer restored"
   local -r cmd="1 FROM ${image}"
   # Stub
   vedv::image_service::pull() {
-    assert_equal "$*" "${image} ${image_name} true"
+    assert_equal "$*" "${image} ${image_name}"
     echo 'image_id'
   }
   vedv::image_builder::__create_layer() {
@@ -466,7 +466,7 @@ Previous layer restored"
   local -r cmd="1 FROM ${image}"
   # Stub
   vedv::image_service::pull() {
-    assert_equal "$*" "${image} ${image_name} true"
+    assert_equal "$*" "${image} ${image_name}"
     echo 'image_id'
   }
   vedv::image_builder::__create_layer() {
@@ -483,7 +483,7 @@ Previous layer restored"
   local -r image_name='image_name'
   # Stub
   vedv::image_service::pull() {
-    assert_equal "$*" "${image} ${image_name} true"
+    assert_equal "$*" "${image} ${image_name}"
     echo 'image_id'
   }
   vedv::image_builder::__create_layer() {

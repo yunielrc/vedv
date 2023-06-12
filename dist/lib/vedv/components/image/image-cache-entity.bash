@@ -43,46 +43,41 @@ vedv::image_cache_entity::validate_vm_name() {
 # Get the vm name of an image
 #
 # Arguments:
-#   image_id string     image id
+#   image_cache_id string     image id
 #
 # Output:
-#  writes image vm name to the stdout
+#  writes image_cache_vm_name (string) to the stdout
 #
 # Returns:
 #   0 on success, non-zero on error.
 #
 vedv::image_cache_entity::get_vm_name() {
-  local -r image_id="$1"
+  local -r image_cache_id="$1"
 
-  utils::validate_name_or_id "$image_id" ||
+  utils::validate_name_or_id "$image_cache_id" ||
     return "$?"
 
-  local vms
-  vms="$(vedv::hypervisor::list_vms_by_partial_name "|crc:${image_id}|")" || {
-    err "Failed to list vms"
-    return "$ERR_HYPERVISOR_OPERATION"
-  }
-
-  head -n 1 <<<"$vms"
+  echo "image-cache|crc:${image_cache_id}|"
 }
 
 #
 # Get image id from image vm name
 #
 # Arguments:
-#   image_vm_name string       image vm name
+#   image_cache_vm_name string       image cache vm name
 #
 # Output:
-#  Writes image id to the stdout
+#  Writes image_cache_id (string) to the stdout
 #
 # Returns:
 #   0 on success, non-zero on error.
 #
 vedv::image_cache_entity::get_image_id_by_vm_name() {
-  local -r image_vm_name="$1"
+  local -r image_cache_vm_name="$1"
 
-  vedv::image_cache_entity::validate_vm_name "$image_vm_name" || return "$?"
+  vedv::image_cache_entity::validate_vm_name "$image_cache_vm_name" ||
+    return "$?"
 
-  local result="${image_vm_name#*'|crc:'}"
+  local result="${image_cache_vm_name#*'|crc:'}"
   echo "${result%'|'}"
 }
