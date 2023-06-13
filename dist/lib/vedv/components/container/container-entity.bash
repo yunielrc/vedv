@@ -9,18 +9,12 @@ if false; then
   . './../../hypervisors/virtualbox.bash'
 fi
 
-# +----------------------------+
-# |    container               |
-# +----------------------------+
-# | - id: string               |
-# | - name: string             |
-# +----------------------------+
-
-# VARIABLES
-
+# CONSTANTS
 readonly VEDV_CONTAINER_ENTITY_TYPE='container'
 # shellcheck disable=SC2034
-readonly VEDV_CONTAINER_ENTITY_VALID_ATTRIBUTES='parent_image_id|ssh_port|user_name|workdir|environment|exposed_ports|shell'
+readonly VEDV_CONTAINER_ENTITY_VALID_ATTRIBUTES='parent_image_id'
+
+# VARIABLES
 
 # FUNCTIONS
 

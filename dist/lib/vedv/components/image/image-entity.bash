@@ -9,22 +9,13 @@ if false; then
   . './../../hypervisors/virtualbox.bash'
 fi
 
-# +----------------------------+
-# |    image                   |
-# +----------------------------+
-# | - id: string               |
-# | - name: string             |
-# | - ova_file_sum: string     |
-# | - image_cache: string      |
-# | - layers_ids: string[]     |
-# | - containers_ids: integer[]|
-# +----------------------------+
-
 # CONSTANTS
 
 readonly VEDV_IMAGE_ENTITY_TYPE='image'
 # shellcheck disable=SC2034
-readonly VEDV_IMAGE_ENTITY_VALID_ATTRIBUTES='image_cache|ova_file_sum|ssh_port|user_name|workdir|environment|exposed_ports|shell'
+readonly VEDV_IMAGE_ENTITY_VALID_ATTRIBUTES='image_cache|ova_file_sum'
+
+# VARIABLES
 
 # FUNCTIONS
 

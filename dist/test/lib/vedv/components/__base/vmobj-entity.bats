@@ -3,10 +3,11 @@
 load test_helper
 
 setup_file() {
+
   vedv::vmobj_entity::constructor \
     "$(mktemp -d)" \
     'container|image' \
-    '([image]="image_cache|ova_file_sum|ssh_port|user_name|workdir|environment|exposed_ports|shell" [container]="parent_image_id|ssh_port|user_name|workdir|environment|exposed_ports|shell")' \
+    '([image]="" [container]="parent_image_id")' \
     "$TEST_SSH_USER"
 
   export __VEDV_VMOBJ_ENTITY_MEMORY_CACHE_DIR
@@ -82,7 +83,7 @@ setup() {
   run vedv::vmobj_entity::__validate_attribute "$type" "$attribute"
 
   assert_failure
-  assert_output --partial "Invalid attribute: att1, valid attributes are: parent_image_id|ssh_port"
+  assert_output --partial "Invalid attribute: att1, valid attributes are: ssh_port|user_name|workdir|environment|exposed_ports|shell|parent_image_id"
 }
 
 @test "vedv::vmobj_entity::__validate_attribute() Should succeed with valid attribute" {
@@ -542,7 +543,7 @@ setup() {
   run vedv::vmobj_entity::__get_attribute "$type" "$vmobj_id" "$attribute"
 
   assert_failure
-  assert_output --partial "Invalid attribute: invalid, valid attributes are: parent_image_id|ssh_port"
+  assert_output --partial "Invalid attribute: invalid, valid attributes are: ssh_port|user_name|workdir|environment|exposed_ports|shell|parent_image_id"
 }
 # bats test_tags=only
 @test 'vedv::vmobj_entity::__get_attribute() Should fail If __memcache_get_data' {
@@ -657,7 +658,7 @@ setup() {
   run vedv::vmobj_entity::__set_attribute "$type" "$vmobj_id" "$attribute" "$value"
 
   assert_failure
-  assert_output --partial "Invalid attribute: invalid, valid attributes are: parent_image_id|ssh_port"
+  assert_output --partial "Invalid attribute: invalid, valid attributes are: ssh_port|user_name|workdir|environment|exposed_ports|shell|parent_image_id"
 }
 
 @test 'vedv::vmobj_entity::__set_attribute() Should fail If get_vm_name fails' {

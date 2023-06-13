@@ -5,9 +5,9 @@ load test_helper
 
 setup_file() {
   vedv::vmobj_entity::constructor \
-    "$TEST_VEDV_MEMORY_CACHE_DIR" \
+    "$(mktemp -d)" \
     'container|image' \
-    '([image]="image_cache|ova_file_sum|ssh_port|user_name|workdir|environment|exposed_ports|shell" [container]="parent_image_id|ssh_port|user_name|workdir|environment|exposed_ports|shell")' \
+    '([image]="" [container]="parent_image_id")' \
     "$TEST_SSH_USER"
 
   export __VEDV_VMOBJ_ENTITY_MEMORY_CACHE_DIR

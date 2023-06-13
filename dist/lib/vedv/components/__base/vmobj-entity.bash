@@ -10,6 +10,9 @@ if false; then
   . './../../hypervisors/virtualbox.bash'
 fi
 
+# CONSTANTS
+readonly VEDV_VMOBJ_ENTITY_VALID_ATTRIBUTES='ssh_port|user_name|workdir|environment|exposed_ports|shell'
+
 # VARIABLES
 
 # FUNCTIONS
@@ -79,7 +82,7 @@ vedv::vmobj_entity::__get_valid_attributes() {
     return "$ERR_INVAL_VALUE"
   fi
 
-  echo "$valid_att"
+  echo "${VEDV_VMOBJ_ENTITY_VALID_ATTRIBUTES}|${valid_att}"
 }
 
 #
