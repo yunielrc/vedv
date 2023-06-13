@@ -109,6 +109,50 @@ vedv::vmobj_service::get_ssh_user() {
 }
 
 #
+# This function must be called by every child creation function
+# after the vmobj is created.
+#
+# Arguments:
+#   type      string   type (e.g. 'container|image')
+#   vmobj_id  string   vmobj id
+#
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::vmobj_service::after_create() {
+  local -r type="$1"
+  local -r vmobj_id="$2"
+
+  vedv::vmobj_entity::memcache_delete_data "$type" "$vmobj_id" || {
+    err "Failed to delete memcache for ${type}: ${vmobj_id}"
+    return "$ERR_VMOBJ_OPERATION"
+  }
+}
+
+#
+# This function must be called by every child removing function
+# after the vmobj is removed.
+#
+# Arguments:
+#   type      string   type (e.g. 'container|image')
+#   vmobj_id  string   vmobj id
+#
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::vmobj_service::after_remove() {
+  local -r type="$1"
+  local -r vmobj_id="$2"
+
+  vedv::vmobj_entity::memcache_delete_data "$type" "$vmobj_id" || {
+    err "Failed to delete memcache for ${type}: ${vmobj_id}"
+    return "$ERR_VMOBJ_OPERATION"
+  }
+}
+
+#
 # Tell if a vmobj is started
 #
 # Arguments:

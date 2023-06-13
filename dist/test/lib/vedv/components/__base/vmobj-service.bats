@@ -4,9 +4,12 @@ load test_helper
 
 setup_file() {
   vedv::vmobj_entity::constructor \
+    "$TEST_VEDV_MEMORY_CACHE_DIR" \
     'container|image' \
     '([image]="image_cache|ova_file_sum|ssh_port|user_name|workdir|environment|exposed_ports|shell" [container]="parent_image_id|ssh_port|user_name|workdir|environment|exposed_ports|shell")' \
     "$TEST_SSH_USER"
+
+  export __VEDV_VMOBJ_ENTITY_MEMORY_CACHE_DIR
   export __VEDV_VMOBJ_ENTITY_TYPE
   export __VEDV_VMOBJ_ENTITY_VALID_ATTRIBUTES_DICT_STR
   export __VEDV_DEFAULT_USER
@@ -2804,4 +2807,65 @@ EOF
 
   assert_success
   assert_output "12345"
+}
+
+# Tests for vedv::vmobj_service::after_create()
+# bats test_tags=only
+@test "vedv::vmobj_service::after_create() Should fail" {
+  local -r type="container"
+  local -r vmobj_id="12345"
+
+  vedv::vmobj_entity::memcache_delete_data() {
+    assert_equal "$*" "container 12345"
+    return 1
+  }
+
+  run vedv::vmobj_service::after_create "$type" "$vmobj_id"
+
+  assert_failure
+  assert_output "Failed to delete memcache for container: 12345"
+}
+# bats test_tags=only
+@test "vedv::vmobj_service::after_create() Should succeed" {
+  local -r type="container"
+  local -r vmobj_id="12345"
+
+  vedv::vmobj_entity::memcache_delete_data() {
+    assert_equal "$*" "container 12345"
+  }
+
+  run vedv::vmobj_service::after_create "$type" "$vmobj_id"
+
+  assert_success
+  assert_output ""
+}
+# Tests for vedv::vmobj_service::after_remove()
+# bats test_tags=only
+@test "vedv::vmobj_service::after_remove() Should fail" {
+  local -r type="container"
+  local -r vmobj_id="12345"
+
+  vedv::vmobj_entity::memcache_delete_data() {
+    assert_equal "$*" "container 12345"
+    return 1
+  }
+
+  run vedv::vmobj_service::after_remove "$type" "$vmobj_id"
+
+  assert_failure
+  assert_output "Failed to delete memcache for container: 12345"
+}
+# bats test_tags=only
+@test "vedv::vmobj_service::after_remove() Should succeed" {
+  local -r type="container"
+  local -r vmobj_id="12345"
+
+  vedv::vmobj_entity::memcache_delete_data() {
+    assert_equal "$*" "container 12345"
+  }
+
+  run vedv::vmobj_service::after_remove "$type" "$vmobj_id"
+
+  assert_success
+  assert_output ""
 }

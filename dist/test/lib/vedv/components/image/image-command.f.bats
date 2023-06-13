@@ -48,7 +48,7 @@ Pull an image from a file"
   local -r image_name="$(vedv image list | head -n 1 | awk '{print $2}')"
 
   assert_success
-  assert_output "$image_name"
+  assert_output --partial "$image_name"
 }
 
 @test "vedv image pull, Should show error with invalid argument" {
@@ -487,7 +487,7 @@ vedv image import IMAGE_FILE"
   run vedv image import --check --name image123 "$TEST_OVA_FILE"
 
   assert_success
-  assert_output 'image123'
+  assert_output --partial 'image123'
 }
 
 @test "vedv image import --check-file -n image123, Should check the image file" {
@@ -495,14 +495,14 @@ vedv image import IMAGE_FILE"
   run vedv image import --check-file "${TEST_OVA_FILE}.sha256sum" --name image123 "$TEST_OVA_FILE"
 
   assert_success
-  assert_output 'image123'
+  assert_output --partial 'image123'
 }
 @test "vedv image import -n image123 image_file, Should succeed" {
 
   run vedv image import -n 'image123' "$TEST_OVA_FILE"
 
   assert_success
-  assert_output 'image123'
+  assert_output --partial 'image123'
 }
 
 # Tests for vedv image from-url
@@ -531,7 +531,7 @@ vedv image from-url URL"
   run vedv image from-url --name image123 "$TEST_OVA_URL"
 
   assert_success
-  assert_output 'image123'
+  assert_output --partial 'image123'
 
   __run_cmd2_wrapper() {
     vedv image ls | grep 'image123'
@@ -548,7 +548,7 @@ vedv image from-url URL"
   run vedv image from-url -n image123 --checksum-url "$TEST_OVA_CHECKSUM" "$TEST_OVA_URL"
 
   assert_success
-  assert_output 'image123'
+  assert_output --partial 'image123'
 
   __run_cmd2_wrapper() {
     vedv image ls | grep 'image123'

@@ -185,11 +185,11 @@ vedv::hypervisor::list_vms_by_partial_name() {
   #   fi
   # done < <(VBoxManage list vms)
 
-  # The code below is by average faster that the commented builtin version,
+  # Using hyperfine to run the benchmarks the code below is by average faster that the commented builtin version,
   # at least in a machine with:
   # i5-12400F, 32GB DDR4 3200MHz RAM, 970 EVO Plus 500GB NVMe SSD PCIe Gen 3.0 x 4
   #
-  # The importance of the performance here is that this function is called
+  # The importance of the performance here is that this function is called so
   # many times during the execution of the script.
   VBoxManage list vms |
     grep "$vm_partial_name" |

@@ -50,6 +50,7 @@ readonly VEDV_NO_WAIT_AFTER_BUILD="${VEDV_NO_WAIT_AFTER_BUILD:-"${NO_WAIT_AFTER_
 readonly VEDV_TMP_DIR="${VEDV_TMP_DIR:-"${TMP_DIR:-"/var/tmp/vedv"}"}"
 readonly VEDV_CACHE_DIR="${VEDV_CACHE_DIR:-"${CACHE_DIR:-"/home/${USER}/.var/cache/vedv"}"}"
 readonly VEDV_IMAGE_CACHE_DIR="${VEDV_IMAGE_CACHE_DIR:-"${IMAGE_CACHE_DIR:-"/home/${USER}/.var/cache/vedv/images"}"}"
+readonly VEDV_MEMORY_CACHE_DIR="${VEDV_MEMORY_CACHE_DIR:-"${MEMORY_CACHE_DIR:-"/dev/shm/${USER}/var/cache/vedv"}"}"
 
 # CREATE DIRECTORIES
 
@@ -57,6 +58,7 @@ readonly -a VEDV_DIRS_ARR=(
   "$VEDV_TMP_DIR"
   "$VEDV_CACHE_DIR"
   "$VEDV_IMAGE_CACHE_DIR"
+  "$VEDV_MEMORY_CACHE_DIR"
 )
 
 for dir in "${VEDV_DIRS_ARR[@]}"; do
@@ -152,6 +154,7 @@ vedv::__run_cmd() {
   )
 
   vedv::vmobj_entity::constructor \
+    "$VEDV_MEMORY_CACHE_DIR" \
     "$vmobj_types" \
     "$(arr2str vmobj_types_attributes_dict)" \
     "$VEDV_SSH_USER"

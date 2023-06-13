@@ -188,6 +188,11 @@ vedv::container_service::create() {
     return "$ERR_CONTAINER_OPERATION"
   }
   readonly container_id
+  # we need to call this func to clean the cache for the vmobj_id is there is any
+  vedv::vmobj_service::after_create 'container' "$container_id" || {
+    err "Error on after create event: '${container_name}'"
+    return "$ERR_CONTAINER_OPERATION"
+  }
 
   vedv::container_entity::set_parent_image_id "$container_id" "$([[ "$standalone" == false ]] && echo "$image_id" || echo "$VEDV_CONTAINER_SERVICE_STANDALONE")" || {
     err "Failed to set parent image id for container: '${container_name}'"
@@ -551,6 +556,10 @@ vedv::container_service::remove_one() {
 
   vedv::hypervisor::rm "$container_vm_name" &>/dev/null || {
     err "Failed to remove container: '${container_id}'"
+    return "$ERR_CONTAINER_OPERATION"
+  }
+  vedv::vmobj_service::after_remove 'container' "$container_id" || {
+    err "Error on after remove event: '${container_id}'"
     return "$ERR_CONTAINER_OPERATION"
   }
 

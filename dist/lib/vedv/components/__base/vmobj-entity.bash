@@ -18,17 +18,38 @@ fi
 # Constructor
 #
 # Arguments:
+#   memory_cache_dir          string   memory cache dir
 #   type                      string   type (e.g. 'container|image')
 #   valid_attributes_dict_str string   (eg: $(arr2str valid_attributes_dict))
+#   default_user              string   default user
 #
 vedv::vmobj_entity::constructor() {
-  readonly __VEDV_VMOBJ_ENTITY_TYPE="$1"
+  __VEDV_VMOBJ_ENTITY_MEMORY_CACHE_DIR="$1"
+  readonly __VEDV_VMOBJ_ENTITY_TYPE="$2"
   # This doesn't work on tests
   # declare -rn __VEDV_VMOBJ_ENTITY_VALID_ATTRIBUTES_DICT="$2"
-  readonly __VEDV_VMOBJ_ENTITY_VALID_ATTRIBUTES_DICT_STR="$2"
-  readonly __VEDV_DEFAULT_USER="${3:-vedv}"
+  readonly __VEDV_VMOBJ_ENTITY_VALID_ATTRIBUTES_DICT_STR="$3"
+  readonly __VEDV_DEFAULT_USER="${4:-vedv}"
 
   # validate arguments
+  if [[ -z "$__VEDV_VMOBJ_ENTITY_MEMORY_CACHE_DIR" ]]; then
+    err "Argument 'memory_cache_dir' must not be empty"
+    return "$ERR_INVAL_ARG"
+  fi
+  if [[ ! -d "$__VEDV_VMOBJ_ENTITY_MEMORY_CACHE_DIR" ]]; then
+    err "Argument 'memory_cache_dir' must be a directory"
+    return "$ERR_INVAL_ARG"
+  fi
+
+  readonly __VEDV_VMOBJ_ENTITY_MEMORY_CACHE_DIR="${__VEDV_VMOBJ_ENTITY_MEMORY_CACHE_DIR%/}/vmobj_entity"
+
+  if [[ ! -d "$__VEDV_VMOBJ_ENTITY_MEMORY_CACHE_DIR" ]]; then
+    mkdir "$__VEDV_VMOBJ_ENTITY_MEMORY_CACHE_DIR" || {
+      err "Failed to create memory cache dir"
+      return "$ERR_FAILED_CREATE_DIR"
+    }
+  fi
+
   if [[ -z "$__VEDV_VMOBJ_ENTITY_TYPE" ]]; then
     err "Argument 'type' must not be empty"
     return "$ERR_INVAL_ARG"
@@ -206,13 +227,13 @@ vedv::vmobj_entity::get_vm_name() {
   utils::validate_name_or_id "$vmobj_id" ||
     return "$?"
 
-  local vms
-  vms="$(vedv::hypervisor::list_vms_by_partial_name "|crc:${vmobj_id}|")" || {
+  local vm_name
+  vm_name="$(vedv::hypervisor::list_vms_by_partial_name "|crc:${vmobj_id}|")" || {
     err "Failed to get vm name of ${type}: ${vmobj_id}"
     return "$ERR_VMOBJ_ENTITY"
   }
 
-  head -n 1 <<<"$vms"
+  echo "$vm_name"
 }
 
 #
@@ -243,7 +264,7 @@ vedv::vmobj_entity::get_vm_name_by_vmobj_name() {
     return "$ERR_VMOBJ_ENTITY"
   }
 
-  head -n 1 <<<"$vm_name"
+  echo "$vm_name"
 }
 
 #
@@ -438,11 +459,28 @@ vedv::vmobj_entity::__get_attribute() {
   vedv::vmobj_entity::__validate_attribute "$type" "$attribute" ||
     return "$?"
 
-  local dictionary_str
-  dictionary_str="$(vedv::vmobj_entity::get_dictionary "$type" "$vmobj_id")" || {
-    err "Failed to get the dictionary for the ${type}: '${vmobj_id}'"
+  local cached_dictionary_str
+  cached_dictionary_str="$(vedv::vmobj_entity::__memcache_get_data "$type" "$vmobj_id")" || {
+    err "Failed to get the cached dictionary for the ${type}: '${vmobj_id}'"
     return "$ERR_VMOBJ_ENTITY"
   }
+  readonly cached_dictionary_str
+
+  local dictionary_str
+
+  if [[ -n "$cached_dictionary_str" ]]; then
+    dictionary_str="$cached_dictionary_str"
+  else
+    dictionary_str="$(vedv::vmobj_entity::get_dictionary "$type" "$vmobj_id")" || {
+      err "Failed to get the dictionary for the ${type}: '${vmobj_id}'"
+      return "$ERR_VMOBJ_ENTITY"
+    }
+    # create memory cache for the vmobj data
+    vedv::vmobj_entity::__memcache_set_data "$type" "$vmobj_id" "$dictionary_str" || {
+      err "Failed to set the cached dictionary for the ${type}: '${vmobj_id}'"
+      return "$ERR_VMOBJ_ENTITY"
+    }
+  fi
   readonly dictionary_str
   # shellcheck disable=SC2178
   local -rA vmobj_dict="$dictionary_str"
@@ -559,62 +597,125 @@ vedv::vmobj_entity::__set_attribute() {
 
   local updated_description
   updated_description="$(arr2str vmobj_dict)" || return $?
-
+  # update data on memory
+  vedv::vmobj_entity::__memcache_set_data "$type" "$vmobj_id" "$updated_description" || {
+    err "Failed to update memory cache for the ${type}: '${vmobj_id}'"
+    return "$ERR_VMOBJ_ENTITY"
+  }
+  # update data on disk
   vedv::hypervisor::set_description "$vmobj_vm_name" "$updated_description" || {
     err "Failed to set description of vm: ${vmobj_vm_name}"
     return "$ERR_VMOBJ_ENTITY"
   }
 }
 
-# # THIS FUNCTION IS UNTESTED
-# # Import vmobj vedv data from the filesystem
-# #
-# # Arguments:
-# #   type      string      type (e.g. 'container|image')
-# #   vmobj_id  string      vmobj id
-# #
-# # Returns:
-# #   0 on success, non-zero on error.
-# #
-# vedv::vmobj_entity::import_data() {
-#   local -r type="$1"
-#   local -r vmobj_id="$2"
-#   # validate arguments
-#   vedv::vmobj_entity::validate_type "$type" ||
-#     return "$?"
-#   utils::validate_name_or_id "$vmobj_id" ||
-#     return "$?"
+#
+# Get memory cache data for a given vmobj
+#
+# Arguments:
+#   type      string  type (e.g. 'container|image')
+#   vmobj_id  string  image id
+#
+# Output:
+#  Writes data (string) to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::vmobj_entity::__memcache_get_data() {
+  local -r type="$1"
+  local -r vmobj_id="$2"
 
-#   local -r mountpoint='/mnt'
-#   local -r vedv_data_dir="${mountpoint}/etc/vedv-guest/layer"
+  local -r memcache_dir="$__VEDV_VMOBJ_ENTITY_MEMORY_CACHE_DIR"
 
-#   local -rA attribute_file_map=(
-#     ['environment']="${vedv_data_dir}/env"
-#     ['exposed_ports']="${vedv_data_dir}/expose"
-#     ['workdir']="${vedv_data_dir}/workdir"
-#     ['shell']="${vedv_data_dir}/shell"
-#     ['user_name']="${vedv_data_dir}/user"
-#   )
+  if [[ ! -d "$memcache_dir" ]]; then
+    err "Memory cache directory does not exist: '${memcache_dir}'"
+    return "$ERR_VMOBJ_ENTITY"
+  fi
 
-#   for attribute in "${!attribute_file_map[@]}"; do
-#     local file="${attribute_file_map["$attribute"]}"
+  local -r memcache_data_file="${memcache_dir}/${type}-${vmobj_id}"
 
-#     if [[ -f "$file" ]]; then
-#       local value
+  if [[ ! -f "$memcache_data_file" ]]; then
+    return 0
+  fi
 
-#       value="$(<"$file")" || {
-#         err "Failed to read the value of the attribute '${attribute}' from the file: '${file}'"
-#         return "$ERR_VMOBJ_ENTITY"
-#       }
+  cat "$memcache_data_file"
+}
 
-#       vedv::vmobj_entity::__set_attribute "$type" "$vmobj_id" "$attribute" "$value" || {
-#         err "Failed to set the value of the attribute '${attribute}' from the file: '${file}'"
-#         return "$ERR_VMOBJ_ENTITY"
-#       }
-#     fi
-#   done
+#
+# Update memory cache data for a given vmobj
+#
+# Arguments:
+#   type      string  type (e.g. 'container|image')
+#   vmobj_id  string  image id
+#   data      string  updated data
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::vmobj_entity::__memcache_set_data() {
+  local -r type="$1"
+  local -r vmobj_id="$2"
+  local -r data="$3"
 
-# }
+  if [[ -z "$data" ]]; then
+    err "Argument 'data' can not be empty"
+    return "$ERR_INVAL_VALUE"
+  fi
+
+  local -r memcache_dir="$__VEDV_VMOBJ_ENTITY_MEMORY_CACHE_DIR"
+
+  if [[ ! -d "$memcache_dir" ]]; then
+    err "Memory cache directory does not exist: '${memcache_dir}'"
+    return "$ERR_VMOBJ_ENTITY"
+  fi
+
+  local -r memcache_data_file="${memcache_dir}/${type}-${vmobj_id}"
+  # update the memory cache
+  echo "$data" >"$memcache_data_file" || {
+    err "Failed to update the memory cache for the ${type}: '${vmobj_id}'"
+    return "$ERR_VMOBJ_ENTITY"
+  }
+}
+
+#
+# Delete memory cache for a given vmobj
+# When a vmobj is removed, its memory cache should be deleted.
+# When a vmobj is created, any memory cache with the same object
+# id should be removed.
+#
+# Arguments:
+#   type      string  type (e.g. 'container|image')
+#   vmobj_id  string  image id
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::vmobj_entity::memcache_delete_data() {
+  local -r type="$1"
+  local -r vmobj_id="$2"
+  # validate arguments
+  vedv::vmobj_entity::validate_type "$type" ||
+    return "$?"
+  utils::validate_name_or_id "$vmobj_id" ||
+    return "$?"
+
+  local -r memcache_dir="$__VEDV_VMOBJ_ENTITY_MEMORY_CACHE_DIR"
+
+  if [[ ! -d "$memcache_dir" ]]; then
+    err "Memory cache directory does not exist: '${memcache_dir}'"
+    return "$ERR_VMOBJ_ENTITY"
+  fi
+
+  local -r memcache_data_file="${memcache_dir}/${type}-${vmobj_id}"
+
+  if [[ -f "$memcache_data_file" ]]; then
+    rm -f "$memcache_data_file" || {
+      err "Failed to remove the memory cache file: '${memcache_data_file}'"
+      return "$ERR_VMOBJ_ENTITY"
+    }
+  fi
+}
 
 #
 # Set ssh_port value

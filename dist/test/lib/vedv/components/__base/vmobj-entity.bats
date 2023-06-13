@@ -1,20 +1,26 @@
-# shellcheck disable=SC2317
+# shellcheck disable=SC2317,SC2031,SC2030
 
 load test_helper
 
 setup_file() {
   vedv::vmobj_entity::constructor \
+    "$(mktemp -d)" \
     'container|image' \
-    '([image]="image_cache|ova_file_sum|ssh_port" [container]="parent_image_id|ssh_port")' \
+    '([image]="image_cache|ova_file_sum|ssh_port|user_name|workdir|environment|exposed_ports|shell" [container]="parent_image_id|ssh_port|user_name|workdir|environment|exposed_ports|shell")' \
     "$TEST_SSH_USER"
 
+  export __VEDV_VMOBJ_ENTITY_MEMORY_CACHE_DIR
   export __VEDV_VMOBJ_ENTITY_TYPE
   export __VEDV_VMOBJ_ENTITY_VALID_ATTRIBUTES_DICT_STR
   export __VEDV_DEFAULT_USER
 }
 
+setup() {
+  export __VEDV_VMOBJ_ENTITY_MEMORY_CACHE_DIR="$(mktemp -d)"
+}
+
 # Test vedv::vmobj_entity::constructor()
-@test 'vedv::vmobj_entity::constructor() Succeed' {
+@test 'vedv::vmobj_entity::constructor() DUMMY' {
   :
 }
 
@@ -76,7 +82,7 @@ setup_file() {
   run vedv::vmobj_entity::__validate_attribute "$type" "$attribute"
 
   assert_failure
-  assert_output "Invalid attribute: att1, valid attributes are: parent_image_id|ssh_port"
+  assert_output --partial "Invalid attribute: att1, valid attributes are: parent_image_id|ssh_port"
 }
 
 @test "vedv::vmobj_entity::__validate_attribute() Should succeed with valid attribute" {
@@ -536,14 +542,33 @@ setup_file() {
   run vedv::vmobj_entity::__get_attribute "$type" "$vmobj_id" "$attribute"
 
   assert_failure
-  assert_output "Invalid attribute: invalid, valid attributes are: parent_image_id|ssh_port"
+  assert_output --partial "Invalid attribute: invalid, valid attributes are: parent_image_id|ssh_port"
 }
+# bats test_tags=only
+@test 'vedv::vmobj_entity::__get_attribute() Should fail If __memcache_get_data' {
+  local -r type='container'
+  local -r vmobj_id='23456'
+  local -r attribute='ssh_port'
 
+  vedv::vmobj_entity::__memcache_get_data() {
+    assert_equal "$*" 'container 23456'
+    return 1
+  }
+
+  run vedv::vmobj_entity::__get_attribute "$type" "$vmobj_id" "$attribute"
+
+  assert_failure
+  assert_output "Failed to get the cached dictionary for the container: '23456'"
+}
+# bats test_tags=only
 @test 'vedv::vmobj_entity::__get_attribute() Should fail If getting dictionary fails' {
   local -r type='container'
   local -r vmobj_id='23456'
   local -r attribute='ssh_port'
 
+  vedv::vmobj_entity::__memcache_get_data() {
+    assert_equal "$*" 'container 23456'
+  }
   vedv::vmobj_entity::get_dictionary() {
     assert_equal "$*" 'container 23456'
     return 1
@@ -554,15 +579,41 @@ setup_file() {
   assert_failure
   assert_output "Failed to get the dictionary for the container: '23456'"
 }
+# bats test_tags=only
+@test 'vedv::vmobj_entity::__get_attribute() Should fail If __memcache_set_data fails' {
+  local -r type='container'
+  local -r vmobj_id='23456'
+  local -r attribute='ssh_port'
+
+  vedv::vmobj_entity::__memcache_get_data() {
+    assert_equal "$*" 'container 23456'
+  }
+  vedv::vmobj_entity::get_dictionary() {
+    assert_equal "$*" 'container 23456'
+    echo '([parent_image_id]="alpine1" [ssh_port]=22)'
+  }
+  vedv::vmobj_entity::__memcache_set_data() {
+    assert_equal "$*" 'container 23456 ([parent_image_id]="alpine1" [ssh_port]=22)'
+    return 1
+  }
+
+  run vedv::vmobj_entity::__get_attribute "$type" "$vmobj_id" "$attribute"
+
+  assert_failure
+  assert_output "Failed to set the cached dictionary for the container: '23456'"
+}
 
 @test 'vedv::vmobj_entity::__get_attribute() Should succeed' {
   local -r type='container'
   local -r vmobj_id='23456'
   local -r attribute='ssh_port'
 
-  vedv::vmobj_entity::get_dictionary() {
+  vedv::vmobj_entity::__memcache_get_data() {
     assert_equal "$*" 'container 23456'
     echo '([parent_image_id]="alpine1" [ssh_port]=22)'
+  }
+  vedv::vmobj_entity::get_dictionary() {
+    assert_equal "$*" 'INVALID_CALL'
   }
 
   run vedv::vmobj_entity::__get_attribute "$type" "$vmobj_id" "$attribute"
@@ -606,7 +657,7 @@ setup_file() {
   run vedv::vmobj_entity::__set_attribute "$type" "$vmobj_id" "$attribute" "$value"
 
   assert_failure
-  assert_output "Invalid attribute: invalid, valid attributes are: parent_image_id|ssh_port"
+  assert_output --partial "Invalid attribute: invalid, valid attributes are: parent_image_id|ssh_port"
 }
 
 @test 'vedv::vmobj_entity::__set_attribute() Should fail If get_vm_name fails' {
@@ -725,6 +776,37 @@ setup_file() {
   assert_failure
   assert_output --partial "eval:"
 }
+# bats test_tags=only
+@test 'vedv::vmobj_entity::__set_attribute() Should fail If __memcache_set_data fails' {
+  local -r type='container'
+  local -r vmobj_id='23456'
+  local -r attribute='ssh_port'
+  local -r value=2022
+
+  vedv::vmobj_entity::__validate_attribute() {
+    assert_equal "$*" 'container ssh_port'
+  }
+  vedv::vmobj_entity::get_vm_name() {
+    assert_equal "$*" 'container 23456'
+    echo 'container:foo-foo|crc:23456|'
+  }
+  vedv::hypervisor::get_description() {
+    assert_equal "$*" 'container:foo-foo|crc:23456|'
+    echo '([parent_image_id]="alpine1" [ssh_port]=22)'
+  }
+  vedv::vmobj_entity::__get_valid_attributes() {
+    assert_equal "$*" 'INVALID_CALL'
+  }
+  vedv::vmobj_entity::__memcache_set_data() {
+    assert_equal "$*" 'container 23456 ([parent_image_id]="alpine1" [ssh_port]="2022" )'
+    return 1
+  }
+
+  run vedv::vmobj_entity::__set_attribute "$type" "$vmobj_id" "$attribute" "$value"
+
+  assert_failure
+  assert_output "Failed to update memory cache for the container: '23456'"
+}
 
 @test 'vedv::vmobj_entity::__set_attribute() Should fail If set_description fails' {
   local -r type='container'
@@ -745,6 +827,9 @@ setup_file() {
   }
   vedv::vmobj_entity::__get_valid_attributes() {
     assert_equal "$*" 'INVALID_CALL'
+  }
+  vedv::vmobj_entity::__memcache_set_data() {
+    assert_equal "$*" 'container 23456 ([parent_image_id]="alpine1" [ssh_port]="2022" )'
   }
   vedv::hypervisor::set_description() {
     assert_equal "$*" 'container:foo-foo|crc:23456| ([parent_image_id]="alpine1" [ssh_port]="2022" )'
@@ -777,6 +862,9 @@ setup_file() {
   vedv::vmobj_entity::__get_valid_attributes() {
     assert_equal "$*" 'INVALID_CALL'
   }
+  vedv::vmobj_entity::__memcache_set_data() {
+    assert_equal "$*" 'container 23456 ([parent_image_id]="alpine1" [ssh_port]="2022" )'
+  }
   vedv::hypervisor::set_description() {
     assert_equal "$*" 'container:foo-foo|crc:23456| ([parent_image_id]="alpine1" [ssh_port]="2022" )'
   }
@@ -803,8 +891,11 @@ setup_file() {
   vedv::hypervisor::get_description() {
     assert_equal "$*" 'container:foo-foo|crc:23456|'
   }
+  vedv::vmobj_entity::__memcache_set_data() {
+    assert_equal "$*" 'container 23456 ([user_name]="" [shell]="" [workdir]="" [exposed_ports]="" [parent_image_id]="" [ssh_port]="2022" [environment]="" )'
+  }
   vedv::hypervisor::set_description() {
-    assert_equal "$*" 'container:foo-foo|crc:23456| ([parent_image_id]="" [ssh_port]="2022" )'
+    assert_equal "$*" 'container:foo-foo|crc:23456| ([user_name]="" [shell]="" [workdir]="" [exposed_ports]="" [parent_image_id]="" [ssh_port]="2022" [environment]="" )'
   }
 
   run vedv::vmobj_entity::__set_attribute "$type" "$vmobj_id" "$attribute" "$value"
@@ -843,7 +934,7 @@ setup_file() {
   run vedv::vmobj_entity::__create_new_vmobj_dict "$type"
 
   assert_success
-  assert_output '([parent_image_id]="" [ssh_port]="" )'
+  assert_output '([user_name]="" [shell]="" [workdir]="" [exposed_ports]="" [parent_image_id]="" [ssh_port]="" [environment]="" )'
 }
 
 # Test vedv::vmobj_entity::set_ssh_port()
@@ -1228,4 +1319,158 @@ setup_file() {
 
   assert_success
   assert_output ''
+}
+
+# Tests for vedv::vmobj_entity::__memcache_get_data()
+# bats test_tags=only
+@test "vedv::vmobj_entity::__memcache_get_data() Should fail if memcache_dir does not exist" {
+  local -r type='container'
+  local -r vmobj_id='23456'
+
+  __VEDV_VMOBJ_ENTITY_MEMORY_CACHE_DIR='/tmp/asdfasi243523kl4jdf909'
+
+  run vedv::vmobj_entity::__memcache_get_data "$type" "$vmobj_id"
+
+  assert_failure
+  assert_output "Memory cache directory does not exist: '/tmp/asdfasi243523kl4jdf909'"
+}
+# bats test_tags=only
+@test "vedv::vmobj_entity::__memcache_get_data() Should succeed if there is no cache file" {
+  local -r type='container'
+  local -r vmobj_id='23456'
+
+  run vedv::vmobj_entity::__memcache_get_data "$type" "$vmobj_id"
+
+  assert_success
+  assert_output ""
+}
+# bats test_tags=only
+@test "vedv::vmobj_entity::__memcache_get_data() Should succeed" {
+  local -r type='container'
+  local -r vmobj_id='23456'
+
+  local -r memcache_dir="$__VEDV_VMOBJ_ENTITY_MEMORY_CACHE_DIR"
+
+  echo '([parent_image_id]="alpine1" [ssh_port]=22)' >"${memcache_dir}/${type}-${vmobj_id}"
+
+  run vedv::vmobj_entity::__memcache_get_data "$type" "$vmobj_id"
+
+  assert_success
+  assert_output '([parent_image_id]="alpine1" [ssh_port]=22)'
+}
+
+# Tests for vedv::vmobj_entity::__memcache_set_data()
+# bats test_tags=only
+@test "vedv::vmobj_entity::__memcache_set_data() Should fail if data is empty" {
+  local -r type='container'
+  local -r vmobj_id='23456'
+  local -r data=''
+
+  run vedv::vmobj_entity::__memcache_set_data "$type" "$vmobj_id" "$data"
+
+  assert_failure
+  assert_output "Argument 'data' can not be empty"
+}
+@test "vedv::vmobj_entity::__memcache_set_data() Should fail if memcache_dir does not exist" {
+  local -r type='container'
+  local -r vmobj_id='23456'
+  local -r data='([parent_image_id]="alpine1" [ssh_port]=22)'
+
+  __VEDV_VMOBJ_ENTITY_MEMORY_CACHE_DIR='/tmp/asdfasi243523kl4jdf909'
+
+  run vedv::vmobj_entity::__memcache_set_data "$type" "$vmobj_id" "$data"
+
+  assert_failure
+  assert_output "Memory cache directory does not exist: '/tmp/asdfasi243523kl4jdf909'"
+}
+# bats test_tags=only
+@test "vedv::vmobj_entity::__memcache_set_data() Should fail if writing to cache file fails" {
+  local -r type='container'
+  local -r vmobj_id='23456'
+  local -r data='([parent_image_id]="alpine1" [ssh_port]=22)'
+
+  local -r memcache_dir="$__VEDV_VMOBJ_ENTITY_MEMORY_CACHE_DIR"
+  chmod -w "$memcache_dir"
+
+  run vedv::vmobj_entity::__memcache_set_data "$type" "$vmobj_id" "$data"
+
+  assert_failure
+  assert_output --partial "Failed to update the memory cache for the container: '23456'"
+}
+# bats test_tags=only
+@test "vedv::vmobj_entity::__memcache_set_data() Should succeed" {
+  local -r type='container'
+  local -r vmobj_id='23456'
+  local -r data='([parent_image_id]="alpine1" [ssh_port]=22)'
+
+  local -r memcache_dir="$__VEDV_VMOBJ_ENTITY_MEMORY_CACHE_DIR"
+
+  run vedv::vmobj_entity::__memcache_set_data "$type" "$vmobj_id" "$data"
+
+  assert_success
+  assert_output ""
+
+  run cat "${memcache_dir}/${type}-${vmobj_id}"
+
+  assert_success
+  assert_output '([parent_image_id]="alpine1" [ssh_port]=22)'
+}
+
+# Tests for vedv::vmobj_entity::memcache_delete_data()
+# bats test_tags=only
+@test "vedv::vmobj_entity::memcache_delete_data() Should fail if memcache_dir does not exist" {
+  local -r type='container'
+  local -r vmobj_id='23456'
+
+  __VEDV_VMOBJ_ENTITY_MEMORY_CACHE_DIR='/tmp/asdfasi243523kl4jdf909'
+
+  run vedv::vmobj_entity::memcache_delete_data "$type" "$vmobj_id"
+
+  assert_failure
+  assert_output "Memory cache directory does not exist: '/tmp/asdfasi243523kl4jdf909'"
+}
+# bats test_tags=only
+@test "vedv::vmobj_entity::memcache_delete_data() Should succeed if there is no cache file" {
+  local -r type='container'
+  local -r vmobj_id='23456'
+
+  run vedv::vmobj_entity::memcache_delete_data "$type" "$vmobj_id"
+
+  assert_success
+  assert_output ""
+}
+# bats test_tags=only
+@test "vedv::vmobj_entity::memcache_delete_data() Should fail if deleting cache file fails" {
+  local -r type='container'
+  local -r vmobj_id='23456'
+
+  local -r memcache_dir="$__VEDV_VMOBJ_ENTITY_MEMORY_CACHE_DIR"
+
+  : >"${memcache_dir}/${type}-${vmobj_id}"
+
+  rm() {
+    assert_equal "$*" "-f ${memcache_dir}/${type}-${vmobj_id}"
+    return 1
+  }
+
+  run vedv::vmobj_entity::memcache_delete_data "$type" "$vmobj_id"
+
+  assert_failure
+  assert_output --partial "Failed to remove the memory cache file:"
+}
+# bats test_tags=only
+@test "vedv::vmobj_entity::memcache_delete_data() Should succeed" {
+  local -r type='container'
+  local -r vmobj_id='23456'
+
+  local -r memcache_dir="$__VEDV_VMOBJ_ENTITY_MEMORY_CACHE_DIR"
+
+  : >"${memcache_dir}/${type}-${vmobj_id}"
+
+  run vedv::vmobj_entity::memcache_delete_data "$type" "$vmobj_id"
+
+  assert_success
+  assert_output ""
+
+  assert [ ! -f "${memcache_dir}/${type}-${vmobj_id}" ]
 }

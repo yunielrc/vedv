@@ -24,6 +24,7 @@ readonly ERR_VMOBJ_OPERATION=92
 readonly ERR_CHECKSUM=93
 readonly ERR_FILE_EXISTS=94
 readonly ERR_DOWNLOAD=95
+readonly ERR_FAILED_CREATE_DIR=96
 # This error code can only be throwed by vedv::image_builder::__layer_execute_cmd()
 readonly ERR_IMAGE_BUILDER_LAYER_CREATION_FAILURE_PREV_RESTORATION_FAIL=100
 #

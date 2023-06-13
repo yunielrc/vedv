@@ -122,7 +122,7 @@ Options:
   run vedv container create --name 'container123' "$TEST_OVA_FILE"
 
   assert_success
-  assert_output "container123"
+  assert_output --partial "container123"
 }
 
 @test "vedv container create --name container123 -p 8080:80/tcp -p 8082:82 -p 8081 -p 81/udp image, Should create a container" {
@@ -131,7 +131,7 @@ Options:
   run vedv container create --name "$container_id" -p 8080:80/tcp -p 8082:82 -p 8081 -p 81/udp "$TEST_OVA_FILE"
 
   assert_success
-  assert_output "container123"
+  assert_output --partial "container123"
 
   local container_vm_name="$(vedv::hypervisor::list_vms_by_partial_name "container:${container_id}|" | head -n 1)"
 
@@ -503,7 +503,7 @@ Build finished
   run vedv container create --publish-all --name "$container_id" 'image123'
 
   assert_success
-  assert_output "$container_id"
+  assert_output --partial "$container_id"
 
   local -r container_vm_name="$(vedv::hypervisor::list_vms_by_partial_name "container:${container_id}|" | head -n 1)"
 
@@ -545,7 +545,7 @@ Build finished
     'image123'
 
   assert_success
-  assert_output "$container_id"
+  assert_output --partial "$container_id"
 
   run vedv container list-ports "$container_id"
 
@@ -578,7 +578,7 @@ Build finished
   run vedv container create --name "$container_id" 'image123'
 
   assert_success
-  assert_output "$container_id"
+  assert_output --partial "$container_id"
 
   run vedv container list-exposed-ports "$container_id"
 

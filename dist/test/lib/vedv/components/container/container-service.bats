@@ -3,11 +3,12 @@ load test_helper
 
 setup_file() {
   vedv::vmobj_entity::constructor \
+    "$TEST_VEDV_MEMORY_CACHE_DIR" \
     'container|image' \
-    '([image]="image_cache|ova_file_sum|ssh_port" [container]="parent_image_id|ssh_port")' \
+    '([image]="image_cache|ova_file_sum|ssh_port|user_name|workdir|environment|exposed_ports|shell" [container]="parent_image_id|ssh_port|user_name|workdir|environment|exposed_ports|shell")' \
     "$TEST_SSH_USER"
 
-  export __VEDV_VMOBJ_ENTITY_TYPE
+  export __VEDV_VMOBJ_ENTITY_MEMORY_CACHE_DIR
   export __VEDV_VMOBJ_ENTITY_VALID_ATTRIBUTES_DICT_STR
   export __VEDV_DEFAULT_USER
 
@@ -447,6 +448,66 @@ setup_file() {
   assert_failure
   assert_output "Failed to get container id for vm: 'container:bin-baam|crc:12346|'"
 }
+# bats test_tags=only
+@test "vedv::container_service::create() Should fail If after_create fails" {
+  local -r image="image1"
+  local -r container_name=''
+
+  vedv::vmobj_service::exists_with_name() {
+    assert_equal "$*" "container container1"
+    echo false
+  }
+  petname() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::image_service::pull() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::image_entity::get_vm_name_by_image_name() {
+    assert_equal "$*" "image1"
+    echo "image:foo-bar|crc:12345|"
+  }
+  vedv::container_entity::gen_vm_name() {
+    assert_equal "$*" ""
+    echo "container:bin-baam|crc:12346|"
+  }
+  vedv::image_entity::get_id_by_vm_name() {
+    assert_equal "$*" "image:foo-bar|crc:12345|"
+    echo 12345
+  }
+  vedv::image_entity::get_last_layer_id() {
+    assert_equal "$*" "12345"
+    echo 53455
+  }
+  vedv::image_entity::get_snapshot_name_by_layer_id() {
+    assert_equal "$*" "12345 53455"
+    echo "layer:RUN|id:layer_id|"
+  }
+  vedv::container_entity::gen_vm_name() {
+    assert_equal "$*" ""
+    echo "container:bin-baam|crc:12346|"
+  }
+  vedv::hypervisor::clonevm_link() {
+    assert_equal "$*" "image:foo-bar|crc:12345| container:bin-baam|crc:12346| layer:RUN|id:layer_id|"
+  }
+  vedv::container_entity::get_container_name_by_vm_name() {
+    echo "bin-baam"
+    assert_equal "$*" "container:bin-baam|crc:12346|"
+  }
+  vedv::container_entity::get_id_by_vm_name() {
+    assert_equal "$*" "container:bin-baam|crc:12346|"
+    echo 12346
+  }
+  vedv::vmobj_service::after_create() {
+    assert_equal "$*" "container 12346"
+    return 1
+  }
+
+  run vedv::container_service::create "$image" "$container_name"
+
+  assert_failure
+  assert_output "Error on after create event: 'bin-baam'"
+}
 
 @test "vedv::container_service::create() Should fail If set_parent_image_id fails" {
   local -r image="image1"
@@ -496,6 +557,9 @@ setup_file() {
   vedv::container_entity::get_id_by_vm_name() {
     assert_equal "$*" "container:bin-baam|crc:12346|"
     echo 12346
+  }
+  vedv::vmobj_service::after_create() {
+    assert_equal "$*" "container 12346"
   }
   vedv::container_entity::set_parent_image_id() {
     assert_equal "$*" "12346 12345"
@@ -557,6 +621,9 @@ setup_file() {
     assert_equal "$*" "container:bin-baam|crc:12346|"
     echo 12346
   }
+  vedv::vmobj_service::after_create() {
+    assert_equal "$*" "container 12346"
+  }
   vedv::container_entity::set_parent_image_id() {
     assert_equal "$*" "12346 12345"
   }
@@ -567,7 +634,6 @@ setup_file() {
   assert_output "12346 bin-baam"
 }
 
-# bats test_tags=only
 @test "vedv::container_service::create() Should fail if publish_ports fails" {
   local -r image="image1"
   local -r container_name=''
@@ -621,6 +687,9 @@ setup_file() {
     assert_equal "$*" "container:bin-baam|crc:12346|"
     echo 12346
   }
+  vedv::vmobj_service::after_create() {
+    assert_equal "$*" "container 12346"
+  }
   vedv::container_entity::set_parent_image_id() {
     assert_equal "$*" "12346 12345"
   }
@@ -640,7 +709,6 @@ setup_file() {
   assert_output "Failed to publish ports for container: 'bin-baam'"
 }
 
-# bats test_tags=only
 @test "vedv::container_service::create() Should fail if __publish_exposed_ports fails" {
   local -r image="image1"
   local -r container_name=''
@@ -693,6 +761,9 @@ setup_file() {
   vedv::container_entity::get_id_by_vm_name() {
     assert_equal "$*" "container:bin-baam|crc:12346|"
     echo 12346
+  }
+  vedv::vmobj_service::after_create() {
+    assert_equal "$*" "container 12346"
   }
   vedv::container_entity::set_parent_image_id() {
     assert_equal "$*" "12346 12345"
@@ -934,6 +1005,38 @@ Sibling containers ids: '123457 123458'"
   assert_output "Failed to remove container: '123456'"
 }
 
+@test "vedv::container_service::remove_one() Should fail If after_remove fails" {
+  local -r container_id=123456
+
+  vedv::container_service::is_started() {
+    assert_equal "$*" 123456
+    echo false
+  }
+  vedv::container_entity::get_vm_name() {
+    assert_equal "$*" 123456
+    echo "container:bin-baam|crc:12346|"
+  }
+  vedv::container_entity::get_parent_image_id() {
+    assert_equal "$*" 123456
+    echo 22345
+  }
+  vedv::container_service::__get_running_siblings_ids() {
+    assert_equal "$*" 123456
+  }
+  vedv::hypervisor::rm() {
+    assert_equal "$*" "container:bin-baam|crc:12346|"
+  }
+  vedv::vmobj_service::after_remove() {
+    assert_equal "$*" 'container 123456'
+    return 1
+  }
+
+  run vedv::container_service::remove_one "$container_id"
+
+  assert_failure
+  assert_output "Error on after remove event: '${container_id}'"
+}
+
 @test "vedv::container_service::remove_one() Should fail If image_entity::get_vm_name fails" {
   local -r container_id=123456
 
@@ -954,6 +1057,9 @@ Sibling containers ids: '123457 123458'"
   }
   vedv::hypervisor::rm() {
     assert_equal "$*" "container:bin-baam|crc:12346|"
+  }
+  vedv::vmobj_service::after_remove() {
+    assert_equal "$*" 'container 123456'
   }
   vedv::image_entity::get_vm_name() {
     assert_equal "$*" 22345
@@ -986,6 +1092,9 @@ Sibling containers ids: '123457 123458'"
   }
   vedv::hypervisor::rm() {
     assert_equal "$*" "container:bin-baam|crc:12346|"
+  }
+  vedv::vmobj_service::after_remove() {
+    assert_equal "$*" 'container 123456'
   }
   vedv::image_entity::get_vm_name() {
     assert_equal "$*" 22345
@@ -1022,6 +1131,9 @@ Sibling containers ids: '123457 123458'"
   }
   vedv::hypervisor::rm() {
     assert_equal "$*" "container:bin-baam|crc:12346|"
+  }
+  vedv::vmobj_service::after_remove() {
+    assert_equal "$*" 'container 123456'
   }
   vedv::image_entity::get_vm_name() {
     assert_equal "$*" 22345
@@ -1446,7 +1558,7 @@ Sibling containers ids: '123457 123458'"
 }
 
 # Tests for vedv::container_service::__publish_exposed_ports()
-# bats test_tags=only
+
 @test "vedv::container_service::__publish_exposed_ports() Should fail If container_id is empty" {
   local -r container_id=''
 
@@ -1455,7 +1567,7 @@ Sibling containers ids: '123457 123458'"
   assert_failure
   assert_output "Invalid argument 'container_id': it's empty"
 }
-# bats test_tags=only
+
 @test "vedv::container_service::__publish_exposed_ports() Should fail If get_expose_ports fails" {
   local -r container_id=123456
 
@@ -1469,7 +1581,7 @@ Sibling containers ids: '123457 123458'"
   assert_failure
   assert_output "Failed to get exposed ports for container: '${container_id}'"
 }
-# bats test_tags=only
+
 @test "vedv::container_service::__publish_exposed_ports() Should succeed If there are no exposed ports" {
   local -r container_id=123456
 
@@ -1485,7 +1597,7 @@ Sibling containers ids: '123457 123458'"
   assert_success
   assert_output ""
 }
-# bats test_tags=only
+
 @test "vedv::container_service::__publish_exposed_ports() Should fail If publish_port fails" {
   local -r container_id=123456
 
@@ -1508,7 +1620,7 @@ Sibling containers ids: '123457 123458'"
   assert_failure
   assert_output --regexp "Failed to publish port: '.*:80/tcp' for container: '123456'"
 }
-# bats test_tags=only
+
 @test "vedv::container_service::__publish_exposed_ports() Should succeed" {
   local -r container_id=123456
 
@@ -1534,7 +1646,7 @@ Sibling containers ids: '123457 123458'"
 }
 
 # Tests for vedv::container_service::list_ports_by_id()
-# bats test_tags=only
+
 @test "vedv::container_service::list_ports_by_id() Should fail If container_id is empty" {
   local -r container_id=''
 
@@ -1543,7 +1655,7 @@ Sibling containers ids: '123457 123458'"
   assert_failure
   assert_output "Invalid argument 'container_id': it's empty"
 }
-# bats test_tags=only
+
 @test "vedv::container_service::list_ports_by_id() Should fail If get_vm_name fails" {
   local -r container_id=123456
 
@@ -1557,7 +1669,7 @@ Sibling containers ids: '123457 123458'"
   assert_failure
   assert_output "Failed to get vm name for container: '123456'"
 }
-# bats test_tags=only
+
 @test "vedv::container_service::list_ports_by_id() Should fail If container_vm_name is empty" {
   local -r container_id=123456
 
@@ -1570,7 +1682,7 @@ Sibling containers ids: '123457 123458'"
   assert_failure
   assert_output "There is no container with id '123456'"
 }
-# bats test_tags=only
+
 @test "vedv::container_service::list_ports_by_id() Should fail If get_forwarding_ports fails" {
   local -r container_id=123456
 
@@ -1588,7 +1700,7 @@ Sibling containers ids: '123457 123458'"
   assert_failure
   assert_output "Failed to get ports for container: '123456'"
 }
-# bats test_tags=only
+
 @test "vedv::container_service::list_ports_by_id() Should succeed" {
   local -r container_id=123456
 
@@ -1610,7 +1722,7 @@ Sibling containers ids: '123457 123458'"
 }
 
 # Tests for vedv::container_service::list_ports()
-# bats test_tags=only
+
 @test "vedv::container_service::list_ports() Should fail If container_name is empty" {
   local -r container_name_or_id=''
 
@@ -1619,7 +1731,7 @@ Sibling containers ids: '123457 123458'"
   assert_failure
   assert_output "Invalid argument 'container_name_or_id': it's empty"
 }
-# bats test_tags=only
+
 @test "vedv::container_service::list_ports() Should fail If get_ids_from_vmobj_names_or_ids fails" {
   local -r container_name_or_id='container1'
 
@@ -1633,7 +1745,7 @@ Sibling containers ids: '123457 123458'"
   assert_failure
   assert_output "Failed to get id for container: 'container1'"
 }
-# bats test_tags=only
+
 @test "vedv::container_service::list_ports() Should succeed" {
   local -r container_name_or_id='container1'
 

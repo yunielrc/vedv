@@ -129,10 +129,23 @@ vedv::image_service::import() {
     err "Failed to generate image vm name for image: '${image_name}'"
     return "$ERR_IMAGE_OPERATION"
   }
+
   readonly image_vm_name
   # Execution
   vedv::hypervisor::clonevm_link "$image_cache_vm_name" "$image_vm_name" &>/dev/null || {
     err "Failed to clone vm: '${image_cache_vm_name}' to: '${image_vm_name}'"
+    return "$ERR_IMAGE_OPERATION"
+  }
+
+  local image_id
+  image_id="$(vedv::image_entity::get_id_by_vm_name "$image_vm_name")" || {
+    err "Error getting image_id for vm_name '${image_vm_name}'"
+    return "$ERR_IMAGE_OPERATION"
+  }
+  readonly image_id
+  # we need to call this func to clean the cache for the vmobj_id is there is any
+  vedv::vmobj_service::after_create 'image' "$image_id" || {
+    err "Error on after create event: '${image_id}'"
     return "$ERR_IMAGE_OPERATION"
   }
   # Data gathering
@@ -144,12 +157,6 @@ vedv::image_service::import() {
   fi
   readonly image_name
 
-  local image_id
-  image_id="$(vedv::image_entity::get_id_by_vm_name "$image_vm_name")" || {
-    err "Error getting image_id for vm_name '${image_vm_name}'"
-    return "$ERR_IMAGE_OPERATION"
-  }
-  readonly image_id
   # Execution
   vedv::image_entity::set_image_cache "$image_id" "$image_cache_vm_name" || {
     err "Error setting attribute image cache '${image_cache_vm_name}' to the image '${image_name}'"
@@ -395,6 +402,10 @@ vedv::image_service::remove_one() {
 
   vedv::hypervisor::rm "$vm_name" &>/dev/null || {
     err "Failed to remove image: '${image_id}'"
+    return "$ERR_IMAGE_OPERATION"
+  }
+  vedv::vmobj_service::after_remove 'image' "$image_id" || {
+    err "Error on after remove event: '${image_id}'"
     return "$ERR_IMAGE_OPERATION"
   }
 
