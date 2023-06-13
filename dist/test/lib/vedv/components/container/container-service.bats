@@ -58,7 +58,7 @@ setup_file() {
   run vedv::container_service::create "$image" "$container_name"
 
   assert_failure
-  assert_output "Container with name: 'container1' already exist"
+  assert_output "Container with name: 'container1' already exist, you can delete it or use another name"
 }
 
 @test "vedv::container_service::create() Should fail If petname fails" {
@@ -147,35 +147,6 @@ setup_file() {
   assert_output "Image: 'image1' does not exist"
 }
 
-@test "vedv::container_service::create() Should fail If gen_vm_name fails" {
-  local -r image="image1"
-  local -r container_name='container1'
-
-  vedv::vmobj_service::exists_with_name() {
-    assert_equal "$*" "container container1"
-    echo false
-  }
-  petname() {
-    assert_equal "$*" "INVALID_CALL"
-  }
-  vedv::image_service::pull() {
-    assert_equal "$*" "INVALID_CALL"
-  }
-  vedv::image_entity::get_vm_name_by_image_name() {
-    assert_equal "$*" "image1"
-    echo "image:foo-bar|crc:12345|"
-  }
-  vedv::container_entity::gen_vm_name() {
-    assert_equal "$*" "container1"
-    return 1
-  }
-
-  run vedv::container_service::create "$image" "$container_name"
-
-  assert_failure
-  assert_output "Failed to generate container vm name for container: 'container1'"
-}
-
 @test "vedv::container_service::create() Should fail If get_id_by_vm_name fails" {
   local -r image="image1"
   local -r container_name='container1'
@@ -193,10 +164,6 @@ setup_file() {
   vedv::image_entity::get_vm_name_by_image_name() {
     assert_equal "$*" "image1"
     echo "image:foo-bar|crc:12345|"
-  }
-  vedv::container_entity::gen_vm_name() {
-    assert_equal "$*" "container1"
-    echo "container:bin-baam|crc:12346|"
   }
   vedv::image_entity::get_id_by_vm_name() {
     assert_equal "$*" "image:foo-bar|crc:12345|"
@@ -226,10 +193,6 @@ setup_file() {
   vedv::image_entity::get_vm_name_by_image_name() {
     assert_equal "$*" "image1"
     echo "image:foo-bar|crc:12345|"
-  }
-  vedv::container_entity::gen_vm_name() {
-    assert_equal "$*" "container1"
-    echo "container:bin-baam|crc:12346|"
   }
   vedv::image_entity::get_id_by_vm_name() {
     assert_equal "$*" "image:foo-bar|crc:12345|"
@@ -264,10 +227,6 @@ setup_file() {
     assert_equal "$*" "image1"
     echo "image:foo-bar|crc:12345|"
   }
-  vedv::container_entity::gen_vm_name() {
-    assert_equal "$*" "container1"
-    echo "container:bin-baam|crc:12346|"
-  }
   vedv::image_entity::get_id_by_vm_name() {
     assert_equal "$*" "image:foo-bar|crc:12345|"
     echo 12345
@@ -287,7 +246,7 @@ setup_file() {
   assert_output "Failed to get image layer snapshot name for image: 'image1'"
 }
 
-@test "vedv::container_service::create() Should fail If clonevm_link fails" {
+@test "vedv::container_service::create() Should fail If gen_vm_name fails" {
   local -r image="image1"
   local -r container_name='container1'
 
@@ -320,6 +279,55 @@ setup_file() {
   vedv::image_entity::get_snapshot_name_by_layer_id() {
     assert_equal "$*" "12345 53455"
     echo "layer:RUN|id:layer_id|"
+  }
+  vedv::container_entity::gen_vm_name() {
+    assert_equal "$*" "container1"
+    return 1
+  }
+
+  run vedv::container_service::create "$image" "$container_name"
+
+  assert_failure
+  assert_output "Failed to generate container vm name for container: 'container1'"
+}
+
+@test "vedv::container_service::create() Should fail If clonevm_link fails" {
+  local -r image="image1"
+  local -r container_name=''
+
+  vedv::vmobj_service::exists_with_name() {
+    assert_equal "$*" "INVALID_CALL"
+    echo false
+  }
+  petname() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::image_service::pull() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::image_entity::get_vm_name_by_image_name() {
+    assert_equal "$*" "image1"
+    echo "image:foo-bar|crc:12345|"
+  }
+  vedv::container_entity::gen_vm_name() {
+    assert_equal "$*" "container1"
+    echo "container:bin-baam|crc:12346|"
+  }
+  vedv::image_entity::get_id_by_vm_name() {
+    assert_equal "$*" "image:foo-bar|crc:12345|"
+    echo 12345
+  }
+  vedv::image_entity::get_last_layer_id() {
+    assert_equal "$*" "12345"
+    echo 53455
+  }
+  vedv::image_entity::get_snapshot_name_by_layer_id() {
+    assert_equal "$*" "12345 53455"
+    echo "layer:RUN|id:layer_id|"
+  }
+  vedv::container_entity::gen_vm_name() {
+    assert_equal "$*" ""
+    echo "container:bin-baam|crc:12346|"
   }
   vedv::hypervisor::clonevm_link() {
     assert_equal "$*" "image:foo-bar|crc:12345| container:bin-baam|crc:12346| layer:RUN|id:layer_id|"
@@ -365,6 +373,10 @@ setup_file() {
   vedv::image_entity::get_snapshot_name_by_layer_id() {
     assert_equal "$*" "12345 53455"
     echo "layer:RUN|id:layer_id|"
+  }
+  vedv::container_entity::gen_vm_name() {
+    assert_equal "$*" ""
+    echo "container:bin-baam|crc:12346|"
   }
   vedv::hypervisor::clonevm_link() {
     assert_equal "$*" "image:foo-bar|crc:12345| container:bin-baam|crc:12346| layer:RUN|id:layer_id|"
@@ -413,6 +425,10 @@ setup_file() {
   vedv::image_entity::get_snapshot_name_by_layer_id() {
     assert_equal "$*" "12345 53455"
     echo "layer:RUN|id:layer_id|"
+  }
+  vedv::container_entity::gen_vm_name() {
+    assert_equal "$*" ""
+    echo "container:bin-baam|crc:12346|"
   }
   vedv::hypervisor::clonevm_link() {
     assert_equal "$*" "image:foo-bar|crc:12345| container:bin-baam|crc:12346| layer:RUN|id:layer_id|"
@@ -465,6 +481,10 @@ setup_file() {
   vedv::image_entity::get_snapshot_name_by_layer_id() {
     assert_equal "$*" "12345 53455"
     echo "layer:RUN|id:layer_id|"
+  }
+  vedv::container_entity::gen_vm_name() {
+    assert_equal "$*" ""
+    echo "container:bin-baam|crc:12346|"
   }
   vedv::hypervisor::clonevm_link() {
     assert_equal "$*" "image:foo-bar|crc:12345| container:bin-baam|crc:12346| layer:RUN|id:layer_id|"
@@ -522,6 +542,10 @@ setup_file() {
     assert_equal "$*" "12345 53455"
     echo "layer:RUN|id:layer_id|"
   }
+  vedv::container_entity::gen_vm_name() {
+    assert_equal "$*" ""
+    echo "container:bin-baam|crc:12346|"
+  }
   vedv::hypervisor::clonevm_link() {
     assert_equal "$*" "image:foo-bar|crc:12345| container:bin-baam|crc:12346| layer:RUN|id:layer_id|"
   }
@@ -540,7 +564,7 @@ setup_file() {
   run vedv::container_service::create "$image" "$container_name"
 
   assert_success
-  assert_output "bin-baam"
+  assert_output "12346 bin-baam"
 }
 
 # bats test_tags=only
@@ -581,6 +605,10 @@ setup_file() {
   vedv::image_entity::get_snapshot_name_by_layer_id() {
     assert_equal "$*" "12345 53455"
     echo "layer:RUN|id:layer_id|"
+  }
+  vedv::container_entity::gen_vm_name() {
+    assert_equal "$*" ""
+    echo "container:bin-baam|crc:12346|"
   }
   vedv::hypervisor::clonevm_link() {
     assert_equal "$*" "image:foo-bar|crc:12345| container:bin-baam|crc:12346| layer:RUN|id:layer_id|"
@@ -650,6 +678,10 @@ setup_file() {
   vedv::image_entity::get_snapshot_name_by_layer_id() {
     assert_equal "$*" "12345 53455"
     echo "layer:RUN|id:layer_id|"
+  }
+  vedv::container_entity::gen_vm_name() {
+    assert_equal "$*" ""
+    echo "container:bin-baam|crc:12346|"
   }
   vedv::hypervisor::clonevm_link() {
     assert_equal "$*" "image:foo-bar|crc:12345| container:bin-baam|crc:12346| layer:RUN|id:layer_id|"

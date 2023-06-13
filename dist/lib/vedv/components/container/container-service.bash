@@ -61,17 +61,17 @@ vedv::container_service::set_use_cache() {
 }
 
 #
-# Create a new container
+# Create a container from an image
 #
 # Arguments:
-#   image             string    image name or an OVF file
+#   image             string    image name or image file
 #   [container_name]  string    container name
-#   [standalone]      bool      create a standalone container
+#   [standalone]      bool      create a standalone container (default: false)
 #   [publish_ports]   string[]  ports to be published
-#   [publish_all]     bool      publish all ports
+#   [publish_all]     bool      publish all ports (default: false)
 #
 # Output:
-#  Writes container ID to the stdout
+#  Writes container id and name (string) to the stdout
 #
 # Returns:
 #   0 on success, non-zero on error.
@@ -82,7 +82,7 @@ vedv::container_service::create() {
   local -r standalone="${3:-false}"
   local -r publish_ports="${4:-}"
   local -r publish_all="${5:-false}"
-
+  # validate arguments
   if [[ -z "$image" ]]; then
     err "Invalid argument 'image': it's empty"
     return "$ERR_INVAL_ARG"
@@ -97,7 +97,7 @@ vedv::container_service::create() {
     readonly exists_container
 
     if [[ "$exists_container" == true ]]; then
-      err "Container with name: '${container_name}' already exist"
+      err "Container with name: '${container_name}' already exist, you can delete it or use another name"
       return "$ERR_CONTAINER_OPERATION"
     fi
   fi
@@ -130,13 +130,6 @@ vedv::container_service::create() {
     return "$ERR_NOT_FOUND"
   fi
 
-  local container_vm_name
-  container_vm_name="$(vedv::container_entity::gen_vm_name "$container_name")" || {
-    err "Failed to generate container vm name for container: '${container_name}'"
-    return "$ERR_CONTAINER_OPERATION"
-  }
-  readonly container_vm_name
-
   # create a vm snapshoot, the snapshoot is the container
   local image_id
   image_id="$(vedv::image_entity::get_id_by_vm_name "$image_vm_name")" || {
@@ -162,6 +155,13 @@ vedv::container_service::create() {
   fi
   readonly layer_vm_snapshot_name
 
+  local container_vm_name
+  container_vm_name="$(vedv::container_entity::gen_vm_name "$container_name")" || {
+    err "Failed to generate container vm name for container: '${container_name}'"
+    return "$ERR_CONTAINER_OPERATION"
+  }
+  readonly container_vm_name
+
   if [[ "$standalone" == false ]]; then
     vedv::hypervisor::clonevm_link "$image_vm_name" "$container_vm_name" "$layer_vm_snapshot_name" &>/dev/null || {
       err "Failed to link clone vm: '${image_vm_name}' to: '${container_vm_name}'"
@@ -179,8 +179,8 @@ vedv::container_service::create() {
       err "Failed to get container name for vm: '${container_vm_name}'"
       return "$ERR_CONTAINER_OPERATION"
     }
-    readonly container_name
   fi
+  readonly container_name
 
   local container_id
   container_id="$(vedv::container_entity::get_id_by_vm_name "$container_vm_name")" || {
@@ -212,7 +212,7 @@ vedv::container_service::create() {
   #   err "Failed to import data for container: '${container_name}'"
   #   return "$ERR_CONTAINER_OPERATION"
   # }
-  echo "$container_name"
+  echo "${container_id} ${container_name}"
 }
 
 #
