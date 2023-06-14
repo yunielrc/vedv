@@ -23,6 +23,26 @@ setup() {
   assert_output ""
 }
 
+# Tests for vedv::container_entity::set_vm_name()
+# bats test_tags=only
+@test "vedv::container_entity::set_vm_name() Should succeed" {
+  # Setup
+  local -r container_id="123456"
+  local -r vm_name="container:ct1|crc:123456|"
+  # Mock
+  vedv::vmobj_entity::set_vm_name() {
+    assert_equal "$*" "container 123456 container:ct1|crc:123456|"
+  }
+  # Act
+  run vedv::container_entity::set_vm_name \
+    "$container_id" \
+    "$vm_name"
+
+  # Assert
+  assert_success
+  assert_output ""
+}
+
 # Tests for vedv::container_entity::get_vm_name()
 # bats test_tags=only
 @test "vedv::container_entity::get_vm_name() Should succeed" {

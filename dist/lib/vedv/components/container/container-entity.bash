@@ -35,6 +35,23 @@ vedv::container_entity::gen_vm_name() {
 }
 
 #
+# Set the vm name of a container
+#
+# Arguments:
+#   container_id string     container id
+#   vm_name      string     vm name
+#
+# Output:
+#  writes container vm name to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::container_entity::set_vm_name() {
+  vedv::vmobj_entity::set_vm_name "$VEDV_CONTAINER_ENTITY_TYPE" "$@"
+}
+
+#
 # Get the vm name of a container
 #
 # Arguments:

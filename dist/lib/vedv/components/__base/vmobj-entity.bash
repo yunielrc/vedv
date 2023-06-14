@@ -11,7 +11,7 @@ if false; then
 fi
 
 # CONSTANTS
-readonly VEDV_VMOBJ_ENTITY_VALID_ATTRIBUTES='ssh_port|user_name|workdir|environment|exposed_ports|shell'
+readonly VEDV_VMOBJ_ENTITY_VALID_ATTRIBUTES='vm_name|ssh_port|user_name|workdir|environment|exposed_ports|shell'
 
 # VARIABLES
 
@@ -178,6 +178,7 @@ vedv::vmobj_entity::__validate_vm_name() {
 
 #
 # Generate vm name
+# the id is unique for the name
 #
 # Arguments:
 #   type string   type (e.g. 'container|image')
@@ -209,14 +210,38 @@ vedv::vmobj_entity::gen_vm_name() {
 }
 
 #
-# Get the vm name
+# Set vm_name
+#
 #
 # Arguments:
-#   type string   type (e.g. 'container|image')
-#   vmobj_id string     vmobj id
+#   type       string  type (e.g. 'container|image')
+#   vmobj_id   string  vmobj id
+#   vm_name    string  vm_name
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::vmobj_entity::set_vm_name() {
+  local -r type="$1"
+  local -r vmobj_id="$2"
+  local -r value="$3"
+
+  vedv::vmobj_entity::__set_attribute \
+    "$type" \
+    "$vmobj_id" \
+    'vm_name' \
+    "$value"
+}
+
+#
+# Get vm name
+#
+# Arguments:
+#   type      string  type (e.g. 'container|image')
+#   vmobj_id  string  vmobj id
 #
 # Output:
-#  writes vmobj vm name to the stdout
+#   Writes vm_name (string) to the stdout.
 #
 # Returns:
 #   0 on success, non-zero on error.
@@ -230,11 +255,37 @@ vedv::vmobj_entity::get_vm_name() {
   utils::validate_name_or_id "$vmobj_id" ||
     return "$?"
 
-  local vm_name
-  vm_name="$(vedv::hypervisor::list_vms_by_partial_name "|crc:${vmobj_id}|")" || {
-    err "Failed to get vm name of ${type}: ${vmobj_id}"
+  local vm_name=''
+  vm_name="$(
+    vedv::vmobj_entity::__get_attribute \
+      "$type" \
+      "$vmobj_id" \
+      'vm_name'
+  )" || {
+    err "Error getting attribute vm_name for the ${type}: '${vmobj_id}'"
     return "$ERR_VMOBJ_ENTITY"
   }
+
+  if [[ -z "$vm_name" ]]; then
+    vm_name="$(vedv::hypervisor::list_vms_by_partial_name "|crc:${vmobj_id}|")" || {
+      err "Error getting the vm name for the ${type}: '${vmobj_id}'"
+      return "$ERR_VMOBJ_ENTITY"
+    }
+
+    if [[ -z "$vm_name" ]]; then
+      err "${type^} with id '${vmobj_id}' not found"
+      return "$ERR_NOT_FOUND"
+    fi
+
+    vedv::vmobj_entity::__set_attribute \
+      "$type" \
+      "$vmobj_id" \
+      'vm_name' \
+      "$vm_name" || {
+      err "Error setting attribute vm_name for the ${type}: '${vmobj_id}'"
+      return "$ERR_VMOBJ_ENTITY"
+    }
+  fi
 
   echo "$vm_name"
 }
@@ -247,7 +298,7 @@ vedv::vmobj_entity::get_vm_name() {
 #   vmobj_name string     vmobj name
 #
 # Output:
-#  writes vmobj vm_name (string) to the stdout
+#  writes vmobj vm_name (string) or nothing to the stdout
 #
 # Returns:
 #   0 on success, non-zero on error.
@@ -271,7 +322,34 @@ vedv::vmobj_entity::get_vm_name_by_vmobj_name() {
 }
 
 #
+# Calculate the vm name of a vmobj
+# this function don't check if the vmobj exists
+#
+# Arguments:
+#   type string   type (e.g. 'container|image')
+#   vmobj_name string     vmobj name
+#
+# Output:
+#  writes vmobj vm_name (string) to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::vmobj_entity::calc_vm_name_by_vmobj_name() {
+  local -r type="$1"
+  local -r vmobj_name="$2"
+  # validate arguments
+  vedv::vmobj_entity::validate_type "$type" ||
+    return "$?"
+  utils::validate_name_or_id "$vmobj_name" ||
+    return "$?"
+
+  vedv::vmobj_entity::gen_vm_name "$type" "$vmobj_name"
+}
+
+#
 # Get vmobj name from vm name
+# this function don't check if the vmobj exists
 #
 # Arguments:
 #   type string   type (e.g. 'container|image')
@@ -368,6 +446,32 @@ vedv::vmobj_entity::get_id_by_vmobj_name() {
 }
 
 #
+# Calculate vmobj id by vmobj name
+# this function don't check if the vmobj exists
+#
+# Arguments:
+#   type string   type (e.g. 'container|image')
+#   vmobj_name string       vmobj name
+#
+# Output:
+#  Writes vmobj_id (string) to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::vmobj_entity::calc_id_by_vmobj_name() {
+  local -r type="$1"
+  local -r vmobj_name="$2"
+  # validate arguments
+  vedv::vmobj_entity::validate_type "$type" ||
+    return "$?"
+  utils::validate_name_or_id "$vmobj_name" ||
+    return "$?"
+  # shellcheck disable=SC2119
+  crc_sum <<<"$vmobj_name"
+}
+
+#
 # Get entity as dictionary
 #
 # Arguments:
@@ -389,50 +493,56 @@ vedv::vmobj_entity::get_dictionary() {
   utils::validate_name_or_id "$vmobj_id" ||
     return "$?"
 
-  local vmobj_vm_name
-  vmobj_vm_name="$(vedv::vmobj_entity::get_vm_name "$type" "$vmobj_id")" || {
-    err "Error getting the vm name for the ${type}: '${vmobj_id}'"
-    return "$ERR_NOT_FOUND"
-  }
-  readonly vmobj_vm_name
-
-  if [[ -z "$vmobj_vm_name" ]]; then
-    err "Vm name for the ${type}: '${vmobj_id}' is empty"
-    return "$ERR_INVAL_VALUE"
-  fi
-
-  local vm_description
-  vm_description="$(vedv::hypervisor::get_description "$vmobj_vm_name")" || {
-    err "Error getting the description for the vm name: '${vmobj_vm_name}'"
+  local cached_dictionary_str
+  cached_dictionary_str="$(vedv::vmobj_entity::__memcache_get_data "$type" "$vmobj_id")" || {
+    err "Failed to get the cached dictionary for the ${type}: '${vmobj_id}'"
     return "$ERR_VMOBJ_ENTITY"
   }
-  # vm_description="${vm_description//\\/}"
-  readonly vm_description
+  readonly cached_dictionary_str
 
-  if [[ -z "$vm_description" ]]; then
-    err "Description for the vm name: '${vmobj_vm_name}' is empty"
-    return "$ERR_INVAL_VALUE"
+  local dictionary_str=''
+
+  if [[ -n "$cached_dictionary_str" ]]; then
+    dictionary_str="$cached_dictionary_str"
+  else
+    local vmobj_vm_name
+    vmobj_vm_name="$(vedv::hypervisor::list_vms_by_partial_name "|crc:${vmobj_id}|")" || {
+      err "Error getting the vm name for the ${type}: '${vmobj_id}'"
+      return "$ERR_VMOBJ_ENTITY"
+    }
+    readonly vmobj_vm_name
+
+    if [[ -z "$vmobj_vm_name" ]]; then
+      err "${type^} with id '${vmobj_id}' not found"
+      return "$ERR_NOT_FOUND"
+    fi
+
+    dictionary_str="$(vedv::hypervisor::get_description "$vmobj_vm_name")" || {
+      err "Error getting the description for the vm name: '${vmobj_vm_name}'"
+      return "$ERR_VMOBJ_ENTITY"
+    }
+
+    if [[ -z "$dictionary_str" ]]; then
+      err "Description for the vm name: '${vmobj_vm_name}' is empty"
+      return "$ERR_INVAL_VALUE"
+    fi
+    # create memory cache for the vmobj data
+    vedv::vmobj_entity::__memcache_set_data "$type" "$vmobj_id" "$dictionary_str" || {
+      err "Failed to set the cached dictionary for the ${type}: '${vmobj_id}'"
+      return "$ERR_VMOBJ_ENTITY"
+    }
   fi
-
-  # e.g.: vm_description='([parent_image_id]="alpine1" [ssh_port]=22 ...)'
-  eval local -A vmobj_dict="$vm_description" || return $?
+  readonly dictionary_str
+  # e.g.: dictionary_str='([parent_image_id]="alpine1" [ssh_port]=22 ...)'
+  eval local -A vmobj_dict="$dictionary_str" || return $?
   # shellcheck disable=SC2199
   if [[ "${#vmobj_dict[@]}" -eq 0 ]]; then
-    err "Empty dictionary for the vm name: '${vmobj_vm_name}'"
+    err "Empty dictionary for vmobj: '${vmobj_id}'"
     return "$ERR_INVAL_VALUE"
   fi
-
-  local vmojb_name
-  vmojb_name="$(vedv::vmobj_entity::get_vmobj_name_by_vm_name "$type" "$vmobj_vm_name")" || {
-    err "Error getting the vmobj name for the vm name: '${vmobj_vm_name}'"
-    return "$ERR_VMOBJ_ENTITY"
-  }
-  readonly vmojb_name
 
   vmobj_dict['id']="$vmobj_id"
   vmobj_dict['type']="$type"
-  vmobj_dict['name']="$vmojb_name"
-  vmobj_dict['vm_name']="$vmobj_vm_name"
 
   arr2str vmobj_dict
 }
@@ -462,28 +572,15 @@ vedv::vmobj_entity::__get_attribute() {
   vedv::vmobj_entity::__validate_attribute "$type" "$attribute" ||
     return "$?"
 
-  local cached_dictionary_str
-  cached_dictionary_str="$(vedv::vmobj_entity::__memcache_get_data "$type" "$vmobj_id")" || {
-    err "Failed to get the cached dictionary for the ${type}: '${vmobj_id}'"
+  local dictionary_str
+  dictionary_str="$(vedv::vmobj_entity::get_dictionary "$type" "$vmobj_id")" || {
+    if [[ "$?" -eq "$ERR_NOT_FOUND" ]]; then
+      err "${type^} with id '${vmobj_id}' not found"
+      return "$ERR_NOT_FOUND"
+    fi
+    err "Failed to get the dictionary for the ${type}: '${vmobj_id}'"
     return "$ERR_VMOBJ_ENTITY"
   }
-  readonly cached_dictionary_str
-
-  local dictionary_str
-
-  if [[ -n "$cached_dictionary_str" ]]; then
-    dictionary_str="$cached_dictionary_str"
-  else
-    dictionary_str="$(vedv::vmobj_entity::get_dictionary "$type" "$vmobj_id")" || {
-      err "Failed to get the dictionary for the ${type}: '${vmobj_id}'"
-      return "$ERR_VMOBJ_ENTITY"
-    }
-    # create memory cache for the vmobj data
-    vedv::vmobj_entity::__memcache_set_data "$type" "$vmobj_id" "$dictionary_str" || {
-      err "Failed to set the cached dictionary for the ${type}: '${vmobj_id}'"
-      return "$ERR_VMOBJ_ENTITY"
-    }
-  fi
   readonly dictionary_str
   # shellcheck disable=SC2178
   local -rA vmobj_dict="$dictionary_str"
@@ -534,10 +631,10 @@ vedv::vmobj_entity::__create_new_vmobj_dict() {
 # Set attribute value
 #
 # Arguments:
-#   type string               type (e.g. 'container|image')
-#   vmobj_id  string   image id
-#   attribute  string      attribute
-#   value  string          value
+#   type      string  type (e.g. 'container|image')
+#   vmobj_id  string  image id
+#   attribute string  attribute
+#   value     string  value
 #
 # Returns:
 #   0 on success, non-zero on error.
@@ -556,15 +653,15 @@ vedv::vmobj_entity::__set_attribute() {
     return "$?"
 
   local vmobj_vm_name
-  vmobj_vm_name="$(vedv::vmobj_entity::get_vm_name "$type" "$vmobj_id")" || {
+  vmobj_vm_name="$(vedv::hypervisor::list_vms_by_partial_name "|crc:${vmobj_id}|")" || {
     err "Error getting the vm name for the ${type}: '${vmobj_id}'"
-    return "$ERR_NOT_FOUND"
+    return "$ERR_VMOBJ_ENTITY"
   }
   readonly vmobj_vm_name
 
   if [[ -z "$vmobj_vm_name" ]]; then
-    err "Vm name for the ${type}: '${vmobj_id}' is empty"
-    return "$ERR_INVAL_VALUE"
+    err "${type^} with id '${vmobj_id}' not found"
+    return "$ERR_NOT_FOUND"
   fi
 
   # e.g.: vm_description='([parent_image_id]="alpine1" [ssh_port]=22 ...)'

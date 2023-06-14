@@ -508,6 +508,69 @@ setup_file() {
   assert_failure
   assert_output "Error on after create event: 'bin-baam'"
 }
+# bats test_tags=only
+@test "vedv::container_service::create() Should fail If set_vm_name fails" {
+  local -r image="image1"
+  local -r container_name=''
+
+  vedv::vmobj_service::exists_with_name() {
+    assert_equal "$*" "container container1"
+    echo false
+  }
+  petname() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::image_service::pull() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::image_entity::get_vm_name_by_image_name() {
+    assert_equal "$*" "image1"
+    echo "image:foo-bar|crc:12345|"
+  }
+  vedv::container_entity::gen_vm_name() {
+    assert_equal "$*" ""
+    echo "container:bin-baam|crc:12346|"
+  }
+  vedv::image_entity::get_id_by_vm_name() {
+    assert_equal "$*" "image:foo-bar|crc:12345|"
+    echo 12345
+  }
+  vedv::image_entity::get_last_layer_id() {
+    assert_equal "$*" "12345"
+    echo 53455
+  }
+  vedv::image_entity::get_snapshot_name_by_layer_id() {
+    assert_equal "$*" "12345 53455"
+    echo "layer:RUN|id:layer_id|"
+  }
+  vedv::container_entity::gen_vm_name() {
+    assert_equal "$*" ""
+    echo "container:bin-baam|crc:12346|"
+  }
+  vedv::hypervisor::clonevm_link() {
+    assert_equal "$*" "image:foo-bar|crc:12345| container:bin-baam|crc:12346| layer:RUN|id:layer_id|"
+  }
+  vedv::container_entity::get_container_name_by_vm_name() {
+    echo "bin-baam"
+    assert_equal "$*" "container:bin-baam|crc:12346|"
+  }
+  vedv::container_entity::get_id_by_vm_name() {
+    assert_equal "$*" "container:bin-baam|crc:12346|"
+    echo 12346
+  }
+  vedv::vmobj_service::after_create() {
+    assert_equal "$*" "container 12346"
+  }
+  vedv::container_entity::set_vm_name() {
+    assert_equal "$*" "12346 container:bin-baam|crc:12346|"
+    return 1
+  }
+
+  run vedv::container_service::create "$image" "$container_name"
+
+  assert_failure
+  assert_output "Failed to set vm name for container: 'bin-baam'"
+}
 
 @test "vedv::container_service::create() Should fail If set_parent_image_id fails" {
   local -r image="image1"
@@ -560,6 +623,9 @@ setup_file() {
   }
   vedv::vmobj_service::after_create() {
     assert_equal "$*" "container 12346"
+  }
+  vedv::container_entity::set_vm_name() {
+    assert_equal "$*" "12346 container:bin-baam|crc:12346|"
   }
   vedv::container_entity::set_parent_image_id() {
     assert_equal "$*" "12346 12345"
@@ -623,6 +689,9 @@ setup_file() {
   }
   vedv::vmobj_service::after_create() {
     assert_equal "$*" "container 12346"
+  }
+  vedv::container_entity::set_vm_name() {
+    assert_equal "$*" "12346 container:bin-baam|crc:12346|"
   }
   vedv::container_entity::set_parent_image_id() {
     assert_equal "$*" "12346 12345"
@@ -689,6 +758,9 @@ setup_file() {
   }
   vedv::vmobj_service::after_create() {
     assert_equal "$*" "container 12346"
+  }
+  vedv::container_entity::set_vm_name() {
+    assert_equal "$*" "12346 container:bin-baam|crc:12346|"
   }
   vedv::container_entity::set_parent_image_id() {
     assert_equal "$*" "12346 12345"
@@ -764,6 +836,9 @@ setup_file() {
   }
   vedv::vmobj_service::after_create() {
     assert_equal "$*" "container 12346"
+  }
+  vedv::container_entity::set_vm_name() {
+    assert_equal "$*" "12346 container:bin-baam|crc:12346|"
   }
   vedv::container_entity::set_parent_image_id() {
     assert_equal "$*" "12346 12345"
@@ -1804,6 +1879,38 @@ Sibling containers ids: '123457 123458'"
 
   run vedv::container_service::set_use_cache 'true'
 
+  assert_success
+  assert_output ""
+}
+
+# Tests for vedv::container_service::exists_with_id()
+@test "vedv::container_service::exists_with_id() Should succeed" {
+  # Arrange
+  local -r container_id="container1"
+  # Stub
+  vedv::vmobj_service::exists_with_id() {
+    assert_equal "$*" "container ${container_id}"
+  }
+  # Act
+  run vedv::container_service::exists_with_id "$container_id"
+
+  # Assert
+  assert_success
+  assert_output ""
+}
+
+# Tests for vedv::container_service::exists_with_name()
+@test "vedv::container_service::exists_with_name() Should succeed" {
+  # Arrange
+  local -r container_name="container1"
+  # Stub
+  vedv::vmobj_service::exists_with_name() {
+    assert_equal "$*" "container ${container_name}"
+  }
+  # Act
+  run vedv::container_service::exists_with_name "$container_name"
+
+  # Assert
   assert_success
   assert_output ""
 }

@@ -76,17 +76,15 @@
       "args": [
         "container",
         "create",
-        "-n",
-        "dyli123",
+        "--name",
+        "ct123",
         "-p",
-        "57864:2300/tcp",
-        "-p",
-        "8082:82",
+        "8080:80/tcp",
         "-p",
         "8081",
         "-p",
         "81/udp",
-        "image123"
+        "/tmp/vedv/test/files/alpine-x86_64.ova"
       ]
     },
     {
@@ -215,10 +213,9 @@
       "args": [
         "image",
         "build",
-        "--force",
         "-t",
-        "image123",
-        "./Vedvfile2"
+        "bimage1",
+        "./Vedvfile12"
       ]
     },
     {
@@ -239,7 +236,7 @@
     {
       "type": "bashdb",
       "request": "launch",
-      "name": "Bash-Debug (vedv image exec)",
+      "name": "Bash-Debug (vedv container exec --env ...)",
       "env": {
         "VEDV_HADOLINT_ENABLED": "false"
       },
@@ -253,6 +250,18 @@
         "E2=\"ve2 ef\"",
         "container123a",
         "echo \"E1:${E1} E2:${E2} U:${USER}\""
+      ]
+    },
+    {
+      "type": "bashdb",
+      "request": "launch",
+      "name": "Bash-Debug (vedv container exec ...)",
+      "program": "${workspaceFolder}/dist/usr/bin/vedv",
+      "args": [
+        "container",
+        "exec",
+        "ct1",
+        "echo 1"
       ]
     },
     {

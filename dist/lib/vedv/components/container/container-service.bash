@@ -194,6 +194,11 @@ vedv::container_service::create() {
     return "$ERR_CONTAINER_OPERATION"
   }
 
+  vedv::container_entity::set_vm_name "$container_id" "$container_vm_name" || {
+    err "Failed to set vm name for container: '${container_name}'"
+    return "$ERR_CONTAINER_OPERATION"
+  }
+
   vedv::container_entity::set_parent_image_id "$container_id" "$([[ "$standalone" == false ]] && echo "$image_id" || echo "$VEDV_CONTAINER_SERVICE_STANDALONE")" || {
     err "Failed to set parent image id for container: '${container_name}'"
     return "$ERR_CONTAINER_OPERATION"
@@ -917,4 +922,44 @@ vedv::container_service::list_ports() {
   readonly container_id
 
   vedv::container_service::list_ports_by_id "$container_id"
+}
+
+#
+#  Exists container with id
+#
+# Arguments:
+#  container_id string    container id
+#
+# Output:
+#  writes true if exists otherwise false to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::container_service::exists_with_id() {
+  local -r vmobj_id="$1"
+
+  vedv::vmobj_service::exists_with_id \
+    'container' \
+    "$vmobj_id"
+}
+
+#
+#  Exists container with name
+#
+# Arguments:
+#  container_name string  container name
+#
+# Output:
+#  writes true if exists otherwise false to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::container_service::exists_with_name() {
+  local -r vmobj_name="$1"
+
+  vedv::vmobj_service::exists_with_name \
+    'container' \
+    "$vmobj_name"
 }

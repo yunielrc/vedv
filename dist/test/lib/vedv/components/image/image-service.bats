@@ -2293,3 +2293,35 @@ EOF
   assert_success
   assert_output ""
 }
+
+# Tests for vedv::image_service::exists_with_id()
+@test "vedv::image_service::exists_with_id() Should succeed" {
+  # Arrange
+  local -r image_id="image1"
+  # Stub
+  vedv::vmobj_service::exists_with_id() {
+    assert_equal "$*" "image ${image_id}"
+  }
+  # Act
+  run vedv::image_service::exists_with_id "$image_id"
+
+  # Assert
+  assert_success
+  assert_output ""
+}
+
+# Tests for vedv::image_service::exists_with_name()
+@test "vedv::image_service::exists_with_name() Should succeed" {
+  # Arrange
+  local -r image_name="image1"
+  # Stub
+  vedv::vmobj_service::exists_with_name() {
+    assert_equal "$*" "image ${image_name}"
+  }
+  # Act
+  run vedv::image_service::exists_with_name "$image_name"
+
+  # Assert
+  assert_success
+  assert_output ""
+}

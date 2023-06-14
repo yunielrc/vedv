@@ -1144,3 +1144,43 @@ vedv::image_service::cache_data() {
     'image' \
     "$image_id"
 }
+
+#
+#  Exists image with id
+#
+# Arguments:
+#  image_id string    image id
+#
+# Output:
+#  writes true if exists otherwise false to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::image_service::exists_with_id() {
+  local -r vmobj_id="$1"
+
+  vedv::vmobj_service::exists_with_id \
+    'image' \
+    "$vmobj_id"
+}
+
+#
+#  Exists image with name
+#
+# Arguments:
+#  image_name string  image name
+#
+# Output:
+#  writes true if exists otherwise false to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::image_service::exists_with_name() {
+  local -r vmobj_name="$1"
+
+  vedv::vmobj_service::exists_with_name \
+    'image' \
+    "$vmobj_name"
+}

@@ -78,7 +78,7 @@ utils::crc_sum() {
   cksum "$@" | cut -d' ' -f1
   return "${PIPESTATUS[0]}"
 }
-crc_sum() { utils::crc_sum "${1:-}"; }
+crc_sum() { utils::crc_sum "$@"; }
 
 #
 # calc crc sum for a file, a set of files, or a files inside a directory
