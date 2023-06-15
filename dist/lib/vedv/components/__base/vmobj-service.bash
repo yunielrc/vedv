@@ -219,7 +219,7 @@ vedv::vmobj_service::get_ids_from_vmobj_names_or_ids() {
     return "$?"
 
   if [[ -z "${vmobj_ids_or_names[*]}" ]]; then
-    err "At least one ${type} is required"
+    err "At least one ${type} id or name is required"
     return "$ERR_INVAL_ARG"
   fi
 
@@ -228,10 +228,8 @@ vedv::vmobj_service::get_ids_from_vmobj_names_or_ids() {
 
   for _vmobj_id_or_name in "${vmobj_ids_or_names[@]}"; do
     local vmobj_id
-    vmobj_id="$(vedv::vmobj_entity::get_id_by_vmobj_name "$type" "$_vmobj_id_or_name" 2>/dev/null)" || {
-      if [[ $? != "$ERR_NOT_FOUND" ]]; then
-        err_messages["Error getting vmobj id for ${type}s"]+="'${_vmobj_id_or_name}' "
-      fi
+    vmobj_id="$(vedv::vmobj_entity::get_id "$_vmobj_id_or_name" 2>/dev/null)" || {
+      err_messages["Error getting vmobj id for ${type}s"]+="'${_vmobj_id_or_name}' "
       vmobj_ids+=("$_vmobj_id_or_name")
       continue
     }
@@ -255,7 +253,7 @@ vedv::vmobj_service::get_ids_from_vmobj_names_or_ids() {
 # Arguments:
 #   type                string    type (e.g. 'container|image')
 #   exec_func           string    function name to execute
-#   vmobj_names_or_ids  string[]  vmobj name or id
+#   vmobj_ids_or_names  string[]  vmobj name or id
 #
 # Output:
 #  writes the processed vmobj ids to the stdout
@@ -266,7 +264,9 @@ vedv::vmobj_service::get_ids_from_vmobj_names_or_ids() {
 vedv::vmobj_service::exec_func_on_many_vmobj() {
   local -r type="$1"
   local -r exec_func="$2"
-  local -r vmobj_names_or_ids="$3"
+  local -a vmobj_ids_or_names
+  IFS=' ' read -r -a vmobj_ids_or_names <<<"$3"
+  readonly vmobj_ids_or_names
   # validate arguments
   vedv::vmobj_entity::validate_type "$type" ||
     return "$?"
@@ -276,20 +276,21 @@ vedv::vmobj_service::exec_func_on_many_vmobj() {
     return "$ERR_INVAL_ARG"
   fi
 
-  if [[ -z "$vmobj_names_or_ids" ]]; then
-    err "At least one ${type} is required"
+  if [[ -z "${vmobj_ids_or_names[*]}" ]]; then
+    err "At least one ${type} id or name is required"
     return "$ERR_INVAL_ARG"
   fi
 
-  local -a vmobj_ids
-  # shellcheck disable=SC2207
-  vmobj_ids=($(vedv::vmobj_service::get_ids_from_vmobj_names_or_ids "$type" "$vmobj_names_or_ids")) || {
-    err 'Error getting vmobj ids'
-    return "$ERR_VMOBJ_OPERATION"
-  }
   local -A err_messages=()
 
-  for vmobj_id in "${vmobj_ids[@]}"; do
+  for vmobj_id_or_name in "${vmobj_ids_or_names[@]}"; do
+    local vmobj_id
+
+    vmobj_id="$(vedv::vmobj_entity::get_id "$vmobj_id_or_name")" || {
+      err_messages["Error getting vmobj id for ${type}s"]+="'${vmobj_id_or_name}' "
+      continue
+    }
+
     eval "${exec_func} '${vmobj_id}'" || {
       err_messages["Failed to execute function on ${type}s"]+="'${vmobj_id}'"
     }
@@ -1008,7 +1009,7 @@ vedv::vmobj_service::execute_cmd() {
   local -r shell="${7:-}"
 
   local vmobj_id
-  vmobj_id="$(vedv::vmobj_service::get_ids_from_vmobj_names_or_ids "$type" "$vmobj_id_or_name")" || {
+  vmobj_id="$(vedv::vmobj_entity::get_id "$vmobj_id_or_name")" || {
     err "Failed to get ${type} id by name or id: ${vmobj_id_or_name}"
     return "$ERR_VMOBJ_OPERATION"
   }
@@ -1076,7 +1077,7 @@ vedv::vmobj_service::connect() {
   local -r user="${3:-}"
 
   local vmobj_id
-  vmobj_id="$(vedv::vmobj_service::get_ids_from_vmobj_names_or_ids "$type" "$vmobj_id_or_name")" || {
+  vmobj_id="$(vedv::vmobj_entity::get_id "$vmobj_id_or_name")" || {
     err "Failed to get ${type} id by name or id: ${vmobj_id_or_name}"
     return "$ERR_VMOBJ_OPERATION"
   }
@@ -1186,10 +1187,11 @@ vedv::vmobj_service::copy() {
   local -r chmod="${8:-}"
 
   local vmobj_id
-  vmobj_id="$(vedv::vmobj_service::get_ids_from_vmobj_names_or_ids "$type" "$vmobj_id_or_name")" || {
+  vmobj_id="$(vedv::vmobj_entity::get_id "$vmobj_id_or_name")" || {
     err "Failed to get ${type} id by name or id: ${vmobj_id_or_name}"
     return "$ERR_VMOBJ_OPERATION"
   }
+
   vedv::vmobj_service::copy_by_id \
     "$type" \
     "$vmobj_id" \
@@ -1604,7 +1606,7 @@ vedv::vmobj_service::fs::list_exposed_ports_by_id() {
 #
 # Arguments:
 #   type              string     type (e.g. 'container|image')
-#   vmobj_name_or_id  string     vmobj name or id
+#   vmobj_id_or_name  string     vmobj name or id
 #
 # Output:
 #  writes expose ports (text) to the stdout
@@ -1614,19 +1616,18 @@ vedv::vmobj_service::fs::list_exposed_ports_by_id() {
 #
 vedv::vmobj_service::fs::list_exposed_ports() {
   local -r type="$1"
-  local -r vmobj_name_or_id="$2"
+  local -r vmobj_id_or_name="$2"
   # validate arguments
-  if [[ -z "$vmobj_name_or_id" ]]; then
-    err "Invalid argument 'vmobj_name_or_id': it's empty"
+  if [[ -z "$vmobj_id_or_name" ]]; then
+    err "Invalid argument 'vmobj_id_or_name': it's empty"
     return "$ERR_INVAL_ARG"
   fi
 
   local vmobj_id
-  vmobj_id="$(vedv::vmobj_service::get_ids_from_vmobj_names_or_ids "$type" "$vmobj_name_or_id")" || {
-    err "Failed to get id for container: '${vmobj_name_or_id}'"
-    return "$ERR_CONTAINER_OPERATION"
+  vmobj_id="$(vedv::vmobj_entity::get_id "$vmobj_id_or_name")" || {
+    err "Failed to get ${type} id by name or id: ${vmobj_id_or_name}"
+    return "$ERR_VMOBJ_OPERATION"
   }
-  readonly vmobj_id
 
   vedv::vmobj_service::fs::list_exposed_ports_by_id "$type" "$vmobj_id"
 }

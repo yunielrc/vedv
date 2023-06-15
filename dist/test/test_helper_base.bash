@@ -208,8 +208,10 @@ SSHEOF
 
 # cd "$BATS_TEST_DIRNAME" || exit
 
-[[ -d "$TEST_TMP_DIR" ]] ||
+[[ -d "$TEST_TMP_DIR" ]] || {
   mkdir -p "$TEST_TMP_DIR"
+  chmod 777 "$TEST_TMP_DIR"
+}
 
 if [[ -d "$TEST_IMAGE_CACHE_DIR" &&
   "$TEST_IMAGE_CACHE_DIR" =~ ^/tmp/ ]]; then

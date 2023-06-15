@@ -1850,8 +1850,8 @@ EOF
 @test "vedv::image_service::cache::list_exposed_ports() Should succeed" {
   local -r image_name_or_id='12345'
 
-  vedv::vmobj_service::get_ids_from_vmobj_names_or_ids() {
-    assert_equal "$*" "image 12345"
+  vedv::vmobj_entity::get_id() {
+    assert_equal "$*" "12345"
     echo 12345
   }
   vedv::image_entity::cache::get_exposed_ports() {

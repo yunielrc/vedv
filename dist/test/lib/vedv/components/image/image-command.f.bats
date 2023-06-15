@@ -118,7 +118,7 @@ Flags:
   --force       force remove"
   done
 }
-
+# bats test_tags=only
 @test "vedv image rm, Should remove the image" {
 
   vedv image pull "$TEST_OVA_FILE"
@@ -506,7 +506,7 @@ vedv image import IMAGE_FILE"
 }
 
 # Tests for vedv image from-url
-# bats test_tags=only
+
 @test "vedv image from-url --help, Should show help" {
 
   for flag in '' '-h' '--help'; do
@@ -517,7 +517,7 @@ vedv image import IMAGE_FILE"
 vedv image from-url URL"
   done
 }
-# bats test_tags=only
+
 @test "vedv image from-url --name, Should fail if missing image name" {
 
   run vedv image from-url --name
@@ -525,7 +525,7 @@ vedv image from-url URL"
   assert_failure
   assert_output --partial 'No image name specified'
 }
-# bats test_tags=only
+
 @test "vedv image from-url --name image123 ..., Should import the image file" {
 
   run vedv image from-url --name image123 "$TEST_OVA_URL"
@@ -542,7 +542,7 @@ vedv image from-url URL"
   assert_success
   assert_output --regexp '.* image123'
 }
-# bats test_tags=only
+
 @test "vedv image from-url -n image123 --checksum-url ..., Should check the image file" {
 
   run vedv image from-url -n image123 --checksum-url "$TEST_OVA_CHECKSUM" "$TEST_OVA_URL"
@@ -559,7 +559,7 @@ vedv image from-url URL"
   assert_success
   assert_output --regexp '.* image123'
 }
-# bats test_tags=only
+
 @test "vedv image from-url -n image123 --check ..., Should fail If checksum does not exist on remote server" {
 
   run vedv image from-url --no-cache -n image123 --check "$TEST_OVA_URL"

@@ -14,7 +14,7 @@ fi
 readonly VEDV_IMAGE_ENTITY_TYPE='image'
 # shellcheck disable=SC2034
 readonly VEDV_IMAGE_ENTITY_VALID_ATTRIBUTES='image_cache|ova_file_sum'
-
+readonly VEDV_IMAGE_ENTITY_REGEX_LAYER_NAME='[A-Z]{2,10}'
 # VARIABLES
 
 # FUNCTIONS
@@ -401,8 +401,8 @@ vedv::image_entity::get_snapshot_name_by_layer_id() {
     return "$ERR_IMAGE_OPERATION"
   }
   readonly snapshot_names
-  local -r name_pattern="$UTILS_REGEX_NAME"
-  echo "$snapshot_names" | grep -Po "^layer:${name_pattern}\|id:${layer_id}\|\$" || :
+
+  echo "$snapshot_names" | grep -Eo "^layer:${VEDV_IMAGE_ENTITY_REGEX_LAYER_NAME}\|id:${layer_id}\|\$" || :
 }
 
 #

@@ -1116,7 +1116,7 @@ vedv::image_service::cache::list_exposed_ports() {
   fi
 
   local image_id
-  image_id="$(vedv::vmobj_service::get_ids_from_vmobj_names_or_ids 'image' "$image_name_or_id")" || {
+  image_id="$(vedv::vmobj_entity::get_id "$image_name_or_id")" || {
     err "Failed to get id for image: '${image_name_or_id}'"
     return "$ERR_CONTAINER_OPERATION"
   }

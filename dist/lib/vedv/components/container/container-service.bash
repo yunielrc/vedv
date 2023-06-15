@@ -829,7 +829,7 @@ vedv::container_service::cache::list_exposed_ports() {
   fi
 
   local container_id
-  container_id="$(vedv::vmobj_service::get_ids_from_vmobj_names_or_ids 'container' "$container_name_or_id")" || {
+  container_id="$(vedv::vmobj_entity::get_id "$container_name_or_id")" || {
     err "Failed to get id for container: '${container_name_or_id}'"
     return "$ERR_CONTAINER_OPERATION"
   }
@@ -915,7 +915,7 @@ vedv::container_service::list_ports() {
   fi
 
   local container_id
-  container_id="$(vedv::vmobj_service::get_ids_from_vmobj_names_or_ids 'container' "$container_name_or_id")" || {
+  container_id="$(vedv::vmobj_entity::get_id "$container_name_or_id")" || {
     err "Failed to get id for container: '${container_name_or_id}'"
     return "$ERR_CONTAINER_OPERATION"
   }

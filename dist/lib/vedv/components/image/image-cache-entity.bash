@@ -28,8 +28,7 @@ vedv::image_cache_entity::validate_vm_name() {
     err "Argument must not be empty"
     return "$ERR_INVAL_ARG"
   fi
-  local -r name_pattern="$UTILS_REGEX_NAME"
-  local -r pattern="^image-cache\|crc:${name_pattern}\|\$"
+  local -r pattern="^image-cache\|crc:${VEDV_VMOBJ_ENTITY_REGEX_ID}\|\$"
 
   if [[ ! "$vm_name" =~ $pattern ]]; then
     err "Invalid image vm name: '${vm_name}'"
@@ -54,7 +53,7 @@ vedv::image_cache_entity::validate_vm_name() {
 vedv::image_cache_entity::get_vm_name() {
   local -r image_cache_id="$1"
 
-  utils::validate_name_or_id "$image_cache_id" ||
+  vedv::vmobj_entity::validate_id "$image_cache_id" ||
     return "$?"
 
   echo "image-cache|crc:${image_cache_id}|"

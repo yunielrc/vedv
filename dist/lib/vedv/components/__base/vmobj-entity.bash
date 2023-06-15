@@ -13,6 +13,9 @@ fi
 # CONSTANTS
 readonly VEDV_VMOBJ_ENTITY_VALID_ATTRIBUTES='vm_name|ssh_port|user_name|workdir|environment|exposed_ports|shell'
 
+readonly VEDV_VMOBJ_ENTITY_REGEX_NAME='[[:lower:]](-|_|[[:lower:]]|[[:digit:]]){,28}([[:lower:]]|[[:digit:]])'
+readonly VEDV_VMOBJ_ENTITY_REGEX_ID='[[:digit:]]{6,11}'
+
 # VARIABLES
 
 # FUNCTIONS
@@ -144,6 +147,129 @@ vedv::vmobj_entity::__validate_attribute() {
 }
 
 #
+# Validate if given value is an id
+#
+# Arguments:
+#   value string   value to validate
+#
+# Output:
+#   Writes true or false (bool) to stdout
+#
+# Returns:
+#   0
+#
+vedv::vmobj_entity::is_id() {
+  local -r value="$1"
+
+  if [[ "$value" =~ ^${VEDV_VMOBJ_ENTITY_REGEX_ID}$ ]]; then
+    echo true
+  else
+    echo false
+  fi
+}
+
+#
+# Validate if given id is valid
+#
+# Arguments:
+#   id string   id to validate
+#
+# Output:
+#   Writes error message to stderr
+#
+# Returns:
+#   0 if valid, non-zero id if invalid
+#
+vedv::vmobj_entity::validate_id() {
+  local -r id="$1"
+
+  if [[ "$(vedv::vmobj_entity::is_id "$id")" == false ]]; then
+    err "Invalid argument '${id}'"
+    return "$ERR_INVAL_ARG"
+  fi
+  return 0
+}
+
+#
+# Validate if given value is a name
+#
+# Arguments:
+#   value string   value to validate
+#
+# Output:
+#   Writes true or false (bool) to stdout
+#
+# Returns:
+#   0
+#
+vedv::vmobj_entity::is_name() {
+  local -r value="$1"
+
+  if [[ "$value" =~ ^${VEDV_VMOBJ_ENTITY_REGEX_NAME}$ ]]; then
+    echo true
+  else
+    echo false
+  fi
+}
+
+#
+# Validate if given name is valid
+#
+# Arguments:
+#   name string   name to validate
+#
+# Output:
+#   Writes error message to stderr
+#
+# Returns:
+#   0 if valid, non-zero id if invalid
+#
+vedv::vmobj_entity::validate_name() {
+  local -r name="$1"
+
+  if [[ "$(vedv::vmobj_entity::is_name "$name")" == false ]]; then
+    err "Invalid argument '${name}'"
+    return "$ERR_INVAL_ARG"
+  fi
+  return 0
+}
+
+#
+# Get a vmobj name or id and return the id
+# If received a name, it calculates the id
+# and returns it.
+# If received an id, it returns it as is.
+#
+# Arguments:
+#   vmobj_name_or_id  string  vmobj name or id
+#
+# Output:
+#   writes the id to stdout
+#
+# Returns:
+#  0 on success, non-zero value on failure
+#
+vedv::vmobj_entity::get_id() {
+  local -r vmobj_name_or_id="$1"
+  # validate arguments
+
+  if [[ "$(vedv::vmobj_entity::is_id "$vmobj_name_or_id")" == true ]]; then
+    echo "$vmobj_name_or_id"
+    return 0
+  fi
+
+  if [[ "$(vedv::vmobj_entity::is_name "$vmobj_name_or_id")" == true ]]; then
+    # shellcheck disable=SC2119
+    crc_sum <<<"$vmobj_name_or_id"
+    return 0
+  fi
+
+  err "Invalid name or id: '${vmobj_name_or_id}'"
+
+  return "$ERR_INVAL_ARG"
+}
+
+#
 # Validate vm name
 #
 # Arguments:
@@ -153,7 +279,7 @@ vedv::vmobj_entity::__validate_attribute() {
 # Returns:
 #   0 if valid, 1 if invalid
 #
-vedv::vmobj_entity::__validate_vm_name() {
+vedv::vmobj_entity::validate_vm_name() {
   local -r type="$1"
   local -r vm_name="$2"
   # validate arguments
@@ -165,8 +291,7 @@ vedv::vmobj_entity::__validate_vm_name() {
     return "$ERR_INVAL_ARG"
   fi
 
-  local -r name_pattern="$UTILS_REGEX_NAME"
-  local -r pattern="^${type}:${name_pattern}\|crc:${name_pattern}\|\$"
+  local -r pattern="^${type}:${VEDV_VMOBJ_ENTITY_REGEX_NAME}\|crc:${VEDV_VMOBJ_ENTITY_REGEX_ID}\|\$"
 
   if [[ ! "$vm_name" =~ $pattern ]]; then
     err "Invalid ${type} vm name: '${vm_name}'"
@@ -252,7 +377,7 @@ vedv::vmobj_entity::get_vm_name() {
   # validate arguments
   vedv::vmobj_entity::validate_type "$type" ||
     return "$?"
-  utils::validate_name_or_id "$vmobj_id" ||
+  vedv::vmobj_entity::validate_id "$vmobj_id" ||
     return "$?"
 
   local vm_name=''
@@ -309,7 +434,7 @@ vedv::vmobj_entity::get_vm_name_by_vmobj_name() {
   # validate arguments
   vedv::vmobj_entity::validate_type "$type" ||
     return "$?"
-  utils::validate_name_or_id "$vmobj_name" ||
+  vedv::vmobj_entity::validate_name "$vmobj_name" ||
     return "$?"
 
   local vm_name
@@ -341,7 +466,7 @@ vedv::vmobj_entity::calc_vm_name_by_vmobj_name() {
   # validate arguments
   vedv::vmobj_entity::validate_type "$type" ||
     return "$?"
-  utils::validate_name_or_id "$vmobj_name" ||
+  vedv::vmobj_entity::validate_name "$vmobj_name" ||
     return "$?"
 
   vedv::vmobj_entity::gen_vm_name "$type" "$vmobj_name"
@@ -367,7 +492,7 @@ vedv::vmobj_entity::get_vmobj_name_by_vm_name() {
   # validate arguments
   vedv::vmobj_entity::validate_type "$type" ||
     return "$?"
-  vedv::vmobj_entity::__validate_vm_name "$type" "$vmobj_vm_name" ||
+  vedv::vmobj_entity::validate_vm_name "$type" "$vmobj_vm_name" ||
     return "$?"
 
   local vmobj_name="${vmobj_vm_name#"${type}:"}"
@@ -394,7 +519,7 @@ vedv::vmobj_entity::get_vmobj_id_by_vm_name() {
   # validate arguments
   vedv::vmobj_entity::validate_type "$type" ||
     return "$?"
-  vedv::vmobj_entity::__validate_vm_name "$type" "$vmobj_vm_name" ||
+  vedv::vmobj_entity::validate_vm_name "$type" "$vmobj_vm_name" ||
     return "$?"
 
   local result="${vmobj_vm_name#*'|crc:'}"
@@ -420,7 +545,7 @@ vedv::vmobj_entity::get_id_by_vmobj_name() {
   # validate arguments
   vedv::vmobj_entity::validate_type "$type" ||
     return "$?"
-  utils::validate_name_or_id "$vmobj_name" ||
+  vedv::vmobj_entity::validate_name "$vmobj_name" ||
     return "$?"
 
   local vmobj_vm_name
@@ -465,7 +590,7 @@ vedv::vmobj_entity::calc_id_by_vmobj_name() {
   # validate arguments
   vedv::vmobj_entity::validate_type "$type" ||
     return "$?"
-  utils::validate_name_or_id "$vmobj_name" ||
+  vedv::vmobj_entity::validate_name "$vmobj_name" ||
     return "$?"
   # shellcheck disable=SC2119
   crc_sum <<<"$vmobj_name"
@@ -490,7 +615,7 @@ vedv::vmobj_entity::get_dictionary() {
   # validate arguments
   vedv::vmobj_entity::validate_type "$type" ||
     return "$?"
-  utils::validate_name_or_id "$vmobj_id" ||
+  vedv::vmobj_entity::validate_id "$vmobj_id" ||
     return "$?"
 
   local cached_dictionary_str
@@ -567,7 +692,7 @@ vedv::vmobj_entity::__get_attribute() {
   # validate arguments
   vedv::vmobj_entity::validate_type "$type" ||
     return "$?"
-  utils::validate_name_or_id "$vmobj_id" ||
+  vedv::vmobj_entity::validate_id "$vmobj_id" ||
     return "$?"
   vedv::vmobj_entity::__validate_attribute "$type" "$attribute" ||
     return "$?"
@@ -647,7 +772,7 @@ vedv::vmobj_entity::__set_attribute() {
   # validate arguments
   vedv::vmobj_entity::validate_type "$type" ||
     return "$?"
-  utils::validate_name_or_id "$vmobj_id" ||
+  vedv::vmobj_entity::validate_id "$vmobj_id" ||
     return "$?"
   vedv::vmobj_entity::__validate_attribute "$type" "$attribute" ||
     return "$?"
@@ -797,7 +922,7 @@ vedv::vmobj_entity::memcache_delete_data() {
   # validate arguments
   vedv::vmobj_entity::validate_type "$type" ||
     return "$?"
-  utils::validate_name_or_id "$vmobj_id" ||
+  vedv::vmobj_entity::validate_id "$vmobj_id" ||
     return "$?"
 
   local -r memcache_dir="$__VEDV_VMOBJ_ENTITY_MEMORY_CACHE_DIR"

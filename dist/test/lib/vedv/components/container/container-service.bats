@@ -1810,8 +1810,8 @@ Sibling containers ids: '123457 123458'"
 @test "vedv::container_service::list_ports() Should fail If get_ids_from_vmobj_names_or_ids fails" {
   local -r container_name_or_id='container1'
 
-  vedv::vmobj_service::get_ids_from_vmobj_names_or_ids() {
-    assert_equal "$*" "container container1"
+  vedv::vmobj_entity::get_id() {
+    assert_equal "$*" "container1"
     return 1
   }
 
@@ -1824,8 +1824,8 @@ Sibling containers ids: '123457 123458'"
 @test "vedv::container_service::list_ports() Should succeed" {
   local -r container_name_or_id='container1'
 
-  vedv::vmobj_service::get_ids_from_vmobj_names_or_ids() {
-    assert_equal "$*" "container container1"
+  vedv::vmobj_entity::get_id() {
+    assert_equal "$*" "container1"
     echo 123456
   }
   vedv::container_service::list_ports_by_id() {
@@ -1843,8 +1843,8 @@ Sibling containers ids: '123457 123458'"
 @test "vedv::container_service::cache::list_exposed_ports() Should succeed" {
   local -r container_name_or_id='12345'
 
-  vedv::vmobj_service::get_ids_from_vmobj_names_or_ids() {
-    assert_equal "$*" "container 12345"
+  vedv::vmobj_entity::get_id() {
+    assert_equal "$*" "12345"
     echo 12345
   }
   vedv::container_entity::cache::get_exposed_ports() {

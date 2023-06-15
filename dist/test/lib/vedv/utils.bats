@@ -189,52 +189,6 @@ World!"
   assert_output "RUN"
 }
 
-# Test utils::validate_name_or_id()
-@test "utils::validate_name_or_id() prints error message for empty name" {
-  # Arrange
-  local -r image_name=""
-  # Act
-  run utils::validate_name_or_id "$image_name"
-  # Assert
-  assert_failure
-  assert_output "Argument must not be empty"
-}
-
-@test "utils::validate_name_or_id() returns 1 for invalid name: foo_bar" {
-  # Arrange
-  local -r image_name="foo/bar"
-  # Act
-  run utils::validate_name_or_id "$image_name"
-  # Assert
-  assert_failure
-}
-
-@test "utils::validate_name_or_id() returns 1 for invalid name: -invalid-name" {
-  # Arrange
-  local -r image_name="-invalid-name"
-  # Act
-  run utils::validate_name_or_id "$image_name"
-  # Assert
-  assert_failure
-}
-
-@test "utils::validate_name_or_id() returns 1 for invalid name: invalid-name-" {
-  # Arrange
-  local -r image_name="invalid-name-"
-  # Act
-  run utils::validate_name_or_id "$image_name"
-  # Assert
-  assert_failure
-}
-@test "utils::validate_name_or_id() returns 0 for valid name: foo-bar123" {
-  # Arrange
-  local -r image_name="foo-bar123"
-  # Act
-  run utils::validate_name_or_id "$image_name"
-  # Assert
-  assert_success
-}
-
 # Test utils::get_first_invalid_positions_between_two_arrays()
 calc_item_id_from_array_a() { echo "$1"; }
 calc_item_id_from_array_b() { echo "$1"; }

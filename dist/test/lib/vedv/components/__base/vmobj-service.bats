@@ -122,15 +122,15 @@ setup_file() {
   run vedv::vmobj_service::get_ids_from_vmobj_names_or_ids "$type" "$vmobj_ids_or_names"
 
   assert_failure
-  assert_output 'At least one container is required'
+  assert_output "At least one container id or name is required"
 }
 
-@test "vedv::vmobj_service::get_ids_from_vmobj_names_or_ids() Should fail If get_id_by_vmobj_name fails" {
+@test "vedv::vmobj_service::get_ids_from_vmobj_names_or_ids() Should fail If get_id fails" {
   local -r type='container'
   local -r vmobj_ids_or_names='name1 id1 name2 id2'
 
-  vedv::vmobj_entity::get_id_by_vmobj_name() {
-    assert_regex "$*" 'container (name1|id1|name2|id2)'
+  vedv::vmobj_entity::get_id() {
+    assert_regex "$*" '(name1|id1|name2|id2)'
     return 1
   }
   # shellcheck disable=SC2086
@@ -140,31 +140,33 @@ setup_file() {
   assert_output "name1 id1 name2 id2
 Error getting vmobj id for containers: 'name1' 'id1' 'name2' 'id2' "
 }
-
+# bats test_tags=only
 @test "vedv::vmobj_service::get_ids_from_vmobj_names_or_ids() Should succeed" {
   local -r type='container'
   local -r vmobj_ids_or_names='name1 id2 name3 id4'
 
-  vedv::vmobj_entity::get_id_by_vmobj_name() {
-    assert_regex "$*" 'container\s+(name1|id2|name3|id4)'
+  vedv::vmobj_entity::get_id() {
+    assert_regex "$*" '(name1|id2|name3|id4)'
 
-    case "$2" in
+    case "$1" in
     name1)
-      echo 'id1'
+      echo 'id11'
       ;;
     name3)
-      echo 'id3'
+      echo 'id33'
       ;;
     *)
-      echo "$2"
+      echo "$1"
       ;;
     esac
+
+    return 0
   }
   # shellcheck disable=SC2086
   run vedv::vmobj_service::get_ids_from_vmobj_names_or_ids "$type" "$vmobj_ids_or_names"
 
   assert_success
-  assert_output "id1 id2 id3 id4"
+  assert_output "id11 id2 id33 id4"
 }
 
 # Tests for vedv::vmobj_service::exec_func_on_many_vmobjs()
@@ -191,20 +193,44 @@ Error getting vmobj id for containers: 'name1' 'id1' 'name2' 'id2' "
   assert_output "Invalid argument 'exec_func': it's empty"
 }
 
+@test "vedv::vmobj_service::exec_func_on_many_vmobj() Should fail With empty vmobj_ids_or_names" {
+  local -r type='container'
+  local -r exec_func='func1'
+  local -r vmobj_ids_or_names=''
+  # shellcheck disable=SC2086
+  run vedv::vmobj_service::exec_func_on_many_vmobj "$type" "$exec_func" "$vmobj_ids_or_names"
+
+  assert_failure
+  assert_output "At least one container id or name is required"
+}
+
 @test "vedv::vmobj_service::exec_func_on_many_vmobj() Should fail If __get_ids_from_vmobj_names_or_ids fails" {
   local -r type='container'
   local -r exec_func='func1'
   local -r vmobj_ids_or_names='name1 id2 name3 id4'
 
-  vedv::vmobj_service::get_ids_from_vmobj_names_or_ids() {
-    assert_equal "$*" 'container name1 id2 name3 id4'
+  vedv::vmobj_entity::get_id() {
+    assert_regex "$*" '(name1|id2|name3|id4)'
+
+    case "$1" in
+    name1)
+      echo 'id11'
+      ;;
+    name3)
+      echo 'id33'
+      ;;
+    *)
+      echo "$1"
+      ;;
+    esac
+
     return 1
   }
   # shellcheck disable=SC2086
   run vedv::vmobj_service::exec_func_on_many_vmobj "$type" "$exec_func" "$vmobj_ids_or_names"
 
   assert_failure
-  assert_output "Error getting vmobj ids"
+  assert_output "Error getting vmobj id for containers: 'name1' 'id2' 'name3' 'id4' "
 }
 
 @test "vedv::vmobj_service::exec_func_on_many_vmobj() Should fail If exec_func fails" {
@@ -217,15 +243,28 @@ Error getting vmobj id for containers: 'name1' 'id1' 'name2' 'id2' "
     return 1
   }
 
-  vedv::vmobj_service::get_ids_from_vmobj_names_or_ids() {
-    assert_equal "$*" 'container name1 id2 name3 id4'
-    echo 'id1 id2 id3 id4'
+  vedv::vmobj_entity::get_id() {
+    assert_regex "$*" '(name1|id2|name3|id4)'
+
+    case "$1" in
+    name1)
+      echo 'id11'
+      ;;
+    name3)
+      echo 'id33'
+      ;;
+    *)
+      echo "$1"
+      ;;
+    esac
+
+    return 0
   }
   # shellcheck disable=SC2086
   run vedv::vmobj_service::exec_func_on_many_vmobj "$type" "$exec_func" "$vmobj_ids_or_names"
 
   assert_failure
-  assert_output "Failed to execute function on containers: 'id1''id2''id3''id4'"
+  assert_output "Failed to execute function on containers: 'id11''id2''id33''id4'"
 }
 
 @test "vedv::vmobj_service::exec_func_on_many_vmobj() Should succeed" {
@@ -237,9 +276,22 @@ Error getting vmobj id for containers: 'name1' 'id1' 'name2' 'id2' "
     assert_regex "$*" '(id1|id2|id3|id4)'
   }
 
-  vedv::vmobj_service::get_ids_from_vmobj_names_or_ids() {
-    assert_equal "$*" 'container name1 id2 name3 id4'
-    echo 'id1 id2 id3 id4'
+  vedv::vmobj_entity::get_id() {
+    assert_regex "$*" '(name1|id2|name3|id4)'
+
+    case "$1" in
+    name1)
+      echo 'id11'
+      ;;
+    name3)
+      echo 'id33'
+      ;;
+    *)
+      echo "$1"
+      ;;
+    esac
+
+    return 0
   }
   # shellcheck disable=SC2086
   run vedv::vmobj_service::exec_func_on_many_vmobj "$type" "$exec_func" "$vmobj_ids_or_names"
@@ -1389,8 +1441,8 @@ EOF
   local -r vmobj_id=12345
   local -r cmd=":"
 
-  vedv::vmobj_service::get_ids_from_vmobj_names_or_ids() {
-    assert_equal "$*" "container 12345"
+  vedv::vmobj_entity::get_id() {
+    assert_equal "$*" "12345"
     return 1
   }
 
@@ -1406,8 +1458,8 @@ EOF
   local -r cmd=":"
   local -r user=""
 
-  vedv::vmobj_service::get_ids_from_vmobj_names_or_ids() {
-    assert_equal "$*" "container 12345"
+  vedv::vmobj_entity::get_id() {
+    assert_equal "$*" "12345"
     echo 12345
   }
   vedv::vmobj_service::execute_cmd_by_id() {
@@ -1463,8 +1515,8 @@ EOF
   local -r type="container"
   local -r vmobj_id=12345
 
-  vedv::vmobj_service::get_ids_from_vmobj_names_or_ids() {
-    assert_equal "$*" "container 12345"
+  vedv::vmobj_entity::get_id() {
+    assert_equal "$*" "12345"
     return 1
   }
 
@@ -1478,8 +1530,8 @@ EOF
   local -r type="container"
   local -r vmobj_id=12345
 
-  vedv::vmobj_service::get_ids_from_vmobj_names_or_ids() {
-    assert_equal "$*" "container 12345"
+  vedv::vmobj_entity::get_id() {
+    assert_equal "$*" "12345"
     echo 12345
   }
   vedv::vmobj_service::connect_by_id() {
@@ -1640,8 +1692,8 @@ EOF
   local -r src="src"
   local -r dest="dest"
 
-  vedv::vmobj_service::get_ids_from_vmobj_names_or_ids() {
-    assert_equal "$*" "container 12345"
+  vedv::vmobj_entity::get_id() {
+    assert_equal "$*" "12345"
     return 1
   }
 
@@ -1657,8 +1709,8 @@ EOF
   local -r src="src"
   local -r dest="dest"
 
-  vedv::vmobj_service::get_ids_from_vmobj_names_or_ids() {
-    assert_equal "$*" "container 12345"
+  vedv::vmobj_entity::get_id() {
+    assert_equal "$*" "12345"
     echo 12345
   }
   vedv::vmobj_service::copy_by_id() {
@@ -1681,8 +1733,8 @@ EOF
   local -r chown="nalyd"
   local -r chmod="644"
 
-  vedv::vmobj_service::get_ids_from_vmobj_names_or_ids() {
-    assert_equal "$*" "container 12345"
+  vedv::vmobj_entity::get_id() {
+    assert_equal "$*" "12345"
     echo 12345
   }
   vedv::vmobj_service::copy_by_id() {
@@ -2618,30 +2670,30 @@ EOF
   run vedv::vmobj_service::fs::list_exposed_ports "$type" "$vmobj_name_or_id"
 
   assert_failure
-  assert_output "Invalid argument 'vmobj_name_or_id': it's empty"
+  assert_output "Invalid argument 'vmobj_id_or_name': it's empty"
 }
 
 @test "vedv::vmobj_service::fs::list_exposed_ports() Should fail If get_ids_from_vmobj_names_or_ids fails" {
   local -r type="container"
   local -r vmobj_name_or_id="container1"
 
-  vedv::vmobj_service::get_ids_from_vmobj_names_or_ids() {
-    assert_equal "$*" "container container1"
+  vedv::vmobj_entity::get_id() {
+    assert_equal "$*" "container1"
     return 1
   }
 
   run vedv::vmobj_service::fs::list_exposed_ports "$type" "$vmobj_name_or_id"
 
   assert_failure
-  assert_output "Failed to get id for container: 'container1'"
+  assert_output "Failed to get container id by name or id: container1"
 }
 
 @test "vedv::vmobj_service::fs::list_exposed_ports() Should succeed" {
   local -r type="container"
   local -r vmobj_name_or_id="container1"
 
-  vedv::vmobj_service::get_ids_from_vmobj_names_or_ids() {
-    assert_equal "$*" "container container1"
+  vedv::vmobj_entity::get_id() {
+    assert_equal "$*" "container1"
     echo "12345"
   }
   vedv::vmobj_service::fs::list_exposed_ports_by_id() {
@@ -2723,7 +2775,7 @@ EOF
 }
 
 # Tests for vedv::vmobj_service::start_one_batch()
-# bats test_tags=only
+
 @test "vedv::vmobj_service::start_one_batch() Should succeed" {
   local -r type="container"
   local -r wait_for_ssh="false"
@@ -2741,7 +2793,7 @@ EOF
 }
 
 # Tests for vedv::vmobj_service::start()
-# bats test_tags=only
+
 @test "vedv::vmobj_service::start() Should succeed" {
   local -r type="container"
   local -r vmobj_names_or_ids="container1 container2"
@@ -2759,7 +2811,7 @@ EOF
   assert_output "12345 123456"
 }
 # Tests for vedv::vmobj_service::stop() {
-# bats test_tags=only
+
 @test "vedv::vmobj_service::stop() Should succeed" {
   local -r type="container"
   local -r save_state="false"
@@ -2776,7 +2828,7 @@ EOF
   assert_output "12345 123456"
 }
 # Tests for vedv::vmobj_service::secure_stop() {
-# bats test_tags=only
+
 @test "vedv::vmobj_service::secure_stop() Should succeed" {
   local -r type="container"
   local -r vmobj_names_or_ids="container1 container2"
@@ -2810,7 +2862,7 @@ EOF
 }
 
 # Tests for vedv::vmobj_service::after_create()
-# bats test_tags=only
+
 @test "vedv::vmobj_service::after_create() Should fail" {
   local -r type="container"
   local -r vmobj_id="12345"
@@ -2825,7 +2877,7 @@ EOF
   assert_failure
   assert_output "Failed to delete memcache for container: 12345"
 }
-# bats test_tags=only
+
 @test "vedv::vmobj_service::after_create() Should succeed" {
   local -r type="container"
   local -r vmobj_id="12345"
@@ -2840,7 +2892,7 @@ EOF
   assert_output ""
 }
 # Tests for vedv::vmobj_service::after_remove()
-# bats test_tags=only
+
 @test "vedv::vmobj_service::after_remove() Should fail" {
   local -r type="container"
   local -r vmobj_id="12345"
@@ -2855,7 +2907,7 @@ EOF
   assert_failure
   assert_output "Failed to delete memcache for container: 12345"
 }
-# bats test_tags=only
+
 @test "vedv::vmobj_service::after_remove() Should succeed" {
   local -r type="container"
   local -r vmobj_id="12345"

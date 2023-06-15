@@ -26,7 +26,7 @@ load test_helper
 
 @test "vedv::image_cache_entity::validate_vm_name() returns 0 for valid vm name" {
   # Arrange
-  local -r name="image-cache|crc:123456|"
+  local -r name="image-cache|crc:1234567890|"
   # Act
   run vedv::image_cache_entity::validate_vm_name "$name"
   # Assert
@@ -52,10 +52,10 @@ load test_helper
     echo "image-cache${1}"
   }
 
-  run vedv::image_cache_entity::get_vm_name "12345678"
+  run vedv::image_cache_entity::get_vm_name "1234567890"
 
   assert_success
-  assert_output 'image-cache|crc:12345678|'
+  assert_output 'image-cache|crc:1234567890|'
 }
 
 # Test vedv::image_cache_entity::get_image_id_by_vm_name()
@@ -81,10 +81,10 @@ load test_helper
 
 @test "vedv::image_cache_entity::get_image_id_by_vm_name() returns image id for valid vm name" {
   # Arrange
-  local -r name="image-cache|crc:123456|"
+  local -r name="image-cache|crc:1234567890|"
   # Act
   run vedv::image_cache_entity::get_image_id_by_vm_name "$name"
   # Assert
   assert_success
-  assert_output "123456"
+  assert_output "1234567890"
 }

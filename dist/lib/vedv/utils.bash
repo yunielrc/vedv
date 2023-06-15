@@ -31,9 +31,6 @@ readonly ERR_IMAGE_BUILDER_LAYER_CREATION_FAILURE_PREV_RESTORATION_FAIL=100
 readonly UTILS_ENCODED_VAR_PREFIX='var_9f57a558b3_'
 readonly UTILS_ENCODED_ESCVAR_PREFIX='escvar_fc064fcc7e_'
 
-# REGEX
-readonly UTILS_REGEX_NAME='[[:alnum:]]+((-|_)[[:alnum:]]+)*'
-
 #
 # Constructor
 #
@@ -234,32 +231,6 @@ utils::get_arg_from_string() {
   }
   set -o noglob
   eval "__get ${args}"
-}
-
-#
-# Validate name
-#
-# Arguments:
-#   image   name to validate
-#
-# Returns:
-#   0 if valid, 1 if invalid
-#
-utils::validate_name_or_id() {
-  local -r name="$1"
-  # validate arguments
-  if [[ -z "$name" ]]; then
-    err "Argument must not be empty"
-    return "$ERR_INVAL_ARG"
-  fi
-
-  local -r pattern="^${UTILS_REGEX_NAME}\$"
-  if [[ ! "$name" =~ $pattern ]]; then
-    err "Invalid argument '${name}'"
-    return "$ERR_INVAL_ARG"
-  fi
-
-  return 0
 }
 
 #
