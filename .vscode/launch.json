@@ -63,8 +63,8 @@
         "container",
         "create",
         "-n",
-        "nalyd1",
-        "image1"
+        "container123",
+        "/tmp/vedv/test/files/alpine-x86_64.ova"
       ]
     },
     {
@@ -135,9 +135,7 @@
       "args": [
         "container",
         "rm",
-        "-f",
-        "dyli1",
-        "dyli2"
+        "image1-ct65"
       ]
     },
     {

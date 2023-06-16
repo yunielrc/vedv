@@ -36,8 +36,8 @@ setup_file() {
   local -r image='image1'
   local -r container_name='container1'
 
-  vedv::vmobj_service::exists_with_name() {
-    assert_equal "$*" "container container1"
+  vedv::container_service::exists_with_name() {
+    assert_equal "$*" "container1"
     return 1
   }
 
@@ -51,8 +51,8 @@ setup_file() {
   local -r image='image1'
   local -r container_name='container1'
 
-  vedv::vmobj_service::exists_with_name() {
-    assert_equal "$*" "container container1"
+  vedv::container_service::exists_with_name() {
+    assert_equal "$*" "container1"
     echo true
   }
 
@@ -66,8 +66,8 @@ setup_file() {
   local -r image="$TEST_OVA_FILE"
   local -r container_name='container1'
 
-  vedv::vmobj_service::exists_with_name() {
-    assert_equal "$*" "container container1"
+  vedv::container_service::exists_with_name() {
+    assert_equal "$*" "container1"
     echo false
   }
   petname() { return 1; }
@@ -82,8 +82,8 @@ setup_file() {
   local -r image="$TEST_OVA_FILE"
   local -r container_name='container1'
 
-  vedv::vmobj_service::exists_with_name() {
-    assert_equal "$*" "container container1"
+  vedv::container_service::exists_with_name() {
+    assert_equal "$*" "container1"
     echo false
   }
   petname() { echo "image_name"; }
@@ -103,8 +103,8 @@ setup_file() {
   local -r image="image1"
   local -r container_name='container1'
 
-  vedv::vmobj_service::exists_with_name() {
-    assert_equal "$*" "container container1"
+  vedv::container_service::exists_with_name() {
+    assert_equal "$*" "container1"
     echo false
   }
   petname() {
@@ -128,8 +128,8 @@ setup_file() {
   local -r image="image1"
   local -r container_name='container1'
 
-  vedv::vmobj_service::exists_with_name() {
-    assert_equal "$*" "container container1"
+  vedv::container_service::exists_with_name() {
+    assert_equal "$*" "container1"
     echo false
   }
   petname() {
@@ -152,8 +152,8 @@ setup_file() {
   local -r image="image1"
   local -r container_name='container1'
 
-  vedv::vmobj_service::exists_with_name() {
-    assert_equal "$*" "container container1"
+  vedv::container_service::exists_with_name() {
+    assert_equal "$*" "container1"
     echo false
   }
   petname() {
@@ -181,8 +181,8 @@ setup_file() {
   local -r image="image1"
   local -r container_name='container1'
 
-  vedv::vmobj_service::exists_with_name() {
-    assert_equal "$*" "container container1"
+  vedv::container_service::exists_with_name() {
+    assert_equal "$*" "container1"
     echo false
   }
   petname() {
@@ -214,8 +214,8 @@ setup_file() {
   local -r image="image1"
   local -r container_name='container1'
 
-  vedv::vmobj_service::exists_with_name() {
-    assert_equal "$*" "container container1"
+  vedv::container_service::exists_with_name() {
+    assert_equal "$*" "container1"
     echo false
   }
   petname() {
@@ -251,8 +251,8 @@ setup_file() {
   local -r image="image1"
   local -r container_name='container1'
 
-  vedv::vmobj_service::exists_with_name() {
-    assert_equal "$*" "container container1"
+  vedv::container_service::exists_with_name() {
+    assert_equal "$*" "container1"
     echo false
   }
   petname() {
@@ -296,7 +296,7 @@ setup_file() {
   local -r image="image1"
   local -r container_name=''
 
-  vedv::vmobj_service::exists_with_name() {
+  vedv::container_service::exists_with_name() {
     assert_equal "$*" "INVALID_CALL"
     echo false
   }
@@ -345,8 +345,8 @@ setup_file() {
   local -r image="image1"
   local -r container_name=''
 
-  vedv::vmobj_service::exists_with_name() {
-    assert_equal "$*" "container container1"
+  vedv::container_service::exists_with_name() {
+    assert_equal "$*" "container1"
     echo false
   }
   petname() {
@@ -397,8 +397,8 @@ setup_file() {
   local -r image="image1"
   local -r container_name=''
 
-  vedv::vmobj_service::exists_with_name() {
-    assert_equal "$*" "container container1"
+  vedv::container_service::exists_with_name() {
+    assert_equal "$*" "container1"
     echo false
   }
   petname() {
@@ -453,8 +453,8 @@ setup_file() {
   local -r image="image1"
   local -r container_name=''
 
-  vedv::vmobj_service::exists_with_name() {
-    assert_equal "$*" "container container1"
+  vedv::container_service::exists_with_name() {
+    assert_equal "$*" "container1"
     echo false
   }
   petname() {
@@ -513,8 +513,8 @@ setup_file() {
   local -r image="image1"
   local -r container_name=''
 
-  vedv::vmobj_service::exists_with_name() {
-    assert_equal "$*" "container container1"
+  vedv::container_service::exists_with_name() {
+    assert_equal "$*" "container1"
     echo false
   }
   petname() {
@@ -576,8 +576,8 @@ setup_file() {
   local -r image="image1"
   local -r container_name=''
 
-  vedv::vmobj_service::exists_with_name() {
-    assert_equal "$*" "container container1"
+  vedv::container_service::exists_with_name() {
+    assert_equal "$*" "container1"
     echo false
   }
   petname() {
@@ -642,8 +642,8 @@ setup_file() {
   local -r image="image1"
   local -r container_name=''
 
-  vedv::vmobj_service::exists_with_name() {
-    assert_equal "$*" "container container1"
+  vedv::container_service::exists_with_name() {
+    assert_equal "$*" "container1"
     echo false
   }
   petname() {
@@ -711,8 +711,8 @@ setup_file() {
   local -r publish_ports='-p 8080:80/tcp -p 8082:82 -p 8081 -p 81/udp'
   local -r publish_all=false
 
-  vedv::vmobj_service::exists_with_name() {
-    assert_equal "$*" "container container1"
+  vedv::container_service::exists_with_name() {
+    assert_equal "$*" "container1"
     echo false
   }
   petname() {
@@ -789,8 +789,8 @@ setup_file() {
   local -r publish_ports='-p 8080:80/tcp -p 8082:82 -p 8081 -p 81/udp'
   local -r publish_all=true
 
-  vedv::vmobj_service::exists_with_name() {
-    assert_equal "$*" "container container1"
+  vedv::container_service::exists_with_name() {
+    assert_equal "$*" "container1"
     echo false
   }
   petname() {

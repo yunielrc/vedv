@@ -49,8 +49,8 @@ teardown() {
   local -r image_file="$TEST_OVA_FILE"
   local -r image_name="image1"
 
-  vedv::vmobj_service::exists_with_name() {
-    assert_equal "$*" "image image1"
+  vedv::image_service::exists_with_name() {
+    assert_equal "$*" "image1"
     return 1
   }
 
@@ -64,8 +64,8 @@ teardown() {
   local -r image_file="$TEST_OVA_FILE"
   local -r image_name="image1"
 
-  vedv::vmobj_service::exists_with_name() {
-    assert_equal "$*" "image image1"
+  vedv::image_service::exists_with_name() {
+    assert_equal "$*" "image1"
     echo true
   }
 
@@ -80,8 +80,8 @@ teardown() {
   local -r image_name="image1"
   local -r checksum_file="/tmp/f31d50798a.ova.sha256sum"
 
-  vedv::vmobj_service::exists_with_name() {
-    assert_equal "$*" "image image1"
+  vedv::image_service::exists_with_name() {
+    assert_equal "$*" "image1"
     echo false
   }
   utils::sha256sum_check() {
@@ -103,8 +103,8 @@ teardown() {
   local -r image_name="image1"
   local -r checksum_file="/tmp/f31d50798a.ova.sha256sum"
 
-  vedv::vmobj_service::exists_with_name() {
-    assert_equal "$*" "image image1"
+  vedv::image_service::exists_with_name() {
+    assert_equal "$*" "image1"
     echo false
   }
   utils::sha256sum_check() {
@@ -129,8 +129,8 @@ teardown() {
   local -r image_name="image1"
   local -r checksum_file="/tmp/f31d50798a.ova.sha256sum"
 
-  vedv::vmobj_service::exists_with_name() {
-    assert_equal "$*" "image image1"
+  vedv::image_service::exists_with_name() {
+    assert_equal "$*" "image1"
     echo false
   }
   utils::sha256sum_check() {
@@ -163,8 +163,8 @@ teardown() {
   local -r image_name="image1"
   local -r checksum_file="/tmp/f31d50798a.ova.sha256sum"
 
-  vedv::vmobj_service::exists_with_name() {
-    assert_equal "$*" "image image1"
+  vedv::image_service::exists_with_name() {
+    assert_equal "$*" "image1"
     echo false
   }
   utils::sha256sum_check() {
@@ -201,8 +201,8 @@ teardown() {
   local -r image_name="image1"
   local -r checksum_file="/tmp/f31d50798a.ova.sha256sum"
 
-  vedv::vmobj_service::exists_with_name() {
-    assert_equal "$*" "image image1"
+  vedv::image_service::exists_with_name() {
+    assert_equal "$*" "image1"
     echo false
   }
   utils::sha256sum_check() {
@@ -242,8 +242,8 @@ teardown() {
   local -r image_name="image1"
   local -r checksum_file="/tmp/f31d50798a.ova.sha256sum"
 
-  vedv::vmobj_service::exists_with_name() {
-    assert_equal "$*" "image image1"
+  vedv::image_service::exists_with_name() {
+    assert_equal "$*" "image1"
     echo false
   }
   utils::sha256sum_check() {
@@ -287,7 +287,7 @@ teardown() {
   local -r image_name=""
   local -r checksum_file="/tmp/f31d50798a.ova.sha256sum"
 
-  vedv::vmobj_service::exists_with_name() {
+  vedv::image_service::exists_with_name() {
     assert_equal "$*" "INVALID_CALL"
     echo false
   }
@@ -335,7 +335,7 @@ teardown() {
   local -r image_name=""
   local -r checksum_file="/tmp/f31d50798a.ova.sha256sum"
 
-  vedv::vmobj_service::exists_with_name() {
+  vedv::image_service::exists_with_name() {
     assert_equal "$*" "INVALID_CALL"
     echo false
   }
@@ -387,7 +387,7 @@ teardown() {
   local -r image_name=""
   local -r checksum_file="/tmp/f31d50798a.ova.sha256sum"
 
-  vedv::vmobj_service::exists_with_name() {
+  vedv::image_service::exists_with_name() {
     assert_equal "$*" "INVALID_CALL"
     echo false
   }
@@ -442,7 +442,7 @@ teardown() {
   local -r image_name=""
   local -r checksum_file="/tmp/f31d50798a.ova.sha256sum"
 
-  vedv::vmobj_service::exists_with_name() {
+  vedv::image_service::exists_with_name() {
     assert_equal "$*" "INVALID_CALL"
     echo false
   }
@@ -501,7 +501,7 @@ teardown() {
   local -r image_name=""
   local -r checksum_file="/tmp/f31d50798a.ova.sha256sum"
 
-  vedv::vmobj_service::exists_with_name() {
+  vedv::image_service::exists_with_name() {
     assert_equal "$*" "INVALID_CALL"
     echo false
   }
@@ -563,7 +563,7 @@ teardown() {
   local -r image_name=""
   local -r checksum_file="/tmp/f31d50798a.ova.sha256sum"
 
-  vedv::vmobj_service::exists_with_name() {
+  vedv::image_service::exists_with_name() {
     assert_equal "$*" "INVALID_CALL"
     echo false
   }

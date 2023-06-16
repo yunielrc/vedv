@@ -163,7 +163,7 @@ vedv::virtualbox::import() { vedv::hypervisor::import "$@"; }
 # List virtual machines with name that contains the partial name
 #
 # Arguments:
-#   vm_partial_name string     name of the exported VM
+#   vm_partial_name string     BRE pattern
 #
 # Output:
 #   writes vm_names (text) to stdout
@@ -180,7 +180,7 @@ vedv::hypervisor::list_vms_by_partial_name() {
   fi
 
   # while read -r __vm_name _; do
-  #   if [[ "$__vm_name" == *"$vm_partial_name"* ]]; then
+  #   if [[ "$__vm_name" =~ $vm_partial_name ]]; then
   #     eval echo "$__vm_name"
   #   fi
   # done < <(VBoxManage list vms)
@@ -204,7 +204,7 @@ vedv::virtualbox::list_wms_by_partial_name() { vedv::hypervisor::list_vms_by_par
 # Returns if exists virtual machines with partial name
 #
 # Arguments:
-#   vm_partial_name         partial name
+#   vm_partial_name         BRE pattern
 #
 # Output:
 #   writes true if exists or false otherwise to stdout

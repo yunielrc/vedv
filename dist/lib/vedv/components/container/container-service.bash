@@ -90,7 +90,7 @@ vedv::container_service::create() {
 
   if [[ -n "$container_name" ]]; then
     local exists_container
-    exists_container="$(vedv::vmobj_service::exists_with_name 'container' "$container_name")" || {
+    exists_container="$(vedv::container_service::exists_with_name "$container_name")" || {
       err "Failed to check if container with name: '${container_name}' already exist"
       return "$ERR_CONTAINER_OPERATION"
     }
@@ -536,7 +536,7 @@ vedv::container_service::remove_one() {
   #
   # The solution is to stop all the SRC and then remove the CBR snapshot.
   #
-  local running_siblings_ids
+  local running_siblings_ids=''
   running_siblings_ids="$(vedv::container_service::__get_running_siblings_ids "$container_id")" || {
     err "Failed to get running siblings ids for container: '${container_id}'"
     return "$ERR_CONTAINER_OPERATION"
@@ -657,7 +657,7 @@ vedv::container_service::__get_running_siblings_ids() {
       continue
     fi
 
-    local is_started
+    local is_started=false
     is_started="$(vedv::container_service::is_started "$image_child_id")" || {
       err "Failed to check if container is started: '${image_child_id}'"
       return "$ERR_CONTAINER_OPERATION"

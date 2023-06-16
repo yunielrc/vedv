@@ -83,7 +83,7 @@ vedv::image_service::import() {
   fi
   if [[ -n "$image_name" ]]; then
     local exists_image
-    exists_image="$(vedv::vmobj_service::exists_with_name 'image' "$image_name")" || {
+    exists_image="$(vedv::image_service::exists_with_name "$image_name")" || {
       err "Failed to check if image with name: '${image_name}' already exist"
       return "$ERR_IMAGE_OPERATION"
     }

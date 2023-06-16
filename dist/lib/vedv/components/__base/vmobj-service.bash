@@ -722,13 +722,10 @@ vedv::vmobj_service::exists_with_id() {
     return "$ERR_INVAL_ARG"
   fi
 
-  local output
-  output="$(vedv::hypervisor::exists_vm_with_partial_name "|crc:${vmobj_id}|")" || {
+  vedv::hypervisor::exists_vm_with_partial_name "$(vname_bregex_by_id "$type" "$vmobj_id")" || {
     err "Hypervisor failed to check if ${type} with id '${vmobj_id}' exists"
     return "$ERR_VMOBJ_OPERATION"
   }
-
-  echo "$output"
 }
 
 #
@@ -756,13 +753,10 @@ vedv::vmobj_service::exists_with_name() {
     return "$ERR_INVAL_ARG"
   fi
 
-  local output
-  output="$(vedv::hypervisor::exists_vm_with_partial_name "${type}:${vmobj_name}|")" || {
+  vedv::hypervisor::exists_vm_with_partial_name "$(vname_bregex_by_name "$type" "$vmobj_name")" || {
     err "Hypervisor failed to check if ${type} with name '${vmobj_name}' exists"
     return "$ERR_VMOBJ_OPERATION"
   }
-
-  echo "$output"
 }
 
 #

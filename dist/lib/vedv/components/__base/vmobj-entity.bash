@@ -13,9 +13,10 @@ fi
 # CONSTANTS
 readonly VEDV_VMOBJ_ENTITY_VALID_ATTRIBUTES='vm_name|ssh_port|user_name|workdir|environment|exposed_ports|shell'
 
-readonly VEDV_VMOBJ_ENTITY_REGEX_NAME='[[:lower:]](-|_|[[:lower:]]|[[:digit:]]){,28}([[:lower:]]|[[:digit:]])'
-readonly VEDV_VMOBJ_ENTITY_REGEX_ID='[[:digit:]]{6,11}'
-
+readonly VEDV_VMOBJ_ENTITY_EREGEX_NAME='[[:lower:]](-|_|[[:lower:]]|[[:digit:]]){,28}([[:lower:]]|[[:digit:]])'
+readonly VEDV_VMOBJ_ENTITY_EREGEX_ID='[[:digit:]]{6,11}'
+readonly VEDV_VMOBJ_ENTITY_BREGEX_NAME='[[:lower:]]\(-\|_\|[[:lower:]]\|[[:digit:]]\)\{,28\}\([[:lower:]]\|[[:digit:]]\)'
+readonly VEDV_VMOBJ_ENTITY_BREGEX_ID='[[:digit:]]\{6,11\}'
 # VARIABLES
 
 # FUNCTIONS
@@ -147,6 +148,58 @@ vedv::vmobj_entity::__validate_attribute() {
 }
 
 #
+# Get a vm_name regex by id
+#
+# Arguments:
+#   type string   type to validate (e.g. 'container|image')
+#   id   string   vmobj id of the vm
+#
+# Output:
+#   Writes regex (string) to stdout
+#
+# Returns:
+#   0 on success, non-zero value on failure
+#
+vedv::vmobj_entity::vm_name_bregex_by_id() {
+  local -r type="$1"
+  local -r id="$2"
+  # validate arguments
+  vedv::vmobj_entity::validate_type "$type" ||
+    return "$?"
+  vedv::vmobj_entity::validate_id "$id" ||
+    return "$?"
+
+  echo "${type}:${VEDV_VMOBJ_ENTITY_BREGEX_NAME}|crc:${id}|"
+}
+vname_bregex_by_id() { vedv::vmobj_entity::vm_name_bregex_by_id "$@"; }
+
+#
+# Get a vm_name regex by name
+#
+# Arguments:
+#   type string   type to validate (e.g. 'container|image')
+#   name string   vmobj name of the vm
+#
+# Output:
+#   Writes regex (string) to stdout
+#
+# Returns:
+#   0 on success, non-zero value on failure
+#
+vedv::vmobj_entity::vm_name_bregex_by_name() {
+  local -r type="$1"
+  local -r name="$2"
+  # validate arguments
+  vedv::vmobj_entity::validate_type "$type" ||
+    return "$?"
+  vedv::vmobj_entity::validate_name "$name" ||
+    return "$?"
+
+  echo "${type}:${name}|crc:${VEDV_VMOBJ_ENTITY_BREGEX_ID}|"
+}
+vname_bregex_by_name() { vedv::vmobj_entity::vm_name_bregex_by_name "$@"; }
+
+#
 # Validate if given value is an id
 #
 # Arguments:
@@ -161,7 +214,7 @@ vedv::vmobj_entity::__validate_attribute() {
 vedv::vmobj_entity::is_id() {
   local -r value="$1"
 
-  if [[ "$value" =~ ^${VEDV_VMOBJ_ENTITY_REGEX_ID}$ ]]; then
+  if [[ "$value" =~ ^${VEDV_VMOBJ_ENTITY_EREGEX_ID}$ ]]; then
     echo true
   else
     echo false
@@ -205,7 +258,7 @@ vedv::vmobj_entity::validate_id() {
 vedv::vmobj_entity::is_name() {
   local -r value="$1"
 
-  if [[ "$value" =~ ^${VEDV_VMOBJ_ENTITY_REGEX_NAME}$ ]]; then
+  if [[ "$value" =~ ^${VEDV_VMOBJ_ENTITY_EREGEX_NAME}$ ]]; then
     echo true
   else
     echo false
@@ -291,7 +344,7 @@ vedv::vmobj_entity::validate_vm_name() {
     return "$ERR_INVAL_ARG"
   fi
 
-  local -r pattern="^${type}:${VEDV_VMOBJ_ENTITY_REGEX_NAME}\|crc:${VEDV_VMOBJ_ENTITY_REGEX_ID}\|\$"
+  local -r pattern="^${type}:${VEDV_VMOBJ_ENTITY_EREGEX_NAME}\|crc:${VEDV_VMOBJ_ENTITY_EREGEX_ID}\|\$"
 
   if [[ ! "$vm_name" =~ $pattern ]]; then
     err "Invalid ${type} vm name: '${vm_name}'"
@@ -392,7 +445,7 @@ vedv::vmobj_entity::get_vm_name() {
   }
 
   if [[ -z "$vm_name" ]]; then
-    vm_name="$(vedv::hypervisor::list_vms_by_partial_name "|crc:${vmobj_id}|")" || {
+    vm_name="$(vedv::hypervisor::list_vms_by_partial_name "$(vname_bregex_by_id "$type" "$vmobj_id")")" || {
       err "Error getting the vm name for the ${type}: '${vmobj_id}'"
       return "$ERR_VMOBJ_ENTITY"
     }
@@ -438,7 +491,7 @@ vedv::vmobj_entity::get_vm_name_by_vmobj_name() {
     return "$?"
 
   local vm_name
-  vm_name="$(vedv::hypervisor::list_vms_by_partial_name "${type}:${vmobj_name}|")" || {
+  vm_name="$(vedv::hypervisor::list_vms_by_partial_name "$(vname_bregex_by_name "$type" "$vmobj_name")")" || {
     err "Failed to get vm name of ${type}: ${vmobj_name}"
     return "$ERR_VMOBJ_ENTITY"
   }
@@ -631,7 +684,7 @@ vedv::vmobj_entity::get_dictionary() {
     dictionary_str="$cached_dictionary_str"
   else
     local vmobj_vm_name
-    vmobj_vm_name="$(vedv::hypervisor::list_vms_by_partial_name "|crc:${vmobj_id}|")" || {
+    vmobj_vm_name="$(vedv::hypervisor::list_vms_by_partial_name "$(vname_bregex_by_id "$type" "$vmobj_id")")" || {
       err "Error getting the vm name for the ${type}: '${vmobj_id}'"
       return "$ERR_VMOBJ_ENTITY"
     }
@@ -778,7 +831,7 @@ vedv::vmobj_entity::__set_attribute() {
     return "$?"
 
   local vmobj_vm_name
-  vmobj_vm_name="$(vedv::hypervisor::list_vms_by_partial_name "|crc:${vmobj_id}|")" || {
+  vmobj_vm_name="$(vedv::hypervisor::list_vms_by_partial_name "$(vname_bregex_by_id "$type" "$vmobj_id")")" || {
     err "Error getting the vm name for the ${type}: '${vmobj_id}'"
     return "$ERR_VMOBJ_ENTITY"
   }
