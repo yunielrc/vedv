@@ -1454,7 +1454,11 @@ vedv::image_builder::__build() {
   }
   readonly commands
 
-  local -r from_cmd="$(echo "$commands" | head -n 1)"
+  local -a commands_arr
+  readarray -t commands_arr <<<"$commands"
+  readonly commands_arr
+
+  local -r from_cmd="${commands_arr[0]}"
 
   local image_id
   image_id="$(vedv::image_entity::get_id_by_image_name "$image_name" 2>/dev/null)" || {
@@ -1545,7 +1549,7 @@ vedv::image_builder::__build() {
   }
   readonly first_invalid_cmd_pos
 
-  local -ri commands_length="$(echo "$commands" | wc -l)"
+  local -ri commands_length="${#commands_arr[@]}"
 
   if [[ $first_invalid_cmd_pos -lt -1 || $first_invalid_cmd_pos -ge $commands_length ]]; then
     err "Invalid first invalid layer position '${first_invalid_cmd_pos}'"
@@ -1559,12 +1563,8 @@ vedv::image_builder::__build() {
     __print_build_success_msg
     return 0
   fi
-  # iterate over cmds_to_run and build the image
 
-  # it get rid of commands with valid layers
-  local -r cmds_to_run="$(echo "$commands" | tail -n +"$((first_invalid_cmd_pos + 1))")"
-
-  if [[ -z "$cmds_to_run" ]]; then
+  if [[ -z "${commands_arr[*]:$first_invalid_cmd_pos}" ]]; then
     err "There is no command to run"
     return "$ERR_IMAGE_BUILDER_OPERATION"
   fi
@@ -1584,7 +1584,7 @@ vedv::image_builder::__build() {
     return "$ERR_IMAGE_BUILDER_OPERATION"
   }
 
-  while IFS= read -r cmd; do
+  for cmd in "${commands_arr[@]:$first_invalid_cmd_pos}"; do
     local layer_id cmd_name evaluated_cmd
     cmd_name="$(vedv::image_vedvfile_service::get_cmd_name "$cmd")" || {
       err "Failed to get command name from command '${cmd}'"
@@ -1609,8 +1609,7 @@ vedv::image_builder::__build() {
     }
 
     echo "created layer '${layer_id}' for command '${cmd_name}'"
-  done <<<"$cmds_to_run"
-
+  done
   # vedv::image_service::stop "$image_id" >/dev/null || {
   #   err "Failed to stop the image '${image_name}'.You must stop it."
   #   return "$ERR_IMAGE_BUILDER_OPERATION"

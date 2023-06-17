@@ -213,7 +213,7 @@
         "build",
         "-t",
         "bimage1",
-        "./env.vedvfile"
+        "Vedvfile"
       ]
     },
     {
