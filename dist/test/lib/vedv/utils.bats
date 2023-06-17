@@ -819,3 +819,17 @@ calc_item_id_from_array_b() { echo "$1"; }
   assert_success
   assert_output ""
 }
+
+# Tests for utils::random_number()
+@test "utils::random_number() Should succeed" {
+  local -r number="$(utils::random_number)"
+
+  assert [ "$number" -gt 0 ]
+}
+
+# Tests for utils::random_numberx3()
+@test "utils::random_numberx3() Should succeed" {
+  local -r number="$(utils::random_numberx3)"
+
+  assert [ "$number" -gt 0 ]
+}

@@ -761,3 +761,47 @@ utils::validate_sha256sum_format() {
 
   return 0
 }
+
+#
+# Generate a random number between min and max
+#
+# Arguments:
+#   [min] int   minimum value (default: 100)
+#   [max] int   maximum value (default: 200)
+#
+# Output:
+#   Writes the random number (int) to stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+utils::random_number() {
+  local -ri min="${1:-100}"
+  local -ri max="${2:-200}"
+
+  if [[ -z "$min" ]]; then
+    err "min is required"
+    return "$ERR_INVAL_ARG"
+  fi
+  if [[ -z "$max" ]]; then
+    err "max is required"
+    return "$ERR_INVAL_ARG"
+  fi
+
+  echo "$((min + RANDOM % $((max - min))))"
+}
+
+#
+# Generate 3 random number between min and max
+# and concatenate them
+#
+# Arguments:
+#   [min] int   minimum value (default: 100)
+#   [max] int   maximum value (default: 200)
+#
+# Output:
+#   Writes the random number (int) to stdout
+#
+utils::random_numberx3() {
+  echo "$(utils::random_number "$@")$(utils::random_number "$@")$(utils::random_number "$@")"
+}

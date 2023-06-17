@@ -15,20 +15,64 @@ if false; then
 fi
 
 # CONSTANTS
-# a file is used because the variable is modified in a subshell
-readonly __VEDV_IMAGE_BUILDER_ENV_VARS_FILE="$(mktemp)"
 
 # Constructor
 #
 # Arguments:
-#  __VEDV_IMAGE_BUILDER_NO_WAIT_AFTER_BUILD  bool    if true, it will not wait for the
+#  memory_cache_dir     string  memory cache dir
+#  no_wait_after_build  bool    if true, it will not wait for the
 #                                                    image to save data cache and stopping
 #
 # Returns:
 #   0 on success, non-zero on error.
 #
 vedv::image_builder::constructor() {
-  readonly __VEDV_IMAGE_BUILDER_NO_WAIT_AFTER_BUILD="${1:-false}"
+  __VEDV_IMAGE_BUILDER_MEMORY_CACHE_DIR="$1"
+  readonly __VEDV_IMAGE_BUILDER_NO_WAIT_AFTER_BUILD="${2:-false}"
+
+  # validate arguments
+  if [[ -z "$__VEDV_IMAGE_BUILDER_MEMORY_CACHE_DIR" ]]; then
+    err "Argument 'memory_cache_dir' must not be empty"
+    return "$ERR_INVAL_ARG"
+  fi
+  if [[ ! -d "$__VEDV_IMAGE_BUILDER_MEMORY_CACHE_DIR" ]]; then
+    err "Argument 'memory_cache_dir' must be a directory"
+    return "$ERR_INVAL_ARG"
+  fi
+
+  readonly __VEDV_IMAGE_BUILDER_MEMORY_CACHE_DIR="${__VEDV_IMAGE_BUILDER_MEMORY_CACHE_DIR%/}/image_builder"
+
+  if [[ ! -d "$__VEDV_IMAGE_BUILDER_MEMORY_CACHE_DIR" ]]; then
+    mkdir "$__VEDV_IMAGE_BUILDER_MEMORY_CACHE_DIR" || {
+      err "Failed to create memory cache dir"
+      return "$ERR_FAILED_CREATE_DIR"
+    }
+  fi
+  # a file is used because the variable is modified in a subshell
+  # shellcheck disable=SC2119
+  readonly __VEDV_IMAGE_BUILDER_ENV_VARS_FILE="${__VEDV_IMAGE_BUILDER_MEMORY_CACHE_DIR}/env_vars_$(utils::random_numberx3)"
+  : >"$__VEDV_IMAGE_BUILDER_ENV_VARS_FILE"
+}
+
+vedv::image_builder::__get_env_vars() {
+  cat "$__VEDV_IMAGE_BUILDER_ENV_VARS_FILE"
+}
+
+vedv::image_builder::__get_env_vars_file() {
+  echo "$__VEDV_IMAGE_BUILDER_ENV_VARS_FILE"
+}
+
+vedv::image_builder::__add_env_vars() {
+  local -r env_vars="$1"
+  echo "$env_vars" >>"$__VEDV_IMAGE_BUILDER_ENV_VARS_FILE"
+}
+vedv::image_builder::__set_env_vars() {
+  local -r env_vars="$1"
+  echo "$env_vars" >"$__VEDV_IMAGE_BUILDER_ENV_VARS_FILE"
+}
+
+vedv::image_builder::on_exit() {
+  rm -f "$__VEDV_IMAGE_BUILDER_ENV_VARS_FILE"
 }
 
 #
@@ -757,7 +801,7 @@ vedv::image_builder::__expand_cmd_parameters() {
   }
   readonly escaped_cmd
 
-  . "$__VEDV_IMAGE_BUILDER_ENV_VARS_FILE"
+  source "$(vedv::image_builder::__get_env_vars_file)"
 
   local evaluated_cmd
   evaluated_cmd="$(eval "echo \"${escaped_cmd}\"")" || {
@@ -1135,7 +1179,7 @@ vedv::image_builder::__layer_env() {
   fi
   # export environment variable with the prefix 'vedv_'
   # to avoid conflicts with other environment variables
-  echo "local -r ${UTILS_ENCODED_VAR_PREFIX}${env}" >>"$__VEDV_IMAGE_BUILDER_ENV_VARS_FILE"
+  vedv::image_builder::__add_env_vars "local -r ${UTILS_ENCODED_VAR_PREFIX}${env}"
 
   local -r env_escaped="$(utils::str_escape_quotes "$env")"
 
@@ -1269,7 +1313,7 @@ vedv::image_builder::__delete_invalid_layers() {
   # The function ...::__expand_cmd_parameters() needs
   # the environment variables to be in the file
   # __VEDV_IMAGE_BUILDER_ENV_VARS_FILE to work properly.
-  vedv::image_builder::__save_environment_vars_to_local_file "$image_id" || {
+  vedv::image_builder::__load_env_vars "$image_id" || {
     err "Failed to save environment variables for image '${image_id}' on the local file"
     return "$ERR_IMAGE_BUILDER_OPERATION"
   }
@@ -1335,7 +1379,7 @@ vedv::image_builder::__delete_invalid_layers() {
   return 0
 }
 
-vedv::image_builder::__save_environment_vars_to_local_file() {
+vedv::image_builder::__load_env_vars() {
   local -r image_id="$1"
   # validate arguments
   if [[ -z "$image_id" ]]; then
@@ -1352,7 +1396,7 @@ vedv::image_builder::__save_environment_vars_to_local_file() {
   env_vars="$(sed -e '/^[[:space:]]*$/d' -e 's/^[[:space:]]*//' -e "s/^/local -r ${UTILS_ENCODED_VAR_PREFIX}/" <<<"$env_vars")"
   readonly env_vars
 
-  echo "$env_vars" >"$__VEDV_IMAGE_BUILDER_ENV_VARS_FILE"
+  vedv::image_builder::__set_env_vars "$env_vars"
 }
 
 #
@@ -1535,7 +1579,7 @@ vedv::image_builder::__build() {
 
   # if any layer was deleted, we need to load only the
   # environment variables for the current layers.
-  vedv::image_builder::__save_environment_vars_to_local_file "$image_id" || {
+  vedv::image_builder::__load_env_vars "$image_id" || {
     err "Failed to save environment variables for image '${image_id}'"
     return "$ERR_IMAGE_BUILDER_OPERATION"
   }

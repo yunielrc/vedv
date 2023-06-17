@@ -93,12 +93,9 @@ HELPMSG
 }
 
 vedv::__on_exit() {
-  # shellcheck disable=SC2181
-  if [[ $? != 0 ]]; then
-    vedv::__help
-  fi
+  vedv::image_builder::on_exit
 }
-# trap vedv::__on_exit INT TERM EXIT
+trap vedv::__on_exit INT TERM EXIT
 
 vedv::__run_cmd() {
   # IMPL: test this function
@@ -169,7 +166,9 @@ vedv::__run_cmd() {
 
   vedv::image_service::constructor "$VEDV_IMAGE_CACHE_DIR"
 
-  vedv::image_builder::constructor "$VEDV_NO_WAIT_AFTER_BUILD"
+  vedv::image_builder::constructor \
+    "$VEDV_MEMORY_CACHE_DIR" \
+    "$VEDV_NO_WAIT_AFTER_BUILD"
 
   vedv::image_command::constructor "$__VEDV_SCRIPT_NAME"
 

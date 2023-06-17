@@ -1,10 +1,16 @@
 # shellcheck disable=SC2317,SC2034,SC2031,SC2030,SC2016
 load test_helper
 
-setup_file() {
-  vedv::image_builder::constructor 'false'
+setup() {
+  vedv::image_builder::constructor "$(mktemp -d)" 'false'
+  export __VEDV_IMAGE_BUILDER_MEMORY_CACHE_DIR
   export __VEDV_IMAGE_BUILDER_NO_WAIT_AFTER_BUILD
+  export __VEDV_IMAGE_BUILDER_ENV_VARS_FILE
 }
+
+# setup() {
+#   export __VEDV_IMAGE_BUILDER_MEMORY_CACHE_DIR="$(mktemp -d)"
+# }
 
 @test 'vedv::image_builder::constructor() Should succeed' {
   :
@@ -1033,7 +1039,7 @@ Previous layer restored"
     assert_equal "$*" "$image_id"
     echo "1 2 3"
   }
-  vedv::image_builder::__save_environment_vars_to_local_file() {
+  vedv::image_builder::__load_env_vars() {
     assert_equal "$*" "$image_id"
     return 1
   }
@@ -1061,7 +1067,7 @@ Previous layer restored"
     assert_equal "$*" "$image_id"
     echo "1 2 3"
   }
-  vedv::image_builder::__save_environment_vars_to_local_file() {
+  vedv::image_builder::__load_env_vars() {
     assert_equal "$*" "$image_id"
   }
   utils::get_first_invalid_positions_between_two_arrays() {
@@ -1092,7 +1098,7 @@ Previous layer restored"
     assert_equal "$*" "$image_id"
     echo "1 2 3"
   }
-  vedv::image_builder::__save_environment_vars_to_local_file() {
+  vedv::image_builder::__load_env_vars() {
     assert_equal "$*" "$image_id"
   }
   utils::get_first_invalid_positions_between_two_arrays() {
@@ -1123,7 +1129,7 @@ Previous layer restored"
     assert_equal "$*" "$image_id"
     echo "321 322 323"
   }
-  vedv::image_builder::__save_environment_vars_to_local_file() {
+  vedv::image_builder::__load_env_vars() {
     assert_equal "$*" "$image_id"
   }
   utils::get_first_invalid_positions_between_two_arrays() {
@@ -1158,7 +1164,7 @@ Previous layer restored"
     assert_equal "$*" "$image_id"
     echo "321 322 323"
   }
-  vedv::image_builder::__save_environment_vars_to_local_file() {
+  vedv::image_builder::__load_env_vars() {
     assert_equal "$*" "$image_id"
   }
   utils::get_first_invalid_positions_between_two_arrays() {
@@ -1196,7 +1202,7 @@ Previous layer restored"
     assert_equal "$*" "$image_id"
     echo "321 322 323"
   }
-  vedv::image_builder::__save_environment_vars_to_local_file() {
+  vedv::image_builder::__load_env_vars() {
     assert_equal "$*" "$image_id"
   }
   utils::get_first_invalid_positions_between_two_arrays() {
@@ -1987,7 +1993,7 @@ The image 'my-image-name' was removed."
   vedv::image_service::start() {
     assert_equal "$*" "$image_id"
   }
-  vedv::image_builder::__save_environment_vars_to_local_file() {
+  vedv::image_builder::__load_env_vars() {
     assert_equal "$*" "$image_id"
     false
   }
@@ -2047,7 +2053,7 @@ The image 'my-image-name' was removed."
   vedv::image_service::start() {
     assert_equal "$*" "$image_id"
   }
-  vedv::image_builder::__save_environment_vars_to_local_file() {
+  vedv::image_builder::__load_env_vars() {
     assert_equal "$*" "$image_id"
   }
   vedv::image_service::stop() {
@@ -2116,7 +2122,7 @@ The image 'my-image-name' was removed."
   vedv::image_service::start() {
     assert_equal "$*" "$image_id"
   }
-  vedv::image_builder::__save_environment_vars_to_local_file() {
+  vedv::image_builder::__load_env_vars() {
     assert_equal "$*" "$image_id"
   }
   vedv::image_service::stop() {
@@ -2197,7 +2203,7 @@ image-id my-image-name"
 #   vedv::image_service::start() {
 #     assert_equal "$*" "$image_id"
 #   }
-#   vedv::image_builder::__save_environment_vars_to_local_file() {
+#   vedv::image_builder::__load_env_vars() {
 #     assert_equal "$*" "$image_id"
 #   }
 #   vedv::image_builder::__layer_run() {
@@ -2808,17 +2814,17 @@ EOF
 echo "var2 var2:var3 var3"'
 }
 
-# Tests for vedv::image_builder::__save_environment_vars_to_local_file()
-@test "vedv::image_builder::__save_environment_vars_to_local_file() Should fail With empty image_id" {
+# Tests for vedv::image_builder::__load_env_vars()
+@test "vedv::image_builder::__load_env_vars() Should fail With empty image_id" {
   local -r image_id=""
 
-  run vedv::image_builder::__save_environment_vars_to_local_file "$image_id"
+  run vedv::image_builder::__load_env_vars "$image_id"
 
   assert_failure
   assert_output "Argument 'image_id' is required"
 }
 
-@test "vedv::image_builder::__save_environment_vars_to_local_file() Should fail If get_environment_vars fails" {
+@test "vedv::image_builder::__load_env_vars() Should fail If get_environment_vars fails" {
   local -r image_id="12345"
 
   vedv::image_service::fs::list_environment_vars() {
@@ -2826,13 +2832,13 @@ echo "var2 var2:var3 var3"'
     return 1
   }
 
-  run vedv::image_builder::__save_environment_vars_to_local_file "$image_id"
+  run vedv::image_builder::__load_env_vars "$image_id"
 
   assert_failure
   assert_output "Failed to get environment variables for image '12345'"
 }
 
-@test "vedv::image_builder::__save_environment_vars_to_local_file() Should succeed" {
+@test "vedv::image_builder::__load_env_vars() Should succeed" {
   local -r image_id="12345"
 
   vedv::image_service::fs::list_environment_vars() {
@@ -2846,7 +2852,7 @@ VAR23="var3 var3"
 EOF
   }
 
-  run vedv::image_builder::__save_environment_vars_to_local_file "$image_id"
+  run vedv::image_builder::__load_env_vars "$image_id"
 
   assert_success
   assert_output ""
