@@ -10,7 +10,10 @@ test-unit:
 	./tools/bats $(u)
 
 test-tag:
-	./tools/bats --filter-tags $(t) $(u)
+	./tools/bats --filter-tags '$(t)' $(u)
+
+test-name:
+	./tools/bats --filter '$(n)' $(u)
 
 untested:
 	./tools/untested $(f)

@@ -281,7 +281,7 @@ teardown() {
   assert_failure
   assert_output "Failed to clone vm: 'image-cache|crc:123456|' to: 'image:gen-name|crc:133456|'"
 }
-# bats test_tags=only
+
 @test "vedv::image_service::import() Should fail If get_id_by_vm_name fails" {
   local -r image_file="$TEST_OVA_FILE"
   local -r image_name=""
@@ -329,7 +329,7 @@ teardown() {
   assert_failure
   assert_output "Error getting image_id for vm_name 'image:gen-name|crc:133456|'"
 }
-# bats test_tags=only
+
 @test "vedv::image_service::import() Should fail If after_create fails" {
   local -r image_file="$TEST_OVA_FILE"
   local -r image_name=""
@@ -381,6 +381,64 @@ teardown() {
   assert_failure
   assert_output "Error on after create event: '133456'"
 }
+# bats test_tags=only
+@test "vedv::image_service::import() Should fail If create_layer_from fails" {
+  local -r image_file="$TEST_OVA_FILE"
+  local -r image_name=""
+  local -r checksum_file="/tmp/f31d50798a.ova.sha256sum"
+
+  vedv::image_service::exists_with_name() {
+    assert_equal "$*" "INVALID_CALL"
+    echo false
+  }
+  utils::sha256sum_check() {
+    assert_equal "$*" "$checksum_file"
+  }
+  utils::crc_sum() {
+    assert_equal "$*" "$image_file"
+    echo "123456"
+  }
+  vedv::image_cache_entity::get_vm_name() {
+    assert_equal "$*" "123456"
+    echo "image-cache|crc:123456|"
+  }
+  vedv::hypervisor::exists_vm_with_partial_name() {
+    assert_equal "$*" "image-cache|crc:123456|"
+    echo false
+  }
+  vedv::hypervisor::import() {
+    assert_equal "$*" "$image_file image-cache|crc:123456|"
+  }
+  vedv::image_entity::gen_vm_name() {
+    assert_equal "$*" ""
+    echo "image:gen-name|crc:133456|"
+  }
+  vedv::hypervisor::clonevm_link() {
+    assert_equal "$*" "image-cache|crc:123456| image:gen-name|crc:133456|"
+  }
+  vedv::image_entity::get_id_by_vm_name() {
+    assert_equal "$*" "image:gen-name|crc:133456|"
+    echo '133456'
+  }
+  vedv::vmobj_service::after_create() {
+    assert_equal "$*" "image 133456"
+  }
+  vedv::image_service::create_layer_from() {
+    assert_equal "$*" "133456 ${image_file}"
+  }
+  vedv::image_service::create_layer_from() {
+    assert_equal "$*" "133456 ${image_file}"
+    return 1
+  }
+
+  run vedv::image_service::import \
+    "$image_file" \
+    "$image_name" \
+    "$checksum_file"
+
+  assert_failure
+  assert_output "Error creating the first layer for image '133456'"
+}
 
 @test "vedv::image_service::import() Should fail If get_image_name_by_vm_name fails" {
   local -r image_file="$TEST_OVA_FILE"
@@ -422,6 +480,9 @@ teardown() {
   }
   vedv::vmobj_service::after_create() {
     assert_equal "$*" "image 133456"
+  }
+  vedv::image_service::create_layer_from() {
+    assert_equal "$*" "133456 ${image_file}"
   }
   vedv::image_entity::get_image_name_by_vm_name() {
     assert_equal "$*" "image:gen-name|crc:133456|"
@@ -477,6 +538,9 @@ teardown() {
   }
   vedv::vmobj_service::after_create() {
     assert_equal "$*" "image 133456"
+  }
+  vedv::image_service::create_layer_from() {
+    assert_equal "$*" "133456 ${image_file}"
   }
   vedv::image_entity::get_image_name_by_vm_name() {
     assert_equal "$*" "image:gen-name|crc:133456|"
@@ -536,6 +600,9 @@ teardown() {
   }
   vedv::vmobj_service::after_create() {
     assert_equal "$*" "image 133456"
+  }
+  vedv::image_service::create_layer_from() {
+    assert_equal "$*" "133456 ${image_file}"
   }
   vedv::image_entity::get_image_name_by_vm_name() {
     assert_equal "$*" "image:gen-name|crc:133456|"
@@ -598,6 +665,9 @@ teardown() {
   }
   vedv::vmobj_service::after_create() {
     assert_equal "$*" "image 133456"
+  }
+  vedv::image_service::create_layer_from() {
+    assert_equal "$*" "133456 ${image_file}"
   }
   vedv::image_entity::get_image_name_by_vm_name() {
     assert_equal "$*" "image:gen-name|crc:133456|"
@@ -777,7 +847,7 @@ Failed to remove image: '1234567890'"
   assert_failure
   assert_output "Failed to remove image: '1234567890'"
 }
-# bats test_tags=only
+
 @test 'vedv::image_service::remove_one() Should fail If after_remove fails' {
   local -r image_id='1234567890'
 
@@ -2324,4 +2394,195 @@ EOF
   # Assert
   assert_success
   assert_output ""
+}
+
+# Tests for vedv::image_service::create_layer()
+@test "vedv::image_service::create_layer() Should fail With invalid image_id" {
+  local -r image_id="invalid"
+  local -r layer_name="123456"
+  local -r layer_id="invalid"
+
+  run vedv::image_service::create_layer "$image_id" "$layer_name" "$layer_id"
+
+  assert_failure
+  assert_output "Invalid argument 'invalid'"
+}
+
+@test "vedv::image_service::create_layer() Should fail With invalid layer_name" {
+  local -r image_id="223456789"
+  local -r layer_name="invalid"
+  local -r layer_id="3234567890"
+
+  run vedv::image_service::create_layer "$image_id" "$layer_name" "$layer_id"
+
+  assert_failure
+  assert_output "Invalid layer name 'invalid'"
+}
+
+@test "vedv::image_service::create_layer() Should fail With invalid layer_id" {
+  local -r image_id="223456789"
+  local -r layer_name="FROM"
+  local -r layer_id="invalid"
+
+  run vedv::image_service::create_layer "$image_id" "$layer_name" "$layer_id"
+
+  assert_failure
+  assert_output "Invalid argument 'invalid'"
+}
+
+@test "vedv::image_service::create_layer() Should fail If has_layer_id fails" {
+  local -r image_id="223456789"
+  local -r layer_name="FROM"
+  local -r layer_id="3234567890"
+  # Stub
+  vedv::image_entity::has_layer_id() {
+    assert_equal "$*" "${image_id} ${layer_id}"
+    return 1
+  }
+
+  run vedv::image_service::create_layer "$image_id" "$layer_name" "$layer_id"
+
+  assert_failure
+  assert_output "Failed to check if layer 'FROM' exists for image '223456789'"
+}
+
+@test "vedv::image_service::create_layer() Should fail If layer id exists" {
+  local -r image_id="223456789"
+  local -r layer_name="FROM"
+  local -r layer_id="3234567890"
+  # Stub
+  vedv::image_entity::has_layer_id() {
+    assert_equal "$*" "${image_id} ${layer_id}"
+    echo true
+  }
+
+  run vedv::image_service::create_layer "$image_id" "$layer_name" "$layer_id"
+
+  assert_failure
+  assert_output "Layer 'FROM' already exists for image '223456789'"
+}
+
+@test "vedv::image_service::create_layer() Should fail If get_vm_name fails" {
+  local -r image_id="223456789"
+  local -r layer_name="FROM"
+  local -r layer_id="3234567890"
+  # Stub
+  vedv::image_entity::has_layer_id() {
+    assert_equal "$*" "${image_id} ${layer_id}"
+    echo false
+  }
+  vedv::image_entity::get_vm_name() {
+    assert_equal "$*" "${image_id}"
+    return 1
+  }
+
+  run vedv::image_service::create_layer "$image_id" "$layer_name" "$layer_id"
+
+  assert_failure
+  assert_output "Failed to get vm name for image '223456789'"
+}
+
+@test "vedv::image_service::create_layer() Should fail If take_snapshot fails" {
+  local -r image_id="223456789"
+  local -r layer_name="FROM"
+  local -r layer_id="3234567890"
+  # Stub
+  vedv::image_entity::has_layer_id() {
+    assert_equal "$*" "${image_id} ${layer_id}"
+    echo false
+  }
+  vedv::image_entity::get_vm_name() {
+    assert_equal "$*" "${image_id}"
+    echo "image:nalyd1|crc:223456789|"
+  }
+  local -r full_layer_name="layer:${layer_name}|id:${layer_id}|"
+
+  vedv::hypervisor::take_snapshot() {
+    assert_equal "$*" "image:nalyd1|crc:223456789| ${full_layer_name}"
+    return 1
+  }
+
+  run vedv::image_service::create_layer "$image_id" "$layer_name" "$layer_id"
+
+  assert_failure
+  assert_output "Failed to create layer 'layer:FROM|id:3234567890|' for image '223456789'"
+}
+
+@test "vedv::image_service::create_layer() Should succeed" {
+  local -r image_id="223456789"
+  local -r layer_name="FROM"
+  local -r layer_id="3234567890"
+  # Stub
+  vedv::image_entity::has_layer_id() {
+    assert_equal "$*" "${image_id} ${layer_id}"
+    echo false
+  }
+  vedv::image_entity::get_vm_name() {
+    assert_equal "$*" "${image_id}"
+    echo "image:nalyd1|crc:223456789|"
+  }
+  local -r full_layer_name="layer:${layer_name}|id:${layer_id}|"
+
+  vedv::hypervisor::take_snapshot() {
+    assert_equal "$*" "image:nalyd1|crc:223456789| ${full_layer_name}"
+  }
+
+  run vedv::image_service::create_layer "$image_id" "$layer_name" "$layer_id"
+
+  assert_success
+  assert_output "3234567890"
+}
+
+# Tests for vedv::image_service::create_layer_from()
+@test "vedv::image_service::create_layer_from() Should fail With invalid image_id" {
+  local -r image_id="invalid"
+  local -r image_file="$TEST_OVA_FILE"
+
+  run vedv::image_service::create_layer_from "$image_id" "$image_file"
+
+  assert_failure
+  assert_output "Invalid argument 'invalid'"
+}
+
+@test "vedv::image_service::create_layer_from() Should fail If file does not exist" {
+  local -r image_id="223456789"
+  local -r image_file="invalid"
+
+  run vedv::image_service::create_layer_from "$image_id" "$image_file"
+
+  assert_failure
+  assert_output "image file doesn't exist, path: 'invalid'"
+}
+
+@test "vedv::image_service::create_layer_from() Should fail If crc_sum fails" {
+  local -r image_id="223456789"
+  local -r image_file="$TEST_OVA_FILE"
+
+  utils::crc_sum() {
+    assert_equal "$*" "$image_file"
+    return 1
+  }
+
+  run vedv::image_service::create_layer_from "$image_id" "$image_file"
+
+  assert_failure
+  assert_output --partial "Failed to calculate crc sum for image file "
+}
+
+@test "vedv::image_service::create_layer_from() Should succeed" {
+  local -r image_id="223456789"
+  local -r image_file="$TEST_OVA_FILE"
+
+  utils::crc_sum() {
+    assert_equal "$*" "$image_file"
+    echo "4278381351"
+  }
+  vedv::image_service::create_layer() {
+    assert_equal "$*" "${image_id} FROM 4278381351"
+    echo "4278381351"
+  }
+  run vedv::image_service::create_layer_from "$image_id" "$image_file"
+
+  assert_success
+  assert_output "4278381351"
 }

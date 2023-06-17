@@ -439,7 +439,7 @@ Previous layer restored"
   assert_output "Failed to pull image '${image}'"
 }
 
-@test "vedv::image_builder::__layer_from(), Should fail if create layer fails" {
+@test "vedv::image_builder::__layer_from(), Should fail if get_first_layer_id fails" {
   local -r image='image'
   local -r image_name='image_name'
 
@@ -449,14 +449,14 @@ Previous layer restored"
     assert_equal "$*" "${image} ${image_name}"
     echo 'image_id'
   }
-  vedv::image_builder::__create_layer() {
-    assert_equal "$*" "image_id ${cmd}"
+  vedv::image_entity::get_first_layer_id() {
+    assert_equal "$*" "image_id"
     return 1
   }
   run vedv::image_builder::__layer_from 'image' 'image_name'
 
   assert_failure
-  assert_output "Failed to create layer for image 'image_id'"
+  assert_output "Failed to get first layer id for image 'image_id'"
 }
 
 @test "vedv::image_builder::__layer_from(), Should fail if layer_id is empty" {
@@ -469,8 +469,8 @@ Previous layer restored"
     assert_equal "$*" "${image} ${image_name}"
     echo 'image_id'
   }
-  vedv::image_builder::__create_layer() {
-    assert_equal "$*" "image_id ${cmd}"
+  vedv::image_entity::get_first_layer_id() {
+    assert_equal "$*" "image_id"
   }
   run vedv::image_builder::__layer_from 'image' 'image_name'
 
@@ -486,8 +486,8 @@ Previous layer restored"
     assert_equal "$*" "${image} ${image_name}"
     echo 'image_id'
   }
-  vedv::image_builder::__create_layer() {
-    assert_equal "$*" "image_id ${cmd}"
+  vedv::image_entity::get_first_layer_id() {
+    assert_equal "$*" "image_id"
     echo 'layer_id'
   }
 

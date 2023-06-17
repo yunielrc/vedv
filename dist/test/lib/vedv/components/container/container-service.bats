@@ -331,7 +331,7 @@ setup_file() {
     echo "container:bin-baam|crc:12346|"
   }
   vedv::hypervisor::clonevm_link() {
-    assert_equal "$*" "image:foo-bar|crc:12345| container:bin-baam|crc:12346| layer:RUN|id:layer_id|"
+    assert_equal "$*" "image:foo-bar|crc:12345| container:bin-baam|crc:12346| layer:RUN|id:layer_id| false"
     return 1
   }
 
@@ -380,7 +380,7 @@ setup_file() {
     echo "container:bin-baam|crc:12346|"
   }
   vedv::hypervisor::clonevm_link() {
-    assert_equal "$*" "image:foo-bar|crc:12345| container:bin-baam|crc:12346| layer:RUN|id:layer_id|"
+    assert_equal "$*" "image:foo-bar|crc:12345| container:bin-baam|crc:12346| layer:RUN|id:layer_id| false"
   }
   vedv::container_entity::get_container_name_by_vm_name() {
     assert_equal "$*" "container:bin-baam|crc:12346|"
@@ -432,7 +432,7 @@ setup_file() {
     echo "container:bin-baam|crc:12346|"
   }
   vedv::hypervisor::clonevm_link() {
-    assert_equal "$*" "image:foo-bar|crc:12345| container:bin-baam|crc:12346| layer:RUN|id:layer_id|"
+    assert_equal "$*" "image:foo-bar|crc:12345| container:bin-baam|crc:12346| layer:RUN|id:layer_id| false"
   }
   vedv::container_entity::get_container_name_by_vm_name() {
     assert_equal "$*" "container:bin-baam|crc:12346|"
@@ -448,7 +448,7 @@ setup_file() {
   assert_failure
   assert_output "Failed to get container id for vm: 'container:bin-baam|crc:12346|'"
 }
-# bats test_tags=only
+
 @test "vedv::container_service::create() Should fail If after_create fails" {
   local -r image="image1"
   local -r container_name=''
@@ -488,7 +488,7 @@ setup_file() {
     echo "container:bin-baam|crc:12346|"
   }
   vedv::hypervisor::clonevm_link() {
-    assert_equal "$*" "image:foo-bar|crc:12345| container:bin-baam|crc:12346| layer:RUN|id:layer_id|"
+    assert_equal "$*" "image:foo-bar|crc:12345| container:bin-baam|crc:12346| layer:RUN|id:layer_id| false"
   }
   vedv::container_entity::get_container_name_by_vm_name() {
     echo "bin-baam"
@@ -508,7 +508,70 @@ setup_file() {
   assert_failure
   assert_output "Error on after create event: 'bin-baam'"
 }
-# bats test_tags=only
+
+@test "vedv::container_service::create() Should fail If add_child_container_id fails" {
+  local -r image="image1"
+  local -r container_name=''
+
+  vedv::container_service::exists_with_name() {
+    assert_equal "$*" "container1"
+    echo false
+  }
+  petname() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::image_service::pull() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::image_entity::get_vm_name_by_image_name() {
+    assert_equal "$*" "image1"
+    echo "image:foo-bar|crc:12345|"
+  }
+  vedv::container_entity::gen_vm_name() {
+    assert_equal "$*" ""
+    echo "container:bin-baam|crc:12346|"
+  }
+  vedv::image_entity::get_id_by_vm_name() {
+    assert_equal "$*" "image:foo-bar|crc:12345|"
+    echo 12345
+  }
+  vedv::image_entity::get_last_layer_id() {
+    assert_equal "$*" "12345"
+    echo 53455
+  }
+  vedv::image_entity::get_snapshot_name_by_layer_id() {
+    assert_equal "$*" "12345 53455"
+    echo "layer:RUN|id:layer_id|"
+  }
+  vedv::container_entity::gen_vm_name() {
+    assert_equal "$*" ""
+    echo "container:bin-baam|crc:12346|"
+  }
+  vedv::hypervisor::clonevm_link() {
+    assert_equal "$*" "image:foo-bar|crc:12345| container:bin-baam|crc:12346| layer:RUN|id:layer_id| false"
+  }
+  vedv::container_entity::get_container_name_by_vm_name() {
+    echo "bin-baam"
+    assert_equal "$*" "container:bin-baam|crc:12346|"
+  }
+  vedv::container_entity::get_id_by_vm_name() {
+    assert_equal "$*" "container:bin-baam|crc:12346|"
+    echo 12346
+  }
+  vedv::vmobj_service::after_create() {
+    assert_equal "$*" "container 12346"
+  }
+  vedv::image_entity::add_child_container_id() {
+    assert_equal "$*" "12345 12346"
+    return 1
+  }
+
+  run vedv::container_service::create "$image" "$container_name"
+
+  assert_failure
+  assert_output "Failed to add child container id for image: 'image1'"
+}
+
 @test "vedv::container_service::create() Should fail If set_vm_name fails" {
   local -r image="image1"
   local -r container_name=''
@@ -548,7 +611,7 @@ setup_file() {
     echo "container:bin-baam|crc:12346|"
   }
   vedv::hypervisor::clonevm_link() {
-    assert_equal "$*" "image:foo-bar|crc:12345| container:bin-baam|crc:12346| layer:RUN|id:layer_id|"
+    assert_equal "$*" "image:foo-bar|crc:12345| container:bin-baam|crc:12346| layer:RUN|id:layer_id| false"
   }
   vedv::container_entity::get_container_name_by_vm_name() {
     echo "bin-baam"
@@ -560,6 +623,9 @@ setup_file() {
   }
   vedv::vmobj_service::after_create() {
     assert_equal "$*" "container 12346"
+  }
+  vedv::image_entity::add_child_container_id() {
+    assert_equal "$*" "12345 12346"
   }
   vedv::container_entity::set_vm_name() {
     assert_equal "$*" "12346 container:bin-baam|crc:12346|"
@@ -611,7 +677,7 @@ setup_file() {
     echo "container:bin-baam|crc:12346|"
   }
   vedv::hypervisor::clonevm_link() {
-    assert_equal "$*" "image:foo-bar|crc:12345| container:bin-baam|crc:12346| layer:RUN|id:layer_id|"
+    assert_equal "$*" "image:foo-bar|crc:12345| container:bin-baam|crc:12346| layer:RUN|id:layer_id| false"
   }
   vedv::container_entity::get_container_name_by_vm_name() {
     assert_equal "$*" "container:bin-baam|crc:12346|"
@@ -623,6 +689,9 @@ setup_file() {
   }
   vedv::vmobj_service::after_create() {
     assert_equal "$*" "container 12346"
+  }
+  vedv::image_entity::add_child_container_id() {
+    assert_equal "$*" "12345 12346"
   }
   vedv::container_entity::set_vm_name() {
     assert_equal "$*" "12346 container:bin-baam|crc:12346|"
@@ -677,7 +746,7 @@ setup_file() {
     echo "container:bin-baam|crc:12346|"
   }
   vedv::hypervisor::clonevm_link() {
-    assert_equal "$*" "image:foo-bar|crc:12345| container:bin-baam|crc:12346| layer:RUN|id:layer_id|"
+    assert_equal "$*" "image:foo-bar|crc:12345| container:bin-baam|crc:12346| layer:RUN|id:layer_id| false"
   }
   vedv::container_entity::get_container_name_by_vm_name() {
     assert_equal "$*" "container:bin-baam|crc:12346|"
@@ -689,6 +758,9 @@ setup_file() {
   }
   vedv::vmobj_service::after_create() {
     assert_equal "$*" "container 12346"
+  }
+  vedv::image_entity::add_child_container_id() {
+    assert_equal "$*" "12345 12346"
   }
   vedv::container_entity::set_vm_name() {
     assert_equal "$*" "12346 container:bin-baam|crc:12346|"
@@ -746,7 +818,7 @@ setup_file() {
     echo "container:bin-baam|crc:12346|"
   }
   vedv::hypervisor::clonevm_link() {
-    assert_equal "$*" "image:foo-bar|crc:12345| container:bin-baam|crc:12346| layer:RUN|id:layer_id|"
+    assert_equal "$*" "image:foo-bar|crc:12345| container:bin-baam|crc:12346| layer:RUN|id:layer_id| false"
   }
   vedv::container_entity::get_container_name_by_vm_name() {
     assert_equal "$*" "container:bin-baam|crc:12346|"
@@ -758,6 +830,9 @@ setup_file() {
   }
   vedv::vmobj_service::after_create() {
     assert_equal "$*" "container 12346"
+  }
+  vedv::image_entity::add_child_container_id() {
+    assert_equal "$*" "12345 12346"
   }
   vedv::container_entity::set_vm_name() {
     assert_equal "$*" "12346 container:bin-baam|crc:12346|"
@@ -824,7 +899,7 @@ setup_file() {
     echo "container:bin-baam|crc:12346|"
   }
   vedv::hypervisor::clonevm_link() {
-    assert_equal "$*" "image:foo-bar|crc:12345| container:bin-baam|crc:12346| layer:RUN|id:layer_id|"
+    assert_equal "$*" "image:foo-bar|crc:12345| container:bin-baam|crc:12346| layer:RUN|id:layer_id| false"
   }
   vedv::container_entity::get_container_name_by_vm_name() {
     assert_equal "$*" "container:bin-baam|crc:12346|"
@@ -836,6 +911,9 @@ setup_file() {
   }
   vedv::vmobj_service::after_create() {
     assert_equal "$*" "container 12346"
+  }
+  vedv::image_entity::add_child_container_id() {
+    assert_equal "$*" "12345 12346"
   }
   vedv::container_entity::set_vm_name() {
     assert_equal "$*" "12346 container:bin-baam|crc:12346|"
@@ -933,7 +1011,20 @@ setup_file() {
   assert_failure
   assert_output "Failed to get vm name for container: '123456'"
 }
+# bats test_tags=only
+@test "vedv::container_service::remove_one() Should fail If container_vm_name is empty" {
+  local -r container_id=123456
 
+  vedv::container_entity::get_vm_name() {
+    assert_equal "$*" 123456
+  }
+
+  run vedv::container_service::remove_one "$container_id"
+
+  assert_failure
+  assert_output "There is no container with id '${container_id}'"
+}
+# bats test_tags=only
 @test "vedv::container_service::remove_one() Should fail If container_entity::get_parent_image_id fails" {
   local -r container_id=123456
 
@@ -951,7 +1042,7 @@ setup_file() {
   assert_failure
   assert_output "Failed to get parent image id for container '123456'"
 }
-
+# bats test_tags=only
 @test "vedv::container_service::remove_one() Should fail If empty parent_image_id" {
   local -r container_id=123456
 
@@ -968,14 +1059,10 @@ setup_file() {
   assert_failure
   assert_output "No 'parent_image_id' for container: '123456'"
 }
-
-@test "vedv::container_service::remove_one() Should fail If __get_running_siblings_ids fails" {
+# bats test_tags=only
+@test "vedv::container_service::remove_one() Should fail If is_started fails" {
   local -r container_id=123456
 
-  vedv::container_service::is_started() {
-    assert_equal "$*" 123456
-    echo false
-  }
   vedv::container_entity::get_vm_name() {
     assert_equal "$*" 123456
     echo "container:bin-baam|crc:12346|"
@@ -984,7 +1071,7 @@ setup_file() {
     assert_equal "$*" 123456
     echo 22345
   }
-  vedv::container_service::__get_running_siblings_ids() {
+  vedv::container_service::is_started() {
     assert_equal "$*" 123456
     return 1
   }
@@ -992,16 +1079,12 @@ setup_file() {
   run vedv::container_service::remove_one "$container_id"
 
   assert_failure
-  assert_output "Failed to get running siblings ids for container: '123456'"
+  assert_output "Failed to check if container is started: '123456'"
 }
-
-@test "vedv::container_service::remove_one() Should fail If there are running siblings and force is false" {
+# bats test_tags=only
+@test "vedv::container_service::remove_one() Should fail If force is false and container is started" {
   local -r container_id=123456
 
-  vedv::container_service::is_started() {
-    assert_equal "$*" 123456
-    echo false
-  }
   vedv::container_entity::get_vm_name() {
     assert_equal "$*" 123456
     echo "container:bin-baam|crc:12346|"
@@ -1010,47 +1093,17 @@ setup_file() {
     assert_equal "$*" 123456
     echo 22345
   }
-  vedv::container_service::__get_running_siblings_ids() {
+  vedv::container_service::is_started() {
     assert_equal "$*" 123456
-    echo '123457 123458'
+    echo true
   }
 
   run vedv::container_service::remove_one "$container_id"
 
   assert_failure
-  assert_output "Can't remove container: '123456' because it has running sibling containers
-You can Use the 'force' flag to stop them automatically and remove the container
-Or you can stop them manually and then remove the container
-Sibling containers ids: '123457 123458'"
+  assert_output "Failed to remove a running container '123456'. Stop the container first or force remove"
 }
-
-@test "vedv::container_service::remove_one() Should fail If there are running siblings and stop them fails" {
-  local -r container_id=123456
-  local -r force=true
-
-  vedv::container_entity::get_vm_name() {
-    assert_equal "$*" 123456
-    echo "container:bin-baam|crc:12346|"
-  }
-  vedv::container_entity::get_parent_image_id() {
-    assert_equal "$*" 123456
-    echo 22345
-  }
-  vedv::container_service::__get_running_siblings_ids() {
-    assert_equal "$*" 123456
-    echo '123457 123458'
-  }
-  vedv::container_service::stop() {
-    assert_equal "$*" '123457 123458'
-    return 1
-  }
-
-  run vedv::container_service::remove_one "$container_id" "$force"
-
-  assert_failure
-  assert_output "Failed to stop some sibling container"
-}
-
+# bats test_tags=only
 @test "vedv::container_service::remove_one() Should fail If vedv::hypervisor::rm fails" {
   local -r container_id=123456
 
@@ -1066,9 +1119,7 @@ Sibling containers ids: '123457 123458'"
     assert_equal "$*" 123456
     echo 22345
   }
-  vedv::container_service::__get_running_siblings_ids() {
-    assert_equal "$*" 123456
-  }
+
   vedv::hypervisor::rm() {
     assert_equal "$*" "container:bin-baam|crc:12346|"
     return 1
@@ -1095,9 +1146,7 @@ Sibling containers ids: '123457 123458'"
     assert_equal "$*" 123456
     echo 22345
   }
-  vedv::container_service::__get_running_siblings_ids() {
-    assert_equal "$*" 123456
-  }
+
   vedv::hypervisor::rm() {
     assert_equal "$*" "container:bin-baam|crc:12346|"
   }
@@ -1112,7 +1161,7 @@ Sibling containers ids: '123457 123458'"
   assert_output "Error on after remove event: '${container_id}'"
 }
 
-@test "vedv::container_service::remove_one() Should fail If image_entity::get_vm_name fails" {
+@test "vedv::container_service::remove_one() Should fail If remove_child_container_id fails" {
   local -r container_id=123456
 
   vedv::container_service::is_started() {
@@ -1127,63 +1176,19 @@ Sibling containers ids: '123457 123458'"
     assert_equal "$*" 123456
     echo 22345
   }
-  vedv::container_service::__get_running_siblings_ids() {
-    assert_equal "$*" 123456
-  }
   vedv::hypervisor::rm() {
     assert_equal "$*" "container:bin-baam|crc:12346|"
+    return 1
   }
-  vedv::vmobj_service::after_remove() {
-    assert_equal "$*" 'container 123456'
-  }
-  vedv::image_entity::get_vm_name() {
-    assert_equal "$*" 22345
+  vedv::image_entity::remove_child_container_id() {
+    assert_equal "$*" '123456 12346'
     return 1
   }
 
   run vedv::container_service::remove_one "$container_id"
 
   assert_failure
-  assert_output "Failed to get vm name for parent image id: '22345'"
-}
-
-@test "vedv::container_service::remove_one() Should fail If delete_snapshot fails" {
-  local -r container_id=123456
-
-  vedv::container_service::is_started() {
-    assert_equal "$*" 123456
-    echo false
-  }
-  vedv::container_entity::get_vm_name() {
-    assert_equal "$*" 123456
-    echo "container:bin-baam|crc:12346|"
-  }
-  vedv::container_entity::get_parent_image_id() {
-    assert_equal "$*" 123456
-    echo 22345
-  }
-  vedv::container_service::__get_running_siblings_ids() {
-    assert_equal "$*" 123456
-  }
-  vedv::hypervisor::rm() {
-    assert_equal "$*" "container:bin-baam|crc:12346|"
-  }
-  vedv::vmobj_service::after_remove() {
-    assert_equal "$*" 'container 123456'
-  }
-  vedv::image_entity::get_vm_name() {
-    assert_equal "$*" 22345
-    echo "image:foo-bar|crc:22345|"
-  }
-  vedv::hypervisor::delete_snapshot() {
-    assert_equal "$*" "image:foo-bar|crc:22345| container:bin-baam|crc:12346|"
-    return 1
-  }
-
-  run vedv::container_service::remove_one "$container_id"
-
-  assert_failure
-  assert_output "Failed to delete snapshot of container '123456' on parent image '22345'"
+  assert_output "Failed to remove container: '123456'"
 }
 
 @test "vedv::container_service::remove_one() Should succeed" {
@@ -1201,11 +1206,50 @@ Sibling containers ids: '123457 123458'"
     assert_equal "$*" 123456
     echo 22345
   }
-  vedv::container_service::__get_running_siblings_ids() {
+
+  vedv::hypervisor::rm() {
+    assert_equal "$*" "container:bin-baam|crc:12346|"
+  }
+  vedv::image_entity::remove_child_container_id() {
+    assert_equal "$*" '22345 123456'
+  }
+  vedv::vmobj_service::after_remove() {
+    assert_equal "$*" 'container 123456'
+  }
+  vedv::image_entity::get_vm_name() {
+    assert_equal "$*" 22345
+    echo "image:foo-bar|crc:22345|"
+  }
+  vedv::hypervisor::delete_snapshot() {
+    assert_equal "$*" "image:foo-bar|crc:22345| container:bin-baam|crc:12346|"
+  }
+
+  run vedv::container_service::remove_one "$container_id"
+
+  assert_success
+  assert_output "123456"
+}
+
+@test "vedv::container_service::remove_one() Should succeed as standalone container" {
+  local -r container_id=123456
+
+  vedv::container_service::is_started() {
     assert_equal "$*" 123456
+    echo false
+  }
+  vedv::container_entity::get_vm_name() {
+    assert_equal "$*" 123456
+    echo "container:bin-baam|crc:12346|"
+  }
+  vedv::container_entity::get_parent_image_id() {
+    assert_equal "$*" 123456
+    echo 'STANDALONE'
   }
   vedv::hypervisor::rm() {
     assert_equal "$*" "container:bin-baam|crc:12346|"
+  }
+  vedv::image_entity::remove_child_container_id() {
+    assert_equal "$*" 'INVALID_CALL'
   }
   vedv::vmobj_service::after_remove() {
     assert_equal "$*" 'container 123456'

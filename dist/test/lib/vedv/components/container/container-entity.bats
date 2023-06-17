@@ -324,3 +324,33 @@ setup() {
   assert_success
   assert_output ""
 }
+
+# Tests for vedv::container_entity::validate_id()
+@test "vedv::container_entity::validate_id() Should succeed" {
+  # Setup
+  local -r container_id="ct1"
+  # Mock
+  vedv::vmobj_entity::validate_id() {
+    assert_equal "$*" "ct1"
+  }
+  # Act
+  run vedv::container_entity::validate_id "$container_id"
+  # Assert
+  assert_success
+  assert_output ""
+}
+
+# Tests for vedv::container_entity::validate_name()
+@test "vedv::container_entity::validate_name() Should succeed" {
+  # Setup
+  local -r container_name="ct1"
+  # Mock
+  vedv::vmobj_entity::validate_name() {
+    assert_equal "$*" "ct1"
+  }
+  # Act
+  run vedv::container_entity::validate_name "$container_name"
+  # Assert
+  assert_success
+  assert_output ""
+}

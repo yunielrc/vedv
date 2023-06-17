@@ -112,7 +112,97 @@ gen_vm_clone_name() {
   assert_success
   assert_output --partial "Snapshot taken"
 }
+# Tests for vedv::hypervisor::clonevm()
+# bats test_tags=only
+@test "vedv::hypervisor::clonevm() Should fail with invalid vm_name" {
+  local -r vm_name='vm'
+  local -r vm_clone_name='vm_clone'
 
+  run vedv::hypervisor::clonevm "$vm_name" "$vm_clone_name"
+
+  assert_failure
+  assert_output "The vm_name name cannot be shorter than 5 characters"
+}
+# bats test_tags=only
+@test "vedv::hypervisor::clonevm() Should fail with invalid vm_clone_name" {
+  local -r vm_name='vm_name1'
+  local -r vm_clone_name='vmc'
+
+  run vedv::hypervisor::clonevm "$vm_name" "$vm_clone_name"
+
+  assert_failure
+  assert_output "The clone_vm_name name cannot be shorter than 5 characters"
+}
+# bats test_tags=only
+@test "vedv::hypervisor::clonevm() Should fail If clonevm fails" {
+  local -r vm_name='vm_name1'
+  local -r vm_clone_name='clone_name1'
+  local -r vm_snapshot='snapshot1'
+
+  VBoxManage() {
+    if [[ "$1" == 'clonevm' ]]; then
+      assert_equal "$*" "clonevm vm_name1 --name clone_name1 --register --snapshot snapshot1"
+      return 1
+    fi
+  }
+
+  run vedv::hypervisor::clonevm "$vm_name" "$vm_clone_name" "$vm_snapshot"
+
+  assert_failure
+  assert_output "Failed to clone VM 'vm_name1' to 'clone_name1' from snapshot 'snapshot1'"
+}
+# bats test_tags=only
+@test "vedv::hypervisor::clonevm() Should succeed" {
+  local -r vm_name='vm_name1'
+  local -r vm_clone_name='clone_name1'
+  local -r vm_snapshot='snapshot1'
+
+  VBoxManage() {
+    if [[ "$1" == 'clonevm' ]]; then
+      assert_equal "$*" "clonevm vm_name1 --name clone_name1 --register --snapshot snapshot1"
+    fi
+  }
+
+  run vedv::hypervisor::clonevm "$vm_name" "$vm_clone_name" "$vm_snapshot"
+
+  assert_success
+  assert_output ""
+}
+# bats test_tags=only
+@test "vedv::hypervisor::clonevm() Should fail If clonevm fails without snapshot" {
+  local -r vm_name='vm_name1'
+  local -r vm_clone_name='clone_name1'
+  local -r vm_snapshot=''
+
+  VBoxManage() {
+    if [[ "$1" == 'clonevm' ]]; then
+      assert_equal "$*" "clonevm vm_name1 --name clone_name1 --register"
+      return 1
+    fi
+  }
+
+  run vedv::hypervisor::clonevm "$vm_name" "$vm_clone_name" "$vm_snapshot"
+
+  assert_failure
+  assert_output "Failed to clone VM 'vm_name1' to 'clone_name1'"
+}
+# bats test_tags=only
+@test "vedv::hypervisor::clonevm() Should succeed without snapshot" {
+  local -r vm_name='vm_name1'
+  local -r vm_clone_name='clone_name1'
+  local -r vm_snapshot=''
+
+  VBoxManage() {
+    if [[ "$1" == 'clonevm' ]]; then
+      assert_equal "$*" "clonevm vm_name1 --name clone_name1 --register"
+    fi
+  }
+
+  run vedv::hypervisor::clonevm "$vm_name" "$vm_clone_name" "$vm_snapshot"
+
+  assert_success
+  assert_output ""
+}
 # Tests for vedv::hypervisor::clonevm_link()
 @test "vedv::hypervisor::clonevm_link(), with 'vm_name' undefined should return error" {
   run vedv::hypervisor::clonevm_link
@@ -130,13 +220,13 @@ gen_vm_clone_name() {
 }
 
 @test "vedv::hypervisor::clonevm_link(), with a 'vm_name' that doesn't exist should return error" {
-  local -r vm_name='vm'
+  local -r vm_name='vm_name1'
   local -r vm_clone_name='vm_clone'
 
   run vedv::hypervisor::clonevm_link "$vm_name" "$vm_clone_name"
 
   assert_failure
-  assert_output --partial "Could not find a registered machine named 'vm'"
+  assert_output --partial "Could not find a registered machine named 'vm_name1'"
 }
 
 @test "vedv::hypervisor::clonevm_link(), should clone the vm" {
@@ -150,6 +240,143 @@ gen_vm_clone_name() {
   assert_output --partial "Machine has been successfully cloned"
 }
 
+@test "vedv::hypervisor::clonevm_link() Should fail with invalid vm_name" {
+  local -r vm_name='vm'
+  local -r vm_clone_name='vm_clone'
+
+  run vedv::hypervisor::clonevm_link "$vm_name" "$vm_clone_name"
+
+  assert_failure
+  assert_output "The vm_name name cannot be shorter than 5 characters"
+}
+
+@test "vedv::hypervisor::clonevm_link() Should fail with invalid vm_clone_name" {
+  local -r vm_name='vm_name1'
+  local -r vm_clone_name='vmc'
+
+  run vedv::hypervisor::clonevm_link "$vm_name" "$vm_clone_name"
+
+  assert_failure
+  assert_output "The clone_vm_name name cannot be shorter than 5 characters"
+}
+
+@test "vedv::hypervisor::clonevm_link() Should fail If take_snapshot fails" {
+  local -r vm_name='vm_name1'
+  local -r vm_clone_name='clone_name1'
+  local -r vm_snapshot='snapshot1'
+  local -r create_snapshot='true'
+
+  vedv::hypervisor::take_snapshot() {
+    assert_equal "$*" "vm_name1 clone_name1"
+    return 1
+  }
+
+  run vedv::hypervisor::clonevm_link "$vm_name" "$vm_clone_name" "$vm_snapshot"
+
+  assert_failure
+  assert_output "Failed to create snapshot '${vm_clone_name}'"
+}
+
+@test "vedv::hypervisor::clonevm_link() Should fail If clonevm fails" {
+  local -r vm_name='vm_name1'
+  local -r vm_clone_name='clone_name1'
+  local -r vm_snapshot='snapshot1'
+  local -r create_snapshot='true'
+
+  vedv::hypervisor::take_snapshot() {
+    assert_equal "$*" "vm_name1 clone_name1"
+  }
+  VBoxManage() {
+    if [[ "$1" == 'clonevm' ]]; then
+      assert_equal "$*" "clonevm vm_name1 --name clone_name1 --register --options link --snapshot snapshot1"
+      return 1
+    fi
+  }
+  vedv::hypervisor::delete_snapshot() {
+    assert_equal "$*" "vm_name1 clone_name1"
+    return 1
+  }
+
+  run vedv::hypervisor::clonevm_link "$vm_name" "$vm_clone_name" "$vm_snapshot"
+
+  assert_failure
+  assert_output "Failed to delete snapshot 'clone_name1'
+Failed to clone VM 'vm_name1' to 'clone_name1'"
+}
+
+@test "vedv::hypervisor::clonevm_link() Should fail If clonevm fails 2" {
+  local -r vm_name='vm_name1'
+  local -r vm_clone_name='clone_name1'
+  local -r vm_snapshot='snapshot1'
+  local -r create_snapshot='true'
+
+  vedv::hypervisor::take_snapshot() {
+    assert_equal "$*" "vm_name1 clone_name1"
+  }
+  VBoxManage() {
+    if [[ "$1" == 'clonevm' ]]; then
+      assert_equal "$*" "clonevm vm_name1 --name clone_name1 --register --options link --snapshot snapshot1"
+      return 1
+    fi
+  }
+  vedv::hypervisor::delete_snapshot() {
+    assert_equal "$*" "vm_name1 clone_name1"
+  }
+
+  run vedv::hypervisor::clonevm_link "$vm_name" "$vm_clone_name" "$vm_snapshot"
+
+  assert_failure
+  assert_output "Failed to clone VM 'vm_name1' to 'clone_name1'"
+}
+
+@test "vedv::hypervisor::clonevm_link() Should fail With create_snapshot=false and clonevm fails" {
+  local -r vm_name='vm_name1'
+  local -r vm_clone_name='clone_name1'
+  local -r vm_snapshot='snapshot1'
+  local -r create_snapshot='false'
+
+  vedv::hypervisor::take_snapshot() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+  VBoxManage() {
+    if [[ "$1" == 'clonevm' ]]; then
+      assert_equal "$*" "clonevm vm_name1 --name clone_name1 --register --options link --snapshot snapshot1"
+      return 1
+    fi
+  }
+  vedv::hypervisor::delete_snapshot() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+
+  run vedv::hypervisor::clonevm_link "$vm_name" "$vm_clone_name" "$vm_snapshot" "$create_snapshot"
+
+  assert_failure
+  assert_output "Failed to clone VM 'vm_name1' to 'clone_name1'"
+}
+
+@test "vedv::hypervisor::clonevm_link() Should succeed" {
+  local -r vm_name='vm_name1'
+  local -r vm_clone_name='clone_name1'
+  local -r vm_snapshot='snapshot1'
+  local -r create_snapshot='true'
+
+  vedv::hypervisor::take_snapshot() {
+    assert_equal "$*" "vm_name1 clone_name1"
+  }
+  VBoxManage() {
+    if [[ "$1" == 'clonevm' ]]; then
+      assert_equal "$*" "clonevm vm_name1 --name clone_name1 --register --options link --snapshot snapshot1"
+    fi
+  }
+  vedv::hypervisor::delete_snapshot() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+
+  run vedv::hypervisor::clonevm_link "$vm_name" "$vm_clone_name" "$vm_snapshot"
+
+  assert_success
+  assert_output ""
+}
 # Tests for vedv::hypervisor::list_vms_by_partial_name()
 @test "vedv::hypervisor::list_vms_by_partial_name, with 'vm_partial_name()' that doesn't exist should print an empty list" {
   local -r vm_partial_name='container:happy'
@@ -474,12 +701,6 @@ ${snapshot_name2}"
   assert_output "$(echo -e "$create_m_out" | sed 's/.*UUID:\s\+//' | head -n 2)"
 }
 
-# Tests for vedv::hypervisor::clonevm()
-@test "vedv::hypervisor::clonevm(): DUMMY" {
-  :
-  # TODO: implement test
-}
-
 # Tests for vedv::hypervisor::get_forwarding_ports()
 
 @test "vedv::hypervisor::get_forwarding_ports(): Should fail With empty vm_name" {
@@ -522,7 +743,7 @@ http,tcp,,8080,,80'
 }
 
 # Tests for vedv::hypervisor::start()
-# bats test_tags=only
+
 @test "vedv::hypervisor::start(): Should fail With empty vm_name" {
   local -r vm_name=""
 
@@ -531,7 +752,7 @@ http,tcp,,8080,,80'
   assert_failure "$ERR_INVAL_ARG"
   assert_output "Argument 'vm_name' must not be empty"
 }
-# bats test_tags=only
+
 @test "vedv::hypervisor::start(): Should fail With vm_name that doesn't exist" {
   local -r vm_name="vm_name1"
 
@@ -545,7 +766,7 @@ http,tcp,,8080,,80'
   assert_failure
   assert_output "Failed to start VM ${vm_name}"
 }
-# bats test_tags=only
+
 @test "vedv::hypervisor::start(): Should succeed" {
   local -r vm_name="vm_name1"
   local -r show_gui='true'

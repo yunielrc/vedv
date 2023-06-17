@@ -602,8 +602,8 @@ setup() {
   assert_failure
   assert_output "Error getting the description for the vm name: 'container:foo-bar|crc:1234567890|'"
 }
-
-@test "vedv::vmobj_entity::get_dictionary() Should fail If description is empty" {
+# bats test_tags=only
+@test "vedv::vmobj_entity::get_dictionary() Should fail if __create_new_vmobj_dict fails" {
   # Setup
   local -r type="container"
   local -r vmobj_id="1234567890"
@@ -619,13 +619,43 @@ setup() {
     assert_equal "$*" "container:foo-bar|crc:1234567890|"
     echo ""
   }
+  vedv::vmobj_entity::__create_new_vmobj_dict() {
+    assert_equal "$*" "container"
+    return 1
+  }
   # Execute
   run vedv::vmobj_entity::get_dictionary "$type" "$vmobj_id"
   # Assert
   assert_failure
-  assert_output "Description for the vm name: 'container:foo-bar|crc:1234567890|' is empty"
+  assert_output "Failed to create new dictionary for the container: '1234567890'"
 }
-
+# bats test_tags=only
+@test "vedv::vmobj_entity::get_dictionary() Should succeed if __create_new_vmobj_dict succeeds" {
+  # Setup
+  local -r type="container"
+  local -r vmobj_id="1234567890"
+  # Stub
+  vedv::vmobj_entity::__memcache_get_data() {
+    assert_equal "$*" "container 1234567890"
+  }
+  vedv::hypervisor::list_vms_by_partial_name() {
+    assert_equal "$*" 'container:[[:lower:]]\(-\|_\|[[:lower:]]\|[[:digit:]]\)\{,28\}\([[:lower:]]\|[[:digit:]]\)|crc:1234567890|'
+    echo "container:foo-bar|crc:1234567890|"
+  }
+  vedv::hypervisor::get_description() {
+    assert_equal "$*" "container:foo-bar|crc:1234567890|"
+    echo ""
+  }
+  vedv::vmobj_entity::__create_new_vmobj_dict() {
+    assert_equal "$*" "container"
+    echo '([parent_image_id]="alpine1" [ssh_port]=22)'
+  }
+  # Execute
+  run vedv::vmobj_entity::get_dictionary "$type" "$vmobj_id"
+  # Assert
+  assert_success
+  assert_output '([parent_image_id]="alpine1" [ssh_port]=22)'
+}
 @test "vedv::vmobj_entity::get_dictionary() Should fail If dictionary is empty" {
   # Setup
   local -r type="container"
@@ -738,7 +768,7 @@ setup() {
   assert_output "22"
 }
 
-# Test vedv::vmobj_entity::__set_attribute()
+# Tests for vedv::vmobj_entity::__set_attribute()
 
 @test 'vedv::vmobj_entity::__set_attribute() Should fail With invalid type' {
   local -r type='invalid'
@@ -776,7 +806,7 @@ setup() {
   assert_output --partial "Invalid attribute: invalid, valid attributes are: vm_name|ssh_port|user_name|workdir|environment|exposed_ports|shell|parent_image_id"
 }
 
-@test 'vedv::vmobj_entity::__set_attribute() Should fail If list_vms_by_partial_name fails' {
+@test 'vedv::vmobj_entity::__set_attribute() Should succeed' {
   local -r type='container'
   local -r vmobj_id='1234567890'
   local -r attribute='ssh_port'
@@ -785,233 +815,8 @@ setup() {
   vedv::vmobj_entity::__validate_attribute() {
     assert_equal "$*" 'container ssh_port'
   }
-  vedv::hypervisor::list_vms_by_partial_name() {
-    assert_equal "$*" 'container:[[:lower:]]\(-\|_\|[[:lower:]]\|[[:digit:]]\)\{,28\}\([[:lower:]]\|[[:digit:]]\)|crc:1234567890|'
-    return 1
-  }
-
-  run vedv::vmobj_entity::__set_attribute "$type" "$vmobj_id" "$attribute" "$value"
-
-  assert_failure
-  assert_output "Error getting the vm name for the container: '1234567890'"
-}
-
-@test 'vedv::vmobj_entity::__set_attribute() Should fail If vm_name is empty' {
-  local -r type='container'
-  local -r vmobj_id='1234567890'
-  local -r attribute='ssh_port'
-  local -r value=22
-
-  vedv::vmobj_entity::__validate_attribute() {
-    assert_equal "$*" 'container ssh_port'
-  }
-  vedv::hypervisor::list_vms_by_partial_name() {
-    assert_equal "$*" 'container:[[:lower:]]\(-\|_\|[[:lower:]]\|[[:digit:]]\)\{,28\}\([[:lower:]]\|[[:digit:]]\)|crc:1234567890|'
-  }
-
-  run vedv::vmobj_entity::__set_attribute "$type" "$vmobj_id" "$attribute" "$value"
-
-  assert_failure
-  assert_output "Container with id '1234567890' not found"
-}
-
-@test 'vedv::vmobj_entity::__set_attribute() Should fail If get_description fails' {
-  local -r type='container'
-  local -r vmobj_id='1234567890'
-  local -r attribute='ssh_port'
-  local -r value=22
-
-  vedv::vmobj_entity::__validate_attribute() {
-    assert_equal "$*" 'container ssh_port'
-  }
-  vedv::hypervisor::list_vms_by_partial_name() {
-    assert_equal "$*" 'container:[[:lower:]]\(-\|_\|[[:lower:]]\|[[:digit:]]\)\{,28\}\([[:lower:]]\|[[:digit:]]\)|crc:1234567890|'
-    echo 'container:foo-foo|crc:1234567890|'
-  }
-  vedv::hypervisor::get_description() {
-    assert_equal "$*" 'container:foo-foo|crc:1234567890|'
-    return 1
-  }
-
-  run vedv::vmobj_entity::__set_attribute "$type" "$vmobj_id" "$attribute" "$value"
-
-  assert_failure
-  assert_output "Error getting the description for the vm name: 'container:foo-foo|crc:1234567890|'"
-}
-
-@test 'vedv::vmobj_entity::__set_attribute() Should fail If __create_new_vmobj_dict fails' {
-  local -r type='container'
-  local -r vmobj_id='1234567890'
-  local -r attribute='ssh_port'
-  local -r value=22
-
-  vedv::vmobj_entity::__validate_attribute() {
-    assert_equal "$*" 'container ssh_port'
-  }
-  vedv::hypervisor::list_vms_by_partial_name() {
-    assert_equal "$*" 'container:[[:lower:]]\(-\|_\|[[:lower:]]\|[[:digit:]]\)\{,28\}\([[:lower:]]\|[[:digit:]]\)|crc:1234567890|'
-    echo 'container:foo-foo|crc:1234567890|'
-  }
-  vedv::hypervisor::get_description() {
-    assert_equal "$*" 'container:foo-foo|crc:1234567890|'
-  }
-  vedv::vmobj_entity::__create_new_vmobj_dict() {
-    assert_equal "$*" 'container'
-    return 1
-  }
-
-  run vedv::vmobj_entity::__set_attribute "$type" "$vmobj_id" "$attribute" "$value"
-
-  assert_failure
-  assert_output "Failed to create a new vmobj dictionary for the container: '1234567890'"
-}
-
-@test 'vedv::vmobj_entity::__set_attribute() Should fail If dictionary has invalid syntax' {
-  local -r type='container'
-  local -r vmobj_id='1234567890'
-  local -r attribute='ssh_port'
-  local -r value=22
-
-  vedv::vmobj_entity::__validate_attribute() {
-    assert_equal "$*" 'container ssh_port'
-  }
-  vedv::hypervisor::list_vms_by_partial_name() {
-    assert_equal "$*" 'container:[[:lower:]]\(-\|_\|[[:lower:]]\|[[:digit:]]\)\{,28\}\([[:lower:]]\|[[:digit:]]\)|crc:1234567890|'
-    echo 'container:foo-foo|crc:23456|'
-  }
-  vedv::hypervisor::get_description() {
-    assert_equal "$*" 'container:foo-foo|crc:1234567890|'
-    echo '([parent_image_id]="alpine1" [ssh_port]=22'
-  }
-  vedv::vmobj_entity::__get_valid_attributes() {
-    assert_equal "$*" 'INVALID_CALL'
-  }
-
-  run vedv::vmobj_entity::__set_attribute "$type" "$vmobj_id" "$attribute" "$value"
-
-  assert_failure
-  assert_output --partial "eval:"
-}
-
-@test 'vedv::vmobj_entity::__set_attribute() Should fail If __memcache_set_data fails' {
-  local -r type='container'
-  local -r vmobj_id='1234567890'
-  local -r attribute='ssh_port'
-  local -r value=2022
-
-  vedv::vmobj_entity::__validate_attribute() {
-    assert_equal "$*" 'container ssh_port'
-  }
-  vedv::hypervisor::list_vms_by_partial_name() {
-    assert_equal "$*" 'container:[[:lower:]]\(-\|_\|[[:lower:]]\|[[:digit:]]\)\{,28\}\([[:lower:]]\|[[:digit:]]\)|crc:1234567890|'
-    echo 'container:foo-foo|crc:1234567890|'
-  }
-  vedv::hypervisor::get_description() {
-    assert_equal "$*" 'container:foo-foo|crc:1234567890|'
-    echo '([parent_image_id]="alpine1" [ssh_port]=22)'
-  }
-  vedv::vmobj_entity::__get_valid_attributes() {
-    assert_equal "$*" 'INVALID_CALL'
-  }
-  vedv::vmobj_entity::__memcache_set_data() {
-    assert_equal "$*" 'container 1234567890 ([parent_image_id]="alpine1" [ssh_port]="2022" )'
-    return 1
-  }
-
-  run vedv::vmobj_entity::__set_attribute "$type" "$vmobj_id" "$attribute" "$value"
-
-  assert_failure
-  assert_output "Failed to update memory cache for the container: '1234567890'"
-}
-
-@test 'vedv::vmobj_entity::__set_attribute() Should fail If set_description fails' {
-  local -r type='container'
-  local -r vmobj_id='1234567890'
-  local -r attribute='ssh_port'
-  local -r value=2022
-
-  vedv::vmobj_entity::__validate_attribute() {
-    assert_equal "$*" 'container ssh_port'
-  }
-  vedv::hypervisor::list_vms_by_partial_name() {
-    assert_equal "$*" 'container:[[:lower:]]\(-\|_\|[[:lower:]]\|[[:digit:]]\)\{,28\}\([[:lower:]]\|[[:digit:]]\)|crc:1234567890|'
-    echo 'container:foo-foo|crc:1234567890|'
-  }
-  vedv::hypervisor::get_description() {
-    assert_equal "$*" 'container:foo-foo|crc:1234567890|'
-    echo '([parent_image_id]="alpine1" [ssh_port]=22)'
-  }
-  vedv::vmobj_entity::__get_valid_attributes() {
-    assert_equal "$*" 'INVALID_CALL'
-  }
-  vedv::vmobj_entity::__memcache_set_data() {
-    assert_equal "$*" 'container 1234567890 ([parent_image_id]="alpine1" [ssh_port]="2022" )'
-  }
-  vedv::hypervisor::set_description() {
-    assert_equal "$*" 'container:foo-foo|crc:1234567890| ([parent_image_id]="alpine1" [ssh_port]="2022" )'
-    return 1
-  }
-
-  run vedv::vmobj_entity::__set_attribute "$type" "$vmobj_id" "$attribute" "$value"
-
-  assert_failure
-  assert_output "Failed to set description of vm: container:foo-foo|crc:1234567890|"
-}
-
-@test 'vedv::vmobj_entity::__set_attribute() Should succeed With existing dictionary' {
-  local -r type='container'
-  local -r vmobj_id='1234567890'
-  local -r attribute='ssh_port'
-  local -r value=2022
-
-  vedv::vmobj_entity::__validate_attribute() {
-    assert_equal "$*" 'container ssh_port'
-  }
-  vedv::hypervisor::list_vms_by_partial_name() {
-    assert_equal "$*" 'container:[[:lower:]]\(-\|_\|[[:lower:]]\|[[:digit:]]\)\{,28\}\([[:lower:]]\|[[:digit:]]\)|crc:1234567890|'
-    echo 'container:foo-foo|crc:1234567890|'
-  }
-  vedv::hypervisor::get_description() {
-    assert_equal "$*" 'container:foo-foo|crc:1234567890|'
-    echo '([parent_image_id]="alpine1" [ssh_port]=22)'
-  }
-  vedv::vmobj_entity::__get_valid_attributes() {
-    assert_equal "$*" 'INVALID_CALL'
-  }
-  vedv::vmobj_entity::__memcache_set_data() {
-    assert_equal "$*" 'container 1234567890 ([parent_image_id]="alpine1" [ssh_port]="2022" )'
-  }
-  vedv::hypervisor::set_description() {
-    assert_equal "$*" 'container:foo-foo|crc:1234567890| ([parent_image_id]="alpine1" [ssh_port]="2022" )'
-  }
-
-  run vedv::vmobj_entity::__set_attribute "$type" "$vmobj_id" "$attribute" "$value"
-
-  assert_success
-  assert_output ""
-}
-# bats test_tags=only
-@test 'vedv::vmobj_entity::__set_attribute() Should succeed With new dictionary' {
-  local -r type='container'
-  local -r vmobj_id='1234567890'
-  local -r attribute='ssh_port'
-  local -r value=2022
-
-  vedv::vmobj_entity::__validate_attribute() {
-    assert_equal "$*" 'container ssh_port'
-  }
-  vedv::hypervisor::list_vms_by_partial_name() {
-    assert_equal "$*" "${type}:${VEDV_VMOBJ_ENTITY_BREGEX_NAME}|crc:${vmobj_id}|"
-    echo 'container:foo-foo|crc:1234567890|'
-  }
-  vedv::hypervisor::get_description() {
-    assert_equal "$*" 'container:foo-foo|crc:1234567890|'
-  }
-  vedv::vmobj_entity::__memcache_set_data() {
-    assert_equal "$*" 'container 1234567890 ([user_name]="" [shell]="" [workdir]="" [exposed_ports]="" [parent_image_id]="" [ssh_port]="2022" [environment]="" [vm_name]="" )'
-  }
-  vedv::hypervisor::set_description() {
-    assert_equal "$*" 'container:foo-foo|crc:1234567890| ([user_name]="" [shell]="" [workdir]="" [exposed_ports]="" [parent_image_id]="" [ssh_port]="2022" [environment]="" [vm_name]="" )'
+  vedv::vmobj_entity::set_dictionary() {
+    assert_equal "$*" 'container 1234567890 ([ssh_port]="22" )'
   }
 
   run vedv::vmobj_entity::__set_attribute "$type" "$vmobj_id" "$attribute" "$value"
@@ -1888,4 +1693,250 @@ setup() {
 
   assert_success
   assert_output 'container:name1-last_name1-age6|crc:[[:digit:]]\{6,11\}|'
+}
+
+# Tests for vedv::vmobj_entity::set_dictionary()
+
+@test "vedv::vmobj_entity::set_dictionary() Should fail with an invalid type" {
+  local -r type='invalid'
+  local -r vmobj_id='abc'
+  local -r dictionary_str=''
+
+  run vedv::vmobj_entity::set_dictionary "$type" "$vmobj_id" "$dictionary_str"
+
+  assert_failure
+  assert_output "Invalid type: invalid, valid types are: container|image"
+}
+
+@test "vedv::vmobj_entity::set_dictionary() Should fail with invalid vmobj_id" {
+  local -r type='container'
+  local -r vmobj_id='abc'
+  local -r dictionary_str=''
+
+  run vedv::vmobj_entity::set_dictionary "$type" "$vmobj_id" "$dictionary_str"
+
+  assert_failure
+  assert_output "Invalid argument 'abc'"
+}
+
+@test "vedv::vmobj_entity::set_dictionary() Should fail with empty dictionary_str" {
+  local -r type='container'
+  local -r vmobj_id='1234567890'
+  local -r dictionary_str=''
+
+  run vedv::vmobj_entity::set_dictionary "$type" "$vmobj_id" "$dictionary_str"
+
+  assert_failure
+  assert_output "Argument 'dictionary_str' is empty"
+}
+
+@test "vedv::vmobj_entity::set_dictionary() Should fail with invalid dictionary" {
+  local -r type='container'
+  local -r vmobj_id='1234567890'
+  local -r dictionary_str='('
+
+  run vedv::vmobj_entity::set_dictionary "$type" "$vmobj_id" "$dictionary_str"
+
+  assert_failure
+}
+
+@test "vedv::vmobj_entity::set_dictionary() Should fail with empty dictionary" {
+  local -r type='container'
+  local -r vmobj_id='1234567890'
+  local -r dictionary_str='()'
+
+  run vedv::vmobj_entity::set_dictionary "$type" "$vmobj_id" "$dictionary_str"
+
+  assert_failure
+  assert_output "Dictionary for argument 'dictionary_str' is empty"
+}
+
+@test "vedv::vmobj_entity::set_dictionary() Should fail If list_vms_by_partial_name fails" {
+  local -r type='container'
+  local -r vmobj_id='1234567890'
+  local -r dictionary_str='([parent_image_id]="2234567890" [ssh_port]=22)'
+
+  vedv::hypervisor::list_vms_by_partial_name() {
+    assert_equal "$*" 'container:[[:lower:]]\(-\|_\|[[:lower:]]\|[[:digit:]]\)\{,28\}\([[:lower:]]\|[[:digit:]]\)|crc:1234567890|'
+    return 1
+  }
+
+  run vedv::vmobj_entity::set_dictionary "$type" "$vmobj_id" "$dictionary_str"
+
+  assert_failure
+  assert_output "Error getting the vm name for the container: '1234567890'"
+}
+
+@test "vedv::vmobj_entity::set_dictionary() Should fail If there is no vm for vmobj_id" {
+  local -r type='container'
+  local -r vmobj_id='1234567890'
+  local -r dictionary_str='([parent_image_id]="2234567890" [ssh_port]=22)'
+
+  vedv::hypervisor::list_vms_by_partial_name() {
+    assert_equal "$*" 'container:[[:lower:]]\(-\|_\|[[:lower:]]\|[[:digit:]]\)\{,28\}\([[:lower:]]\|[[:digit:]]\)|crc:1234567890|'
+  }
+
+  run vedv::vmobj_entity::set_dictionary "$type" "$vmobj_id" "$dictionary_str"
+
+  assert_failure
+  assert_output "Container with id '1234567890' not found"
+}
+
+@test "vedv::vmobj_entity::set_dictionary() Should fail If get_description fails" {
+  local -r type='container'
+  local -r vmobj_id='1234567890'
+  local -r dictionary_str='([parent_image_id]="2234567890" [ssh_port]=22)'
+
+  vedv::hypervisor::list_vms_by_partial_name() {
+    assert_equal "$*" 'container:[[:lower:]]\(-\|_\|[[:lower:]]\|[[:digit:]]\)\{,28\}\([[:lower:]]\|[[:digit:]]\)|crc:1234567890|'
+    echo 'container:ct1|crc:1234567890|'
+  }
+  vedv::hypervisor::get_description() {
+    assert_equal "$*" 'container:ct1|crc:1234567890|'
+    return 1
+  }
+
+  run vedv::vmobj_entity::set_dictionary "$type" "$vmobj_id" "$dictionary_str"
+
+  assert_failure
+  assert_output "Failed to get saved dictionary for the container: '1234567890'"
+}
+
+@test "vedv::vmobj_entity::set_dictionary() Should fail If __create_new_new_dict fails" {
+  local -r type='container'
+  local -r vmobj_id='1234567890'
+  local -r dictionary_str='([parent_image_id]="2234567890" [ssh_port]=22 [invalid_prop]="invalid_prop_val")'
+
+  vedv::hypervisor::list_vms_by_partial_name() {
+    assert_equal "$*" 'container:[[:lower:]]\(-\|_\|[[:lower:]]\|[[:digit:]]\)\{,28\}\([[:lower:]]\|[[:digit:]]\)|crc:1234567890|'
+    echo 'container:ct1|crc:1234567890|'
+  }
+  vedv::hypervisor::get_description() {
+    assert_equal "$*" 'container:ct1|crc:1234567890|'
+    echo '([ssh_port]="3022" [user_name]="nalyd")'
+  }
+  vedv::vmobj_entity::__create_new_vmobj_dict() {
+    assert_equal "$*" 'container'
+    return 1
+  }
+
+  run vedv::vmobj_entity::set_dictionary "$type" "$vmobj_id" "$dictionary_str"
+
+  assert_failure
+  assert_output "Failed to create a new vmobj dictionary for the container: '1234567890'"
+}
+
+@test "vedv::vmobj_entity::set_dictionary() Should fail If __memcache_set_data fails" {
+  local -r type='container'
+  local -r vmobj_id='1234567890'
+  local -r dictionary_str='([parent_image_id]="2234567890" [ssh_port]=22 [invalid_prop]="invalid_prop_val" [shell]="bash")'
+
+  vedv::hypervisor::list_vms_by_partial_name() {
+    assert_equal "$*" 'container:[[:lower:]]\(-\|_\|[[:lower:]]\|[[:digit:]]\)\{,28\}\([[:lower:]]\|[[:digit:]]\)|crc:1234567890|'
+    echo 'container:ct1|crc:1234567890|'
+  }
+  vedv::hypervisor::get_description() {
+    assert_equal "$*" 'container:ct1|crc:1234567890|'
+    echo '([ssh_port]="3022" [user_name]="nalyd" [parent_image_id]="3234567890" [shell]="zsh"  [invalid_prop2]="invalid_prop2_val")'
+  }
+  vedv::vmobj_entity::__create_new_vmobj_dict() {
+    assert_equal "$*" 'container'
+    echo '([vm_name]="" [ssh_port]="" [user_name]="" [workdir]="" [environment]="" [exposed_ports]="" [shell]="" [parent_image_id]="")'
+  }
+  vedv::vmobj_entity::__memcache_set_data() {
+    assert_equal "$*" 'container 1234567890 ([user_name]="nalyd" [shell]="bash" [workdir]="" [exposed_ports]="" [parent_image_id]="2234567890" [ssh_port]="22" [environment]="" [vm_name]="" )'
+    return 1
+  }
+
+  run vedv::vmobj_entity::set_dictionary "$type" "$vmobj_id" "$dictionary_str"
+
+  assert_failure
+  assert_output "Failed to update memory cache for the container: '1234567890'"
+}
+
+@test "vedv::vmobj_entity::set_dictionary() Should fail If set_description fails" {
+  local -r type='container'
+  local -r vmobj_id='1234567890'
+  local -r dictionary_str='([parent_image_id]="2234567890" [ssh_port]=22 [invalid_prop]="invalid_prop_val" [shell]="bash")'
+
+  vedv::hypervisor::list_vms_by_partial_name() {
+    assert_equal "$*" 'container:[[:lower:]]\(-\|_\|[[:lower:]]\|[[:digit:]]\)\{,28\}\([[:lower:]]\|[[:digit:]]\)|crc:1234567890|'
+    echo 'container:ct1|crc:1234567890|'
+  }
+  vedv::hypervisor::get_description() {
+    assert_equal "$*" 'container:ct1|crc:1234567890|'
+    echo '([ssh_port]="3022" [user_name]="nalyd" [parent_image_id]="3234567890" [shell]="zsh"  [invalid_prop2]="invalid_prop2_val")'
+  }
+  vedv::vmobj_entity::__create_new_vmobj_dict() {
+    assert_equal "$*" 'container'
+    echo '([vm_name]="" [ssh_port]="" [user_name]="" [workdir]="" [environment]="" [exposed_ports]="" [shell]="" [parent_image_id]="")'
+  }
+  vedv::vmobj_entity::__memcache_set_data() {
+    assert_equal "$*" 'container 1234567890 ([user_name]="nalyd" [shell]="bash" [workdir]="" [exposed_ports]="" [parent_image_id]="2234567890" [ssh_port]="22" [environment]="" [vm_name]="" )'
+  }
+  vedv::hypervisor::set_description() {
+    assert_equal "$*" 'container:ct1|crc:1234567890| ([user_name]="nalyd" [shell]="bash" [workdir]="" [exposed_ports]="" [parent_image_id]="2234567890" [ssh_port]="22" [environment]="" [vm_name]="" )'
+    return 1
+  }
+  run vedv::vmobj_entity::set_dictionary "$type" "$vmobj_id" "$dictionary_str"
+
+  assert_failure
+  assert_output "Failed to set description of vm: container:ct1|crc:1234567890|"
+}
+
+@test "vedv::vmobj_entity::set_dictionary() Should succeed" {
+  local -r type='container'
+  local -r vmobj_id='1234567890'
+  local -r dictionary_str='([parent_image_id]="2234567890" [ssh_port]=22 [invalid_prop]="invalid_prop_val" [shell]="bash")'
+
+  vedv::hypervisor::list_vms_by_partial_name() {
+    assert_equal "$*" 'container:[[:lower:]]\(-\|_\|[[:lower:]]\|[[:digit:]]\)\{,28\}\([[:lower:]]\|[[:digit:]]\)|crc:1234567890|'
+    echo 'container:ct1|crc:1234567890|'
+  }
+  vedv::hypervisor::get_description() {
+    assert_equal "$*" 'container:ct1|crc:1234567890|'
+    echo '([ssh_port]="3022" [user_name]="nalyd" [parent_image_id]="3234567890" [shell]="zsh"  [invalid_prop2]="invalid_prop2_val")'
+  }
+  vedv::vmobj_entity::__create_new_vmobj_dict() {
+    assert_equal "$*" 'container'
+    echo '([vm_name]="" [ssh_port]="" [user_name]="" [workdir]="" [environment]="" [exposed_ports]="" [shell]="" [parent_image_id]="")'
+  }
+  vedv::vmobj_entity::__memcache_set_data() {
+    assert_equal "$*" 'container 1234567890 ([user_name]="nalyd" [shell]="bash" [workdir]="" [exposed_ports]="" [parent_image_id]="2234567890" [ssh_port]="22" [environment]="" [vm_name]="" )'
+  }
+  vedv::hypervisor::set_description() {
+    assert_equal "$*" 'container:ct1|crc:1234567890| ([user_name]="nalyd" [shell]="bash" [workdir]="" [exposed_ports]="" [parent_image_id]="2234567890" [ssh_port]="22" [environment]="" [vm_name]="" )'
+  }
+  run vedv::vmobj_entity::set_dictionary "$type" "$vmobj_id" "$dictionary_str"
+
+  assert_success
+  assert_output ""
+}
+
+@test "vedv::vmobj_entity::set_dictionary() Should succeed without previous saved dictionary" {
+  local -r type='container'
+  local -r vmobj_id='1234567890'
+  local -r dictionary_str='([parent_image_id]="2234567890" [ssh_port]=22 [invalid_prop]="invalid_prop_val" [shell]="bash")'
+
+  vedv::hypervisor::list_vms_by_partial_name() {
+    assert_equal "$*" 'container:[[:lower:]]\(-\|_\|[[:lower:]]\|[[:digit:]]\)\{,28\}\([[:lower:]]\|[[:digit:]]\)|crc:1234567890|'
+    echo 'container:ct1|crc:1234567890|'
+  }
+  vedv::hypervisor::get_description() {
+    assert_equal "$*" 'container:ct1|crc:1234567890|'
+  }
+  vedv::vmobj_entity::__create_new_vmobj_dict() {
+    assert_equal "$*" 'container'
+    echo '([vm_name]="" [ssh_port]="" [user_name]="" [workdir]="" [environment]="" [exposed_ports]="" [shell]="" [parent_image_id]="")'
+  }
+  vedv::vmobj_entity::__memcache_set_data() {
+    assert_equal "$*" 'container 1234567890 ([user_name]="" [shell]="bash" [workdir]="" [exposed_ports]="" [parent_image_id]="2234567890" [ssh_port]="22" [environment]="" [vm_name]="" )'
+  }
+  vedv::hypervisor::set_description() {
+    assert_equal "$*" 'container:ct1|crc:1234567890| ([user_name]="" [shell]="bash" [workdir]="" [exposed_ports]="" [parent_image_id]="2234567890" [ssh_port]="22" [environment]="" [vm_name]="" )'
+  }
+  run vedv::vmobj_entity::set_dictionary "$type" "$vmobj_id" "$dictionary_str"
+
+  assert_success
+  assert_output ""
 }

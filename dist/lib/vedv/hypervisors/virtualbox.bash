@@ -83,6 +83,8 @@ vedv::hypervisor::clonevm() {
   local -r vm_clone_name="$2"
   local -r vm_snapshot="${3:-}"
 
+  vedv::hypervisor::validate_vm_name "$vm_name" 'vm_name' ||
+    return $?
   if ! vedv::hypervisor::validate_vm_name "$vm_clone_name" 'clone_vm_name'; then
     return "$ERR_INVAL_ARG"
   fi
@@ -110,6 +112,7 @@ vedv::hypervisor::clonevm() {
 #   vm_name             name of the VM
 #   vm_clone_name       name of the cloned VM
 #   vm_snapshot         name of the snapshot that will be used to clone
+#   [create_snapshot]   create a snapshot before cloning (default: true)
 #
 # Returns:
 #   0 on success, non-zero on error.
@@ -118,16 +121,30 @@ vedv::hypervisor::clonevm_link() {
   local -r vm_name="$1"
   local -r vm_clone_name="$2"
   local -r vm_snapshot="${3:-"$vm_clone_name"}"
+  local -r create_snapshot="${4:-true}"
 
-  if ! vedv::hypervisor::validate_vm_name "$vm_clone_name" 'clone_vm_name'; then
-    return "$ERR_INVAL_ARG"
+  vedv::hypervisor::validate_vm_name "$vm_name" 'vm_name' ||
+    return $?
+  vedv::hypervisor::validate_vm_name "$vm_clone_name" 'clone_vm_name' ||
+    return $?
+
+  if [[ "$create_snapshot" == true ]]; then
+    vedv::hypervisor::take_snapshot "$vm_name" "$vm_clone_name" || {
+      err "Failed to create snapshot '${vm_clone_name}'"
+      return "$ERR_VIRTUALBOX_OPERATION"
+    }
   fi
-  vedv::hypervisor::take_snapshot "$vm_name" "$vm_clone_name"
 
   VBoxManage clonevm "$vm_name" --name "$vm_clone_name" --register \
     --options 'link' --snapshot "$vm_snapshot" || {
-    vedv::hypervisor::delete_snapshot "$vm_name" "$vm_clone_name"
+
+    if [[ "$create_snapshot" == true ]]; then
+      vedv::hypervisor::delete_snapshot "$vm_name" "$vm_clone_name" || {
+        err "Failed to delete snapshot '${vm_clone_name}'"
+      }
+    fi
     err "Failed to clone VM '${vm_name}' to '${vm_clone_name}'"
+
     return "$ERR_VIRTUALBOX_OPERATION"
   }
 }

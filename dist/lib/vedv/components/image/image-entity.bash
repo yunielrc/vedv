@@ -13,11 +13,66 @@ fi
 
 readonly VEDV_IMAGE_ENTITY_TYPE='image'
 # shellcheck disable=SC2034
-readonly VEDV_IMAGE_ENTITY_VALID_ATTRIBUTES='image_cache|ova_file_sum'
+readonly VEDV_IMAGE_ENTITY_VALID_ATTRIBUTES='image_cache|ova_file_sum|child_containers_ids'
 readonly VEDV_IMAGE_ENTITY_REGEX_LAYER_NAME='[A-Z]{2,10}'
+readonly VEDV_IMAGE_ENTITY_SNAPSHOT_TYPES='layer'
 # VARIABLES
 
 # FUNCTIONS
+
+#
+# Validate if given id is valid
+#
+# Arguments:
+#   id string   id to validate
+#
+# Output:
+#   Writes error message to stderr
+#
+# Returns:
+#   0 if valid, non-zero id if invalid
+#
+vedv::image_entity::validate_id() {
+  vedv::vmobj_entity::validate_id "$@"
+}
+
+#
+# Validate if image name is valid
+#
+# Arguments:
+#   image_name string   name to validate
+#
+# Output:
+#   Writes error message to stderr
+#
+# Returns:
+#   0 if valid, non-zero id if invalid
+#
+vedv::image_entity::validate_name() {
+  vedv::vmobj_entity::validate_name "$@"
+}
+
+#
+# Validate if given id is valid
+#
+# Arguments:
+#   layer_name string   layer_name to validate
+#
+# Output:
+#   Writes error message to stderr
+#
+# Returns:
+#   0 if valid, non-zero id if invalid
+#
+vedv::image_entity::validate_layer_name() {
+  local -r layer_name="$1"
+
+  if [[ ! "$layer_name" =~ ^${VEDV_IMAGE_ENTITY_REGEX_LAYER_NAME}$ ]]; then
+    err "Invalid layer name '${layer_name}'"
+    return "$ERR_INVAL_ARG"
+  fi
+  return 0
+}
 
 #
 # Generate image vm name
@@ -259,7 +314,7 @@ vedv::image_entity::__get_snapshots_names() {
     return "$ERR_INVAL_ARG"
   fi
 
-  local -r valid_types='container|layer'
+  local -r valid_types="$VEDV_IMAGE_ENTITY_SNAPSHOT_TYPES"
 
   if [[ "$_type" != @($valid_types) ]]; then
     err "Invalid type: ${_type}, valid values are: ${valid_types}"
@@ -300,7 +355,7 @@ vedv::image_entity::__get_snapshots_names() {
 # Returns:
 #   0 on success, non-zero on error.
 #
-vedv::image_entity::__get_child_ids() {
+vedv::image_entity::__get_snapshots_ids() {
   local -r image_id="$1"
   local -r _type="$2"
 
@@ -315,7 +370,7 @@ vedv::image_entity::__get_child_ids() {
 }
 
 #
-# Get child containers
+# Get child containers ids
 #
 # Arguments:
 #   image_id  string       image id
@@ -328,7 +383,103 @@ vedv::image_entity::__get_child_ids() {
 #
 vedv::image_entity::get_child_containers_ids() {
   local -r image_id="$1"
-  vedv::image_entity::__get_child_ids "$image_id" 'container'
+
+  vedv::vmobj_entity::__get_attribute \
+    "$VEDV_IMAGE_ENTITY_TYPE" \
+    "$image_id" \
+    'child_containers_ids'
+}
+
+#
+# Add child container id
+#
+# Arguments:
+#   image_id            string  image id
+#   child_container_id  string  child container id
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::image_entity::add_child_container_id() {
+  local -r image_id="$1"
+  local -r child_container_id="$2"
+  # validate arguments
+  vedv::vmobj_entity::validate_id "$image_id" ||
+    return "$?"
+  vedv::vmobj_entity::validate_id "$child_container_id" ||
+    return "$?"
+
+  local child_containers_ids_str=''
+  child_containers_ids_str="$(vedv::image_entity::get_child_containers_ids "$image_id")" || {
+    err "Failed to get child containers ids for image '${image_id}'"
+    return "$ERR_IMAGE_OPERATION"
+  }
+  readonly child_containers_ids_str
+
+  local -a child_containers_ids_arr=()
+  IFS=' ' read -r -a child_containers_ids_arr <<<"$child_containers_ids_str"
+
+  for el in "${child_containers_ids_arr[@]}"; do
+    if [[ "$el" == "$child_container_id" ]]; then
+      err "Failed to add child container '${child_container_id}' to image '${image_id}', it is already added"
+      return "$ERR_IMAGE_OPERATION"
+    fi
+  done
+
+  child_containers_ids_arr+=("$child_container_id")
+
+  vedv::vmobj_entity::__set_attribute \
+    "$VEDV_IMAGE_ENTITY_TYPE" \
+    "$image_id" \
+    'child_containers_ids' \
+    "${child_containers_ids_arr[*]}"
+}
+
+#
+# Remove child container id
+#
+# Arguments:
+#   image_id            string  image id
+#   child_container_id  string  child container id
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::image_entity::remove_child_container_id() {
+  local -r image_id="$1"
+  local -r child_container_id="$2"
+  # validate arguments
+  vedv::vmobj_entity::validate_id "$image_id" ||
+    return "$?"
+  vedv::vmobj_entity::validate_id "$child_container_id" ||
+    return "$?"
+
+  local child_containers_ids_str=''
+  child_containers_ids_str="$(vedv::image_entity::get_child_containers_ids "$image_id")" || {
+    err "Failed to get child containers ids for image '${image_id}'"
+    return "$ERR_IMAGE_OPERATION"
+  }
+  readonly child_containers_ids_str
+
+  local -a child_containers_ids_arr=()
+  IFS=' ' read -r -a child_containers_ids_arr <<<"$child_containers_ids_str"
+
+  for i in "${!child_containers_ids_arr[@]}"; do
+    if [[ "${child_containers_ids_arr[$i]}" == "$child_container_id" ]]; then
+      unset "child_containers_ids_arr[$i]"
+
+      vedv::vmobj_entity::__set_attribute \
+        "$VEDV_IMAGE_ENTITY_TYPE" \
+        "$image_id" \
+        'child_containers_ids' \
+        "${child_containers_ids_arr[*]}"
+
+      return 0
+    fi
+  done
+
+  err "Failed to remove child container '${child_container_id}' from image '${image_id}', it was not found"
+  return "$ERR_IMAGE_OPERATION"
 }
 
 #
@@ -362,6 +513,157 @@ vedv::image_entity::has_containers() {
 }
 
 #
+# Get layer at index
+#
+# Arguments:
+#   image_id string       image id
+#   index    int          layer index
+#
+# Output:
+#  Writes layers_ids (string) to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::image_entity::get_layer_at() {
+  local -r image_id="$1"
+  local -ri index="$2"
+  # validate arguments
+  vedv::image_entity::validate_id "$image_id" ||
+    return "$?"
+  if [[ $index -lt 0 ]]; then
+    err "Index must be greater or equal to 0"
+    return "$ERR_INVAL_VALUE"
+  fi
+
+  local layers_ids
+  layers_ids="$(vedv::image_entity::get_layers_ids "$image_id")" || {
+    err "Failed to get layers ids for image '${image_id}'"
+    return "$ERR_IMAGE_OPERATION"
+  }
+  readonly layers_ids
+
+  if [[ -z "$layers_ids" ]]; then
+    err "Failed to get layer id for image '${image_id}', it has no layers"
+    return "$ERR_INVAL_VALUE"
+  fi
+
+  local -a layers_ids_arr=()
+  IFS=' ' read -r -a layers_ids_arr <<<"$layers_ids"
+  readonly layers_ids_arr
+
+  if [[ $index -ge ${#layers_ids_arr[@]} ]]; then
+    err "Failed to get layer id for image '${image_id}', index '${index}' is out of range"
+    return "$ERR_INVAL_VALUE"
+  fi
+
+  echo "${layers_ids_arr[$index]}"
+}
+
+#
+# Get first layer id
+#
+# Arguments:
+#   image_id string       image id
+#
+# Output:
+#  Writes layers_ids (string) to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::image_entity::get_first_layer_id() {
+  local -r image_id="$1"
+  vedv::image_entity::get_layer_at "$image_id" 0
+}
+
+#
+# Search for a layer id by its name and return its index
+#
+# Arguments:
+#   image_id string       image id
+#   layer_id string       layer id
+#
+# Output:
+#  Writes -1 if not found, or index (int) to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::image_entity::get_layer_index() {
+  local -r image_id="$1"
+  local -r layer_id="$2"
+  # validate arguments
+  vedv::image_entity::validate_id "$image_id" ||
+    return "$?"
+  vedv::image_entity::validate_id "$layer_id" ||
+    return "$?"
+
+  local layers_ids
+  layers_ids="$(vedv::image_entity::get_layers_ids "$image_id")" || {
+    err "Failed to get layers ids for image '${image_id}'"
+    return "$ERR_IMAGE_OPERATION"
+  }
+  readonly layers_ids
+
+  if [[ -z "$layers_ids" ]]; then
+    echo '-1'
+    return 0
+  fi
+
+  local -a layers_ids_arr=()
+  IFS=' ' read -r -a layers_ids_arr <<<"$layers_ids"
+  readonly layers_ids_arr
+
+  for i in "${!layers_ids_arr[@]}"; do
+    if [[ "${layers_ids_arr[$i]}" == "$layer_id" ]]; then
+      echo "$i"
+      return 0
+    fi
+  done
+
+  echo '-1'
+}
+
+#
+# Search for a layer id by its id and returns true if found
+# or false otherwise
+#
+# Arguments:
+#   image_id string       image id
+#   layer_id string       layer id
+#
+# Output:
+#  Writes -1 if not found, or index (int) to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::image_entity::has_layer_id() {
+  local image_id="$1"
+  local layer_id="$2"
+  # validate arguments
+  vedv::image_entity::validate_id "$image_id" ||
+    return "$?"
+  vedv::image_entity::validate_id "$layer_id" ||
+    return "$?"
+
+  local layer_index
+  layer_index="$(vedv::image_entity::get_layer_index "$image_id" "$layer_id")" || {
+    err "Failed to get layer index for image '${image_id}'"
+    return "$ERR_IMAGE_OPERATION"
+  }
+  readonly layer_index
+
+  if [[ $layer_index -eq -1 ]]; then
+    echo false
+    return 0
+  fi
+
+  echo true
+}
+
+#
 # Get layers
 #
 # Arguments:
@@ -375,7 +677,7 @@ vedv::image_entity::has_containers() {
 #
 vedv::image_entity::get_layers_ids() {
   local -r image_id="$1"
-  vedv::image_entity::__get_child_ids "$image_id" 'layer'
+  vedv::image_entity::__get_snapshots_ids "$image_id" 'layer'
 }
 
 #

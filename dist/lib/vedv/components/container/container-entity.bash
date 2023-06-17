@@ -19,6 +19,38 @@ readonly VEDV_CONTAINER_ENTITY_VALID_ATTRIBUTES='parent_image_id'
 # FUNCTIONS
 
 #
+# Validate if container id is valid
+#
+# Arguments:
+#   container_id string   id to validate
+#
+# Output:
+#   Writes error message to stderr
+#
+# Returns:
+#   0 if valid, non-zero id if invalid
+#
+vedv::container_entity::validate_id() {
+  vedv::vmobj_entity::validate_id "$@"
+}
+
+#
+# Validate if container name is valid
+#
+# Arguments:
+#   container_name string   name to validate
+#
+# Output:
+#   Writes error message to stderr
+#
+# Returns:
+#   0 if valid, non-zero id if invalid
+#
+vedv::container_entity::validate_name() {
+  vedv::vmobj_entity::validate_name "$@"
+}
+
+#
 # Generate container vm name
 #
 # Arguments:

@@ -286,11 +286,16 @@ vedv::image_builder::__layer_from() {
 
   local -r image_id="${image_id_name%%' '*}"
 
-  local -r cmd="1 FROM ${image}"
+  # local -r cmd="1 FROM ${image}"
   # create layer
   local layer_id
-  layer_id="$(vedv::image_builder::__create_layer "$image_id" "$cmd")" || {
-    err "Failed to create layer for image '${image_id}'"
+  # image creates the first layer (FROM) when it is imported
+  # layer_id="$(vedv::image_builder::__create_layer "$image_id" "$cmd")" || {
+  #   err "Failed to create layer for image '${image_id}'"
+  #   return "$ERR_IMAGE_BUILDER_OPERATION"
+  # }
+  layer_id="$(vedv::image_entity::get_first_layer_id "$image_id")" || {
+    err "Failed to get first layer id for image '${image_id}'"
     return "$ERR_IMAGE_BUILDER_OPERATION"
   }
   readonly layer_id

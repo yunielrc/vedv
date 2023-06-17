@@ -653,8 +653,8 @@ vedv::vmobj_entity::calc_id_by_vmobj_name() {
 # Get entity as dictionary
 #
 # Arguments:
-#   type string               type (e.g. 'container|image')
-#   vmobj_id string           image id
+#   type     string   type (e.g. 'container|image')
+#   vmobj_id string   image id
 #
 # Output:
 #  Writes dictionary_str (string) to the stdout
@@ -701,8 +701,11 @@ vedv::vmobj_entity::get_dictionary() {
     }
 
     if [[ -z "$dictionary_str" ]]; then
-      err "Description for the vm name: '${vmobj_vm_name}' is empty"
-      return "$ERR_INVAL_VALUE"
+      vedv::vmobj_entity::__create_new_vmobj_dict "$type" || {
+        err "Failed to create new dictionary for the ${type}: '${vmobj_id}'"
+        return "$ERR_VMOBJ_ENTITY"
+      }
+      return 0
     fi
     # create memory cache for the vmobj data
     vedv::vmobj_entity::__memcache_set_data "$type" "$vmobj_id" "$dictionary_str" || {
@@ -830,6 +833,48 @@ vedv::vmobj_entity::__set_attribute() {
   vedv::vmobj_entity::__validate_attribute "$type" "$attribute" ||
     return "$?"
 
+  local -A vmobj_dict=()
+  vmobj_dict["$attribute"]="$value"
+
+  vedv::vmobj_entity::set_dictionary "$type" "$vmobj_id" "$(arr2str vmobj_dict)"
+}
+
+#
+# Save dictionary
+# invalid properties will be ignored
+#
+# Arguments:
+#   type            string  type (e.g. 'container|image')
+#   vmobj_id        string  image id
+#   dictionary_str  string  dictionary_str
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::vmobj_entity::set_dictionary() {
+  local -r type="$1"
+  local -r vmobj_id="$2"
+  local -r dictionary_str="$3"
+  # validate arguments
+  vedv::vmobj_entity::validate_type "$type" ||
+    return "$?"
+  vedv::vmobj_entity::validate_id "$vmobj_id" ||
+    return "$?"
+
+  if [[ -z "$dictionary_str" ]]; then
+    err "Argument 'dictionary_str' is empty"
+    return "$ERR_INVAL_VALUE"
+  fi
+
+  local -A dict
+  eval dict="$dictionary_str" || return $?
+  readonly dict
+
+  if [[ "${#dict[@]}" -eq 0 ]]; then
+    err "Dictionary for argument 'dictionary_str' is empty"
+    return "$ERR_INVAL_VALUE"
+  fi
+
   local vmobj_vm_name
   vmobj_vm_name="$(vedv::hypervisor::list_vms_by_partial_name "$(vname_bregex_by_id "$type" "$vmobj_id")")" || {
     err "Error getting the vm name for the ${type}: '${vmobj_id}'"
@@ -841,47 +886,51 @@ vedv::vmobj_entity::__set_attribute() {
     err "${type^} with id '${vmobj_id}' not found"
     return "$ERR_NOT_FOUND"
   fi
-
-  # e.g.: vm_description='([parent_image_id]="alpine1" [ssh_port]=22 ...)'
-  local vm_description
-  vm_description="$(vedv::hypervisor::get_description "$vmobj_vm_name")" || {
-    err "Error getting the description for the vm name: '${vmobj_vm_name}'"
+  # e.g.: saved_dict_str='([parent_image_id]="alpine1" [ssh_port]=22 ...)'
+  local saved_dict_str=''
+  saved_dict_str="$(vedv::hypervisor::get_description "$vmobj_vm_name")" || {
+    err "Failed to get saved dictionary for the ${type}: '${vmobj_id}'"
     return "$ERR_VMOBJ_ENTITY"
   }
-  # vm_description="${vm_description//\\/}" # remove backslashes
-  readonly vm_description
+  readonly saved_dict_str
 
-  local -A vmobj_dict
-  local vmobj_dict_str="$vm_description"
+  local -A saved_dict=()
 
-  if [[ -z "$vmobj_dict_str" ]]; then
-    # create and initialize the new vmobj_dict
-    vmobj_dict_str="$(vedv::vmobj_entity::__create_new_vmobj_dict "$type")" || {
-      err "Failed to create a new vmobj dictionary for the ${type}: '${vmobj_id}'"
-      return "$ERR_VMOBJ_ENTITY"
-    }
+  if [[ -n "$saved_dict_str" ]]; then
+    eval saved_dict="$saved_dict_str" || return $?
   fi
-  readonly vmobj_dict_str
-  # I don't like eval but here it validate the dictionary syntax
-  # and throws an error if it is invalid
-  eval vmobj_dict="$vmobj_dict_str" || return $?
+  readonly saved_dict
 
-  if [[ "${#vmobj_dict[@]}" -eq 0 ]]; then
-    err "Empty dictionary for the vm name: '${vmobj_vm_name}'"
-    return "$ERR_INVAL_VALUE"
-  fi
+  local new_dict_str=''
+  new_dict_str="$(vedv::vmobj_entity::__create_new_vmobj_dict "$type")" || {
+    err "Failed to create a new vmobj dictionary for the ${type}: '${vmobj_id}'"
+    return "$ERR_VMOBJ_ENTITY"
+  }
+  readonly new_dict_str
 
-  vmobj_dict["$attribute"]="$value"
+  local -A new_dict
+  eval new_dict="$new_dict_str" || return $?
 
-  local updated_description
-  updated_description="$(arr2str vmobj_dict)" || return $?
+  for key in "${!new_dict[@]}"; do
+    if [[ -v dict["$key"] ]]; then
+      new_dict["$key"]="${dict[$key]}"
+      continue
+    fi
+    if [[ -v saved_dict["$key"] ]]; then
+      new_dict["$key"]="${saved_dict[$key]}"
+    fi
+  done
+
+  local data
+  data="$(arr2str new_dict)" || return $?
+  readonly data
   # update data on memory
-  vedv::vmobj_entity::__memcache_set_data "$type" "$vmobj_id" "$updated_description" || {
+  vedv::vmobj_entity::__memcache_set_data "$type" "$vmobj_id" "$data" || {
     err "Failed to update memory cache for the ${type}: '${vmobj_id}'"
     return "$ERR_VMOBJ_ENTITY"
   }
   # update data on disk
-  vedv::hypervisor::set_description "$vmobj_vm_name" "$updated_description" || {
+  vedv::hypervisor::set_description "$vmobj_vm_name" "$data" || {
     err "Failed to set description of vm: ${vmobj_vm_name}"
     return "$ERR_VMOBJ_ENTITY"
   }

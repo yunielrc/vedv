@@ -148,6 +148,11 @@ vedv::image_service::import() {
     err "Error on after create event: '${image_id}'"
     return "$ERR_IMAGE_OPERATION"
   }
+
+  vedv::image_service::create_layer_from "$image_id" "$image_file" >/dev/null || {
+    err "Error creating the first layer for image '${image_id}'"
+    return "$ERR_IMAGE_OPERATION"
+  }
   # Data gathering
   if [[ -z "$image_name" ]]; then
     image_name="$(vedv::image_entity::get_image_name_by_vm_name "$image_vm_name")" || {
@@ -652,6 +657,96 @@ vedv::image_service::child_containers_remove_all() {
   return 0
 }
 
+#
+# Create a layer
+#
+# Arguments:
+#   image_id    string  image id
+#   layer_name  string  layer name
+#   layer_id    string  layer id
+#
+# Output:
+#   Writes process result
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::image_service::create_layer() {
+  local -r image_id="$1"
+  local -r layer_name="$2"
+  local -r layer_id="$3"
+  # validate arguments
+  vedv::image_entity::validate_id "$image_id" ||
+    return $?
+  vedv::image_entity::validate_layer_name "$layer_name" ||
+    return $?
+  vedv::image_entity::validate_id "$layer_id" ||
+    return $?
+
+  local exists_layer
+  exists_layer="$(vedv::image_entity::has_layer_id "$image_id" "$layer_id")" || {
+    err "Failed to check if layer '${layer_name}' exists for image '${image_id}'"
+    return "$ERR_IMAGE_OPERATION"
+  }
+  readonly exists_layer
+
+  if [[ "$exists_layer" == true ]]; then
+    err "Layer '${layer_name}' already exists for image '${image_id}'"
+    return "$ERR_IMAGE_OPERATION"
+  fi
+
+  local image_vm_name
+  image_vm_name="$(vedv::image_entity::get_vm_name "$image_id")" || {
+    err "Failed to get vm name for image '${image_id}'"
+    return "$ERR_IMAGE_OPERATION"
+  }
+  readonly image_vm_name
+
+  local -r full_layer_name="layer:${layer_name}|id:${layer_id}|"
+
+  vedv::hypervisor::take_snapshot "$image_vm_name" "$full_layer_name" &>/dev/null || {
+    err "Failed to create layer '${full_layer_name}' for image '${image_id}'"
+    return "$ERR_IMAGE_OPERATION"
+  }
+
+  echo "$layer_id"
+}
+
+#
+# Create FROM layer
+#
+# Arguments:
+#   image_id    string  image id
+#   image_file  string  image file
+#
+# Output:
+#   Writes process result
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::image_service::create_layer_from() {
+  local -r image_id="$1"
+  local -r image_file="$2"
+  # validate arguments
+  vedv::image_entity::validate_id "$image_id" ||
+    return $?
+
+  if [[ ! -f "$image_file" ]]; then
+    err "image file doesn't exist, path: '${image_file}'"
+    return "$ERR_NOFILE"
+  fi
+
+  local layer_id
+  layer_id="$(utils::crc_sum "$image_file")" || {
+    err "Failed to calculate crc sum for image file '${image_file}'"
+    return "$ERR_IMAGE_OPERATION"
+  }
+  readonly layer_id
+  local -r layer_name='FROM'
+
+  vedv::image_service::create_layer "$image_id" "$layer_name" "$layer_id"
+}
 #
 # Remove layer
 #

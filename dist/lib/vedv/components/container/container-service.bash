@@ -163,7 +163,7 @@ vedv::container_service::create() {
   readonly container_vm_name
 
   if [[ "$standalone" == false ]]; then
-    vedv::hypervisor::clonevm_link "$image_vm_name" "$container_vm_name" "$layer_vm_snapshot_name" &>/dev/null || {
+    vedv::hypervisor::clonevm_link "$image_vm_name" "$container_vm_name" "$layer_vm_snapshot_name" 'false' &>/dev/null || {
       err "Failed to link clone vm: '${image_vm_name}' to: '${container_vm_name}'"
       return "$ERR_CONTAINER_OPERATION"
     }
@@ -193,6 +193,13 @@ vedv::container_service::create() {
     err "Error on after create event: '${container_name}'"
     return "$ERR_CONTAINER_OPERATION"
   }
+
+  if [[ "$standalone" == false ]]; then
+    vedv::image_entity::add_child_container_id "$image_id" "$container_id" || {
+      err "Failed to add child container id for image: '${image_name}'"
+      return "$ERR_CONTAINER_OPERATION"
+    }
+  fi
 
   vedv::container_entity::set_vm_name "$container_id" "$container_vm_name" || {
     err "Failed to set vm name for container: '${container_name}'"
@@ -520,65 +527,22 @@ vedv::container_service::remove_one() {
     fi
   fi
 
-  if [[ "$parent_image_id" == "$VEDV_CONTAINER_SERVICE_STANDALONE" ]]; then
-    vedv::hypervisor::rm "$container_vm_name" &>/dev/null || {
-      err "Failed to remove container: '${container_id}'"
-      return "$ERR_CONTAINER_OPERATION"
-    }
-    echo "$container_id"
-    return 0
-  fi
-
-  # If the container that is being removed (CBR) has siblings running containers
-  # (SRC) with a snapshot on the parent image that was created after the snapshot
-  # of the CBR, then we can't remove the CBR snapshot because it's being used
-  # by the SRC and the hypervisor fails doing the CBR snapshot removal.
-  #
-  # The solution is to stop all the SRC and then remove the CBR snapshot.
-  #
-  local running_siblings_ids=''
-  running_siblings_ids="$(vedv::container_service::__get_running_siblings_ids "$container_id")" || {
-    err "Failed to get running siblings ids for container: '${container_id}'"
-    return "$ERR_CONTAINER_OPERATION"
-  }
-  readonly running_siblings_ids
-
-  if [[ -n "$running_siblings_ids" ]]; then
-
-    if [[ "$force" == false ]]; then
-      err "Can't remove container: '${container_id}' because it has running sibling containers"
-      err "You can Use the 'force' flag to stop them automatically and remove the container"
-      err "Or you can stop them manually and then remove the container"
-      err "Sibling containers ids: '${running_siblings_ids}'"
-      return "$ERR_CONTAINER_OPERATION"
-    fi
-    # shellcheck disable=SC2086
-    vedv::container_service::stop "$running_siblings_ids" >/dev/null || {
-      err "Failed to stop some sibling container"
-      return "$ERR_CONTAINER_OPERATION"
-    }
-  fi
-
   vedv::hypervisor::rm "$container_vm_name" &>/dev/null || {
     err "Failed to remove container: '${container_id}'"
     return "$ERR_CONTAINER_OPERATION"
   }
+
   vedv::vmobj_service::after_remove 'container' "$container_id" || {
     err "Error on after remove event: '${container_id}'"
     return "$ERR_CONTAINER_OPERATION"
   }
 
-  local parent_image_vm_name
-  parent_image_vm_name="$(vedv::image_entity::get_vm_name "$parent_image_id")" || {
-    err "Failed to get vm name for parent image id: '${parent_image_id}'"
-    return "$ERR_CONTAINER_OPERATION"
-  }
-  readonly parent_image_vm_name
-
-  vedv::hypervisor::delete_snapshot "$parent_image_vm_name" "$container_vm_name" &>/dev/null || {
-    err "Failed to delete snapshot of container '${container_id}' on parent image '${parent_image_id}'"
-    return "$ERR_CONTAINER_OPERATION"
-  }
+  if [[ "$parent_image_id" != "$VEDV_CONTAINER_SERVICE_STANDALONE" ]]; then
+    vedv::image_entity::remove_child_container_id "$parent_image_id" "$container_id" || {
+      err "Failed to remove child container id from parent image: '${container_id}'"
+      return "$ERR_CONTAINER_OPERATION"
+    }
+  fi
 
   echo "$container_id"
 }

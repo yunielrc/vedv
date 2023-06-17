@@ -1,24 +1,19 @@
-utils::validate_sha256sum_format() {
-  local checksum_file="$1"
-  # validate arguments
-  if [[ -z "$checksum_file" ]]; then
-    err "checksum_file is required"
-    return "$ERR_INVAL_ARG"
-  fi
-  if [[ ! -f "$checksum_file" ]]; then
-    err "checksum file doesn't exist"
-    return "$ERR_NOFILE"
+vedv::hypervisor::validate_vm_name() {
+  local -r vm_name="$1"
+  local -r type="${2:-vm}"
+
+  local -ri min_length=5
+  local -ri max_length=60
+
+  if [[ "${#vm_name}" -lt $min_length ]]; then
+    echo "The ${type} name cannot be shorter than ${min_length} characters" >&2
+    return 1
   fi
 
-  while read -r line; do
-    if [[ -z "$line" ]]; then
-      continue
-    fi
-    if [[ ! $line =~ ^[a-f0-9]{64}[[:space:]]+.+$ ]]; then
-      echo "invalid checksum file format" >&2
-      return 1
-    fi
-  done <"$checksum_file"
+  if [[ "${#vm_name}" -gt $max_length ]]; then
+    echo "The ${type} name cannot be longer than ${max_length} characters" >&2
+    return 2
+  fi
 
   return 0
 }
