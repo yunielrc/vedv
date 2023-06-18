@@ -186,7 +186,11 @@ utils::string::trim() {
 utils::validate_port() {
   local -ri port="$1"
 
-  [[ "$port" -ge 0 && "$port" -le 65535 ]]
+  local -i min max
+  read -r min max </proc/sys/net/ipv4/ip_local_port_range
+  readonly min max
+
+  [[ "$port" -ge "$min" && "$port" -le "$max" ]]
 }
 
 #
