@@ -123,6 +123,9 @@ ${__VED_IMAGE_COMMAND_SCRIPT_NAME} image import IMAGE_FILE
 
 Import an image from a file
 
+Aliases:
+  import, from-file
+
 Flags:
   -h, --help            show help
   --check               the checksum is readed from a file with the same name
@@ -716,7 +719,7 @@ vedv::image_command::run_cmd() {
       vedv::image_command::__list_exposed_ports "$@"
       return $?
       ;;
-    import)
+    import | from-file)
       shift
       vedv::image_command::__import "$@"
       return $?
