@@ -1,4 +1,4 @@
-.PHONY: commit test-all test-unit test-tag configure-dev-manjaro untested
+.PHONY: commit test-all test-unit test-tag test-name untested configure-dev-manjaro
 
 commit:
 	git cz

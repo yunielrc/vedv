@@ -134,15 +134,14 @@ utils::valid_ip() {
 #   0 on success, non-zero on error.
 #
 utils::get_a_dynamic_port() {
-  local min man
+  local -i min max
   read -r min max </proc/sys/net/ipv4/ip_local_port_range
   readonly min max
 
-  __random_port() { shuf -i "${min}-${max}" -n 1; }
-  local -i port="$(__random_port)"
+  local -i port="$(utils::random_number $min "$max")"
 
   while nc -z localhost $port &>/dev/null; do
-    port="$(__random_port)"
+    port="$(utils::random_number $min "$max")"
   done
 
   echo $port
