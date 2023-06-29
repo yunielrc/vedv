@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+
+#
+# Provision Nextcloud VM with Multipass
+#
+
+set -eu
+
+cd "$(dirname "${BASH_SOURCE[0]}")"
+
+readonly VM_NAME="nextcloud-dev"
+
+# Create
+multipass purge
+
+if ! multipass info "$VM_NAME" &>/dev/null; then
+  multipass launch -c 2 -m 2G -d 16GB -n "$VM_NAME"
+fi
+
+# Configure local
+readonly NC_HOSTS_G_BRE='\snextcloud.loc\s*$'
+
+if grep -q "$NC_HOSTS_G_BRE" /etc/hosts; then
+  sudo sed -i "/${NC_HOSTS_G_BRE}/d" /etc/hosts
+fi
+
+readonly VM_IP="$(multipass info "$VM_NAME" | grep -oP 'IPv4:\s+\K\S+')"
+
+sudo tee -a /etc/hosts <<<"${VM_IP} nextcloud.loc"
+
+# Configure
+multipass transfer ./nextcloud.ct.dev.cac ./nextcloud.vm.dev.cac "${VM_NAME}:"
+multipass transfer -r ./root-vm/tmp/* "${VM_NAME}:/tmp"
+
+multipass exec "$VM_NAME" bash <<'EOF'
+  sudo groupadd docker
+  sudo usermod -aG docker "$USER"
+EOF
+multipass exec "$VM_NAME" bash ./nextcloud.vm.dev.cac

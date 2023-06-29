@@ -1,0 +1,95 @@
+#!/usr/bin/env bash
+
+set -eu
+
+#
+# Configure Nextcloud as a vedv registry server
+#
+
+cd /var/www/html
+
+# CONSTANTS
+readonly NC_USER_IMAGES_REL_DIR='00-user-images'
+readonly NC_PUBLIC_IMAGES_REL_DIR='01-public-images'
+
+# FUNCTIONS
+occ() {
+  sudo -u www-data php occ --no-interaction "$@"
+}
+
+# Configure skeleton directory
+
+configure_skeleton_directory() {
+  local -r custom_full_dir='/var/www/html/config/00-custom'
+  local -r skeleton_full_dir="${custom_full_dir}/core/skeleton"
+
+  local -r user_images_rel_dir="$NC_USER_IMAGES_REL_DIR"
+  local -r public_images_rel_dir="$NC_PUBLIC_IMAGES_REL_DIR"
+
+  mkdir -p "$skeleton_full_dir"
+  (
+    cd "$skeleton_full_dir"
+
+    mkdir "$user_images_rel_dir"
+
+    cat >"${user_images_rel_dir}/README.md" <<EOF
+# User images
+
+This directory contains user images
+EOF
+
+    mkdir "$public_images_rel_dir"
+
+    cat >"${public_images_rel_dir}/README.md" <<EOF
+# Public images
+
+This directory contains images that are shared by other users
+EOF
+  )
+
+  chown -R 1000:1000 "$custom_full_dir"
+
+  occ config:system:set skeletondirectory --value="$skeleton_full_dir"
+  occ config:app:set core skeletondirectory --value="$skeleton_full_dir"
+}
+
+configure_public_group() {
+  occ group:add public
+  # occ group:adduser public admin
+  # install Auto Groups app
+  occ app:install auto_groups
+  occ config:app:set AutoGroups auto_groups --value='["public"]'
+  occ config:app:set AutoGroups login_hook --value='true'
+}
+
+configure_sharing() {
+  local -r public_images_rel_dir="$NC_PUBLIC_IMAGES_REL_DIR"
+
+  occ config:app:set core shareapi_default_permission_cancreate --value='no'
+  occ config:app:set core shareapi_default_permission_candelete --value='no'
+  occ config:app:set core shareapi_default_permission_canshare --value='no'
+  occ config:app:set core shareapi_default_permission_canupdate --value='no'
+  occ config:app:set core shareapi_default_permissions --value='1'
+
+  occ config:system:set share_folder --value="/${public_images_rel_dir}"
+
+  # TODO: auto share all folders created inside NC_USER_IMAGES_REL_DIR
+}
+
+configure_image_tags() {
+  occ tag:add 'official' 'restricted'
+  occ tag:add 'publisher' 'restricted'
+  occ tag:add 'sponsored' 'restricted'
+}
+
+main() {
+  configure_skeleton_directory
+  configure_public_group
+  configure_sharing
+  configure_image_tags
+}
+
+# call main function if script is executed
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+  main "$@"
+fi

@@ -8,7 +8,8 @@ yay -Syu --noconfirm --needed \
   virtualbox \
   hadolint-bin \
   gnu-netcat \
-  python-pip
+  python-pip \
+  libxml2 # /usr/bin/xmllint is owned by libxml2
 
 pip install dockerfile-parse
 pip install petname

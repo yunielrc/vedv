@@ -1,0 +1,132 @@
+#!/usr/bin/env bash
+#
+# Intall & Configure Nextcloud
+#
+
+set -eu
+
+#
+# Load fixtures
+#
+
+setup_docker() {
+  # install docker if not installed
+  if command -v docker &>/dev/null; then
+    return 0
+  fi
+  # Update the apt package index and install packages to allow apt to use a repository over HTTPS
+  sudo apt-get update -y
+  sudo apt-get install -y ca-certificates curl gnupg
+  # dd Docker’s official GPG key
+  sudo install -m 0755 -d /etc/apt/keyrings
+  curl -fsSL https://download.docker.com/linux/ubuntu/gpg |
+    sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+  sudo chmod a+r /etc/apt/keyrings/docker.gpg
+  # Use the following command to set up the repository
+  echo \
+    "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] \
+  https://download.docker.com/linux/ubuntu \
+  $(. /etc/os-release && echo "$VERSION_CODENAME") stable" |
+    sudo tee /etc/apt/sources.list.d/docker.list >/dev/null
+  # Update the apt package index
+  sudo apt-get update -y
+  # Install Docker Engine, containerd, and Docker Compose
+  sudo apt-get install -y \
+    docker-ce \
+    docker-ce-cli \
+    containerd.io \
+    docker-buildx-plugin \
+    docker-compose-plugin
+
+  sudo ln -sf /usr/libexec/docker/cli-plugins/docker-compose /usr/bin/docker-compose
+  # Verify that the Docker Engine installation is successful
+  # configure
+  # sudo groupadd docker
+  sudo usermod -aG docker "$USER"
+  # newgrp docker
+  docker run hello-world
+}
+
+setup_nextcloud() {
+  # install nextcloud
+  (
+    set -eu
+
+    [[ -d nextcloud-docker-dev ]] ||
+      git clone https://github.com/juliushaertl/nextcloud-docker-dev
+
+    cd nextcloud-docker-dev
+
+    if [[ -n "$(docker container ls -qaf "name=.*nextcloud.*")" ]]; then
+      docker compose down -v
+    fi
+    # patch bootstrap.sh to download nextcloud 27 instead development version
+    patch --force -u bootstrap.sh -i /tmp/files-vm/bootstrap.sh.patch || :
+    ./bootstrap.sh
+
+    sed -i 's/DOMAIN_SUFFIX=.local/DOMAIN_SUFFIX=.loc/g' .env
+
+    docker compose up -d nextcloud
+  )
+
+  # configure nextcloud
+  local -r nc_container_id="$(docker container ls -qf "name=.*nextcloud.*")"
+
+  docker cp ./nextcloud.ct.dev.cac "${nc_container_id}:/tmp"
+
+  local -ri wait_time=60
+
+  echo "Waiting ${wait_time}s for Nextcloud to be ready..."
+  sleep $wait_time
+
+  # configure nextcloud container
+  docker exec "$nc_container_id" /tmp/nextcloud.ct.dev.cac
+}
+
+load_fixtures() {
+
+  local -r mount_dir='/mnt/nextcloud-dav'
+  local -r fixtures_dir='/tmp/files-vm/fixtures'
+
+  # install davfs2 if not installed
+  if ! command -v mount.davfs &>/dev/null; then
+    sudo DEBIAN_FRONTEND=noninteractive apt-get install -y davfs2
+  fi
+
+  if ! grep -q '\snextcloud.loc\s*$' /etc/hosts; then
+    sudo tee -a /etc/hosts <<<'127.0.0.1 nextcloud.loc'
+  fi
+
+  # copy users files
+  [[ -d /mnt/nextcloud-dav ]] ||
+    sudo mkdir "$mount_dir"
+  (
+    set -eu
+
+    cd "${fixtures_dir}/files"
+
+    local -ri _uid="$(id -u)"
+    local -ri _gid="$(id -g)"
+
+    sudo umount "$mount_dir" || :
+
+    for user in *; do
+      echo -e "${user}\n${user}\n" |
+        sudo mount -t davfs -o uid=$_uid,gid=$_gid "http://nextcloud.loc/remote.php/dav/files/${user}" "$mount_dir"
+
+      cp -r "$user"/* "$mount_dir"
+      sudo umount "$mount_dir" || :
+    done
+  )
+}
+
+main() {
+  setup_docker
+  setup_nextcloud
+  load_fixtures
+}
+
+# call main function if script is executed
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+  main "$@"
+fi

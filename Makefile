@@ -18,5 +18,8 @@ test-name:
 untested:
 	./tools/untested $(f)
 
-configure-dev-manjaro:
-	./cac/configure.dev.manjaro
+configure-manjaro-dev:
+	./icac/manjaro.local.dev.cac
+
+setup-nextcloud-dev:
+	./icac/nextcloud/nextcloud.multipass.dev.iac

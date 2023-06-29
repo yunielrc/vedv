@@ -3,7 +3,7 @@ set -eu
 
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
-./cac/configure.prod.manjaro
+./icac/manjaro.local.prod.cac
 
 # Install dev dependencies
 yay -Syu --noconfirm --needed \
@@ -23,6 +23,8 @@ sudo npm install -g \
   @commitlint/config-conventional \
   commitizen \
   cz-conventional-changelog
+
+sudo snap install multipass
 
 # Configure
 git config core.hooksPath .githooks
