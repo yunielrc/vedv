@@ -643,11 +643,9 @@ Flags:
   -h, --help    show help
 HELPMSG
 }
+
 #
 # Show help
-#
-# Options:
-#   [-s| --short]   Print short description
 #
 # Output:
 #  Writes the help to the stdout

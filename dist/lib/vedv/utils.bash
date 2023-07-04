@@ -16,7 +16,6 @@ readonly ERR_SSH_OPERATION=85
 readonly ERR_VIRTUALBOX_OPERATION=86
 readonly ERR_QEMU_OPERATION=87
 readonly ERR_HYPERVISOR_OPERATION=88
-readonly ERR_IMAGE_BUILDER_OPERATION=88
 readonly ERR_IMAGE_ENTITY=89
 readonly ERR_CONTAINER_ENTITY=90
 readonly ERR_VMOBJ_ENTITY=91
@@ -25,11 +24,17 @@ readonly ERR_CHECKSUM=93
 readonly ERR_FILE_EXISTS=94
 readonly ERR_DOWNLOAD=95
 readonly ERR_FAILED_CREATE_DIR=96
+readonly ERR_IMAGE_BUILDER_OPERATION=97
+readonly ERR_REGISTRY_OPERATION=98
+readonly ERR_COPY_FILE=99
 # This error code can only be throwed by vedv::image_builder::__layer_execute_cmd()
 readonly ERR_IMAGE_BUILDER_LAYER_CREATION_FAILURE_PREV_RESTORATION_FAIL=100
 #
 readonly UTILS_ENCODED_VAR_PREFIX='var_9f57a558b3_'
 readonly UTILS_ENCODED_ESCVAR_PREFIX='escvar_fc064fcc7e_'
+
+readonly UTILS_DOMAIN_NAME_EREGEX='[A-Za-z0-9-]+([\-\.]{1}[a-z0-9]+)*\.[A-Za-z]{2,6}'
+readonly UTILS_HTTP_URL_EREGEX="(https?://)?${UTILS_DOMAIN_NAME_EREGEX}"
 
 #
 # Constructor
@@ -186,11 +191,7 @@ utils::string::trim() {
 utils::validate_port() {
   local -ri port="$1"
 
-  local -i min max
-  read -r min max </proc/sys/net/ipv4/ip_local_port_range
-  readonly min max
-
-  [[ "$port" -ge "$min" && "$port" -le "$max" ]]
+  [[ "$port" -ge 0 && "$port" -le 65535 ]]
 }
 
 #

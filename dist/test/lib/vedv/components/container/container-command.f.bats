@@ -2,6 +2,8 @@
 load test_helper
 
 setup_file() {
+  multipass stop nextcloud-dev || :
+
   delete_vms_directory
   export VED_HADOLINT_CONFIG="$TEST_HADOLINT_CONFIG"
   VEDV_HADOLINT_ENABLED=false
@@ -124,7 +126,7 @@ Options:
   assert_success
   assert_output --partial "container123"
 }
-# bats test_tags=only
+
 @test "vedv container create --name container123 -p 8080:80/tcp -p 8082:82 -p 8081 -p 81/udp image, Should create a container" {
   local -r container_id='container123'
 
@@ -177,7 +179,7 @@ Flags:
   -w, --wait    wait for SSH"
   done
 }
-# bats test_tags=only
+
 @test "vedv container start container123a container123b, Should start containers" {
 
   vedv container create --name 'container123a' "$TEST_OVA_FILE"
@@ -227,7 +229,7 @@ Flags:
   --force       force remove"
   done
 }
-# bats test_tags=only
+
 @test "vedv container rm container123a container123b, Should remove containers" {
 
   vedv container create --name 'container123a' "$TEST_OVA_FILE"
@@ -269,7 +271,7 @@ Flags:
   -h, --help    show help"
   done
 }
-# bats test_tags=only
+
 @test "vedv container stop container123a container123b, Should stop containers" {
 
   vedv container create --name 'container123a' "$TEST_OVA_FILE"
@@ -324,7 +326,7 @@ Flags:
   assert_output "375138354 container123a
 339074491 container123b"
 }
-# bats test_tags=only
+
 @test "vedv container list --all, Should list all containers" {
 
   vedv container create --name 'container123a' "$TEST_OVA_FILE"
@@ -341,7 +343,7 @@ Flags:
 }
 
 # Tests for vedv container login
-# bats test_tags=only
+
 @test "vedv container login container123a, Should login" {
 
   vedv container create --name 'container123a' "$TEST_OVA_FILE"
@@ -360,7 +362,7 @@ SSHEOF
 }
 
 # Tests for vedv container exec
-# bats test_tags=only
+
 @test "vedv container exec container123a uname, Should exec cmd" {
 
   vedv container create --name 'container123a' "$TEST_OVA_FILE"
@@ -371,7 +373,7 @@ SSHEOF
   assert_success
   assert_output --partial "Linux"
 }
-# bats test_tags=only
+
 @test "vedv container exec container123a <<EOF, Should exec cmd" {
 
   vedv container create --name 'container123a' "$TEST_OVA_FILE"
@@ -559,7 +561,7 @@ Build finished
 }
 
 # Tests for vedv container list-exposed-ports ..
-# bats test_tags=only
+
 @test "vedv container list-exposed-ports container123,  Should succeed" {
   local -r container_id='container123'
 

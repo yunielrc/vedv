@@ -13,9 +13,9 @@ fi
 # CONSTANTS
 readonly VEDV_VMOBJ_ENTITY_VALID_ATTRIBUTES='vm_name|ssh_port|user_name|workdir|environment|exposed_ports|shell'
 
-readonly VEDV_VMOBJ_ENTITY_EREGEX_NAME='[[:lower:]](-|_|[[:lower:]]|[[:digit:]]){,28}([[:lower:]]|[[:digit:]])'
+readonly VEDV_VMOBJ_ENTITY_EREGEX_NAME='[[:lower:]](-|_|[[:lower:]]|[[:digit:]]){1,28}([[:lower:]]|[[:digit:]])'
 readonly VEDV_VMOBJ_ENTITY_EREGEX_ID='[[:digit:]]{6,11}'
-readonly VEDV_VMOBJ_ENTITY_BREGEX_NAME='[[:lower:]]\(-\|_\|[[:lower:]]\|[[:digit:]]\)\{,28\}\([[:lower:]]\|[[:digit:]]\)'
+readonly VEDV_VMOBJ_ENTITY_BREGEX_NAME='[[:lower:]]\(-\|_\|[[:lower:]]\|[[:digit:]]\)\{1,28\}\([[:lower:]]\|[[:digit:]]\)'
 readonly VEDV_VMOBJ_ENTITY_BREGEX_ID='[[:digit:]]\{6,11\}'
 # VARIABLES
 

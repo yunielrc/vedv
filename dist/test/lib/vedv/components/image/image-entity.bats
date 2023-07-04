@@ -2,6 +2,11 @@
 
 load test_helper
 
+# setup() {
+#   export UTILS_HTTP_URL_EREGEX \
+#          VEDV_VMOBJ_ENTITY_EREGEX_NAME
+# }
+
 # Tests for vedv::image_entity::gen_vm_name()
 @test "vedv::image_entity::gen_vm_name() Should succeed" {
   :
@@ -985,4 +990,372 @@ EOF
   # Assert
   assert_success
   assert_output "true"
+}
+
+# Tets for vedv::image_entity::is_image_fqn()
+@test "vedv::image_entity::is_image_fqn() Should output false With invalid image_fqn" {
+  # Setup
+  local -r image_fqn="invalid"
+  # Act
+  run vedv::image_entity::is_image_fqn "$image_fqn"
+  # Assert
+  assert_success
+  assert_output 'false'
+}
+
+@test "vedv::image_entity::is_image_fqn() Should output false With alpine-13" {
+  # Setup
+  local -r image_fqn="alpine-13"
+  # Act
+  run vedv::image_entity::is_image_fqn "$image_fqn"
+  # Assert
+  assert_success
+  assert_output 'false'
+}
+
+@test "vedv::image_entity::is_image_fqn() Should output false With alpine/alpine-13" {
+  # Setup
+  local -r image_fqn="alpine/alpine-13"
+  # Act
+  run vedv::image_entity::is_image_fqn "$image_fqn"
+  # Assert
+  assert_success
+  assert_output 'false'
+}
+
+@test "vedv::image_entity::is_image_fqn() Should output false With nalyd/alpine/alpine-13" {
+  # Setup
+  local -r image_fqn="nalyd/alpine/alpine-13"
+  # Act
+  run vedv::image_entity::is_image_fqn "$image_fqn"
+  # Assert
+  assert_success
+  assert_output 'false'
+}
+
+@test "vedv::image_entity::is_image_fqn() Should output false With nalyd@alpine/alpine/13" {
+  # Setup
+  local -r image_fqn="nalyd@alpine/alpine/13"
+  # Act
+  run vedv::image_entity::is_image_fqn "$image_fqn"
+  # Assert
+  assert_success
+  assert_output 'false'
+}
+
+@test "vedv::image_entity::is_image_fqn() Should output false With nextcloud/nalyd@alpine/alpine-13" {
+  # Setup
+  local -r image_fqn="nextcloud/nalyd@alpine/alpine-13"
+  # Act
+  run vedv::image_entity::is_image_fqn "$image_fqn"
+  # Assert
+  assert_success
+  assert_output 'false'
+}
+
+@test "vedv::image_entity::is_image_fqn() Should output true With nextcloud.loc/nalyd@alpine/alpine-13" {
+  # Setup
+  local -r image_fqn="nextcloud.loc/nalyd@alpine/alpine-13"
+  # Act
+  run vedv::image_entity::is_image_fqn "$image_fqn"
+  # Assert
+  assert_success
+  assert_output 'true'
+}
+
+@test "vedv::image_entity::is_image_fqn() Should output true With nalyd@alpine/alpine-13" {
+  # Setup
+  local -r image_fqn="nalyd@alpine/alpine-13"
+  # Act
+  run vedv::image_entity::is_image_fqn "$image_fqn"
+  # Assert
+  assert_success
+  assert_output 'true'
+}
+
+@test "vedv::image_entity::is_image_fqn() Should output true With http://nextcloud.loc/nalyd@alpine/alpine-13" {
+  # Setup
+  local -r image_fqn="http://nextcloud.loc/nalyd@alpine/alpine-13"
+  # Act
+  run vedv::image_entity::is_image_fqn "$image_fqn"
+  # Assert
+  assert_success
+  assert_output 'true'
+}
+
+@test "vedv::image_entity::is_image_fqn() Should output true With https://nextcloud.loc/nalyd@alpine/alpine-13" {
+  # Setup
+  local -r image_fqn="https://nextcloud.loc/nalyd@alpine/alpine-13"
+  # Act
+  run vedv::image_entity::is_image_fqn "$image_fqn"
+  # Assert
+  assert_success
+  assert_output 'true'
+}
+
+# Tets for vedv::image_entity::validate_image_fqn()
+@test "vedv::image_entity::validate_image_fqn() Should fail With invalid image_fqn" {
+  # Setup
+  local -r image_fqn="invalid"
+  # Act
+  run vedv::image_entity::validate_image_fqn "$image_fqn"
+  # Assert
+  assert_failure
+  assert_output "Invalid argument 'invalid'"
+}
+
+@test "vedv::image_entity::validate_image_fqn() Should succeed With nextcloud.loc/nalyd@alpine/alpine-13" {
+  # Setup
+  local -r image_fqn="nextcloud.loc/nalyd@alpine/alpine-13"
+  # Act
+  run vedv::image_entity::validate_image_fqn "$image_fqn"
+  # Assert
+  assert_success
+  assert_output ""
+}
+
+@test "vedv::image_entity::validate_image_fqn() Should succeed With http://nextcloud.loc/nalyd@alpine/alpine-13" {
+  # Setup
+  local -r image_fqn="http://nextcloud.loc/nalyd@alpine/alpine-13"
+  # Act
+  run vedv::image_entity::validate_image_fqn "$image_fqn"
+  # Assert
+  assert_success
+  assert_output ""
+}
+
+@test "vedv::image_entity::validate_image_fqn() Should succeed With https://nextcloud.loc/nalyd@alpine/alpine-13" {
+  # Setup
+  local -r image_fqn="https://nextcloud.loc/nalyd@alpine/alpine-13"
+  # Act
+  run vedv::image_entity::validate_image_fqn "$image_fqn"
+  # Assert
+  assert_success
+  assert_output ""
+}
+
+# Tets for vedv::image_entity::fqn_to_file_name()
+@test "vedv::image_entity::fqn_to_file_name() Should succeed With nextcloud.loc/nalyd@alpine/alpine-13" {
+  # Setup
+  local -r image_fqn="nextcloud.loc/nalyd@alpine/alpine-13"
+  # Act
+  run vedv::image_entity::fqn_to_file_name "$image_fqn"
+  # Assert
+  assert_success
+  assert_output "nextcloud.loc__nalyd@alpine__alpine-13.ova"
+}
+
+@test "vedv::image_entity::fqn_to_file_name() Should succeed With nalyd@alpine/alpine-13" {
+  # Setup
+  local -r image_fqn="nalyd@alpine/alpine-13"
+  # Act
+  run vedv::image_entity::fqn_to_file_name "$image_fqn"
+  # Assert
+  assert_success
+  assert_output "nalyd@alpine__alpine-13.ova"
+}
+
+@test "vedv::image_entity::fqn_to_file_name() Should succeed With http://nextcloud.loc/nalyd@alpine/alpine-13" {
+  # Setup
+  local -r image_fqn="http://nextcloud.loc/nalyd@alpine/alpine-13"
+  # Act
+  run vedv::image_entity::fqn_to_file_name "$image_fqn"
+  # Assert
+  assert_success
+  assert_output "http______nextcloud.loc__nalyd@alpine__alpine-13.ova"
+}
+
+@test "vedv::image_entity::fqn_to_file_name() Should succeed With https://nextcloud.loc/nalyd@alpine/alpine-13" {
+  # Setup
+  local -r image_fqn="https://nextcloud.loc/nalyd@alpine/alpine-13"
+  # Act
+  run vedv::image_entity::fqn_to_file_name "$image_fqn"
+  # Assert
+  assert_success
+  assert_output "https______nextcloud.loc__nalyd@alpine__alpine-13.ova"
+}
+
+# Tets for vedv::image_entity::get_domain_from_fqn()
+@test "vedv::image_entity::get_domain_from_fqn() Should succeed With nextcloud.loc/nalyd@alpine/alpine-13" {
+  # Setup
+  local -r image_fqn="nextcloud.loc/nalyd@alpine/alpine-13"
+  # Act
+  run vedv::image_entity::get_domain_from_fqn "$image_fqn"
+  # Assert
+  assert_success
+  assert_output "nextcloud.loc"
+}
+
+@test "vedv::image_entity::get_domain_from_fqn() Should succeed With nalyd@alpine/alpine-13" {
+  # Setup
+  local -r image_fqn="nalyd@alpine/alpine-13"
+  # Act
+  run vedv::image_entity::get_domain_from_fqn "$image_fqn"
+  # Assert
+  assert_success
+  assert_output ""
+}
+
+@test "vedv::image_entity::get_domain_from_fqn() Should succeed With http://nextcloud.loc/nalyd@alpine/alpine-13" {
+  # Setup
+  local -r image_fqn="http://nextcloud.loc/nalyd@alpine/alpine-13"
+  # Act
+  run vedv::image_entity::get_domain_from_fqn "$image_fqn"
+  # Assert
+  assert_success
+  assert_output "http://nextcloud.loc"
+}
+
+@test "vedv::image_entity::get_domain_from_fqn() Should succeed With https://nextcloud.loc/nalyd@alpine/alpine-13" {
+  # Setup
+  local -r image_fqn="https://nextcloud.loc/nalyd@alpine/alpine-13"
+  # Act
+  run vedv::image_entity::get_domain_from_fqn "$image_fqn"
+  # Assert
+  assert_success
+  assert_output "https://nextcloud.loc"
+}
+
+# Tets for vedv::image_entity::get_user_from_fqn()
+@test "vedv::image_entity::get_user_from_fqn() Should succeed With nextcloud.loc/nalyd@alpine/alpine-13" {
+  # Setup
+  local -r image_fqn="nextcloud.loc/nalyd@alpine/alpine-13"
+  # Act
+  run vedv::image_entity::get_user_from_fqn "$image_fqn"
+  # Assert
+  assert_success
+  assert_output "nalyd"
+}
+
+@test "vedv::image_entity::get_user_from_fqn() Should succeed With http://nextcloud.loc/nalyd@alpine/alpine-13" {
+  # Setup
+  local -r image_fqn="http://nextcloud.loc/nalyd@alpine/alpine-13"
+  # Act
+  run vedv::image_entity::get_user_from_fqn "$image_fqn"
+  # Assert
+  assert_success
+  assert_output "nalyd"
+}
+
+@test "vedv::image_entity::get_user_from_fqn() Should succeed With https://nextcloud.loc/nalyd@alpine/alpine-13" {
+  # Setup
+  local -r image_fqn="https://nextcloud.loc/nalyd@alpine/alpine-13"
+  # Act
+  run vedv::image_entity::get_user_from_fqn "$image_fqn"
+  # Assert
+  assert_success
+  assert_output "nalyd"
+}
+
+@test "vedv::image_entity::get_user_from_fqn() Should succeed With nalyd@alpine/alpine-13" {
+  # Setup
+  local -r image_fqn="nalyd@alpine/alpine-13"
+  # Act
+  run vedv::image_entity::get_user_from_fqn "$image_fqn"
+  # Assert
+  assert_success
+  assert_output "nalyd"
+}
+
+# Tests for vedv::image_entity::get_collection_from_fqn()
+@test "vedv::image_entity::get_collection_from_fqn() Should succeed With nextcloud.loc/nalyd@alpine/alpine-13" {
+  # Setup
+  local -r image_fqn="nextcloud.loc/nalyd@alpine/alpine-13"
+  # Act
+  run vedv::image_entity::get_collection_from_fqn "$image_fqn"
+  # Assert
+  assert_success
+  assert_output "alpine"
+}
+
+@test "vedv::image_entity::get_collection_from_fqn() Should succeed With http://nextcloud.loc/nalyd@alpine/alpine-13" {
+  # Setup
+  local -r image_fqn="http://nextcloud.loc/nalyd@alpine/alpine-13"
+  # Act
+  run vedv::image_entity::get_collection_from_fqn "$image_fqn"
+  # Assert
+  assert_success
+  assert_output "alpine"
+}
+
+@test "vedv::image_entity::get_collection_from_fqn() Should succeed With https://nextcloud.loc/nalyd@alpine/alpine-13" {
+  # Setup
+  local -r image_fqn="https://nextcloud.loc/nalyd@alpine/alpine-13"
+  # Act
+  run vedv::image_entity::get_collection_from_fqn "$image_fqn"
+  # Assert
+  assert_success
+  assert_output "alpine"
+}
+
+# Tests for vedv::image_entity::get_name_from_fqn()
+@test "vedv::image_entity::get_name_from_fqn() Should succeed With nextcloud.loc/nalyd@alpine/alpine-13" {
+  # Setup
+  local -r image_fqn="nextcloud.loc/nalyd@alpine/alpine-13"
+  # Act
+  run vedv::image_entity::get_name_from_fqn "$image_fqn"
+  # Assert
+  assert_success
+  assert_output "alpine-13"
+}
+
+@test "vedv::image_entity::get_name_from_fqn() Should succeed With http://nextcloud.loc/nalyd@alpine/alpine-13" {
+  # Setup
+  local -r image_fqn="http://nextcloud.loc/nalyd@alpine/alpine-13"
+  # Act
+  run vedv::image_entity::get_name_from_fqn "$image_fqn"
+  # Assert
+  assert_success
+  assert_output "alpine-13"
+}
+
+@test "vedv::image_entity::get_name_from_fqn() Should succeed With https://nextcloud.loc/nalyd@alpine/alpine-13" {
+  # Setup
+  local -r image_fqn="https://nextcloud.loc/nalyd@alpine/alpine-13"
+  # Act
+  run vedv::image_entity::get_name_from_fqn "$image_fqn"
+  # Assert
+  assert_success
+  assert_output "alpine-13"
+}
+
+# Tests for vedv::image_entity::get_rel_file_path_from_fqn()
+@test "vedv::image_entity::get_rel_file_path_from_fqn() Should succeed With nalyd@alpine/alpine-13" {
+  # Setup
+  local -r image_fqn="nalyd@alpine/alpine-13"
+  # Act
+  run vedv::image_entity::get_rel_file_path_from_fqn "$image_fqn"
+  # Assert
+  assert_success
+  assert_output "nalyd@alpine/alpine-13.ova"
+}
+
+@test "vedv::image_entity::get_rel_file_path_from_fqn() Should succeed With nextcloud.loc/nalyd@alpine/alpine-13" {
+  # Setup
+  local -r image_fqn="nextcloud.loc/nalyd@alpine/alpine-13"
+  # Act
+  run vedv::image_entity::get_rel_file_path_from_fqn "$image_fqn"
+  # Assert
+  assert_success
+  assert_output "nalyd@alpine/alpine-13.ova"
+}
+
+@test "vedv::image_entity::get_rel_file_path_from_fqn() Should succeed With http://nextcloud.loc/nalyd@alpine/alpine-13" {
+  # Setup
+  local -r image_fqn="http://nextcloud.loc/nalyd@alpine/alpine-13"
+  # Act
+  run vedv::image_entity::get_rel_file_path_from_fqn "$image_fqn"
+  # Assert
+  assert_success
+  assert_output "nalyd@alpine/alpine-13.ova"
+}
+
+@test "vedv::image_entity::get_rel_file_path_from_fqn() Should succeed With https://nextcloud.loc/nalyd@alpine/alpine-13" {
+  # Setup
+  local -r image_fqn="https://nextcloud.loc/nalyd@alpine/alpine-13"
+  # Act
+  run vedv::image_entity::get_rel_file_path_from_fqn "$image_fqn"
+  # Assert
+  assert_success
+  assert_output "nalyd@alpine/alpine-13.ova"
 }

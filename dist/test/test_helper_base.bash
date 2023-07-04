@@ -3,8 +3,6 @@
 . "${BATS_LIBS_DIR}/bash-bats-assert-git/load.bash"
 # . "${BATS_LIBS_DIR}/bats-file/load.bash"
 
-. "${DIST_PATH}/lib/vedv/vedv.bash"
-
 # SET BASH OPTIONS
 set -eu
 

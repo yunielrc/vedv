@@ -13,6 +13,7 @@
 
 /.env
 /dist/.env
-TODO
-./test
-.VSCodeCounter
+/TODO
+/test.bash
+/.VSCodeCounter
+/.vedv.env

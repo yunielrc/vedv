@@ -910,9 +910,6 @@ HELPMSG
 #
 # Show help
 #
-# Flags:
-#   [-s| --short]   Print short description
-#
 # Output:
 #  Writes the help to the stdout
 #

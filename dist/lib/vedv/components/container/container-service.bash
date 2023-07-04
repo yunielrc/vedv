@@ -257,7 +257,7 @@ vedv::container_service::__publish_exposed_ports() {
   local exp_ports_str
 
   # the function below starts the container
-  exp_ports_str="$(vedv::container_entity::cache::get_exposed_ports "$container_id")" 2>/dev/null || {
+  exp_ports_str="$(vedv::container_entity::cache::get_exposed_ports "$container_id" 2>/dev/null)" || {
     err "Failed to get exposed ports for container: '${container_id}'"
     return "$ERR_CONTAINER_OPERATION"
   }

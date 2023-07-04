@@ -8,6 +8,9 @@ set -eu
 
 # FOR CODE COMPLETION
 if false; then
+  # lib
+  . './../../lib/vedv/utils.bash'
+  . './../../lib/vedv/ssh-client.bash'
   # __base
   . './../../lib/vedv/components/__base/vmobj-service.bash'
   . './../../lib/vedv/components/__base/vmobj-entity.bash'
@@ -21,6 +24,12 @@ if false; then
   . './../../lib/vedv/components/container/container-service.bash'
   . './../../lib/vedv/components/container/container-entity.bash'
   . './../../lib/vedv/components/container/container-command.bash'
+  # registry
+  . './../../lib/vedv/components/registry/registry-api-client.bash'
+  . './../../lib/vedv/components/registry/registry-service.bash'
+  . './../../lib/vedv/components/registry/registry-command.bash'
+  ## nextcloud
+  . './../../lib/vedv/components/registry/nextcloud/registry-nextcloud-api-client.bash'
 fi
 
 # CONSTANTS
@@ -32,8 +41,10 @@ readonly __VEDV_HYPERVISORS_PATH="${__VEDV_DIST_PATH}/lib/vedv/hypervisors"
 readonly __VEDV_CONFIG_DIR="${__VEDV_DIST_PATH}/etc/vedv"
 readonly __VEDV_CONFIG="${__VEDV_CONFIG_DIR}/vedv.env"
 
-# CONFIG
+# LOAD CONFIG
 if [[ -f "$__VEDV_CONFIG" ]]; then source "$__VEDV_CONFIG"; fi
+if [[ -f ~/.vedv.env ]]; then source ~/.vedv.env; fi
+if [[ -f .vedv.env ]]; then source .vedv.env; fi
 
 # ENVIRONMENT
 # scheme:        VAR="${ENVIRONMENT_VAR:-"${CONFIG_VAR:-default}"}"
@@ -51,27 +62,102 @@ readonly VEDV_TMP_DIR="${VEDV_TMP_DIR:-"${TMP_DIR:-"/var/tmp/vedv-4e87eace91-${U
 readonly VEDV_CACHE_DIR="${VEDV_CACHE_DIR:-"${CACHE_DIR:-"/home/${USER}/.var/cache/vedv"}"}"
 readonly VEDV_IMAGE_CACHE_DIR="${VEDV_IMAGE_CACHE_DIR:-"${IMAGE_CACHE_DIR:-"/home/${USER}/.var/cache/vedv/images"}"}"
 readonly VEDV_MEMORY_CACHE_DIR="${VEDV_MEMORY_CACHE_DIR:-"${MEMORY_CACHE_DIR:-"/dev/shm/vedv-6d2566c564-${USER}"}"}"
+# REGISTRY
+readonly VEDV_REGISTRY_CACHE_DIR="${VEDV_REGISTRY_CACHE_DIR:-"${REGISTRY_CACHE_DIR:-"/home/${USER}/.var/cache/vedv/registry"}"}"
+## API CLIENT
+readonly VEDV_REGISTRY_API_CLIENT="${VEDV_REGISTRY_API_CLIENT:-"${REGISTRY_API_CLIENT:-nextcloud}"}"
+readonly VEDV_REGISTRY_API_CLIENT_CREDENTIALS_DICT_STR="\
+${VEDV_REGISTRY_API_CLIENT_CREDENTIALS_DICT_STR:-"$REGISTRY_API_CLIENT_CREDENTIALS_DICT_STR"}"
+readonly VEDV_REGISTRY_API_CLIENT_MAIN_URL="\
+${VEDV_REGISTRY_API_CLIENT_MAIN_URL:-"$REGISTRY_API_CLIENT_MAIN_URL"}"
+readonly VEDV_REGISTRY_API_CLIENT_CONNECT_TIMEOUT="${VEDV_REGISTRY_API_CLIENT_CONNECT_TIMEOUT:-"${REGISTRY_API_CLIENT_CONNECT_TIMEOUT:-5}"}"
 
 # CREATE DIRECTORIES
+vedv::__create_dirs() {
 
-readonly -a VEDV_DIRS_ARR=(
-  "$VEDV_TMP_DIR"
-  "$VEDV_CACHE_DIR"
-  "$VEDV_IMAGE_CACHE_DIR"
-  "$VEDV_MEMORY_CACHE_DIR"
-)
+  local -a vedv_dirs_arr=(
+    "$VEDV_TMP_DIR"
+    "$VEDV_CACHE_DIR"
+    "$VEDV_IMAGE_CACHE_DIR"
+    "$VEDV_MEMORY_CACHE_DIR"
+    "$VEDV_REGISTRY_CACHE_DIR"
+  )
 
-for dir in "${VEDV_DIRS_ARR[@]}"; do
-  if [[ ! -d "$dir" ]]; then
-    mkdir -p "$dir" || return $?
+  for dir in "${vedv_dirs_arr[@]}"; do
+    if [[ ! -d "$dir" ]]; then
+      mkdir -p "$dir" || return $?
+    fi
+  done
+}
+
+# INCLUDE SOURCE FILES
+vedv::__include_files() {
+  . "${__VEDV_LIB_PATH}/utils.bash"
+  . "${__VEDV_LIB_PATH}/ssh-client.bash"
+
+  for f in "${__VEDV_COMPONENTS_PATH}/"*/*.bash; do . "$f"; done
+  # the specific api client must be included after the generic registry-api-client
+  # because it overrides some functions
+  . "${__VEDV_COMPONENTS_PATH}/registry/${VEDV_REGISTRY_API_CLIENT}/\
+registry-${VEDV_REGISTRY_API_CLIENT}-api-client.bash"
+}
+
+# INITIALIZE COMPONENTS
+vedv::__initialize_components() {
+  # lib
+  utils::constructor "$VEDV_TMP_DIR"
+
+  # __base
+  local -r vmobj_types='container|image'
+  # shellcheck disable=SC2034
+  local -rA vmobj_types_attributes_dict=(
+    [image]="$VEDV_IMAGE_ENTITY_VALID_ATTRIBUTES"
+    [container]="$VEDV_CONTAINER_ENTITY_VALID_ATTRIBUTES"
+  )
+
+  vedv::vmobj_entity::constructor \
+    "$VEDV_MEMORY_CACHE_DIR" \
+    "$vmobj_types" \
+    "$(arr2str vmobj_types_attributes_dict)" \
+    "$VEDV_SSH_USER"
+  # shellcheck disable=SC2034
+  local -rA vedv_vmobj_service_use_cache_dict=([container]=true [image]=true)
+
+  vedv::vmobj_service::constructor \
+    "$VEDV_SSH_IP" \
+    "$VEDV_SSH_USER" \
+    "$VEDV_SSH_PASSWORD" \
+    "$(arr2str vedv_vmobj_service_use_cache_dict)"
+
+  # image
+  local vedvfileignore_path=''
+  if [[ -f "./.vedvfileignore" ]]; then
+    vedvfileignore_path="${PWD}/.vedvfileignore"
   fi
-done
+  readonly vedvfileignore_path
 
-# INCLUDE
-. "${__VEDV_LIB_PATH}/utils.bash"
-. "${__VEDV_LIB_PATH}/ssh-client.bash"
-. "${__VEDV_LIB_PATH}/vedv.bash"
-for f in "${__VEDV_COMPONENTS_PATH}/"*/*.bash; do . "$f"; done
+  vedv::image_vedvfile_service::constructor \
+    "$VEDV_HADOLINT_CONFIG" \
+    "$VEDV_HADOLINT_ENABLED" \
+    "$VEDV_BASE_VEDVFILEIGNORE" \
+    "$vedvfileignore_path"
+  vedv::image_service::constructor "$VEDV_IMAGE_CACHE_DIR"
+  vedv::image_builder::constructor \
+    "$VEDV_MEMORY_CACHE_DIR" \
+    "$VEDV_NO_WAIT_AFTER_BUILD"
+  vedv::image_command::constructor "$__VEDV_SCRIPT_NAME"
+
+  # container
+  vedv::container_command::constructor "$__VEDV_SCRIPT_NAME"
+
+  # registry
+  vedv::registry_api_client::constructor \
+    "$VEDV_REGISTRY_API_CLIENT_CREDENTIALS_DICT_STR" \
+    "$VEDV_REGISTRY_API_CLIENT_MAIN_URL" \
+    "$VEDV_REGISTRY_API_CLIENT_CONNECT_TIMEOUT"
+  vedv::registry_service::constructor "$VEDV_REGISTRY_CACHE_DIR"
+  vedv::registry_command::constructor "$__VEDV_SCRIPT_NAME"
+}
 
 # COMMANDS
 vedv::__help() {
@@ -87,6 +173,7 @@ Flags:
 Management Commands:
   container     manage containers
   image         manage images
+  registry      manage registry
 
 Run '${__VEDV_SCRIPT_NAME} COMMAND --help' for more information on a command.
 HELPMSG
@@ -98,7 +185,6 @@ vedv::__on_exit() {
 trap vedv::__on_exit INT TERM EXIT
 
 vedv::__run_cmd() {
-  # IMPL: test this function
   if [[ $# == 0 ]]; then set -- '-h'; fi
 
   if [[ "$1" == @(-h|--help) ]]; then
@@ -121,64 +207,15 @@ vedv::__run_cmd() {
     readonly hypervisor="$VEDV_DEFAULT_HYPERVISOR"
     ;;
   esac
-
   # include hypervisor
   . "${__VEDV_HYPERVISORS_PATH}/${hypervisor}.bash"
-
-  # initialize components
-  utils::constructor "$VEDV_TMP_DIR"
-
+  # initialize hypervisor
   vedv::hypervisor::constructor "$VEDV_HYPERVISOR_FRONTEND"
-
-  local vedvfileignore_path=''
-
-  if [[ -f "./.vedvfileignore" ]]; then
-    vedvfileignore_path="${PWD}/.vedvfileignore"
-  fi
-  readonly vedvfileignore_path
-
-  vedv::image_vedvfile_service::constructor \
-    "$VEDV_HADOLINT_CONFIG" \
-    "$VEDV_HADOLINT_ENABLED" \
-    "$VEDV_BASE_VEDVFILEIGNORE" \
-    "$vedvfileignore_path"
-
-  local -r vmobj_types='container|image'
-  # shellcheck disable=SC2034
-  local -rA vmobj_types_attributes_dict=(
-    [image]="$VEDV_IMAGE_ENTITY_VALID_ATTRIBUTES"
-    [container]="$VEDV_CONTAINER_ENTITY_VALID_ATTRIBUTES"
-  )
-
-  vedv::vmobj_entity::constructor \
-    "$VEDV_MEMORY_CACHE_DIR" \
-    "$vmobj_types" \
-    "$(arr2str vmobj_types_attributes_dict)" \
-    "$VEDV_SSH_USER"
-  # shellcheck disable=SC2034
-  local -rA vedv_vmobj_service_use_cache_dict=([container]=true [image]=true)
-
-  vedv::vmobj_service::constructor \
-    "$VEDV_SSH_IP" \
-    "$VEDV_SSH_USER" \
-    "$VEDV_SSH_PASSWORD" \
-    "$(arr2str vedv_vmobj_service_use_cache_dict)"
-
-  vedv::image_service::constructor "$VEDV_IMAGE_CACHE_DIR"
-
-  vedv::image_builder::constructor \
-    "$VEDV_MEMORY_CACHE_DIR" \
-    "$VEDV_NO_WAIT_AFTER_BUILD"
-
-  vedv::image_command::constructor "$__VEDV_SCRIPT_NAME"
-
-  vedv::container_command::constructor "$__VEDV_SCRIPT_NAME"
 
   # parse arguments
   while [[ $# -gt 0 ]]; do
     case "$1" in
-    # OPTIONS
-    # COMMANDS
+    # arguments
     image)
       shift
       vedv::image_command::run_cmd "$@"
@@ -187,6 +224,11 @@ vedv::__run_cmd() {
     container)
       shift
       vedv::container_command::run_cmd "$@"
+      return $?
+      ;;
+    registry)
+      shift
+      vedv::registry_command::run_cmd "$@"
       return $?
       ;;
     *)
@@ -199,6 +241,10 @@ vedv::__run_cmd() {
 }
 
 vedv::main() {
+  vedv::__create_dirs
+  vedv::__include_files
+  vedv::__initialize_components
+
   vedv::__run_cmd "$@"
 }
 

@@ -5,6 +5,8 @@
 
 set -eu
 
+. .env
+
 #
 # Load fixtures
 #
@@ -66,6 +68,9 @@ setup_nextcloud() {
 
     sed -i 's/DOMAIN_SUFFIX=.local/DOMAIN_SUFFIX=.loc/g' .env
 
+    # patch docker-compose.yml to add restart: always
+    patch --force -u docker-compose.yml -i /tmp/files-vm/docker-compose.yml.patch || :
+
     docker compose up -d nextcloud
   )
 
@@ -98,7 +103,7 @@ load_fixtures() {
   fi
 
   # copy users files
-  [[ -d /mnt/nextcloud-dav ]] ||
+  [[ -d "$mount_dir" ]] ||
     sudo mkdir "$mount_dir"
   (
     set -eu
@@ -115,6 +120,23 @@ load_fixtures() {
         sudo mount -t davfs -o uid=$_uid,gid=$_gid "http://nextcloud.loc/remote.php/dav/files/${user}" "$mount_dir"
 
       cp -r "$user"/* "$mount_dir"
+
+      if [[ "$user" == admin ]]; then
+        (
+          cd "${mount_dir}/00-user-images/admin@alpine"
+
+          rm -f alpine-13.ova alpine-13.ova.sha256sum || :
+
+          wget -O alpine-13.ova.sha256sum "$NC_OVA_CHECKSUM_URL"
+          wget -O alpine-13.ova "$NC_OVA_URL"
+
+          local remote_file_name=''
+          remote_file_name="$(grep -Pom1 '\s\K\S+.ova' alpine-13.ova.sha256sum)"
+
+          sed -i "s/${remote_file_name}/alpine-13.ova/" alpine-13.ova.sha256sum
+        )
+      fi
+
       sudo umount "$mount_dir" || :
     done
   )

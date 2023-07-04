@@ -295,6 +295,19 @@
       "request": "launch",
       "name": "Bash-Debug (test)",
       "program": "${workspaceFolder}/test"
-    }
+    },
+    {
+      "type": "bashdb",
+      "request": "launch",
+      "name": "Bash-Debug (vedv registry pull ...)",
+      "program": "${workspaceFolder}/dist/usr/bin/vedv",
+      "args": [
+        "registry",
+        "pull",
+        "--name",
+        "my-alpine-14",
+        "nextcloud2.loc/admin@alpine/alpine-14"
+      ]
+    },
   ]
 }

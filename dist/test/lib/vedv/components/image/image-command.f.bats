@@ -2,6 +2,8 @@
 load test_helper
 
 setup_file() {
+  multipass stop nextcloud-dev || :
+
   delete_vms_directory
   export VED_HADOLINT_CONFIG="$TEST_HADOLINT_CONFIG"
   export VEDV_HADOLINT_ENABLED=false
@@ -118,7 +120,7 @@ Flags:
   --force       force remove"
   done
 }
-# bats test_tags=only
+
 @test "vedv image rm, Should remove the image" {
 
   vedv image pull "$TEST_OVA_FILE"
@@ -203,7 +205,7 @@ vedv image build [FLAGS] [OPTIONS] VEDVFILE"
     assert_output --partial "No image name specified"
   done
 }
-
+# bats test_tags=only
 @test "vedv image build, Should build the image from vedvfile" {
   cd "${BATS_TEST_DIRNAME}/fixtures/vedvfiles"
 

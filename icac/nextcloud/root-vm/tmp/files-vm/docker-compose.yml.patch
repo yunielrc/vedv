@@ -1,0 +1,42 @@
+--- docker-compose.yml.bk       2023-07-03 22:27:18.028901150 -0400
++++ docker-compose.yml  2023-07-03 22:33:12.173492031 -0400
+@@ -6,6 +6,7 @@
+   # SSL certificates with the virtual host name need to be added to ./data/ssl
+   proxy:
+     image: ghcr.io/juliushaertl/nextcloud-dev-nginx:latest
++    restart: always
+     ports:
+       - "${PROXY_PORT_HTTP:-80}:80"
+       - "${PROXY_PORT_HTTPS:-443}:443"
+@@ -65,6 +66,7 @@
+
+   nextcloud:
+     image: ghcr.io/juliushaertl/nextcloud-dev-php${PHP_VERSION:-81}:latest
++    restart: always
+     environment:
+       SQL: ${SQL:-mysql}
+       NEXTCLOUD_AUTOINSTALL: "YES"
+@@ -507,6 +509,7 @@
+
+   database-mysql:
+     image: mariadb:10.6
++    restart: always
+     environment:
+       MYSQL_ROOT_PASSWORD: 'nextcloud'
+       MYSQL_PASSWORD: 'nextcloud'
+@@ -546,6 +549,7 @@
+
+   redis:
+     image: redis:7
++    restart: always
+
+   ldap:
+     image: osixia/openldap
+@@ -591,6 +595,7 @@
+
+   mail:
+     image: ghcr.io/juliushaertl/nextcloud-dev-mailhog:latest
++    restart: always
+     environment:
+       VIRTUAL_HOST: "mail${DOMAIN_SUFFIX}"
+       VIRTUAL_PORT: 8025

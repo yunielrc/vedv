@@ -16,9 +16,197 @@ readonly VEDV_IMAGE_ENTITY_TYPE='image'
 readonly VEDV_IMAGE_ENTITY_VALID_ATTRIBUTES='image_cache|ova_file_sum|child_containers_ids'
 readonly VEDV_IMAGE_ENTITY_REGEX_LAYER_NAME='[A-Z]{2,10}'
 readonly VEDV_IMAGE_ENTITY_SNAPSHOT_TYPES='layer'
+# scheme: USER@REPO/NAME
+readonly VEDV_IMAGE_ENTITY_EREGEX_IMAGE_FQN="(${UTILS_HTTP_URL_EREGEX}/)?[a-zA-Z0-9_]+@${VEDV_VMOBJ_ENTITY_EREGEX_NAME}/${VEDV_VMOBJ_ENTITY_EREGEX_NAME}"
+
 # VARIABLES
 
 # FUNCTIONS
+
+#
+# Validate if given value is an image fqn
+#
+# Arguments:
+#   value string   value to validate
+#                  scheme: [domain/]user@collection/image-name
+#
+# Output:
+#   Writes true or false (bool) to stdout
+#
+# Returns:
+#   0
+#
+vedv::image_entity::is_image_fqn() {
+  local -r value="$1"
+
+  if [[ "$value" =~ ^${VEDV_IMAGE_ENTITY_EREGEX_IMAGE_FQN}$ ]]; then
+    echo true
+  else
+    echo false
+  fi
+}
+
+#
+# Validate image fqn
+#
+# Arguments:
+#   image_fqn string   image_fqn to validate
+#                      scheme: [domain/]user@collection/image-name
+#
+# Output:
+#   Writes error message to stderr
+#
+# Returns:
+#   0 if valid, non-zero id if invalid
+#
+vedv::image_entity::validate_image_fqn() {
+  local -r image_fqn="$1"
+
+  if [[ "$(vedv::image_entity::is_image_fqn "$image_fqn")" == false ]]; then
+    err "Invalid argument '${image_fqn}'"
+    return "$ERR_INVAL_ARG"
+  fi
+  return 0
+}
+
+#
+# Image fqn to file name
+#
+# Arguments:
+#   image_fqn string   image fqn
+#                      scheme: [domain/]user@collection/image-name
+#
+# Output:
+#  Writes filename (string) to stdout
+#  eg: domain__user@collection__image-name.ova
+#
+# Returns:
+#   0 if valid, non-zero id if invalid
+#
+vedv::image_entity::fqn_to_file_name() {
+  local -r image_fqn="$1"
+
+  vedv::image_entity::validate_image_fqn "$image_fqn" ||
+    return "$?"
+
+  local -r file_name="${image_fqn//\//__}.ova"
+  echo "${file_name//:/__}"
+}
+
+#
+# Get domain from fqn
+#
+# Arguments:
+#   image_fqn string   image fqn
+#                      scheme: [domain/]user@collection/image-name
+#
+# Output:
+#   Writes domain (string) or nothing to stdout
+#   eg: domain
+#
+# Returns:
+#   0 if valid, non-zero id if invalid
+#
+vedv::image_entity::get_domain_from_fqn() {
+  local -r image_fqn="$1"
+
+  vedv::image_entity::validate_image_fqn "$image_fqn" ||
+    return "$?"
+
+  grep -Pom1 "^${UTILS_HTTP_URL_EREGEX}[^/]" <<<"$image_fqn" || :
+}
+
+#
+# Get user from fqn
+#
+# Arguments:
+#   image_fqn string   image fqn
+#                      scheme: [domain/]user@collection/image-name
+#
+# Output:
+#   Writes user to stdout
+#   eg: user
+#
+# Returns:
+#   0 if valid, non-zero id if invalid
+#
+vedv::image_entity::get_user_from_fqn() {
+  local -r image_fqn="$1"
+
+  vedv::image_entity::validate_image_fqn "$image_fqn" ||
+    return "$?"
+
+  grep -Pom1 "[^/][a-zA-Z0-9_]+(?=@)" <<<"$image_fqn"
+}
+
+#
+# Get collection from fqn
+#
+# Arguments:
+#   image_fqn string   image fqn
+#                      scheme: [domain/]user@collection/image-name
+#
+# Output:
+#   Writes collection (string) to stdout
+#   eg: collection
+#
+# Returns:
+#   0 if valid, non-zero id if invalid
+#
+vedv::image_entity::get_collection_from_fqn() {
+  local -r image_fqn="$1"
+
+  vedv::image_entity::validate_image_fqn "$image_fqn" ||
+    return "$?"
+
+  grep -Pom1 "@\K${VEDV_VMOBJ_ENTITY_EREGEX_NAME}[^/]" <<<"$image_fqn"
+}
+
+#
+# Get name from fqn
+#
+# Arguments:
+#   image_fqn string   image fqn
+#                      scheme: [domain/]user@collection/image-name
+#
+# Output:
+#   Writes name (string) to stdout
+#   eg: image-name
+#
+# Returns:
+#   0 if valid, non-zero id if invalid
+#
+vedv::image_entity::get_name_from_fqn() {
+  local -r image_fqn="$1"
+
+  vedv::image_entity::validate_image_fqn "$image_fqn" ||
+    return "$?"
+
+  echo "${image_fqn##*/}"
+}
+
+#
+# Get relative file path from fqn
+#
+# Arguments:
+#   image_fqn string   image fqn
+#                      scheme: [domain/]user@collection/image-name
+#
+# Output:
+#   Writes rel_file_path (string) to stdout
+#   eg: user@collection/image-name.ova
+#
+# Returns:
+#   0 if valid, non-zero id if invalid
+#
+vedv::image_entity::get_rel_file_path_from_fqn() {
+  local -r image_fqn="$1"
+
+  vedv::image_entity::validate_image_fqn "$image_fqn" ||
+    return "$?"
+
+  echo "$(grep -Pom1 "[^/][a-zA-Z0-9_]+@\S+" <<<"$image_fqn").ova"
+}
 
 #
 # Validate if given id is valid
