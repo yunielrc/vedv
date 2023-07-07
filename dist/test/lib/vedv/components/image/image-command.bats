@@ -389,7 +389,6 @@ vedv image from-url URL"
 
   run vedv::image_command::__import_from_url \
     --check \
-    --no-cache \
     --checksum-url
 
   assert_failure
@@ -400,7 +399,6 @@ vedv image from-url URL"
 
   run vedv::image_command::__import_from_url \
     --check \
-    --no-cache \
     --checksum-url 'http://example.com'
 
   assert_failure
@@ -409,12 +407,11 @@ vedv image from-url URL"
 # bats test_tags=only
 @test "vedv::image_command::__import_from_url() Should succeed with all args" {
   vedv::image_service::import_from_url() {
-    assert_equal "$*" "http://files.get/image image123 http://files.get/sum true"
+    assert_equal "$*" "http://files.get/image image123 http://files.get/sum"
   }
 
   run vedv::image_command::__import_from_url \
     --name image123 \
-    --no-cache \
     --checksum-url 'http://files.get/sum' \
     'http://files.get/image'
 
@@ -424,13 +421,12 @@ vedv image from-url URL"
 # bats test_tags=only
 @test "vedv::image_command::__import_from_url() Should succeed with check" {
   vedv::image_service::import_from_url() {
-    assert_equal "$*" "http://files.get/image image123 http://files.get/image.sha256sum true"
+    assert_equal "$*" "http://files.get/image image123 http://files.get/image.sha256sum"
   }
 
   run vedv::image_command::__import_from_url \
     --name image123 \
     --check \
-    --no-cache \
     'http://files.get/image'
 
   assert_success
@@ -439,7 +435,7 @@ vedv image from-url URL"
 # bats test_tags=only
 @test "vedv::image_command::__import_from_url() Should succeed with name" {
   vedv::image_service::import_from_url() {
-    assert_equal "$*" "http://files.get/image image123  false"
+    assert_equal "$*" "http://files.get/image image123 "
   }
 
   run vedv::image_command::__import_from_url \

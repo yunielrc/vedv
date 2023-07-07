@@ -23,14 +23,18 @@ setup_file() {
   export __VEDV_VMOBJ_SERVICE_SSH_USER
   export __VEDV_VMOBJ_SERVICE_SSH_PASSWORD
 
-  vedv::image_service::constructor "$TEST_IMAGE_CACHE_DIR"
-  export __VEDV_IMAGE_SERVICE_IMAGE_CACHE_DIR
+  vedv::image_service::constructor "$TEST_IMAGE_TMP_DIR"
+  export __VEDV_IMAGE_SERVICE_IMAGE_TMP_DIR
+}
+
+setup() {
+  mkdir -p "$TEST_IMAGE_TMP_DIR"
 }
 
 teardown() {
-  if [[ -d "$TEST_IMAGE_CACHE_DIR" &&
-    "$TEST_IMAGE_CACHE_DIR" =~ ^/tmp/ ]]; then
-    rm -rf "$TEST_IMAGE_CACHE_DIR"
+  if [[ -d "$TEST_IMAGE_TMP_DIR" &&
+    "$TEST_IMAGE_TMP_DIR" =~ ^/tmp/ ]]; then
+    rm -rf "$TEST_IMAGE_TMP_DIR"
   fi
 }
 
@@ -1941,6 +1945,7 @@ EOF
   local -r image_name="image1"
   local -r force="true"
   local -r no_cache="true"
+
   local -r no_wait_after_build="true"
   # Stub
   vedv::image_builder::build() {
@@ -1954,21 +1959,18 @@ EOF
 }
 
 # Tests for vedv::image_service::import_from_url()
-
 @test "vedv::image_service::import_from_url() Should fail If image_url is empty" {
   # Arrange
   local -r image_url=""
   local -r image_name=""
   local -r checksum_url=""
-  local -r no_cache=""
 
   # Stub
   # Act
   run vedv::image_service::import_from_url \
     "$image_url" \
     "$image_name" \
-    "$checksum_url" \
-    "$no_cache"
+    "$checksum_url"
 
   # Assert
   assert_failure
@@ -1980,7 +1982,6 @@ EOF
   local -r image_url="http:files.get/image"
   local -r image_name=""
   local -r checksum_url=""
-  local -r no_cache=""
 
   # Stub
   utils::is_url() {
@@ -1991,8 +1992,7 @@ EOF
   run vedv::image_service::import_from_url \
     "$image_url" \
     "$image_name" \
-    "$checksum_url" \
-    "$no_cache"
+    "$checksum_url"
 
   # Assert
   assert_failure
@@ -2004,9 +2004,11 @@ EOF
   local -r image_url="http://files.get/image"
   local -r image_name=""
   local -r checksum_url="http://files.get/checksum"
-  local -r no_cache=""
 
   # Stub
+  vedv::image_entity::validate_name() {
+    assert_equal "$*" "$image_name"
+  }
   utils::is_url() {
     case "$*" in
     "$image_url") return 0 ;;
@@ -2018,22 +2020,23 @@ EOF
   run vedv::image_service::import_from_url \
     "$image_url" \
     "$image_name" \
-    "$checksum_url" \
-    "$no_cache"
+    "$checksum_url"
 
   # Assert
   assert_failure
   assert_output "checksum_url is not valid"
 }
 
-@test "vedv::image_service::import_from_url() Should fail If mkdir fail" {
+@test "vedv::image_service::import_from_url() Should fail If download dir does not exist" {
   # Arrange
   local -r image_url="http://files.get/image"
   local -r image_name=""
   local -r checksum_url="http://files.get/checksum"
-  local -r no_cache=""
 
   # Stub
+  vedv::image_entity::validate_name() {
+    assert_equal "$*" "$image_name"
+  }
   utils::is_url() {
     case "$*" in
     "$image_url") return 0 ;;
@@ -2041,54 +2044,19 @@ EOF
     *) return 2 ;;
     esac
   }
-  mkdir() {
-    assert_regex "$*" "${TEST_IMAGE_CACHE_DIR}/.*"
-    return 1
-  }
+  if [[ -d "$TEST_IMAGE_TMP_DIR" &&
+    "$TEST_IMAGE_TMP_DIR" =~ ^/tmp/ ]]; then
+    rm -rf "$TEST_IMAGE_TMP_DIR"
+  fi
   # Act
   run vedv::image_service::import_from_url \
     "$image_url" \
     "$image_name" \
-    "$checksum_url" \
-    "$no_cache"
+    "$checksum_url"
 
   # Assert
   assert_failure
-  assert_output --partial "Error creating download directory: '${TEST_IMAGE_CACHE_DIR}/"
-}
-
-@test "vedv::image_service::import_from_url() Should fail If download_file fail" {
-  # Arrange
-  local -r image_url="http://files.get/image"
-  local -r image_name=""
-  local -r checksum_url="http://files.get/checksum"
-  local -r no_cache="true"
-
-  # Stub
-  utils::is_url() {
-    case "$*" in
-    "$image_url") return 0 ;;
-    "$checksum_url") return 0 ;;
-    *) return 2 ;;
-    esac
-  }
-  mkdir() {
-    assert_regex "$*" "${TEST_IMAGE_CACHE_DIR}/.*"
-  }
-  utils::download_file() {
-    assert_regex "$*" "${image_url} ${TEST_IMAGE_CACHE_DIR}/.*/image-ef5f3566ea.ova"
-    return 1
-  }
-  # Act
-  run vedv::image_service::import_from_url \
-    "$image_url" \
-    "$image_name" \
-    "$checksum_url" \
-    "$no_cache"
-
-  # Assert
-  assert_failure
-  assert_output "Error downloading image from url: 'http://files.get/image'"
+  assert_output --partial "Download directory does not exist:"
 }
 
 @test "vedv::image_service::import_from_url() Should fail If download_file for checksum fails" {
@@ -2096,7 +2064,6 @@ EOF
   local -r image_url="http://files.get/image"
   local -r image_name=""
   local -r checksum_url="http://files.get/checksum"
-  local -r no_cache="true"
 
   # Stub
   utils::is_url() {
@@ -2107,7 +2074,7 @@ EOF
     esac
   }
   mkdir() {
-    assert_regex "$*" "${TEST_IMAGE_CACHE_DIR}/.*"
+    assert_regex "$*" "${TEST_IMAGE_TMP_DIR}/.*"
   }
   utils::download_file() {
     case "$*" in
@@ -2120,20 +2087,18 @@ EOF
   run vedv::image_service::import_from_url \
     "$image_url" \
     "$image_name" \
-    "$checksum_url" \
-    "$no_cache"
+    "$checksum_url"
 
   # Assert
   assert_failure
   assert_output "Error downloading checksum from url: '${checksum_url}'"
 }
 
-@test "vedv::image_service::import_from_url() Should fail If validate_sha256sum_format fails" {
+@test "vedv::image_service::import_from_url() Should fail If download_file for image fails" {
   # Arrange
   local -r image_url="http://files.get/image"
   local -r image_name=""
-  local -r checksum_url="http://files.get/checksum"
-  local -r no_cache="true"
+  local -r checksum_url=""
 
   # Stub
   utils::is_url() {
@@ -2144,42 +2109,36 @@ EOF
     esac
   }
   mkdir() {
-    assert_regex "$*" "${TEST_IMAGE_CACHE_DIR}/.*"
+    assert_regex "$*" "${TEST_IMAGE_TMP_DIR}/.*"
   }
   utils::download_file() {
     case "$*" in
-    "$image_url"*) return 0 ;;
+    "$image_url"*) return 1 ;;
     "$checksum_url"*) return 0 ;;
-    *) return 1 ;;
+    *) return 2 ;;
     esac
-  }
-  utils::validate_sha256sum_format() {
-    assert_equal "$*" "$checksum_file"
-    return 1
   }
   # Act
   run vedv::image_service::import_from_url \
     "$image_url" \
     "$image_name" \
-    "$checksum_url" \
-    "$no_cache"
+    "$checksum_url"
 
   # Assert
   assert_failure
-  assert_output --partial "Bad checksum file format: "
+  assert_output "Error downloading image from url: '${image_url}'"
 }
 
-@test "vedv::image_service::import_from_url() Should fail If read fails" {
+@test "vedv::image_service::import_from_url() Should fail If read checksum fails" {
   # Arrange
   local -r image_url="http://files.get/image"
   local -r image_name=""
   local -r checksum_url="http://files.get/checksum"
-  local -r no_cache="true"
 
   # Stub
-  local -r download_dir="${TEST_IMAGE_CACHE_DIR}/$(md5sum <<<"$image_url" | cut -d' ' -f1)"
-  local -r image_file="${download_dir}/image-ef5f3566ea.ova"
-  local -r checksum_file="${download_dir}/checksum.sha256sum"
+  local -r download_dir="$TEST_IMAGE_TMP_DIR"
+  local -r image_file="${download_dir}/image-$(md5sum <<<"$image_url" | cut -d' ' -f1).ova"
+  local -r checksum_file="${image_file}.sha256sum"
 
   utils::is_url() {
     case "$*" in
@@ -2200,32 +2159,28 @@ EOF
     *) return 1 ;;
     esac
   }
-  utils::validate_sha256sum_format() {
-    assert_equal "$*" "$checksum_file"
-  }
+
   # Act
   run vedv::image_service::import_from_url \
     "$image_url" \
     "$image_name" \
-    "$checksum_url" \
-    "$no_cache"
+    "$checksum_url"
 
   # Assert
   assert_failure
   assert_output --partial "Error reading checksum file: '/tmp/vedv/images/"
 }
 
-@test "vedv::image_service::import_from_url() Should fail If ln fails" {
+@test "vedv::image_service::import_from_url() Should fail If write checksum fails" {
   # Arrange
   local -r image_url="http://files.get/image"
   local -r image_name=""
   local -r checksum_url="http://files.get/checksum"
-  local -r no_cache="true"
 
   # Stub
-  local -r download_dir="${TEST_IMAGE_CACHE_DIR}/$(md5sum <<<"$image_url" | cut -d' ' -f1)"
-  local -r image_file="${download_dir}/image-ef5f3566ea.ova"
-  local -r checksum_file="${download_dir}/checksum.sha256sum"
+  local -r download_dir="$TEST_IMAGE_TMP_DIR"
+  local -r image_file="${download_dir}/image-$(md5sum <<<"$image_url" | cut -d' ' -f1).ova"
+  local -r checksum_file="${image_file}.sha256sum"
 
   utils::is_url() {
     case "$*" in
@@ -2234,46 +2189,44 @@ EOF
     *) return 2 ;;
     esac
   }
+
+  echo 'image.ova content' >"$image_file"
+
   utils::download_file() {
     case "$*" in
     "$image_url"*)
-      echo 'image.ova content' >"$image_file"
       return 0
       ;;
     "$checksum_url"*)
-      echo '123245677 image-ef5f3566ea.ova' >"$checksum_file"
+      echo "$(md5sum "$image_file" | cut -d' ' -f1) image_file" >"$checksum_file"
+      chmod -w "$checksum_file"
       return 0
       ;;
     *) return 1 ;;
     esac
-  }
-  utils::validate_sha256sum_format() {
-    assert_equal "$*" "$checksum_file"
   }
 
   # Act
   run vedv::image_service::import_from_url \
     "$image_url" \
     "$image_name" \
-    "$checksum_url" \
-    "$no_cache"
+    "$checksum_url"
 
   # Assert
   assert_failure
-  assert_output --partial "Error creating symbolic link to image file: '/tmp/vedv/images/"
+  assert_output --partial "Error writing checksum file: '${checksum_file}'"
 }
 
 @test "vedv::image_service::import_from_url() Should fail If import fails" {
   # Arrange
   local -r image_url="http://files.get/image"
-  local -r image_name="image1"
+  local -r image_name=""
   local -r checksum_url="http://files.get/checksum"
-  local -r no_cache="true"
 
   # Stub
-  local -r download_dir="${TEST_IMAGE_CACHE_DIR}/$(md5sum <<<"$image_url" | cut -d' ' -f1)"
-  local -r image_file="${download_dir}/image-ef5f3566ea.ova"
-  local -r checksum_file="${download_dir}/checksum.sha256sum"
+  local -r download_dir="$TEST_IMAGE_TMP_DIR"
+  local -r image_file="${download_dir}/image-$(md5sum <<<"$image_url" | cut -d' ' -f1).ova"
+  local -r checksum_file="${image_file}.sha256sum"
 
   utils::is_url() {
     case "$*" in
@@ -2282,49 +2235,49 @@ EOF
     *) return 2 ;;
     esac
   }
+
+  echo 'image.ova content' >"$image_file"
+
   utils::download_file() {
     case "$*" in
     "$image_url"*)
-      echo 'image.ova content' >"$image_file"
       return 0
       ;;
     "$checksum_url"*)
-      echo '123245677 image.ova' >"$checksum_file"
+      echo "$(sha256sum "$image_file" | cut -d' ' -f1) image_file" >"$checksum_file"
       return 0
       ;;
     *) return 1 ;;
     esac
   }
-  utils::validate_sha256sum_format() {
-    assert_equal "$*" "$checksum_file"
-  }
+
   vedv::image_service::import() {
     assert_equal "$*" "${image_file} ${image_name} ${checksum_file}"
+    assert_equal "361e5b6aa374cda9eb949eeb1d2a8b7bb6d1c36060b519e6916ec41b4a0f1667 image-95285a18b1628d7cc8e4d8cd410fd335.ova" "$(<"$checksum_file")"
     return 1
   }
+
   # Act
   run vedv::image_service::import_from_url \
     "$image_url" \
     "$image_name" \
-    "$checksum_url" \
-    "$no_cache"
+    "$checksum_url"
 
   # Assert
   assert_failure
-  assert_output --partial "Error importing image from file: '/tmp/vedv/images/"
+  assert_output "Error importing image from file: '${image_file}'"
 }
 
 @test "vedv::image_service::import_from_url() Should succeed" {
   # Arrange
   local -r image_url="http://files.get/image"
-  local -r image_name="image1"
+  local -r image_name=""
   local -r checksum_url="http://files.get/checksum"
-  local -r no_cache="true"
 
   # Stub
-  local -r download_dir="${TEST_IMAGE_CACHE_DIR}/$(md5sum <<<"$image_url" | cut -d' ' -f1)"
-  local -r image_file="${download_dir}/image-ef5f3566ea.ova"
-  local -r checksum_file="${download_dir}/checksum.sha256sum"
+  local -r download_dir="$TEST_IMAGE_TMP_DIR"
+  local -r image_file="${download_dir}/image-$(md5sum <<<"$image_url" | cut -d' ' -f1).ova"
+  local -r checksum_file="${image_file}.sha256sum"
 
   utils::is_url() {
     case "$*" in
@@ -2333,31 +2286,32 @@ EOF
     *) return 2 ;;
     esac
   }
+
+  echo 'image.ova content' >"$image_file"
+
   utils::download_file() {
     case "$*" in
     "$image_url"*)
-      echo 'image.ova content' >"$image_file"
       return 0
       ;;
     "$checksum_url"*)
-      echo '123245677 image.ova' >"$checksum_file"
+      echo "$(sha256sum "$image_file" | cut -d' ' -f1) image_file" >"$checksum_file"
       return 0
       ;;
     *) return 1 ;;
     esac
   }
-  utils::validate_sha256sum_format() {
-    assert_equal "$*" "$checksum_file"
-  }
+
   vedv::image_service::import() {
     assert_equal "$*" "${image_file} ${image_name} ${checksum_file}"
+    assert_equal "361e5b6aa374cda9eb949eeb1d2a8b7bb6d1c36060b519e6916ec41b4a0f1667 image-95285a18b1628d7cc8e4d8cd410fd335.ova" "$(<"$checksum_file")"
   }
+
   # Act
   run vedv::image_service::import_from_url \
     "$image_url" \
     "$image_name" \
-    "$checksum_url" \
-    "$no_cache"
+    "$checksum_url"
 
   # Assert
   assert_success

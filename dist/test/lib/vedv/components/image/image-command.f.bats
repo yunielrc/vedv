@@ -7,7 +7,7 @@ setup_file() {
   delete_vms_directory
   export VED_HADOLINT_CONFIG="$TEST_HADOLINT_CONFIG"
   export VEDV_HADOLINT_ENABLED=false
-  export VEDV_IMAGE_CACHE_DIR="$TEST_IMAGE_CACHE_DIR"
+  export VEDV_IMAGE_TMP_DIR="$TEST_IMAGE_TMP_DIR"
 }
 
 teardown() {
@@ -564,8 +564,8 @@ vedv image from-url URL"
 
 @test "vedv image from-url -n image123 --check ..., Should fail If checksum does not exist on remote server" {
 
-  run vedv image from-url --no-cache -n image123 --check "$TEST_OVA_URL"
+  run vedv image from-url -n image123 --check "$TEST_OVA_URL"
 
   assert_failure
-  assert_output --regexp 'Bad checksum file format: .*/checksum.sha256sum'
+  assert_output --partial 'Failed to check sha256sum for image file'
 }

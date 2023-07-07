@@ -139,19 +139,41 @@ HELPMSG
 }
 
 #
+# Show help for __import_from_url command
+#
+# Output:
+#  Writes the help to the stdout
+#
+vedv::image_command::__import_from_url_help() {
+  cat <<-HELPMSG
+Usage:
+${__VED_IMAGE_COMMAND_SCRIPT_NAME} image from-url URL
+
+Import an image from a url
+
+Flags:
+  -h, --help            show help
+  --check               the checksum is downloaded from the same url as the image
+                        suffixed with .sha256sum
+Options:
+  -n, --name <name>     image name
+  --checksum-url <url>  download the checksum from the URL and check it using
+                        sha256sum algorithm.
+HELPMSG
+}
+
+#
 # Import an image from a url
 #
 # Flags:
-#   -h, --help          show help
-#   --check             the checksum is downloaded from the same url as the image
-#                       suffixed with .sha256sum
-#   --no-cache          do not use cache when downloading the image
+#   -h, --help            show help
+#   --check               the checksum is downloaded from the same url as the image
+#                         suffixed with .sha256sum
 #
 # Options:
-#   -n, --name <name>   image name
-#   --checksum-url <url>   download the checksum from the URL and check it using
-#                       sha256sum algorithm.
-#
+#   -n, --name <name>     image name
+#   --checksum-url <url>  download the checksum from the URL and check it using
+#                         sha256sum algorithm.
 #
 # Arguments:
 #   IMAGE_URL         string  image url
@@ -164,10 +186,9 @@ HELPMSG
 #
 vedv::image_command::__import_from_url() {
   local image_url=''
-  local image_name=''
   local check=false
+  local image_name=''
   local checksum_url=''
-  local no_cache=false
 
   if [[ $# == 0 ]]; then set -- '-h'; fi
 
@@ -178,6 +199,11 @@ vedv::image_command::__import_from_url() {
       vedv::image_command::__import_from_url_help
       return 0
       ;;
+    --check)
+      readonly check=true
+      shift
+      ;;
+    # options
     -n | --name)
       readonly image_name="${2:-}"
       # validate argument
@@ -188,15 +214,6 @@ vedv::image_command::__import_from_url() {
       fi
       shift 2
       ;;
-    --check)
-      readonly check=true
-      shift
-      ;;
-    --no-cache)
-      readonly no_cache=true
-      shift
-      ;;
-    # options
     --checksum-url)
       readonly checksum_url="${2:-}"
       # validate argument
@@ -228,34 +245,7 @@ vedv::image_command::__import_from_url() {
   vedv::image_service::import_from_url \
     "$image_url" \
     "$image_name" \
-    "$checksum_url" \
-    "$no_cache"
-}
-
-#
-# Show help for __pull command
-#
-# Output:
-#  Writes the help to the stdout
-#
-vedv::image_command::__import_from_url_help() {
-  cat <<-HELPMSG
-Usage:
-${__VED_IMAGE_COMMAND_SCRIPT_NAME} image from-url URL
-
-Import an image from a url
-
-Flags:
-  -h, --help            show help
-  --check               the checksum is downloaded from the same url as the image
-                        suffixed with .sha256sum
-  --no-cache            do not use cache when downloading the image
-
-Options:
-  -n, --name <name>     image name
-  --checksum-url <url>  download the checksum from the URL and check it using
-                        sha256sum algorithm.
-HELPMSG
+    "$checksum_url"
 }
 
 #

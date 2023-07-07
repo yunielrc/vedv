@@ -22,13 +22,13 @@ fi
 # Constructor
 #
 # Arguments:
-#   image_cache_dir   string    path to the image cache directory
+#   image_tmp_dir   string    path to the image tmp directory
 #
 # Returns:
 #   0 on success, non-zero on error.
 #
 vedv::image_service::constructor() {
-  readonly __VEDV_IMAGE_SERVICE_IMAGE_CACHE_DIR="$1"
+  readonly __VEDV_IMAGE_SERVICE_IMAGE_TMP_DIR="$1"
 }
 
 #
@@ -195,7 +195,6 @@ vedv::image_service::import_from_url() {
   local -r image_url="$1"
   local -r image_name="${2:-}"
   local -r checksum_url="${3:-}"
-  local -r no_cache="${4:-false}"
   # validate arguments
   if [[ -z "$image_url" ]]; then
     err "image_url is required"
@@ -206,68 +205,54 @@ vedv::image_service::import_from_url() {
     err "image_url is not valid"
     return "$ERR_INVAL_ARG"
   fi
+  if [[ -n "$image_name" ]]; then
+    vedv::image_entity::validate_name "$image_name" ||
+      return "$?"
+  fi
+  readonly image_name
+
   if [[ -n "$checksum_url" ]] && ! utils::is_url "$checksum_url"; then
     err "checksum_url is not valid"
     return "$ERR_INVAL_ARG"
   fi
 
-  local -r im_cache_dir="$__VEDV_IMAGE_SERVICE_IMAGE_CACHE_DIR"
-
-  local download_dir=''
-  download_dir="${im_cache_dir}/$(md5sum <<<"$image_url" | cut -d' ' -f1)" ||
-    return $?
-  readonly download_dir
+  local -r download_dir="$__VEDV_IMAGE_SERVICE_IMAGE_TMP_DIR"
 
   if [[ ! -d "$download_dir" ]]; then
-    mkdir "$download_dir" || {
-      err "Error creating download directory: '${download_dir}'"
-      return "$ERR_IMAGE_OPERATION"
-    }
+    err "Download directory does not exist: '${download_dir}'"
+    return "$ERR_IMAGE_OPERATION"
   fi
 
-  local image_file="${download_dir}/image-ef5f3566ea.ova"
+  local -r image_file="${download_dir}/image-$(md5sum <<<"$image_url" | cut -d' ' -f1).ova"
   local checksum_file=''
 
-  if [[ "$no_cache" == true || ! -f "$image_file" ]]; then
-    utils::download_file "$image_url" "$image_file" || {
-      err "Error downloading image from url: '${image_url}'"
+  if [[ -n "$checksum_url" ]]; then
+    checksum_file="${image_file}.sha256sum"
+
+    utils::download_file "$checksum_url" "$checksum_file" || {
+      err "Error downloading checksum from url: '${checksum_url}'"
       return "$ERR_IMAGE_OPERATION"
     }
-  fi
-
-  if [[ -n "$checksum_url" ]]; then
-    checksum_file="${download_dir}/checksum.sha256sum"
-
-    if [[ "$no_cache" == true || ! -f "$checksum_file" ]]; then
-      utils::download_file "$checksum_url" "$checksum_file" || {
-        err "Error downloading checksum from url: '${checksum_url}'"
-        return "$ERR_IMAGE_OPERATION"
-      }
-    fi
-    # validate sha256 checksum file
-    if ! utils::validate_sha256sum_format "$checksum_file"; then
-      err "Bad checksum file format: '${checksum_file}'"
-      return "$ERR_IMAGE_OPERATION"
-    fi
-
-    local original_file_name=''
-    # shellcheck disable=SC2034
-    IFS=' ' read -r _ original_file_name 2>/dev/null <"$checksum_file" || {
+    # replace the remote image file name with the local one in
+    # the checksum file
+    local _sha256sum
+    _sha256sum="$(cut -d' ' -f1 "$checksum_file")" || {
       err "Error reading checksum file: '${checksum_file}'"
       return "$ERR_IMAGE_OPERATION"
     }
-    readonly original_file_name
+    readonly _sha256sum
 
-    local -r original_file="${download_dir}/${original_file_name}"
-
-    ln -sf "$image_file" "$original_file" 2>/dev/null || {
-      err "Error creating symbolic link to image file: '${image_file}' to '${original_file_name}'"
+    echo "${_sha256sum} ${image_file##*/}" >"$checksum_file" || {
+      err "Error writing checksum file: '${checksum_file}'"
       return "$ERR_IMAGE_OPERATION"
     }
-
-    image_file="$original_file"
   fi
-  readonly image_file checksum_file
+  readonly checksum_file
+
+  utils::download_file "$image_url" "$image_file" || {
+    err "Error downloading image from url: '${image_url}'"
+    return "$ERR_IMAGE_OPERATION"
+  }
 
   vedv::image_service::import \
     "$image_file" \

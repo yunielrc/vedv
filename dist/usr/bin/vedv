@@ -60,7 +60,7 @@ readonly VEDV_DEFAULT_HYPERVISOR="${VEDV_DEFAULT_HYPERVISOR:-"${DEFAULT_HYPERVIS
 readonly VEDV_NO_WAIT_AFTER_BUILD="${VEDV_NO_WAIT_AFTER_BUILD:-"${NO_WAIT_AFTER_BUILD:-false}"}"
 readonly VEDV_TMP_DIR="${VEDV_TMP_DIR:-"${TMP_DIR:-"/var/tmp/vedv-4e87eace91-${USER}"}"}"
 readonly VEDV_CACHE_DIR="${VEDV_CACHE_DIR:-"${CACHE_DIR:-"/home/${USER}/.var/cache/vedv"}"}"
-readonly VEDV_IMAGE_CACHE_DIR="${VEDV_IMAGE_CACHE_DIR:-"${IMAGE_CACHE_DIR:-"/home/${USER}/.var/cache/vedv/images"}"}"
+readonly VEDV_IMAGE_TMP_DIR="${VEDV_IMAGE_TMP_DIR:-"${IMAGE_TMP_DIR:-"${VEDV_TMP_DIR}/images"}"}"
 readonly VEDV_MEMORY_CACHE_DIR="${VEDV_MEMORY_CACHE_DIR:-"${MEMORY_CACHE_DIR:-"/dev/shm/vedv-6d2566c564-${USER}"}"}"
 # REGISTRY
 readonly VEDV_REGISTRY_CACHE_DIR="${VEDV_REGISTRY_CACHE_DIR:-"${REGISTRY_CACHE_DIR:-"/home/${USER}/.var/cache/vedv/registry"}"}"
@@ -78,7 +78,7 @@ vedv::__create_dirs() {
   local -a vedv_dirs_arr=(
     "$VEDV_TMP_DIR"
     "$VEDV_CACHE_DIR"
-    "$VEDV_IMAGE_CACHE_DIR"
+    "$VEDV_IMAGE_TMP_DIR"
     "$VEDV_MEMORY_CACHE_DIR"
     "$VEDV_REGISTRY_CACHE_DIR"
   )
@@ -141,7 +141,7 @@ vedv::__initialize_components() {
     "$VEDV_HADOLINT_ENABLED" \
     "$VEDV_BASE_VEDVFILEIGNORE" \
     "$vedvfileignore_path"
-  vedv::image_service::constructor "$VEDV_IMAGE_CACHE_DIR"
+  vedv::image_service::constructor "$VEDV_IMAGE_TMP_DIR"
   vedv::image_builder::constructor \
     "$VEDV_MEMORY_CACHE_DIR" \
     "$VEDV_NO_WAIT_AFTER_BUILD"
