@@ -14,8 +14,16 @@ teardown() {
   delete_vms_by_partial_vm_name 'container123'
   delete_vms_by_partial_vm_name 'container124'
   delete_vms_by_partial_vm_name 'image123'
+  delete_vms_by_partial_vm_name 'container:'
   delete_vms_by_partial_vm_name 'image:'
   delete_vms_by_partial_vm_name 'image-cache|'
+
+  if [[ -d "$TEST_IMAGE_TMP_DIR" &&
+    "$TEST_IMAGE_TMP_DIR" == */tmp/* ]]; then
+    rm -rf "$TEST_IMAGE_TMP_DIR"
+  fi
+  [[ -d "$TEST_IMAGE_TMP_DIR" ]] ||
+    mkdir -p "$TEST_IMAGE_TMP_DIR"
 }
 
 # Tests for 'vedv image pull'
@@ -568,4 +576,68 @@ vedv image from-url URL"
 
   assert_failure
   assert_output --partial 'Failed to check sha256sum for image file'
+}
+
+# Tests for vedv image export
+@test "vedv image export --help, Should show help" {
+
+  for flag in '' '-h' '--help'; do
+    run vedv image export $flag
+
+    assert_success
+    assert_output --partial "Usage:
+vedv image export IMAGE FILE"
+  done
+}
+
+@test "vedv image export --no-checksum, Should fail if missing image name or id" {
+
+  run vedv image export --no-checksum
+
+  assert_failure
+  assert_output --partial "Missing argument 'IMAGE'"
+}
+
+@test "vedv image export --no-checksum image123, Should fail if missing FILE" {
+
+  run vedv image export --no-checksum image123
+
+  assert_failure
+  assert_output --partial "Missing argument 'FILE'"
+}
+
+@test "vedv image export --no-checksum image123 FILE, Should succeed" {
+
+  vedv image import --name image123 "$TEST_OVA_FILE"
+
+  run vedv image export --no-checksum image123 "${TEST_IMAGE_TMP_DIR}/image123.ova"
+
+  assert_success
+  assert_output ""
+
+  assert [ -f "${TEST_IMAGE_TMP_DIR}/image123.ova" ]
+  assert [ ! -f "${TEST_IMAGE_TMP_DIR}/image123.ova.sha256sum" ]
+}
+
+@test "vedv image export image123 FILE, Should succeed" {
+
+  vedv image import --name image123 "$TEST_OVA_FILE"
+
+  run vedv image export image123 "${TEST_IMAGE_TMP_DIR}/image123.ova"
+
+  assert_success
+  assert_output ""
+
+  assert [ -f "${TEST_IMAGE_TMP_DIR}/image123.ova" ]
+  assert [ -f "${TEST_IMAGE_TMP_DIR}/image123.ova.sha256sum" ]
+
+  run_cmd_wrapper() (
+    cd "$TEST_IMAGE_TMP_DIR"
+    sha256sum -c image123.ova.sha256sum
+  )
+
+  run run_cmd_wrapper
+
+  assert_success
+  assert_output --partial 'image123.ova: OK'
 }

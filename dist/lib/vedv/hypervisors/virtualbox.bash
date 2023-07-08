@@ -149,6 +149,7 @@ vedv::hypervisor::clonevm_link() {
   }
 }
 vedv::virtualbox::clonevm_link() { vedv::hypervisor::clonevm_link "$@"; }
+
 #
 # Import a virtual appliance in OVA format
 # and create virtual machines
@@ -175,6 +176,35 @@ vedv::hypervisor::import() {
   VBoxManage import "$ova_file" --vsys 0 --vmname "$vm_name"
 }
 vedv::virtualbox::import() { vedv::hypervisor::import "$@"; }
+
+#
+# Export a virtual appliance
+#
+# Arguments:
+#   vm_name             string  name of the VM to export
+#   ova_file            string  file to export to
+#   [exported_vm_name]  string  exported vm name (default: vm_name)
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::hypervisor::export() {
+  local -r vm_name="$1"
+  local -r ova_file="$2"
+  local -r exported_vm_name="${3:-"$vm_name"}"
+  # validate arguments
+  if [[ -z "$vm_name" ]]; then
+    err "Argument 'vm_name' is required"
+    return "$ERR_INVAL_ARG"
+  fi
+  if [[ -z "$ova_file" ]]; then
+    err "Argument 'ova_file' is required"
+    return "$ERR_INVAL_ARG"
+  fi
+
+  VBoxManage export "$vm_name" \
+    --output "$ova_file" --vsys 0 --ovf20 --vmname "$exported_vm_name" &>/dev/null
+}
 
 #
 # List virtual machines with name that contains the partial name

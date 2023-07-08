@@ -296,6 +296,102 @@ vedv::image_service::pull() {
 }
 
 #
+# Export an image from to a file, by default create a checksum file
+#
+# Arguments:
+#   image_name_id   string  image id
+#   image_file      string  image file
+#   [no_checksum]   bool    do not create a checksum file (default: false)
+#
+# Output:
+#  Writes image id and name (string) to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::image_service::export_by_id() {
+  local -r image_id="$1"
+  local -r image_file="$2"
+  local -r no_checksum="${3:-false}"
+  # validate arguments
+  if [[ -z "$image_id" ]]; then
+    err "Argument 'image_name_or_id' is required"
+    return "$ERR_INVAL_ARG"
+  fi
+  if [[ -z "$image_file" ]]; then
+    err "Argument 'image_file' is required"
+    return "$ERR_INVAL_ARG"
+  fi
+
+  if [[ -f "$image_file" ]]; then
+    rm -f "$image_file" || {
+      err "Failed to remove existing image file: '${image_file}'"
+      return "$ERR_IMAGE_OPERATION"
+    }
+  fi
+
+  local vm_name=''
+  vm_name="$(vedv::image_entity::get_vm_name "$image_id")" || {
+    err "Failed to get image name by id '${image_id}'"
+    return "$ERR_IMAGE_OPERATION"
+  }
+  readonly vm_name
+
+  local image_name=''
+  image_name="$(vedv::image_entity::get_image_name_by_vm_name "$vm_name")" || {
+    err "Failed to get image name for vm '${vm_name}'"
+    return "$ERR_IMAGE_OPERATION"
+  }
+  readonly image_name
+
+  vedv::hypervisor::export "$vm_name" "$image_file" "$image_name" &>/dev/null || {
+    err "Failed to export image '${image_name}' to '${image_file}'"
+    return "$ERR_IMAGE_OPERATION"
+  }
+
+  if [[ "$no_checksum" == true ]]; then
+    return 0
+  fi
+
+  local -r checksum_file="${image_file}.sha256sum"
+
+  sha256sum "$image_file" >"$checksum_file" || {
+    err "Failed to create checksum file '${checksum_file}'"
+    return "$ERR_IMAGE_OPERATION"
+  }
+}
+
+#
+# Export an image from to a file, by default create a checksum file
+#
+# Arguments:
+#   image_name_or_id  string  image to export
+#   image_file        string  image file
+#
+#   [no_checksum]     bool    do not create a checksum file (default: false)
+#
+# Output:
+#  Writes image id and name (string) to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::image_service::export() {
+  local -r image_name_or_id="$1"
+  local -r image_file="$2"
+  local -r no_checksum="${3:-false}"
+
+  local image_id
+  image_id="$(vedv::vmobj_entity::get_id "$image_name_or_id")" || {
+    err "Failed to get id by name or id: ${image_name_or_id}"
+    return "$ERR_VMOBJ_OPERATION"
+  }
+  readonly image_id
+
+  vedv::image_service::export_by_id "$image_id" "$image_file" "$no_checksum"
+}
+
+#
 #  List images
 #
 # Output:

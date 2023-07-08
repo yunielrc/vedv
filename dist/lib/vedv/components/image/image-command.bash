@@ -28,6 +28,34 @@ vedv::image_command::constructor() {
 }
 
 #
+# Show help for __import command
+#
+# Output:
+#  Writes the help to the stdout
+#
+vedv::image_command::__import_help() {
+  cat <<-HELPMSG
+Usage:
+${__VED_IMAGE_COMMAND_SCRIPT_NAME} image import IMAGE_FILE
+
+Import an image from a file
+
+Aliases:
+  import, from-file
+
+Flags:
+  -h, --help            show help
+  --check               the checksum is readed from a file with the same name
+                        as the image file and the extension .sha256sum.
+
+Options:
+  -n, --name <name>     image name
+  --check-file <file>   read the checksum from the FILE and check it using
+                        sha256sum algorithm.
+HELPMSG
+}
+
+#
 # Import an image from a file
 #
 # Flags:
@@ -111,31 +139,91 @@ vedv::image_command::__import() {
 }
 
 #
-# Show help for __import command
+# Show help for __export command
 #
 # Output:
 #  Writes the help to the stdout
 #
-vedv::image_command::__import_help() {
+vedv::image_command::__export_help() {
   cat <<-HELPMSG
 Usage:
-${__VED_IMAGE_COMMAND_SCRIPT_NAME} image import IMAGE_FILE
+${__VED_IMAGE_COMMAND_SCRIPT_NAME} image export IMAGE FILE
 
-Import an image from a file
+Export an image to a file
 
 Aliases:
-  import, from-file
+  export, to-file
 
 Flags:
-  -h, --help            show help
-  --check               the checksum is readed from a file with the same name
-                        as the image file and the extension .sha256sum.
+  -h, --help      show help
 
 Options:
-  -n, --name <name>     image name
-  --check-file <file>   read the checksum from the FILE and check it using
-                        sha256sum algorithm.
+  --no-checksum   do not create a checksum file
 HELPMSG
+}
+
+#
+# Export an image to a file
+#
+# Flags:
+#   -h, --help        show help
+#
+# Options:
+#   --no-checksum     do not create a checksum file
+#
+# Arguments:
+#   IMAGE             name or id of the image that will be exported
+#   FILE              file to export the image
+#
+# Output:
+#  Writes image name to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::image_command::__export() {
+  local image_name_or_id=''
+  local image_file=''
+  local no_checksum='false'
+
+  if [[ $# == 0 ]]; then set -- '-h'; fi
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+    # flags
+    -h | --help)
+      vedv::image_command::__export_help
+      return 0
+      ;;
+    --no-checksum)
+      readonly no_checksum=true
+      shift
+      ;;
+    # arguments
+    *)
+      readonly image_name_or_id="$1"
+      readonly image_file="${2:-}"
+      break
+      ;;
+    esac
+  done
+
+  if [[ -z "$image_name_or_id" ]]; then
+    err "Missing argument 'IMAGE'\n"
+    vedv::image_command::__export_help
+    return "$ERR_INVAL_ARG"
+  fi
+
+  if [[ -z "$image_file" ]]; then
+    err "Missing argument 'FILE'\n"
+    vedv::image_command::__export_help
+    return "$ERR_INVAL_ARG"
+  fi
+
+  vedv::image_service::export \
+    "$image_name_or_id" \
+    "$image_file" \
+    "$no_checksum"
 }
 
 #
@@ -656,6 +744,7 @@ Flags:
 
 Commands:
   import          import an image from a file
+  export          export an image to a file
   from-url        import an image from a url
   build           build an image from a Vedvfile
   pull            pull an image from a registry or file
@@ -710,6 +799,11 @@ vedv::image_command::run_cmd() {
     import | from-file)
       shift
       vedv::image_command::__import "$@"
+      return $?
+      ;;
+    export | to-file)
+      shift
+      vedv::image_command::__export "$@"
       return $?
       ;;
     from-url)

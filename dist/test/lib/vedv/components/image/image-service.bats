@@ -33,9 +33,11 @@ setup() {
 
 teardown() {
   if [[ -d "$TEST_IMAGE_TMP_DIR" &&
-    "$TEST_IMAGE_TMP_DIR" =~ ^/tmp/ ]]; then
+    "$TEST_IMAGE_TMP_DIR" == */tmp/* ]]; then
     rm -rf "$TEST_IMAGE_TMP_DIR"
   fi
+  [[ -d "$TEST_IMAGE_TMP_DIR" ]] ||
+    mkdir -p "$TEST_IMAGE_TMP_DIR"
 }
 
 # Tests for vedv::image_service::import()
@@ -2074,7 +2076,7 @@ EOF
     esac
   }
   mkdir() {
-    assert_regex "$*" "${TEST_IMAGE_TMP_DIR}/.*"
+    assert_regex "$*" "-p ${TEST_IMAGE_TMP_DIR}.*"
   }
   utils::download_file() {
     case "$*" in
@@ -2109,7 +2111,7 @@ EOF
     esac
   }
   mkdir() {
-    assert_regex "$*" "${TEST_IMAGE_TMP_DIR}/.*"
+    assert_regex "$*" "-p ${TEST_IMAGE_TMP_DIR}.*"
   }
   utils::download_file() {
     case "$*" in
@@ -2539,4 +2541,224 @@ EOF
 
   assert_success
   assert_output "4278381351"
+}
+
+# Tests for vedv::image_service::export_by_id()
+@test "vedv::image_service::export_by_id() Should fail With empty image_id" {
+  local -r image_id=""
+  local -r image_file=""
+  local -r no_checksum=""
+
+  run vedv::image_service::export_by_id \
+    "$image_id" "$image_file" "$no_checksum"
+
+  assert_failure
+  assert_output "Argument 'image_name_or_id' is required"
+}
+
+@test "vedv::image_service::export_by_id() Should fail With empty image_file" {
+  local -r image_id="1234567890"
+  local -r image_file=""
+  local -r no_checksum=""
+
+  run vedv::image_service::export_by_id \
+    "$image_id" "$image_file" "$no_checksum"
+
+  assert_failure
+  assert_output "Argument 'image_file' is required"
+}
+
+@test "vedv::image_service::export_by_id() Should fail If rm fails" {
+  local -r image_id="1234567890"
+  local -r image_file="${TEST_IMAGE_TMP_DIR}/image123.ova"
+  local -r no_checksum=""
+
+  : >"$image_file"
+  rm() {
+    if [[ "$*" == '-f'*'/image123.ova' ]]; then
+      return 1
+    fi
+    command rm "$@"
+  }
+
+  run vedv::image_service::export_by_id \
+    "$image_id" "$image_file" "$no_checksum"
+
+  assert_failure
+  assert_output --regexp "Failed to remove existing image file: '.*/image123.ova'"
+}
+
+@test "vedv::image_service::export_by_id() Should fail If get_vm_name fails" {
+  local -r image_id="1234567890"
+  local -r image_file="${TEST_IMAGE_TMP_DIR}/image123.ova"
+  local -r no_checksum=""
+
+  vedv::image_entity::get_vm_name() {
+    assert_equal "$*" "$image_id"
+    return 1
+  }
+
+  run vedv::image_service::export_by_id \
+    "$image_id" "$image_file" "$no_checksum"
+
+  assert_failure
+  assert_output "Failed to get image name by id '1234567890'"
+}
+
+@test "vedv::image_service::export_by_id() Should fail If get_image_name_by_vm_name fails" {
+  local -r image_id="1234567890"
+  local -r image_file="${TEST_IMAGE_TMP_DIR}/image123.ova"
+  local -r no_checksum=""
+
+  vedv::image_entity::get_vm_name() {
+    assert_equal "$*" "$image_id"
+    echo "image:nalyd1|crc:223456789|"
+  }
+  vedv::image_entity::get_image_name_by_vm_name() {
+    assert_equal "$*" "image:nalyd1|crc:223456789|"
+    return 1
+  }
+
+  run vedv::image_service::export_by_id \
+    "$image_id" "$image_file" "$no_checksum"
+
+  assert_failure
+  assert_output "Failed to get image name for vm 'image:nalyd1|crc:223456789|'"
+}
+
+@test "vedv::image_service::export_by_id() Should fail If export fails" {
+  local -r image_id="1234567890"
+  local -r image_file="${TEST_IMAGE_TMP_DIR}/image123.ova"
+  local -r no_checksum=""
+
+  vedv::image_entity::get_vm_name() {
+    assert_equal "$*" "$image_id"
+    echo "image:nalyd1|crc:223456789|"
+  }
+  vedv::image_entity::get_image_name_by_vm_name() {
+    assert_equal "$*" "image:nalyd1|crc:223456789|"
+    echo 'nalyd1'
+  }
+  vedv::hypervisor::export() {
+    assert_equal "$*" "image:nalyd1|crc:223456789| ${image_file} nalyd1"
+    return 1
+  }
+
+  run vedv::image_service::export_by_id \
+    "$image_id" "$image_file" "$no_checksum"
+
+  assert_failure
+  assert_output --regexp "Failed to export image 'nalyd1' to '.*/image123.ova'"
+}
+
+@test "vedv::image_service::export_by_id() Should succeed With no checksum" {
+  local -r image_id="1234567890"
+  local -r image_file="${TEST_IMAGE_TMP_DIR}/image123.ova"
+  local -r no_checksum="true"
+
+  vedv::image_entity::get_vm_name() {
+    assert_equal "$*" "$image_id"
+    echo "image:nalyd1|crc:223456789|"
+  }
+  vedv::image_entity::get_image_name_by_vm_name() {
+    assert_equal "$*" "image:nalyd1|crc:223456789|"
+    echo 'nalyd1'
+  }
+  vedv::hypervisor::export() {
+    assert_equal "$*" "image:nalyd1|crc:223456789| ${image_file} nalyd1"
+  }
+  sha256sum() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+
+  run vedv::image_service::export_by_id \
+    "$image_id" "$image_file" "$no_checksum"
+
+  assert_success
+  assert_output ""
+}
+
+@test "vedv::image_service::export_by_id() Should fail If sha256sum fails" {
+  local -r image_id="1234567890"
+  local -r image_file="${TEST_IMAGE_TMP_DIR}/image123.ova"
+  local -r no_checksum="false"
+
+  vedv::image_entity::get_vm_name() {
+    assert_equal "$*" "$image_id"
+    echo "image:nalyd1|crc:223456789|"
+  }
+  vedv::image_entity::get_image_name_by_vm_name() {
+    assert_equal "$*" "image:nalyd1|crc:223456789|"
+    echo 'nalyd1'
+  }
+  vedv::hypervisor::export() {
+    assert_equal "$*" "image:nalyd1|crc:223456789| ${image_file} nalyd1"
+  }
+  sha256sum() {
+    assert_equal "$*" "${image_file}"
+    return 1
+  }
+
+  run vedv::image_service::export_by_id \
+    "$image_id" "$image_file" "$no_checksum"
+
+  assert_failure
+  assert_output --regexp "Failed to create checksum file '.*/image123.ova.sha256sum'"
+}
+
+@test "vedv::image_service::export_by_id() Should succeed" {
+  local -r image_id="1234567890"
+  local -r image_file="${TEST_IMAGE_TMP_DIR}/image123.ova"
+  local -r no_checksum="false"
+
+  vedv::image_entity::get_vm_name() {
+    assert_equal "$*" "$image_id"
+    echo "image:nalyd1|crc:223456789|"
+  }
+  vedv::image_entity::get_image_name_by_vm_name() {
+    assert_equal "$*" "image:nalyd1|crc:223456789|"
+    echo 'nalyd1'
+  }
+  vedv::hypervisor::export() {
+    assert_equal "$*" "image:nalyd1|crc:223456789| ${image_file} nalyd1"
+  }
+  sha256sum() {
+    assert_equal "$*" "$image_file"
+  }
+
+  run vedv::image_service::export_by_id \
+    "$image_id" "$image_file" "$no_checksum"
+
+  assert_success
+  assert_output ""
+}
+
+# Tests for vedv::image_service::export()
+@test "vedv::image_service::export() should fail if get_id fails" {
+  local -r image_name_or_id="nalyd1"
+  local -r image_file="${TEST_IMAGE_TMP_DIR}/image123.ova"
+  local -r no_checksum=""
+
+  vedv::vmobj_entity::get_id() {
+    assert_equal "$*" "nalyd1"
+    return 1
+  }
+
+  run vedv::image_service::export "$image_name_or_id" "$image_file" "$no_checksum"
+}
+
+@test "vedv::image_service::export() should succeed" {
+  local -r image_name_or_id="nalyd1"
+  local -r image_file="${TEST_IMAGE_TMP_DIR}/image123.ova"
+  local -r no_checksum=""
+
+  vedv::vmobj_entity::get_id() {
+    assert_equal "$*" "nalyd1"
+    echo "1234567890"
+  }
+  vedv::image_service::export_by_id() {
+    assert_equal "$*" "1234567890 ${image_file} ${no_checksum}"
+  }
+
+  run vedv::image_service::export "$image_name_or_id" "$image_file" "$no_checksum"
 }

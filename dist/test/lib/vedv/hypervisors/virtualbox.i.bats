@@ -14,6 +14,15 @@ setup_file() {
 teardown() {
   delete_vms_by_id_tag "${VM_TAG}-clone"
   delete_vms_by_id_tag "$VM_TAG"
+
+  delete_vms_by_partial_vm_name 'image123'
+
+  if [[ -d "$TEST_IMAGE_TMP_DIR" &&
+    "$TEST_IMAGE_TMP_DIR" == */tmp/* ]]; then
+    rm -rf "$TEST_IMAGE_TMP_DIR"
+  fi
+  [[ -d "$TEST_IMAGE_TMP_DIR" ]] ||
+    mkdir -p "$TEST_IMAGE_TMP_DIR"
 }
 # shellcheck disable=SC2120
 gen_vm_clone_name() {
@@ -782,4 +791,42 @@ http,tcp,,8080,,80'
 
   assert_success
   assert_output ""
+}
+
+# Tests for vedv::hypervisor::export()
+@test "vedv::hypervisor::export() Should fail With empty vm_name" {
+  local -r vm_name=""
+  local -r ova_file=""
+  local -r exported_vm_name=""
+
+  run vedv::hypervisor::export "$vm_name" "$ova_file" "$exported_vm_name"
+
+  assert_failure
+  assert_output "Argument 'vm_name' is required"
+}
+
+@test "vedv::hypervisor::export() Should fail With empty ova_file" {
+  local -r vm_name="image123"
+  local -r ova_file=""
+  local -r exported_vm_name=""
+
+  run vedv::hypervisor::export "$vm_name" "$ova_file" "$exported_vm_name"
+
+  assert_failure
+  assert_output "Argument 'ova_file' is required"
+}
+
+@test "vedv::hypervisor::export() Should succeed" {
+  local -r vm_name="image123"
+  local -r ova_file="${TEST_IMAGE_TMP_DIR}/image123.ova"
+  local -r exported_vm_name="exported_vm_name"
+
+  VBoxManage import "$TEST_OVA_FILE" --vsys 0 --vmname "$vm_name" &>/dev/null
+
+  run vedv::hypervisor::export "$vm_name" "$ova_file" "$exported_vm_name"
+
+  assert_success
+  assert_output ""
+
+  assert [ -f "$ova_file" ]
 }

@@ -445,3 +445,55 @@ vedv image from-url URL"
   assert_success
   assert_output ""
 }
+
+# Tests for vedv::image_command::__export()
+@test "vedv::image_command::__export() Should show help" {
+
+  for flag in '' '-h' '--help'; do
+    run vedv::image_command::__export $flag
+
+    assert_success
+    assert_output --partial "Usage:
+vedv image export IMAGE FILE"
+  done
+}
+
+@test "vedv::image_command::__export() Should fail if missing image name or id" {
+
+  run vedv::image_command::__export --no-checksum
+
+  assert_failure
+  assert_output --partial "Missing argument 'IMAGE'"
+}
+
+@test "vedv::image_command::__export() Should fail if missing FILE" {
+
+  run vedv::image_command::__export --no-checksum image123
+
+  assert_failure
+  assert_output --partial "Missing argument 'FILE'"
+}
+
+@test "vedv::image_command::__export() Should succeed With no-checksum" {
+
+  vedv::image_service::export() {
+    assert_equal "$*" "image123 ${TEST_IMAGE_TMP_DIR}/image123.ova true"
+  }
+
+  run vedv::image_command::__export --no-checksum image123 "${TEST_IMAGE_TMP_DIR}/image123.ova"
+
+  assert_success
+  assert_output ""
+}
+
+@test "vedv::image_command::__export() Should succeed" {
+
+  vedv::image_service::export() {
+    assert_equal "$*" "image123 ${TEST_IMAGE_TMP_DIR}/image123.ova false"
+  }
+
+  run vedv::image_command::__export image123 "${TEST_IMAGE_TMP_DIR}/image123.ova"
+
+  assert_success
+  assert_output ""
+}
