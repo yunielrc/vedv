@@ -149,6 +149,15 @@ vedv::image_service::import() {
     return "$ERR_IMAGE_OPERATION"
   }
 
+  vedv::image_entity::set_vm_name "$image_id" "$image_vm_name" || {
+    err "Failed to set vm name for image: '${image_id}'"
+    return "$ERR_IMAGE_OPERATION"
+  }
+  vedv::image_entity::____clear_child_container_ids "$image_id" || {
+    err "Failed to clear child container ids for image: '${image_id}'"
+    return "$ERR_IMAGE_OPERATION"
+  }
+
   vedv::image_service::create_layer_from "$image_id" "$image_file" >/dev/null || {
     err "Error creating the first layer for image '${image_id}'"
     return "$ERR_IMAGE_OPERATION"
@@ -323,13 +332,6 @@ vedv::image_service::export_by_id() {
     return "$ERR_INVAL_ARG"
   fi
 
-  if [[ -f "$image_file" ]]; then
-    rm -f "$image_file" || {
-      err "Failed to remove existing image file: '${image_file}'"
-      return "$ERR_IMAGE_OPERATION"
-    }
-  fi
-
   local vm_name=''
   vm_name="$(vedv::image_entity::get_vm_name "$image_id")" || {
     err "Failed to get image name by id '${image_id}'"
@@ -343,6 +345,13 @@ vedv::image_service::export_by_id() {
     return "$ERR_IMAGE_OPERATION"
   }
   readonly image_name
+
+  if [[ -f "$image_file" ]]; then
+    rm -f "$image_file" || {
+      err "Failed to remove existing image file: '${image_file}'"
+      return "$ERR_IMAGE_OPERATION"
+    }
+  fi
 
   vedv::hypervisor::export "$vm_name" "$image_file" "$image_name" &>/dev/null || {
     err "Failed to export image '${image_name}' to '${image_file}'"

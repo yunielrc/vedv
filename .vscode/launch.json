@@ -28,6 +28,19 @@
       "program": "${workspaceFolder}/dist/usr/bin/vedv",
       "args": [
         "image",
+        "import",
+        "--check",
+        "~/image1a.ova"
+      ]
+    },
+    {
+      "type": "bashdb",
+      "request": "launch",
+      "name": "Bash-Debug (vedv image import)",
+      "cwd": "${workspaceFolder}",
+      "program": "${workspaceFolder}/dist/usr/bin/vedv",
+      "args": [
+        "image",
         "pull",
         "/tmp/vedv/test/files/alpine-x86_64.ova"
       ]
@@ -169,7 +182,7 @@
       "args": [
         "image",
         "rm",
-        "1250835371"
+        "972912926"
       ]
     },
     {

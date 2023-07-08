@@ -279,6 +279,23 @@ vedv::image_entity::gen_vm_name() {
 }
 
 #
+# Set the vm name of a image
+#
+# Arguments:
+#   image_id  string     image id
+#   vm_name   string     vm name
+#
+# Output:
+#  writes image vm name to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::image_entity::set_vm_name() {
+  vedv::vmobj_entity::set_vm_name "$VEDV_IMAGE_ENTITY_TYPE" "$@"
+}
+
+#
 # Get the vm name of an image
 #
 # Arguments:
@@ -579,7 +596,31 @@ vedv::image_entity::get_child_containers_ids() {
 }
 
 #
+# Clear child containers ids
+# (only for internal use of image_service when an image is imported)
+#
+# Arguments:
+#   image_id            string  image id
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::image_entity::____clear_child_container_ids() {
+  local -r image_id="$1"
+  # validate arguments
+  vedv::vmobj_entity::validate_id "$image_id" ||
+    return "$?"
+
+  vedv::vmobj_entity::__set_attribute \
+    "$VEDV_IMAGE_ENTITY_TYPE" \
+    "$image_id" \
+    'child_containers_ids' \
+    ''
+}
+
+#
 # Add child container id
+# (only for internal use of container_service when creating a container)
 #
 # Arguments:
 #   image_id            string  image id
@@ -588,7 +629,7 @@ vedv::image_entity::get_child_containers_ids() {
 # Returns:
 #   0 on success, non-zero on error.
 #
-vedv::image_entity::add_child_container_id() {
+vedv::image_entity::____add_child_container_id() {
   local -r image_id="$1"
   local -r child_container_id="$2"
   # validate arguments
@@ -625,6 +666,7 @@ vedv::image_entity::add_child_container_id() {
 
 #
 # Remove child container id
+# (only for internal use of container_service when container is deleted)
 #
 # Arguments:
 #   image_id            string  image id
@@ -633,7 +675,7 @@ vedv::image_entity::add_child_container_id() {
 # Returns:
 #   0 on success, non-zero on error.
 #
-vedv::image_entity::remove_child_container_id() {
+vedv::image_entity::____remove_child_container_id() {
   local -r image_id="$1"
   local -r child_container_id="$2"
   # validate arguments

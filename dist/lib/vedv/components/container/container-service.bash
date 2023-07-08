@@ -195,7 +195,7 @@ vedv::container_service::create() {
   }
 
   if [[ "$standalone" == false ]]; then
-    vedv::image_entity::add_child_container_id "$image_id" "$container_id" || {
+    vedv::image_entity::____add_child_container_id "$image_id" "$container_id" || {
       err "Failed to add child container id for image: '${image_name}'"
       return "$ERR_CONTAINER_OPERATION"
     }
@@ -538,7 +538,7 @@ vedv::container_service::remove_one() {
   }
 
   if [[ "$parent_image_id" != "$VEDV_CONTAINER_SERVICE_STANDALONE" ]]; then
-    vedv::image_entity::remove_child_container_id "$parent_image_id" "$container_id" || {
+    vedv::image_entity::____remove_child_container_id "$parent_image_id" "$container_id" || {
       err "Failed to remove child container id from parent image: '${container_id}'"
       return "$ERR_CONTAINER_OPERATION"
     }

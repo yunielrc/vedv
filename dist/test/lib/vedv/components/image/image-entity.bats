@@ -12,6 +12,11 @@ load test_helper
   :
 }
 
+# Tests for vedv::image_entity::set_vm_name()
+@test "vedv::image_entity::set_vm_name() Should succeed" {
+  :
+}
+
 # Tests for vedv::image_entity::get_vm_name()
 @test "vedv::image_entity::get_vm_name() Should succeed" {
   :
@@ -244,30 +249,30 @@ EOF
   assert_success
   assert_output "12345 12346 12347"
 }
-# Tests for vedv::image_entity::add_child_container_id()
-@test "vedv::image_entity::add_child_container_id() Should fail With invalid image_id" {
+# Tests for vedv::image_entity::____add_child_container_id()
+@test "vedv::image_entity::____add_child_container_id() Should fail With invalid image_id" {
   # Arrange
   local -r image_id="test-image"
   local -r container_id="test-container"
   # Act
-  run vedv::image_entity::add_child_container_id "$image_id" "$container_id"
+  run vedv::image_entity::____add_child_container_id "$image_id" "$container_id"
   # Assert
   assert_failure
   assert_output "Invalid argument 'test-image'"
 }
 
-@test "vedv::image_entity::add_child_container_id() Should fail With invalid child_container_id" {
+@test "vedv::image_entity::____add_child_container_id() Should fail With invalid child_container_id" {
   # Arrange
   local -r image_id="223456789"
   local -r container_id="test-container"
   # Act
-  run vedv::image_entity::add_child_container_id "$image_id" "$container_id"
+  run vedv::image_entity::____add_child_container_id "$image_id" "$container_id"
   # Assert
   assert_failure
   assert_output "Invalid argument 'test-container'"
 }
 
-@test "vedv::image_entity::add_child_container_id() Should fail If get_child_containers_ids fails" {
+@test "vedv::image_entity::____add_child_container_id() Should fail If get_child_containers_ids fails" {
   # Arrange
   local -r image_id="223456789"
   local -r container_id="123456789"
@@ -277,13 +282,13 @@ EOF
     return 1
   }
   # Act
-  run vedv::image_entity::add_child_container_id "$image_id" "$container_id"
+  run vedv::image_entity::____add_child_container_id "$image_id" "$container_id"
   # Assert
   assert_failure
   assert_output "Failed to get child containers ids for image '223456789'"
 }
 
-@test "vedv::image_entity::add_child_container_id() Should fail If container_id is already added" {
+@test "vedv::image_entity::____add_child_container_id() Should fail If container_id is already added" {
   # Arrange
   local -r image_id="223456789"
   local -r container_id="123456789"
@@ -293,13 +298,13 @@ EOF
     echo "123456789 123456788 123456787"
   }
   # Act
-  run vedv::image_entity::add_child_container_id "$image_id" "$container_id"
+  run vedv::image_entity::____add_child_container_id "$image_id" "$container_id"
   # Assert
   assert_failure
   assert_output "Failed to add child container '123456789' to image '223456789', it is already added"
 }
 
-@test "vedv::image_entity::add_child_container_id() Should succeed" {
+@test "vedv::image_entity::____add_child_container_id() Should succeed" {
   # Arrange
   local -r image_id="223456789"
   local -r container_id="123456789"
@@ -312,13 +317,13 @@ EOF
     assert_equal "$*" "image 223456789 child_containers_ids 123456787 123456788 123456789"
   }
   # Act
-  run vedv::image_entity::add_child_container_id "$image_id" "$container_id"
+  run vedv::image_entity::____add_child_container_id "$image_id" "$container_id"
   # Assert
   assert_success
   assert_output ""
 }
 
-@test "vedv::image_entity::add_child_container_id() Should succeed without previous saved child containers" {
+@test "vedv::image_entity::____add_child_container_id() Should succeed without previous saved child containers" {
   # Arrange
   local -r image_id="223456789"
   local -r container_id="123456789"
@@ -330,36 +335,36 @@ EOF
     assert_equal "$*" "image 223456789 child_containers_ids 123456789"
   }
   # Act
-  run vedv::image_entity::add_child_container_id "$image_id" "$container_id"
+  run vedv::image_entity::____add_child_container_id "$image_id" "$container_id"
   # Assert
   assert_success
   assert_output ""
 }
 
-# Tests for vedv::image_entity::remove_child_container_id()
-@test "vedv::image_entity::remove_child_container_id() Should fail With invalid image_id" {
+# Tests for vedv::image_entity::____remove_child_container_id()
+@test "vedv::image_entity::____remove_child_container_id() Should fail With invalid image_id" {
   # Arrange
   local -r image_id="test-image"
   local -r container_id="test-container"
   # Act
-  run vedv::image_entity::remove_child_container_id "$image_id" "$container_id"
+  run vedv::image_entity::____remove_child_container_id "$image_id" "$container_id"
   # Assert
   assert_failure
   assert_output "Invalid argument 'test-image'"
 }
 
-@test "vedv::image_entity::remove_child_container_id() Should fail With invalid child_container_id" {
+@test "vedv::image_entity::____remove_child_container_id() Should fail With invalid child_container_id" {
   # Arrange
   local -r image_id="223456789"
   local -r container_id="test-container"
   # Act
-  run vedv::image_entity::remove_child_container_id "$image_id" "$container_id"
+  run vedv::image_entity::____remove_child_container_id "$image_id" "$container_id"
   # Assert
   assert_failure
   assert_output "Invalid argument 'test-container'"
 }
 
-@test "vedv::image_entity::remove_child_container_id() Should fail If get_child_containers_ids fails" {
+@test "vedv::image_entity::____remove_child_container_id() Should fail If get_child_containers_ids fails" {
   # Arrange
   local -r image_id="223456789"
   local -r container_id="123456789"
@@ -369,13 +374,13 @@ EOF
     return 1
   }
   # Act
-  run vedv::image_entity::remove_child_container_id "$image_id" "$container_id"
+  run vedv::image_entity::____remove_child_container_id "$image_id" "$container_id"
   # Assert
   assert_failure
   assert_output "Failed to get child containers ids for image '223456789'"
 }
 
-@test "vedv::image_entity::remove_child_container_id() Should fail If container_id is not added" {
+@test "vedv::image_entity::____remove_child_container_id() Should fail If container_id is not added" {
   # Arrange
   local -r image_id="223456789"
   local -r container_id="123456789"
@@ -388,13 +393,13 @@ EOF
     assert_equal "$*" "INVALID_CALL"
   }
   # Act
-  run vedv::image_entity::remove_child_container_id "$image_id" "$container_id"
+  run vedv::image_entity::____remove_child_container_id "$image_id" "$container_id"
   # Assert
   assert_failure
   assert_output "Failed to remove child container '123456789' from image '223456789', it was not found"
 }
 
-@test "vedv::image_entity::remove_child_container_id() Should succeed" {
+@test "vedv::image_entity::____remove_child_container_id() Should succeed" {
   # Arrange
   local -r image_id="223456789"
   local -r container_id="123456789"
@@ -407,7 +412,7 @@ EOF
     assert_equal "$*" "image 223456789 child_containers_ids 123456788 123456787"
   }
   # Act
-  run vedv::image_entity::remove_child_container_id "$image_id" "$container_id"
+  run vedv::image_entity::____remove_child_container_id "$image_id" "$container_id"
   # Assert
   assert_success
   assert_output ""
@@ -1358,4 +1363,19 @@ EOF
   # Assert
   assert_success
   assert_output "nalyd@alpine/alpine-13.ova"
+}
+
+# Test vedv::image_entity::____clear_child_container_ids()
+@test 'vedv::image_entity::cache::____clear_child_container_ids() Should succeed' {
+  # Setup
+  local -r image_id="1234567890"
+  # Mock
+  vedv::vmobj_entity::__set_attribute() {
+    assert_equal "$*" "image 1234567890 child_containers_ids "
+  }
+  # Act
+  run vedv::image_entity::____clear_child_container_ids "$image_id"
+  # Assert
+  assert_success
+  assert_output ""
 }

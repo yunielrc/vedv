@@ -561,7 +561,7 @@ setup_file() {
   vedv::vmobj_service::after_create() {
     assert_equal "$*" "container 12346"
   }
-  vedv::image_entity::add_child_container_id() {
+  vedv::image_entity::____add_child_container_id() {
     assert_equal "$*" "12345 12346"
     return 1
   }
@@ -624,7 +624,7 @@ setup_file() {
   vedv::vmobj_service::after_create() {
     assert_equal "$*" "container 12346"
   }
-  vedv::image_entity::add_child_container_id() {
+  vedv::image_entity::____add_child_container_id() {
     assert_equal "$*" "12345 12346"
   }
   vedv::container_entity::set_vm_name() {
@@ -690,7 +690,7 @@ setup_file() {
   vedv::vmobj_service::after_create() {
     assert_equal "$*" "container 12346"
   }
-  vedv::image_entity::add_child_container_id() {
+  vedv::image_entity::____add_child_container_id() {
     assert_equal "$*" "12345 12346"
   }
   vedv::container_entity::set_vm_name() {
@@ -759,7 +759,7 @@ setup_file() {
   vedv::vmobj_service::after_create() {
     assert_equal "$*" "container 12346"
   }
-  vedv::image_entity::add_child_container_id() {
+  vedv::image_entity::____add_child_container_id() {
     assert_equal "$*" "12345 12346"
   }
   vedv::container_entity::set_vm_name() {
@@ -831,7 +831,7 @@ setup_file() {
   vedv::vmobj_service::after_create() {
     assert_equal "$*" "container 12346"
   }
-  vedv::image_entity::add_child_container_id() {
+  vedv::image_entity::____add_child_container_id() {
     assert_equal "$*" "12345 12346"
   }
   vedv::container_entity::set_vm_name() {
@@ -912,7 +912,7 @@ setup_file() {
   vedv::vmobj_service::after_create() {
     assert_equal "$*" "container 12346"
   }
-  vedv::image_entity::add_child_container_id() {
+  vedv::image_entity::____add_child_container_id() {
     assert_equal "$*" "12345 12346"
   }
   vedv::container_entity::set_vm_name() {
@@ -1180,7 +1180,7 @@ setup_file() {
     assert_equal "$*" "container:bin-baam|crc:12346|"
     return 1
   }
-  vedv::image_entity::remove_child_container_id() {
+  vedv::image_entity::____remove_child_container_id() {
     assert_equal "$*" '123456 12346'
     return 1
   }
@@ -1210,7 +1210,7 @@ setup_file() {
   vedv::hypervisor::rm() {
     assert_equal "$*" "container:bin-baam|crc:12346|"
   }
-  vedv::image_entity::remove_child_container_id() {
+  vedv::image_entity::____remove_child_container_id() {
     assert_equal "$*" '22345 123456'
   }
   vedv::vmobj_service::after_remove() {
@@ -1248,7 +1248,7 @@ setup_file() {
   vedv::hypervisor::rm() {
     assert_equal "$*" "container:bin-baam|crc:12346|"
   }
-  vedv::image_entity::remove_child_container_id() {
+  vedv::image_entity::____remove_child_container_id() {
     assert_equal "$*" 'INVALID_CALL'
   }
   vedv::vmobj_service::after_remove() {

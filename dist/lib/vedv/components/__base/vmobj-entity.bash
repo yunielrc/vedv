@@ -434,12 +434,7 @@ vedv::vmobj_entity::get_vm_name() {
     return "$?"
 
   local vm_name=''
-  vm_name="$(
-    vedv::vmobj_entity::__get_attribute \
-      "$type" \
-      "$vmobj_id" \
-      'vm_name'
-  )" || {
+  vm_name="$(vedv::vmobj_entity::__get_attribute "$type" "$vmobj_id" 'vm_name')" || {
     err "Error getting attribute vm_name for the ${type}: '${vmobj_id}'"
     return "$ERR_VMOBJ_ENTITY"
   }

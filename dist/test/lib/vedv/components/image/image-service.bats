@@ -388,6 +388,118 @@ teardown() {
   assert_output "Error on after create event: '133456'"
 }
 # bats test_tags=only
+@test "vedv::image_service::import() Should fail If set_vm_name fails" {
+  local -r image_file="$TEST_OVA_FILE"
+  local -r image_name=""
+  local -r checksum_file="/tmp/f31d50798a.ova.sha256sum"
+
+  vedv::image_service::exists_with_name() {
+    assert_equal "$*" "INVALID_CALL"
+    echo false
+  }
+  utils::sha256sum_check() {
+    assert_equal "$*" "$checksum_file"
+  }
+  utils::crc_sum() {
+    assert_equal "$*" "$image_file"
+    echo "123456"
+  }
+  vedv::image_cache_entity::get_vm_name() {
+    assert_equal "$*" "123456"
+    echo "image-cache|crc:123456|"
+  }
+  vedv::hypervisor::exists_vm_with_partial_name() {
+    assert_equal "$*" "image-cache|crc:123456|"
+    echo false
+  }
+  vedv::hypervisor::import() {
+    assert_equal "$*" "$image_file image-cache|crc:123456|"
+  }
+  vedv::image_entity::gen_vm_name() {
+    assert_equal "$*" ""
+    echo "image:gen-name|crc:133456|"
+  }
+  vedv::hypervisor::clonevm_link() {
+    assert_equal "$*" "image-cache|crc:123456| image:gen-name|crc:133456|"
+  }
+  vedv::image_entity::get_id_by_vm_name() {
+    assert_equal "$*" "image:gen-name|crc:133456|"
+    echo '133456'
+  }
+  vedv::vmobj_service::after_create() {
+    assert_equal "$*" "image 133456"
+  }
+  vedv::image_entity::set_vm_name() {
+    assert_equal "$*" "133456 image:gen-name|crc:133456|"
+    return 1
+  }
+
+  run vedv::image_service::import \
+    "$image_file" \
+    "$image_name" \
+    "$checksum_file"
+
+  assert_failure
+  assert_output "Failed to set vm name for image: '133456'"
+}
+# bats test_tags=only
+@test "vedv::image_service::import() Should fail If ____clear_child_container_ids fails" {
+  local -r image_file="$TEST_OVA_FILE"
+  local -r image_name=""
+  local -r checksum_file="/tmp/f31d50798a.ova.sha256sum"
+
+  vedv::image_service::exists_with_name() {
+    assert_equal "$*" "INVALID_CALL"
+    echo false
+  }
+  utils::sha256sum_check() {
+    assert_equal "$*" "$checksum_file"
+  }
+  utils::crc_sum() {
+    assert_equal "$*" "$image_file"
+    echo "123456"
+  }
+  vedv::image_cache_entity::get_vm_name() {
+    assert_equal "$*" "123456"
+    echo "image-cache|crc:123456|"
+  }
+  vedv::hypervisor::exists_vm_with_partial_name() {
+    assert_equal "$*" "image-cache|crc:123456|"
+    echo false
+  }
+  vedv::hypervisor::import() {
+    assert_equal "$*" "$image_file image-cache|crc:123456|"
+  }
+  vedv::image_entity::gen_vm_name() {
+    assert_equal "$*" ""
+    echo "image:gen-name|crc:133456|"
+  }
+  vedv::hypervisor::clonevm_link() {
+    assert_equal "$*" "image-cache|crc:123456| image:gen-name|crc:133456|"
+  }
+  vedv::image_entity::get_id_by_vm_name() {
+    assert_equal "$*" "image:gen-name|crc:133456|"
+    echo '133456'
+  }
+  vedv::vmobj_service::after_create() {
+    assert_equal "$*" "image 133456"
+  }
+  vedv::image_entity::set_vm_name() {
+    assert_equal "$*" "133456 image:gen-name|crc:133456|"
+  }
+  vedv::image_entity::____clear_child_container_ids() {
+    assert_equal "$*" "133456"
+    return 1
+  }
+
+  run vedv::image_service::import \
+    "$image_file" \
+    "$image_name" \
+    "$checksum_file"
+
+  assert_failure
+  assert_output "Failed to clear child container ids for image: '133456'"
+}
 @test "vedv::image_service::import() Should fail If create_layer_from fails" {
   local -r image_file="$TEST_OVA_FILE"
   local -r image_name=""
@@ -428,6 +540,12 @@ teardown() {
   }
   vedv::vmobj_service::after_create() {
     assert_equal "$*" "image 133456"
+  }
+  vedv::image_entity::set_vm_name() {
+    assert_equal "$*" "133456 image:gen-name|crc:133456|"
+  }
+  vedv::image_entity::____clear_child_container_ids() {
+    assert_equal "$*" "133456"
   }
   vedv::image_service::create_layer_from() {
     assert_equal "$*" "133456 ${image_file}"
@@ -487,6 +605,12 @@ teardown() {
   vedv::vmobj_service::after_create() {
     assert_equal "$*" "image 133456"
   }
+  vedv::image_entity::set_vm_name() {
+    assert_equal "$*" "133456 image:gen-name|crc:133456|"
+  }
+  vedv::image_entity::____clear_child_container_ids() {
+    assert_equal "$*" "133456"
+  }
   vedv::image_service::create_layer_from() {
     assert_equal "$*" "133456 ${image_file}"
   }
@@ -544,6 +668,12 @@ teardown() {
   }
   vedv::vmobj_service::after_create() {
     assert_equal "$*" "image 133456"
+  }
+  vedv::image_entity::set_vm_name() {
+    assert_equal "$*" "133456 image:gen-name|crc:133456|"
+  }
+  vedv::image_entity::____clear_child_container_ids() {
+    assert_equal "$*" "133456"
   }
   vedv::image_service::create_layer_from() {
     assert_equal "$*" "133456 ${image_file}"
@@ -606,6 +736,12 @@ teardown() {
   }
   vedv::vmobj_service::after_create() {
     assert_equal "$*" "image 133456"
+  }
+  vedv::image_entity::set_vm_name() {
+    assert_equal "$*" "133456 image:gen-name|crc:133456|"
+  }
+  vedv::image_entity::____clear_child_container_ids() {
+    assert_equal "$*" "133456"
   }
   vedv::image_service::create_layer_from() {
     assert_equal "$*" "133456 ${image_file}"
@@ -671,6 +807,12 @@ teardown() {
   }
   vedv::vmobj_service::after_create() {
     assert_equal "$*" "image 133456"
+  }
+  vedv::image_entity::set_vm_name() {
+    assert_equal "$*" "133456 image:gen-name|crc:133456|"
+  }
+  vedv::image_entity::____clear_child_container_ids() {
+    assert_equal "$*" "133456"
   }
   vedv::image_service::create_layer_from() {
     assert_equal "$*" "133456 ${image_file}"
@@ -2568,26 +2710,6 @@ EOF
   assert_output "Argument 'image_file' is required"
 }
 
-@test "vedv::image_service::export_by_id() Should fail If rm fails" {
-  local -r image_id="1234567890"
-  local -r image_file="${TEST_IMAGE_TMP_DIR}/image123.ova"
-  local -r no_checksum=""
-
-  : >"$image_file"
-  rm() {
-    if [[ "$*" == '-f'*'/image123.ova' ]]; then
-      return 1
-    fi
-    command rm "$@"
-  }
-
-  run vedv::image_service::export_by_id \
-    "$image_id" "$image_file" "$no_checksum"
-
-  assert_failure
-  assert_output --regexp "Failed to remove existing image file: '.*/image123.ova'"
-}
-
 @test "vedv::image_service::export_by_id() Should fail If get_vm_name fails" {
   local -r image_id="1234567890"
   local -r image_file="${TEST_IMAGE_TMP_DIR}/image123.ova"
@@ -2624,6 +2746,34 @@ EOF
 
   assert_failure
   assert_output "Failed to get image name for vm 'image:nalyd1|crc:223456789|'"
+}
+
+@test "vedv::image_service::export_by_id() Should fail If rm fails" {
+  local -r image_id="1234567890"
+  local -r image_file="${TEST_IMAGE_TMP_DIR}/image123.ova"
+  local -r no_checksum=""
+
+  vedv::image_entity::get_vm_name() {
+    assert_equal "$*" "$image_id"
+    echo "image:nalyd1|crc:223456789|"
+  }
+  vedv::image_entity::get_image_name_by_vm_name() {
+    assert_equal "$*" "image:nalyd1|crc:223456789|"
+    echo 'nalyd1'
+  }
+  : >"$image_file"
+  rm() {
+    if [[ "$*" == '-f'*'/image123.ova' ]]; then
+      return 1
+    fi
+    command rm "$@"
+  }
+
+  run vedv::image_service::export_by_id \
+    "$image_id" "$image_file" "$no_checksum"
+
+  assert_failure
+  assert_output --regexp "Failed to remove existing image file: '.*/image123.ova'"
 }
 
 @test "vedv::image_service::export_by_id() Should fail If export fails" {
