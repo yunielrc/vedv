@@ -5,7 +5,7 @@ setup_file() {
   nextcloud_start
 
   vedv::registry_nextcloud_api_client::constructor \
-    "([http://nextcloud.loc]=\"admin:admin\"\
+    "([${TEST_NC_URL}]=\"${TEST_NC_USER}:${TEST_NC_PASSWORD}\"\
   [http://nextcloud2.loc]=\"jane:jane\"\
   [http://nextcloud4.loc]=\"\")" \
     'http://nextcloud.loc'
@@ -13,6 +13,14 @@ setup_file() {
   export __VEDV_REGISTRY_NEXTCLOUD_API_CREDENTIALS_DICT_STR
   export __VEDV_REGISTRY_NEXTCLOUD_API_CREDENTIALS_MAIN_URL
   export __VEDV_REGISTRY_NEXTCLOUD_API_CONNECT_TIMEOUT
+}
+
+teardown() {
+  # remove test directory on nextcloud-dev instance
+  curl "${TEST_NC_URL}/remote.php/dav/files/admin/00-user-images/${TEST_NC_USER}@alpine-test/" \
+    --fail --silent --show-error \
+    --user "${TEST_NC_USER}:${TEST_NC_PASSWORD}" \
+    --request DELETE || :
 }
 
 # Tests for vedv::registry_nextcloud_api_client::get_domain()
@@ -155,7 +163,7 @@ setup_file() {
     "$file_path" "$output_file"
 
   assert_failure
-  assert_output 'Output file is not specified'
+  assert_output 'Local file is not specified'
 }
 
 @test 'vedv::registry_nextcloud_api_client::download_file() Should fail With invalid file path' {
@@ -195,4 +203,144 @@ setup_file() {
 
   assert_success
   assert_output 'alpine-14.ova'
+}
+
+# Tests for vedv::registry_nextcloud_api_client::create_directory()
+@test 'vedv::registry_nextcloud_api_client::create_directory() Should fail With empty directory path' {
+  local -r directory=''
+  local -r registry_url=''
+
+  run vedv::registry_nextcloud_api_client::create_directory \
+    "$directory" "$registry_url"
+
+  assert_failure
+  assert_output 'Directory is not specified'
+}
+
+@test 'vedv::registry_nextcloud_api_client::create_directory() Should fail If __base_url fails' {
+  local -r directory='/00-user-images/admin@alpine-test'
+  local -r registry_url='http123://nextcloud.loc'
+
+  run vedv::registry_nextcloud_api_client::create_directory \
+    "$directory" "$registry_url"
+
+  assert_failure
+  assert_output "Failed to get user for registry 'http123://nextcloud.loc', on base url"
+}
+
+@test 'vedv::registry_nextcloud_api_client::create_directory() Should fail If __get_credentials fails' {
+  local -r directory='/00-user-images/admin@alpine-test'
+  local -r registry_url='http123://nextcloud.loc'
+
+  vedv::registry_nextcloud_api_client::__base_url() {
+    assert_equal "$*" 'http123://nextcloud.loc'
+  }
+
+  run vedv::registry_nextcloud_api_client::create_directory \
+    "$directory" "$registry_url"
+
+  assert_failure
+  assert_output "Registry 'http123://nextcloud.loc' not found in credentials dict"
+}
+
+@test 'vedv::registry_nextcloud_api_client::create_directory() Should fail If request fails' {
+  local -r directory='/invalid_dir/admin@alpine-test'
+  local -r registry_url='http://nextcloud.loc'
+
+  run vedv::registry_nextcloud_api_client::create_directory \
+    "$directory" "$registry_url"
+
+  assert_failure
+  assert_output --partial "Failed to create directory '/invalid_dir/admin@alpine-test'"
+}
+
+@test 'vedv::registry_nextcloud_api_client::create_directory() Should succeed' {
+  local -r directory='/00-user-images/admin@alpine-test'
+  local -r registry_url=''
+
+  run vedv::registry_nextcloud_api_client::create_directory \
+    "$directory" "$registry_url"
+
+  assert_success
+  assert_output ''
+}
+
+# Tests for vedv::registry_nextcloud_api_client::upload_file()
+@test "vedv::registry_nextcloud_api_client::upload_file() Should fail With empty file" {
+  local -r file=''
+  local -r remote_file=''
+  local -r registry_url=''
+
+  run vedv::registry_nextcloud_api_client::upload_file \
+    "$file" "$remote_file" "$registry_url"
+
+  assert_failure
+  assert_output 'File is not specified'
+}
+
+@test "vedv::registry_nextcloud_api_client::upload_file() Should fail With empty remote_file" {
+  local -r file="$TEST_OVA_FILE"
+  local -r remote_file=''
+  local -r registry_url=''
+
+  run vedv::registry_nextcloud_api_client::upload_file \
+    "$file" "$remote_file" "$registry_url"
+
+  assert_failure
+  assert_output 'Remote file is not specified'
+}
+
+@test "vedv::registry_nextcloud_api_client::upload_file() Should fail If __base_url fails" {
+  local -r file="$TEST_OVA_FILE"
+  local -r remote_file='/00-user-images/admin@alpine-test/alpine-14.ova'
+  local -r registry_url='http123://nextcloud.loc'
+
+  run vedv::registry_nextcloud_api_client::upload_file \
+    "$file" "$remote_file" "$registry_url"
+
+  assert_failure
+  assert_output "Failed to get user for registry 'http123://nextcloud.loc', on base url"
+}
+
+@test "vedv::registry_nextcloud_api_client::upload_file() Should fail If __get_credentials fails" {
+  local -r file="$TEST_OVA_FILE"
+  local -r remote_file='/00-user-images/admin@alpine-test/alpine-14.ova'
+  local -r registry_url='http123://nextcloud.loc'
+
+  vedv::registry_nextcloud_api_client::__base_url() {
+    assert_equal "$*" 'http123://nextcloud.loc'
+  }
+
+  run vedv::registry_nextcloud_api_client::upload_file \
+    "$file" "$remote_file" "$registry_url"
+
+  assert_failure
+  assert_output "Registry 'http123://nextcloud.loc' not found in credentials dict"
+}
+
+@test "vedv::registry_nextcloud_api_client::upload_file() Should fail If request fails" {
+  local -r file="$TEST_OVA_FILE"
+  local -r remote_file='/invalid_dir/admin@alpine-test/alpine-14.ova'
+  local -r registry_url=''
+
+  run vedv::registry_nextcloud_api_client::upload_file \
+    "$file" "$remote_file" "$registry_url"
+
+  assert_failure
+  assert_output --partial "Failed to upload file to '/invalid_dir/admin@alpine-test/alpine-14.ova'"
+}
+
+@test "vedv::registry_nextcloud_api_client::upload_file() Should succeed" {
+  local -r file="$TEST_OVA_FILE"
+  local -r remote_file='/00-user-images/admin@alpine-test/alpine-14.ova'
+  local -r registry_url=''
+
+  vedv::registry_nextcloud_api_client::create_directory \
+    '/00-user-images/admin@alpine-test'
+
+  run vedv::registry_nextcloud_api_client::upload_file \
+    "$file" "$remote_file" "$registry_url"
+
+  assert_success
+  assert_output ""
 }

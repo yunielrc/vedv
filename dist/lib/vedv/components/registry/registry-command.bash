@@ -27,6 +27,91 @@ vedv::registry_command::constructor() {
 }
 
 #
+# Show help for __push command
+#
+# Output:
+#  Writes the help to the stdout
+#
+vedv::registry_command::__push_help() {
+  cat <<-HELPMSG
+Usage:
+${__VED_REGISTRY_COMMAND_SCRIPT_NAME} registry push [FLAGS] [OPTIONS] [DOMAIN/]USER@COLLECTION/NAME
+
+Upload an image to a registry
+
+Flags:
+  -h, --help          show help
+
+Options:
+  -n, --name <name>   name of the image that will be pushed to the registry,
+                      if not specified, the name on fqn will be used
+
+HELPMSG
+}
+
+#
+# Upload an image to a registry
+#
+# Flags:
+#   -h, --help          show help
+#
+# Options:
+#   -n, --name <name>   name of the image that will be pushed to the registry,
+#                       if not specified, the name on fqn will be used
+#
+# Arguments:
+#   IMAGE_FQN               string  scheme: [domain/]user@collection/name
+#
+# Output:
+#   Writes image name to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::registry_command::__push() {
+  local image_fqn=''
+  local image_name=''
+
+  if [[ $# == 0 ]]; then set -- '-h'; fi
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+    # flags
+    -h | --help)
+      vedv::registry_command::__push_help
+      return 0
+      ;;
+    # options
+    -n | --name)
+      readonly image_name="${2:-}"
+      # validate argument
+      if [[ -z "$image_name" ]]; then
+        err "No image name specified\n"
+        vedv::registry_command::__push_help
+        return "$ERR_INVAL_ARG"
+      fi
+      shift 2
+      ;;
+    # arguments
+    *)
+      readonly image_fqn="$1"
+      break
+      ;;
+    esac
+  done
+
+  if [[ -z "$image_fqn" ]]; then
+    err "Missing argument 'IMAGE_FQN'\n"
+    vedv::registry_command::__push_help
+    return "$ERR_INVAL_ARG"
+  fi
+
+  vedv::registry_service::push \
+    "$image_fqn" \
+    "$image_name"
+}
+
+#
 # Show help for __pull command
 #
 # Output:
@@ -152,6 +237,11 @@ vedv::registry_command::run_cmd() {
     pull)
       shift
       vedv::registry_command::__pull "$@"
+      return $?
+      ;;
+    push)
+      shift
+      vedv::registry_command::__push "$@"
       return $?
       ;;
     *)

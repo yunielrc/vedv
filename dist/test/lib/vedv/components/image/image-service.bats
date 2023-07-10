@@ -24,7 +24,7 @@ setup_file() {
   export __VEDV_VMOBJ_SERVICE_SSH_PASSWORD
 
   vedv::image_service::constructor "$TEST_IMAGE_TMP_DIR"
-  export __VEDV_IMAGE_SERVICE_IMAGE_TMP_DIR
+  export __VEDV_IMAGE_SERVICE_IMPORTED_DIR
 }
 
 setup() {
@@ -2845,7 +2845,7 @@ EOF
     assert_equal "$*" "image:nalyd1|crc:223456789| ${image_file} nalyd1"
   }
   sha256sum() {
-    assert_equal "$*" "${image_file}"
+    assert_equal "$*" "image123.ova"
     return 1
   }
 
@@ -2853,7 +2853,7 @@ EOF
     "$image_id" "$image_file" "$no_checksum"
 
   assert_failure
-  assert_output --regexp "Failed to create checksum file '.*/image123.ova.sha256sum'"
+  assert_output --regexp "Failed to create checksum file 'image123.ova.sha256sum'"
 }
 
 @test "vedv::image_service::export_by_id() Should succeed" {
@@ -2873,7 +2873,7 @@ EOF
     assert_equal "$*" "image:nalyd1|crc:223456789| ${image_file} nalyd1"
   }
   sha256sum() {
-    assert_equal "$*" "$image_file"
+    assert_equal "$*" "image123.ova"
   }
 
   run vedv::image_service::export_by_id \

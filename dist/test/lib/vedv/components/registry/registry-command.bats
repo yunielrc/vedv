@@ -79,3 +79,54 @@ vedv registry pull [FLAGS] [OPTIONS] [DOMAIN/]USER@COLLECTION/NAME"
   assert_success
   assert_output ''
 }
+
+# Tests for vedv::registry_command::__push()
+@test "vedv::registry_command::__push() Should show help" {
+
+  for flag in '' '-h' '--help'; do
+    run vedv::registry_command::__push $flag
+
+    assert_success
+    assert_output --partial "Usage:
+vedv registry push [FLAGS] [OPTIONS] [DOMAIN/]USER@COLLECTION/NAME"
+  done
+}
+
+@test "vedv::registry_command::__push() Should fail With missing image_name" {
+
+  for opt in '-n' '--name'; do
+    run vedv::registry_command::__push $opt
+
+    assert_failure
+    assert_output --partial "No image name specified"
+  done
+}
+
+@test "vedv::registry_command::__push() Should fail With missing image_fqn" {
+  run vedv::registry_command::__push --name 'alpine-14'
+
+  assert_failure
+  assert_output --partial "Missing argument 'IMAGE_FQN'"
+}
+
+@test "vedv::registry_command::__push() Should succeed" {
+  vedv::registry_service::push() {
+    assert_equal "$*" "admin@alpine-test/alpine-14 "
+  }
+
+  run vedv::registry_command::__push 'admin@alpine-test/alpine-14'
+
+  assert_success
+  assert_output ""
+}
+
+@test "vedv::registry_command::__push() Should succeed With name" {
+  vedv::registry_service::push() {
+    assert_equal "$*" "admin@alpine-test/alpine-14-1 alp-14-1"
+  }
+
+  run vedv::registry_command::__push --name 'alp-14-1' 'admin@alpine-test/alpine-14-1'
+
+  assert_success
+  assert_output ""
+}

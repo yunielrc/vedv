@@ -2,13 +2,20 @@
 load test_helper
 
 teardown() {
+  delete_vms_by_partial_vm_name 'alpine-14'
+  delete_vms_by_partial_vm_name 'alp-14-1'
   delete_vms_by_partial_vm_name 'image:'
   delete_vms_by_partial_vm_name 'image-cache|'
   # it doesn't use $REGISTRY_CACHE_DIR for avoiding
   # catastrophic deletion of files
-  if [[ -d /var/tmp/vedv/registry ]]; then
-    rm -rf /var/tmp/vedv/registry
+  if [[ -d /var/tmp/vedv-dev ]]; then
+    rm -rf /var/tmp/vedv-dev
   fi
+  # remove test directory on nextcloud-dev instance
+  curl "${TEST_NC_URL}/remote.php/dav/files/admin/00-user-images/${TEST_NC_USER}@alpine-test/" \
+    --fail --silent --show-error \
+    --user "${TEST_NC_USER}:${TEST_NC_PASSWORD}" \
+    --request DELETE || :
 }
 
 setup_file() {
@@ -116,4 +123,87 @@ For security reasons, the image can not be downloaded"
 
   assert_success
   assert_output "3955640179 my-alpine-15"
+}
+
+# Tests for vedv registry push()
+@test "vedv registry push ,Should show help" {
+
+  for flag in '' '-h' '--help'; do
+    run vedv registry push $flag
+
+    assert_success
+    assert_output --partial "Usage:
+vedv registry push [FLAGS] [OPTIONS] [DOMAIN/]USER@COLLECTION/NAME"
+  done
+}
+
+@test "vedv registry push, Should fail With missing image_name" {
+
+  for opt in '-n' '--name'; do
+    run vedv registry push $opt
+
+    assert_failure
+    assert_output --partial "No image name specified"
+  done
+}
+
+@test "vedv registry push, Should fail With missing image_fqn" {
+  run vedv registry push --name 'alpine-14'
+
+  assert_failure
+  assert_output --partial "Missing argument 'IMAGE_FQN'"
+}
+
+@test "vedv registry push, Should fail With invalid image_fqn" {
+  run vedv registry push 'admin/alpine-test/alpine-14'
+
+  assert_failure
+  assert_output "Invalid argument 'admin/alpine-test/alpine-14'"
+}
+
+@test "vedv registry push, Should fail With invalid image_name" {
+  run vedv registry push --name '_invalid/name' 'admin@alpine-test/alpine-14'
+
+  assert_failure
+  assert_output "Invalid argument '_invalid/name'"
+}
+
+@test "vedv registry push, Should fail With invalid registry domain" {
+  run vedv registry push 'nextcloud123.loc/admin@alpine-test/alpine-14'
+
+  assert_failure
+  assert_output "Registry 'https://nextcloud123.loc' not found in credentials dict
+Failed to get registry user"
+}
+
+@test "vedv registry push, Should fail With invalid user on fqn" {
+  run vedv registry push 'jane@alpine-test/alpine-14'
+
+  assert_failure
+  assert_output "Image can not be uploaded, user on fqn must be 'admin'"
+}
+
+@test "vedv registry push --name alpine-14, Should fail if image not exists" {
+  run vedv registry push 'admin@alpine-test/alpine-14'
+
+  assert_failure
+  assert_output --partial "Failed to export image 'alpine-14' to"
+}
+
+@test "vedv registry push --name alpine-14, Should succeed" {
+  vedv image import -n 'alpine-14' "$TEST_OVA_FILE"
+
+  run vedv registry push 'admin@alpine-test/alpine-14'
+
+  assert_success
+  assert_output ""
+}
+
+@test "vedv registry push --name alp-14-1, Should succeed" {
+  vedv image import -n 'alp-14-1' "$TEST_OVA_FILE"
+
+  run vedv registry push --name 'alp-14-1' 'admin@alpine-test/alpine-14-1'
+
+  assert_success
+  assert_output ""
 }

@@ -80,8 +80,8 @@ vedv::registry_api_client::get_file_owner() {
 # Download a file
 #
 # Arguments:
-#   file            string  file path
-#   output_file     string  output file path
+#   file            string  path of the file to download
+#   local_file      string  file path to save the downloaded file
 #   [registry_url]  string  registry server url
 #
 # Output:
@@ -91,6 +91,44 @@ vedv::registry_api_client::get_file_owner() {
 #   0 on success, non-zero on error.
 #
 vedv::registry_api_client::download_file() {
+  err "Not implemented"
+  return "$ERR_NOTIMPL"
+}
+
+#
+# Create a directory
+#
+# Arguments:
+#   directory       string  directory to create
+#   [registry_url]  string  registry server url
+#
+# Output:
+#  Writes error messages to stderr
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::registry_api_client::create_directory() {
+  err "Not implemented"
+  return "$ERR_NOTIMPL"
+}
+
+#
+# Upload a file
+#
+# Arguments:
+#   file            string  path of file to upload
+#   remote_file     string  path to save the uploaded
+#                           file on the registry server
+#   [registry_url]  string  registry server url
+#
+# Output:
+#  Writes error messages to stderr
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::registry_api_client::upload_file() {
   err "Not implemented"
   return "$ERR_NOTIMPL"
 }

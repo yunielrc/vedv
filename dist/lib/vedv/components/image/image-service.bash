@@ -22,13 +22,13 @@ fi
 # Constructor
 #
 # Arguments:
-#   image_tmp_dir   string    path to the image tmp directory
+#   image_imported_dir   string    path to the image tmp directory
 #
 # Returns:
 #   0 on success, non-zero on error.
 #
 vedv::image_service::constructor() {
-  readonly __VEDV_IMAGE_SERVICE_IMAGE_TMP_DIR="$1"
+  readonly __VEDV_IMAGE_SERVICE_IMPORTED_DIR="$1"
 }
 
 #
@@ -225,7 +225,7 @@ vedv::image_service::import_from_url() {
     return "$ERR_INVAL_ARG"
   fi
 
-  local -r download_dir="$__VEDV_IMAGE_SERVICE_IMAGE_TMP_DIR"
+  local -r download_dir="$__VEDV_IMAGE_SERVICE_IMPORTED_DIR"
 
   if [[ ! -d "$download_dir" ]]; then
     err "Download directory does not exist: '${download_dir}'"
@@ -305,7 +305,7 @@ vedv::image_service::pull() {
 }
 
 #
-# Export an image from to a file, by default create a checksum file
+# Export an image to a file, by default create a checksum file
 #
 # Arguments:
 #   image_name_id   string  image id
@@ -362,21 +362,29 @@ vedv::image_service::export_by_id() {
     return 0
   fi
 
-  local -r checksum_file="${image_file}.sha256sum"
+  local -r image_file_dir="${image_file%/*}"
+  local -r image_file_basename="${image_file##*/}"
+  local -r checksum_file_basename="${image_file_basename}.sha256sum"
 
-  sha256sum "$image_file" >"$checksum_file" || {
-    err "Failed to create checksum file '${checksum_file}'"
-    return "$ERR_IMAGE_OPERATION"
-  }
+  (
+    cd "$image_file_dir" || {
+      err "Failed to change directory to '${image_file_dir}'"
+      return "$ERR_IMAGE_OPERATION"
+    }
+    sha256sum "$image_file_basename" >"$checksum_file_basename" || {
+      err "Failed to create checksum file '${checksum_file_basename}'"
+      return "$ERR_IMAGE_OPERATION"
+    }
+  )
+
 }
 
 #
-# Export an image from to a file, by default create a checksum file
+# Export an image to a file, by default create a checksum file
 #
 # Arguments:
 #   image_name_or_id  string  image to export
 #   image_file        string  image file
-#
 #   [no_checksum]     bool    do not create a checksum file (default: false)
 #
 # Output:

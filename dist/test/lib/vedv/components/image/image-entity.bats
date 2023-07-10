@@ -1365,7 +1365,7 @@ EOF
   assert_output "nalyd@alpine/alpine-13.ova"
 }
 
-# Test vedv::image_entity::____clear_child_container_ids()
+# Tests for vedv::image_entity::____clear_child_container_ids()
 @test 'vedv::image_entity::cache::____clear_child_container_ids() Should succeed' {
   # Setup
   local -r image_id="1234567890"
@@ -1378,4 +1378,70 @@ EOF
   # Assert
   assert_success
   assert_output ""
+}
+
+# Tests for vedv::image_entity::get_url_from_fqn()
+@test "vedv::image_entity::get_url_from_fqn() Should fail If validate_image_fqn fails" {
+  # Setup
+  local -r image_fqn="nalyd/alpine/alpine-13"
+  # Act
+  run vedv::image_entity::get_url_from_fqn "$image_fqn"
+  # Assert
+  assert_failure
+  assert_output "Invalid argument 'nalyd/alpine/alpine-13'"
+}
+
+@test "vedv::image_entity::get_url_from_fqn() Should fail If get_domain_from_fqn fails" {
+  # Setup
+  local -r image_fqn="nalyd/alpine/alpine-13"
+  # Mock
+  vedv::image_entity::get_domain_from_fqn() {
+    assert_equal "$*" "nalyd/alpine/alpine-13"
+    return 1
+  }
+  # Act
+  run vedv::image_entity::get_url_from_fqn "$image_fqn"
+  # Assert
+  assert_failure
+  assert_output "Invalid argument 'nalyd/alpine/alpine-13'"
+}
+
+@test "vedv::image_entity::get_url_from_fqn() Should succeed With nalyd@alpine/alpine-13" {
+  # Setup
+  local -r image_fqn="nalyd@alpine/alpine-13"
+  # Act
+  run vedv::image_entity::get_url_from_fqn "$image_fqn"
+  # Assert
+  assert_success
+  assert_output ""
+}
+
+@test "vedv::image_entity::get_url_from_fqn() Should succeed With nextcloud.loc/nalyd@alpine/alpine-13" {
+  # Setup
+  local -r image_fqn="nextcloud.loc/nalyd@alpine/alpine-13"
+  # Act
+  run vedv::image_entity::get_url_from_fqn "$image_fqn"
+  # Assert
+  assert_success
+  assert_output "https://nextcloud.loc"
+}
+
+@test "vedv::image_entity::get_url_from_fqn() Should succeed With http://nextcloud.loc/nalyd@alpine/alpine-13" {
+  # Setup
+  local -r image_fqn="http://nextcloud.loc/nalyd@alpine/alpine-13"
+  # Act
+  run vedv::image_entity::get_url_from_fqn "$image_fqn"
+  # Assert
+  assert_success
+  assert_output "http://nextcloud.loc"
+}
+
+@test "vedv::image_entity::get_url_from_fqn() Should succeed With https://nextcloud.loc/nalyd@alpine/alpine-13" {
+  # Setup
+  local -r image_fqn="https://nextcloud.loc/nalyd@alpine/alpine-13"
+  # Act
+  run vedv::image_entity::get_url_from_fqn "$image_fqn"
+  # Assert
+  assert_success
+  assert_output "https://nextcloud.loc"
 }

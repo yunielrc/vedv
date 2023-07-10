@@ -14,13 +14,15 @@ fi
 # Constructor
 #
 # Arguments:
-#   image_cache_dir       string    path to the image cache directory
+#   registry_cache_dir       string    path to the registry cache directory
+#   image_exported_dir       string    path to the image exported directory
 #
 # Returns:
 #   0 on success, non-zero on error.
 #
 vedv::registry_service::constructor() {
-  readonly __VEDV_REGISTRY_SERVICE_IMAGE_CACHE_DIR="$1"
+  readonly __VEDV_REGISTRY_SERVICE_CACHE_DIR="$1"
+  readonly __VEDV_REGISTRY_SERVICE_IMAGE_EXPORTED_DIR="$2"
 }
 
 #
@@ -32,8 +34,8 @@ vedv::registry_service::constructor() {
 # Returns:
 #   0 on success, non-zero on error.
 #
-vedv::registry_service::__get_image_cache_dir() {
-  echo "$__VEDV_REGISTRY_SERVICE_IMAGE_CACHE_DIR"
+vedv::registry_service::__get_registry_cache_dir() {
+  echo "$__VEDV_REGISTRY_SERVICE_CACHE_DIR"
 }
 
 #
@@ -98,6 +100,7 @@ vedv::registry_service::pull() {
   fi
   readonly image_name
   #
+  # refactor to use vedv::image_entity::get_url_from_fqn
   local image_registry_domain
   image_registry_domain="$(vedv::image_entity::get_domain_from_fqn "$image_fqn")" ||
     return $?
@@ -164,7 +167,7 @@ vedv::registry_service::pull() {
   readonly registry_domain
 
   local image_cache_dir
-  image_cache_dir="$(vedv::registry_service::__get_image_cache_dir)/${registry_domain}"
+  image_cache_dir="$(vedv::registry_service::__get_registry_cache_dir)/${registry_domain}"
   readonly image_cache_dir
 
   if [[ ! -d "$image_cache_dir" ]]; then
@@ -210,6 +213,100 @@ vedv::registry_service::pull() {
     "$image_name" \
     "$checksum_file" || {
     err "Error importing image from file: '${image_file}'"
+    return "$ERR_REGISTRY_OPERATION"
+  }
+}
+
+#
+# Upload an image to a registry
+#
+# Arguments:
+#   image_fqn     string  e.g.: nextcloud.loc/admin@alpine/alpine-13
+#                         scheme: [domain/]user@collection/image-name
+#   [image_name]  string  name of the image that will be pushed to the registry
+#                         if not specified, the name on fqn will be used
+#
+# Output:
+#  Writes image name or image id to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::registry_service::push() {
+  local -r image_fqn="$1"
+  local image_name="${2:-}"
+  # validate arguments
+  vedv::image_entity::validate_image_fqn "$image_fqn" ||
+    return "$?"
+
+  local fqn_image_name=''
+  fqn_image_name="$(vedv::image_entity::get_name_from_fqn "$image_fqn")" ||
+    return $?
+  readonly fqn_image_name
+
+  if [[ -n "$image_name" ]]; then
+    vedv::image_entity::validate_name "$image_name" ||
+      return "$?"
+  else
+    image_name="$fqn_image_name"
+  fi
+  readonly image_name
+
+  local registry_url=''
+  registry_url="$(vedv::image_entity::get_url_from_fqn "$image_fqn")" ||
+    return $?
+  readonly registry_url
+
+  local registry_user
+  registry_user="$(vedv::registry_api_client::get_user "$registry_url")" || {
+    err "Failed to get registry user"
+    return "$ERR_REGISTRY_OPERATION"
+  }
+  readonly registry_user
+
+  local image_owner
+  image_owner="$(vedv::image_entity::get_user_from_fqn "$image_fqn")" ||
+    return $?
+  readonly image_owner
+
+  if [[ "$image_owner" != "$registry_user" ]]; then
+    err "Image can not be uploaded, user on fqn must be '${registry_user}'"
+    return "$ERR_REGISTRY_OPERATION"
+  fi
+
+  local -r tmp_dir="$__VEDV_REGISTRY_SERVICE_IMAGE_EXPORTED_DIR"
+
+  local -r image_file="${tmp_dir}/${fqn_image_name}.ova"
+  local -r checksum_file="${image_file}.sha256sum"
+
+  vedv::image_service::export \
+    "$image_name" \
+    "$image_file" || {
+    err "Error exporting image to file: '${image_file}'"
+    return "$ERR_REGISTRY_OPERATION"
+  }
+
+  local rel_file_path
+  rel_file_path="$(vedv::image_entity::get_rel_file_path_from_fqn "$image_fqn")" ||
+    return $?
+  readonly rel_file_path
+
+  local -r remote_directory="/00-user-images/${rel_file_path%/*}"
+  local -r remote_image_file="/00-user-images/${rel_file_path}"
+  local -r remote_checksum_file="${remote_image_file}.sha256sum"
+
+  vedv::registry_api_client::create_directory "$remote_directory" "$registry_url" || {
+    err "Error creating directory '${remote_directory}'"
+    return "$ERR_REGISTRY_OPERATION"
+  }
+
+  vedv::registry_api_client::upload_file "$checksum_file" "$remote_checksum_file" "$registry_url" || {
+    err "Error uploading image checksum to '${remote_checksum_file}'"
+    return "$ERR_REGISTRY_OPERATION"
+  }
+
+  vedv::registry_api_client::upload_file "$image_file" "$remote_image_file" "$registry_url" || {
+    err "Error uploading image file to '${remote_image_file}'"
     return "$ERR_REGISTRY_OPERATION"
   }
 }

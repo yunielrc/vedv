@@ -3,20 +3,21 @@ load test_helper
 
 setup() {
   # vedv::registry_service::constructor "$(mktemp -d)"
-  export __VEDV_REGISTRY_SERVICE_IMAGE_CACHE_DIR="$(mktemp -d)"
+  export __VEDV_REGISTRY_SERVICE_CACHE_DIR="$(mktemp -d)"
+  export __VEDV_REGISTRY_SERVICE_IMAGE_EXPORTED_DIR="$(mktemp -d)"
 }
 # teardown() {
-#   rm -rf "${__VEDV_REGISTRY_SERVICE_IMAGE_CACHE_DIR}"
+#   rm -rf "${__VEDV_REGISTRY_SERVICE_CACHE_DIR}"
 # }
 
-# Tests for vedv::registry_service::__get_image_cache_dir()
-@test "vedv::registry_service::__get_image_cache_dir() Should output image cache dir" {
-  local -r __VEDV_REGISTRY_SERVICE_IMAGE_CACHE_DIR='/tmp/cache-dir'
+# Tests for vedv::registry_service::__get_registry_cache_dir()
+@test "vedv::registry_service::__get_registry_cache_dir() Should output image cache dir" {
+  local -r __VEDV_REGISTRY_SERVICE_CACHE_DIR='/tmp/cache-dir'
 
-  run vedv::registry_service::__get_image_cache_dir
+  run vedv::registry_service::__get_registry_cache_dir
 
   assert_success
-  assert_output "$__VEDV_REGISTRY_SERVICE_IMAGE_CACHE_DIR"
+  assert_output "$__VEDV_REGISTRY_SERVICE_CACHE_DIR"
 }
 
 # Tests for vedv::registry_service::__get_public_image_real_owner()
@@ -245,7 +246,7 @@ For security reasons, the image can not be downloaded"
     assert_equal "$*" "https://nextcloud2.loc"
     echo 'nextcloud2.loc'
   }
-  vedv::registry_service::__get_image_cache_dir() {
+  vedv::registry_service::__get_registry_cache_dir() {
     echo '/tmp/image-cache'
   }
 
@@ -284,7 +285,7 @@ For security reasons, the image can not be downloaded"
     assert_equal "$*" "https://nextcloud2.loc"
     echo 'nextcloud2.loc'
   }
-  local -r cache_dir="$__VEDV_REGISTRY_SERVICE_IMAGE_CACHE_DIR"
+  local -r cache_dir="$__VEDV_REGISTRY_SERVICE_CACHE_DIR"
   local -r _image_file="${cache_dir}/nextcloud2.loc/jane@macos__macos-monterey.ova"
   local -r _checksum_file="${_image_file}.sha256sum"
 
@@ -417,6 +418,463 @@ For security reasons, the image can not be downloaded"
 
   run vedv::registry_service::pull \
     "$image_fqn" "$image_name" "$no_cache"
+
+  assert_success
+  assert_output ""
+}
+
+# Tests for vedv::registry_service::push()
+@test "vedv::registry_service::push() Should fail If validate_image_fqn fails" {
+  local -r image_fqn=''
+  local -r image_name=''
+
+  vedv::image_entity::validate_image_fqn() {
+    assert_equal "$*" "$image_fqn"
+    return 1
+  }
+
+  run vedv::registry_service::push \
+    "$image_fqn" "$image_name"
+
+  assert_failure
+  assert_output ""
+}
+
+@test "vedv::registry_service::push() Should fail If get_name_from_fqn fails" {
+  local -r image_fqn='nextcloud.loc/admin@alpine/alpine-14'
+  local -r image_name=''
+
+  vedv::image_entity::validate_image_fqn() {
+    assert_equal "$*" "$image_fqn"
+  }
+  vedv::image_entity::get_name_from_fqn() {
+    assert_equal "$*" "$image_fqn"
+    return 1
+  }
+
+  run vedv::registry_service::push \
+    "$image_fqn" "$image_name"
+
+  assert_failure
+  assert_output ""
+}
+
+@test "vedv::registry_service::push() Should fail If validate_name fails" {
+  local -r image_fqn='nextcloud.loc/admin@alpine/alpine-14'
+  local -r image_name='_invalid_name'
+
+  vedv::image_entity::validate_image_fqn() {
+    assert_equal "$*" "$image_fqn"
+  }
+  vedv::image_entity::get_name_from_fqn() {
+    assert_equal "$*" "$image_fqn"
+    echo 'alpine-14'
+  }
+  vedv::image_entity::validate_name() {
+    assert_equal "$*" "$image_name"
+    return 1
+  }
+
+  run vedv::registry_service::push \
+    "$image_fqn" "$image_name"
+
+  assert_failure
+  assert_output ""
+}
+
+@test "vedv::registry_service::push() Should fail If get_url_from_fqn fails" {
+  local -r image_fqn='nextcloud.loc/admin@alpine/alpine-14'
+  local -r image_name='alpine'
+
+  vedv::image_entity::validate_image_fqn() {
+    assert_equal "$*" "$image_fqn"
+  }
+  vedv::image_entity::get_name_from_fqn() {
+    assert_equal "$*" "$image_fqn"
+    echo 'alpine-14'
+  }
+  vedv::image_entity::validate_name() {
+    assert_equal "$*" "$image_name"
+  }
+  vedv::image_entity::get_url_from_fqn() {
+    assert_equal "$*" "$image_fqn"
+    return 1
+  }
+
+  run vedv::registry_service::push \
+    "$image_fqn" "$image_name"
+
+  assert_failure
+  assert_output ""
+}
+
+@test "vedv::registry_service::push() Should fail If get_user fails" {
+  local -r image_fqn='nextcloud.loc/admin@alpine/alpine-14'
+  local -r image_name='alpine'
+
+  vedv::image_entity::validate_image_fqn() {
+    assert_equal "$*" "$image_fqn"
+  }
+  vedv::image_entity::get_name_from_fqn() {
+    assert_equal "$*" "$image_fqn"
+    echo 'alpine-14'
+  }
+  vedv::image_entity::validate_name() {
+    assert_equal "$*" "$image_name"
+  }
+  vedv::image_entity::get_url_from_fqn() {
+    assert_equal "$*" "$image_fqn"
+    echo 'https://nextcloud.loc'
+  }
+  vedv::registry_api_client::get_user() {
+    assert_equal "$*" "https://nextcloud.loc"
+    return 1
+  }
+
+  run vedv::registry_service::push \
+    "$image_fqn" "$image_name"
+
+  assert_failure
+  assert_output "Failed to get registry user"
+}
+
+@test "vedv::registry_service::push() Should fail If get_user_from_fqn fails" {
+  local -r image_fqn='nextcloud.loc/admin@alpine/alpine-14'
+  local -r image_name='alpine'
+
+  vedv::image_entity::validate_image_fqn() {
+    assert_equal "$*" "$image_fqn"
+  }
+  vedv::image_entity::get_name_from_fqn() {
+    assert_equal "$*" "$image_fqn"
+    echo 'alpine-14'
+  }
+  vedv::image_entity::validate_name() {
+    assert_equal "$*" "$image_name"
+  }
+  vedv::image_entity::get_url_from_fqn() {
+    assert_equal "$*" "$image_fqn"
+    echo 'https://nextcloud.loc'
+  }
+  vedv::registry_api_client::get_user() {
+    assert_equal "$*" "https://nextcloud.loc"
+    echo 'admin'
+  }
+  vedv::image_entity::get_user_from_fqn() {
+    assert_equal "$*" "$image_fqn"
+    return 1
+  }
+
+  run vedv::registry_service::push \
+    "$image_fqn" "$image_name"
+
+  assert_failure
+  assert_output ""
+}
+
+@test "vedv::registry_service::push() Should fail If image_owner != registry_user" {
+  local -r image_fqn='nextcloud.loc/jane@alpine/alpine-14'
+  local -r image_name='alpine'
+
+  vedv::image_entity::validate_image_fqn() {
+    assert_equal "$*" "$image_fqn"
+  }
+  vedv::image_entity::get_name_from_fqn() {
+    assert_equal "$*" "$image_fqn"
+    echo 'alpine-14'
+  }
+  vedv::image_entity::validate_name() {
+    assert_equal "$*" "$image_name"
+  }
+  vedv::image_entity::get_url_from_fqn() {
+    assert_equal "$*" "$image_fqn"
+    echo 'https://nextcloud.loc'
+  }
+  vedv::registry_api_client::get_user() {
+    assert_equal "$*" "https://nextcloud.loc"
+    echo 'admin'
+  }
+  vedv::image_entity::get_user_from_fqn() {
+    assert_equal "$*" "$image_fqn"
+    echo 'jane'
+  }
+
+  run vedv::registry_service::push \
+    "$image_fqn" "$image_name"
+
+  assert_failure
+  assert_output "Image can not be uploaded, user on fqn must be 'admin'"
+}
+
+@test "vedv::registry_service::push() Should fail If export fails" {
+  local -r image_fqn='nextcloud.loc/admin@alpine/alpine-14'
+  local -r image_name='alpine'
+
+  vedv::image_entity::validate_image_fqn() {
+    assert_equal "$*" "$image_fqn"
+  }
+  vedv::image_entity::get_name_from_fqn() {
+    assert_equal "$*" "$image_fqn"
+    echo 'alpine-14'
+  }
+  vedv::image_entity::validate_name() {
+    assert_equal "$*" "$image_name"
+  }
+  vedv::image_entity::get_url_from_fqn() {
+    assert_equal "$*" "$image_fqn"
+    echo 'https://nextcloud.loc'
+  }
+  vedv::registry_api_client::get_user() {
+    assert_equal "$*" "https://nextcloud.loc"
+    echo 'admin'
+  }
+  vedv::image_entity::get_user_from_fqn() {
+    assert_equal "$*" "$image_fqn"
+    echo 'admin'
+  }
+  vedv::image_service::export() {
+    assert_regex "$*" "${image_name} /tmp/tmp\..*/alpine-14.ova"
+    return 1
+  }
+
+  run vedv::registry_service::push \
+    "$image_fqn" "$image_name"
+
+  assert_failure
+  assert_output --regexp "Error exporting image to file: '/tmp/tmp\..*/alpine-14.ova'"
+}
+
+@test "vedv::registry_service::push() Should fail If get_rel_file_path_from_fqn fails" {
+  local -r image_fqn='nextcloud.loc/admin@alpine/alpine-14'
+  local -r image_name='alpine'
+
+  vedv::image_entity::validate_image_fqn() {
+    assert_equal "$*" "$image_fqn"
+  }
+  vedv::image_entity::get_name_from_fqn() {
+    assert_equal "$*" "$image_fqn"
+    echo 'alpine-14'
+  }
+  vedv::image_entity::validate_name() {
+    assert_equal "$*" "$image_name"
+  }
+  vedv::image_entity::get_url_from_fqn() {
+    assert_equal "$*" "$image_fqn"
+    echo 'https://nextcloud.loc'
+  }
+  vedv::registry_api_client::get_user() {
+    assert_equal "$*" "https://nextcloud.loc"
+    echo 'admin'
+  }
+  vedv::image_entity::get_user_from_fqn() {
+    assert_equal "$*" "$image_fqn"
+    echo 'admin'
+  }
+  vedv::image_service::export() {
+    assert_regex "$*" "${image_name} /tmp/tmp\..*/alpine-14.ova"
+  }
+  vedv::image_entity::get_rel_file_path_from_fqn() {
+    assert_equal "$*" "$image_fqn"
+    return 1
+  }
+
+  run vedv::registry_service::push \
+    "$image_fqn" "$image_name"
+
+  assert_failure
+  assert_output ""
+}
+
+@test "vedv::registry_service::push() Should fail If create_directory fails" {
+  local -r image_fqn='nextcloud.loc/admin@alpine/alpine-14'
+  local -r image_name='alpine'
+
+  vedv::image_entity::validate_image_fqn() {
+    assert_equal "$*" "$image_fqn"
+  }
+  vedv::image_entity::get_name_from_fqn() {
+    assert_equal "$*" "$image_fqn"
+    echo 'alpine-14'
+  }
+  vedv::image_entity::validate_name() {
+    assert_equal "$*" "$image_name"
+  }
+  vedv::image_entity::get_url_from_fqn() {
+    assert_equal "$*" "$image_fqn"
+    echo 'https://nextcloud.loc'
+  }
+  vedv::registry_api_client::get_user() {
+    assert_equal "$*" "https://nextcloud.loc"
+    echo 'admin'
+  }
+  vedv::image_entity::get_user_from_fqn() {
+    assert_equal "$*" "$image_fqn"
+    echo 'admin'
+  }
+  vedv::image_service::export() {
+    assert_regex "$*" "${image_name} /tmp/tmp\..*/alpine-14.ova"
+  }
+  vedv::image_entity::get_rel_file_path_from_fqn() {
+    assert_equal "$*" "$image_fqn"
+    echo 'admin@alpine/alpine-14'
+  }
+  vedv::registry_api_client::create_directory() {
+    assert_equal "$*" "/00-user-images/admin@alpine https://nextcloud.loc"
+    return 1
+  }
+
+  run vedv::registry_service::push \
+    "$image_fqn" "$image_name"
+
+  assert_failure
+  assert_output "Error creating directory '/00-user-images/admin@alpine'"
+}
+
+@test "vedv::registry_service::push() Should fail If upload_file checksum_file fails" {
+  local -r image_fqn='nextcloud.loc/admin@alpine/alpine-14'
+  local -r image_name='alpine'
+
+  vedv::image_entity::validate_image_fqn() {
+    assert_equal "$*" "$image_fqn"
+  }
+  vedv::image_entity::get_name_from_fqn() {
+    assert_equal "$*" "$image_fqn"
+    echo 'alpine-14'
+  }
+  vedv::image_entity::validate_name() {
+    assert_equal "$*" "$image_name"
+  }
+  vedv::image_entity::get_url_from_fqn() {
+    assert_equal "$*" "$image_fqn"
+    echo 'https://nextcloud.loc'
+  }
+  vedv::registry_api_client::get_user() {
+    assert_equal "$*" "https://nextcloud.loc"
+    echo 'admin'
+  }
+  vedv::image_entity::get_user_from_fqn() {
+    assert_equal "$*" "$image_fqn"
+    echo 'admin'
+  }
+  vedv::image_service::export() {
+    assert_regex "$*" "${image_name} /tmp/tmp\..*/alpine-14.ova"
+  }
+  vedv::image_entity::get_rel_file_path_from_fqn() {
+    assert_equal "$*" "$image_fqn"
+    echo 'admin@alpine/alpine-14.ova'
+  }
+  vedv::registry_api_client::create_directory() {
+    assert_equal "$*" "/00-user-images/admin@alpine https://nextcloud.loc"
+  }
+  vedv::registry_api_client::upload_file() {
+    assert_regex "$*" "/tmp/tmp\..*/alpine-14.ova.sha256sum /00-user-images/admin@alpine/alpine-14.ova.sha256sum https://nextcloud.loc"
+    return 1
+  }
+
+  run vedv::registry_service::push \
+    "$image_fqn" "$image_name"
+
+  assert_failure
+  assert_output "Error uploading image checksum to '/00-user-images/admin@alpine/alpine-14.ova.sha256sum'"
+}
+
+@test "vedv::registry_service::push() Should fail If upload_file image_file  fails" {
+  local -r image_fqn='nextcloud.loc/admin@alpine/alpine-14'
+  local -r image_name='alpine'
+
+  vedv::image_entity::validate_image_fqn() {
+    assert_equal "$*" "$image_fqn"
+  }
+  vedv::image_entity::get_name_from_fqn() {
+    assert_equal "$*" "$image_fqn"
+    echo 'alpine-14'
+  }
+  vedv::image_entity::validate_name() {
+    assert_equal "$*" "$image_name"
+  }
+  vedv::image_entity::get_url_from_fqn() {
+    assert_equal "$*" "$image_fqn"
+    echo 'https://nextcloud.loc'
+  }
+  vedv::registry_api_client::get_user() {
+    assert_equal "$*" "https://nextcloud.loc"
+    echo 'admin'
+  }
+  vedv::image_entity::get_user_from_fqn() {
+    assert_equal "$*" "$image_fqn"
+    echo 'admin'
+  }
+  vedv::image_service::export() {
+    assert_regex "$*" "${image_name} /tmp/tmp\..*/alpine-14.ova"
+  }
+  vedv::image_entity::get_rel_file_path_from_fqn() {
+    assert_equal "$*" "$image_fqn"
+    echo 'admin@alpine/alpine-14.ova'
+  }
+  vedv::registry_api_client::create_directory() {
+    assert_equal "$*" "/00-user-images/admin@alpine https://nextcloud.loc"
+  }
+  vedv::registry_api_client::upload_file() {
+    if [[ "$*" == "/tmp/tmp."*"/alpine-14.ova /00-user-images/admin@alpine/alpine-14.ova https://nextcloud.loc" ]]; then
+      return 1
+    fi
+  }
+
+  run vedv::registry_service::push \
+    "$image_fqn" "$image_name"
+
+  assert_failure
+  assert_output "Error uploading image file to '/00-user-images/admin@alpine/alpine-14.ova'"
+}
+
+@test "vedv::registry_service::push() Should succeed" {
+  local -r image_fqn='nextcloud.loc/admin@alpine/alpine-14'
+  local -r image_name='alpine'
+
+  vedv::image_entity::validate_image_fqn() {
+    assert_equal "$*" "$image_fqn"
+  }
+  vedv::image_entity::get_name_from_fqn() {
+    assert_equal "$*" "$image_fqn"
+    echo 'alpine-14'
+  }
+  vedv::image_entity::validate_name() {
+    assert_equal "$*" "$image_name"
+  }
+  vedv::image_entity::get_url_from_fqn() {
+    assert_equal "$*" "$image_fqn"
+    echo 'https://nextcloud.loc'
+  }
+  vedv::registry_api_client::get_user() {
+    assert_equal "$*" "https://nextcloud.loc"
+    echo 'admin'
+  }
+  vedv::image_entity::get_user_from_fqn() {
+    assert_equal "$*" "$image_fqn"
+    echo 'admin'
+  }
+  vedv::image_service::export() {
+    assert_regex "$*" "${image_name} /tmp/tmp\..*/alpine-14.ova"
+  }
+  vedv::image_entity::get_rel_file_path_from_fqn() {
+    assert_equal "$*" "$image_fqn"
+    echo 'admin@alpine/alpine-14.ova'
+  }
+  vedv::registry_api_client::create_directory() {
+    assert_equal "$*" "/00-user-images/admin@alpine https://nextcloud.loc"
+  }
+  vedv::registry_api_client::upload_file() {
+    if [[ "$*" == "/tmp/tmp."*"/alpine-14.ova /00-user-images/admin@alpine/alpine-14.ova https://nextcloud.loc" ]]; then
+      return 0
+    fi
+    if [[ "$*" == "/tmp/tmp."*"/alpine-14.ova.sha256sum /00-user-images/admin@alpine/alpine-14.ova.sha256sum https://nextcloud.loc" ]]; then
+      return 0
+    fi
+    return 1
+  }
+
+  run vedv::registry_service::push \
+    "$image_fqn" "$image_name"
 
   assert_success
   assert_output ""

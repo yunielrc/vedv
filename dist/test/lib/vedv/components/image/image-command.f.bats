@@ -7,7 +7,7 @@ setup_file() {
   delete_vms_directory
   export VED_HADOLINT_CONFIG="$TEST_HADOLINT_CONFIG"
   export VEDV_HADOLINT_ENABLED=false
-  export VEDV_IMAGE_TMP_DIR="$TEST_IMAGE_TMP_DIR"
+  export VEDV_IMAGE_IMPORTED_DIR="$TEST_IMAGE_TMP_DIR"
 }
 
 teardown() {

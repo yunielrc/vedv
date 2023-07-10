@@ -210,9 +210,3 @@ SSHEOF
   mkdir -p "$TEST_TMP_DIR"
   chmod 777 "$TEST_TMP_DIR"
 }
-
-# if [[ -d "$TEST_IMAGE_TMP_DIR" &&
-#   "$TEST_IMAGE_TMP_DIR" =~ ^/tmp/ ]]; then
-#   rm -rf "$TEST_IMAGE_TMP_DIR"
-# fi
-# mkdir -p "$TEST_IMAGE_TMP_DIR"

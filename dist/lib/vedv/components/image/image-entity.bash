@@ -117,6 +117,46 @@ vedv::image_entity::get_domain_from_fqn() {
 }
 
 #
+# Get url from fqn, or nothing if no domain
+#
+# Arguments:
+#   image_fqn string   image fqn
+#                      scheme: [domain/]user@collection/image-name
+# Output:
+#   Writes url (string) or nothing to stdout
+#   eg: domain.com, writes: https://domain.com
+#   eg: http://domain.com, writes: http://domain.com
+#   eg: https://domain.com, writes: https://domain.com
+#   eg: nothing, writes nothing
+#
+# Returns:
+#   0 if valid, non-zero id if invalid
+#
+vedv::image_entity::get_url_from_fqn() {
+  local -r image_fqn="$1"
+
+  vedv::image_entity::validate_image_fqn "$image_fqn" ||
+    return "$?"
+
+  local image_registry_domain
+  image_registry_domain="$(vedv::image_entity::get_domain_from_fqn "$image_fqn")" ||
+    return $?
+  readonly image_registry_domain
+
+  local registry_url=''
+
+  if [[ -n "$image_registry_domain" ]]; then
+    if [[ "$image_registry_domain" =~ ^https?:// ]]; then
+      registry_url="$image_registry_domain"
+    else
+      registry_url="https://${image_registry_domain}"
+    fi
+  fi
+
+  echo "$registry_url"
+}
+
+#
 # Get user from fqn
 #
 # Arguments:
