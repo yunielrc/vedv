@@ -768,8 +768,13 @@ setup_file() {
   vedv::container_entity::set_parent_image_id() {
     assert_equal "$*" "12346 12345"
   }
+  vedv::vmobj_service::modify_system() {
+    assert_equal "$*" "container 12346 2 512"
+  }
 
-  run vedv::container_service::create "$image" "$container_name"
+  run vedv::container_service::create \
+    "$image" "$container_name" 'false' \
+    '' 'false' 2 512
 
   assert_success
   assert_output "12346 bin-baam"
@@ -938,6 +943,187 @@ setup_file() {
 
   assert_failure
   assert_output "Failed to publish all ports for container: 'bin-baam'"
+}
+
+@test "vedv::container_service::create() Should fail if modify_system fails" {
+  local -r image="image1"
+  local -r container_name=''
+  # shellcheck disable=SC2034
+  local -r standalone=false
+  local -r publish_ports='-p 8080:80/tcp -p 8082:82 -p 8081 -p 81/udp'
+  local -r publish_all=true
+  local -ri cpus=2
+  local -ri memory=1024
+
+  vedv::container_service::exists_with_name() {
+    assert_equal "$*" "container1"
+    echo false
+  }
+  petname() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::image_service::pull() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::image_entity::get_vm_name_by_image_name() {
+    assert_equal "$*" "image1"
+    echo "image:foo-bar|crc:12345|"
+  }
+  vedv::container_entity::gen_vm_name() {
+    assert_equal "$*" ""
+    echo "container:bin-baam|crc:12346|"
+  }
+  vedv::image_entity::get_id_by_vm_name() {
+    assert_equal "$*" "image:foo-bar|crc:12345|"
+    echo 12345
+  }
+  vedv::image_entity::get_last_layer_id() {
+    assert_equal "$*" "12345"
+    echo 53455
+  }
+  vedv::image_entity::get_snapshot_name_by_layer_id() {
+    assert_equal "$*" "12345 53455"
+    echo "layer:RUN|id:layer_id|"
+  }
+  vedv::container_entity::gen_vm_name() {
+    assert_equal "$*" ""
+    echo "container:bin-baam|crc:12346|"
+  }
+  vedv::hypervisor::clonevm_link() {
+    assert_equal "$*" "image:foo-bar|crc:12345| container:bin-baam|crc:12346| layer:RUN|id:layer_id| false"
+  }
+  vedv::container_entity::get_container_name_by_vm_name() {
+    assert_equal "$*" "container:bin-baam|crc:12346|"
+    echo "bin-baam"
+  }
+  vedv::container_entity::get_id_by_vm_name() {
+    assert_equal "$*" "container:bin-baam|crc:12346|"
+    echo 12346
+  }
+  vedv::vmobj_service::after_create() {
+    assert_equal "$*" "container 12346"
+  }
+  vedv::image_entity::____add_child_container_id() {
+    assert_equal "$*" "12345 12346"
+  }
+  vedv::container_entity::set_vm_name() {
+    assert_equal "$*" "12346 container:bin-baam|crc:12346|"
+  }
+  vedv::container_entity::set_parent_image_id() {
+    assert_equal "$*" "12346 12345"
+  }
+  vedv::container_service::__publish_ports() {
+    assert_equal "$*" "12346 -p 8080:80/tcp -p 8082:82 -p 8081 -p 81/udp"
+  }
+  vedv::container_service::__publish_exposed_ports() {
+    assert_equal "$*" "12346"
+  }
+  vedv::vmobj_service::modify_system() {
+    assert_equal "$*" "container 12346 2 1024"
+    return 1
+  }
+
+  run vedv::container_service::create \
+    "$image" \
+    "$container_name" \
+    "$standalone" \
+    "$publish_ports" \
+    "$publish_all" \
+    $cpus \
+    $memory
+
+  assert_failure
+  assert_output "Failed to modify system for container: 'bin-baam'"
+}
+
+@test "vedv::container_service::create() Should succeed 2" {
+  local -r image="image1"
+  local -r container_name=''
+  # shellcheck disable=SC2034
+  local -r standalone=false
+  local -r publish_ports='-p 8080:80/tcp -p 8082:82 -p 8081 -p 81/udp'
+  local -r publish_all=true
+  local -ri cpus=2
+  local -ri memory=1024
+
+  vedv::container_service::exists_with_name() {
+    assert_equal "$*" "container1"
+    echo false
+  }
+  petname() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::image_service::pull() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::image_entity::get_vm_name_by_image_name() {
+    assert_equal "$*" "image1"
+    echo "image:foo-bar|crc:12345|"
+  }
+  vedv::container_entity::gen_vm_name() {
+    assert_equal "$*" ""
+    echo "container:bin-baam|crc:12346|"
+  }
+  vedv::image_entity::get_id_by_vm_name() {
+    assert_equal "$*" "image:foo-bar|crc:12345|"
+    echo 12345
+  }
+  vedv::image_entity::get_last_layer_id() {
+    assert_equal "$*" "12345"
+    echo 53455
+  }
+  vedv::image_entity::get_snapshot_name_by_layer_id() {
+    assert_equal "$*" "12345 53455"
+    echo "layer:RUN|id:layer_id|"
+  }
+  vedv::container_entity::gen_vm_name() {
+    assert_equal "$*" ""
+    echo "container:bin-baam|crc:12346|"
+  }
+  vedv::hypervisor::clonevm_link() {
+    assert_equal "$*" "image:foo-bar|crc:12345| container:bin-baam|crc:12346| layer:RUN|id:layer_id| false"
+  }
+  vedv::container_entity::get_container_name_by_vm_name() {
+    assert_equal "$*" "container:bin-baam|crc:12346|"
+    echo "bin-baam"
+  }
+  vedv::container_entity::get_id_by_vm_name() {
+    assert_equal "$*" "container:bin-baam|crc:12346|"
+    echo 12346
+  }
+  vedv::vmobj_service::after_create() {
+    assert_equal "$*" "container 12346"
+  }
+  vedv::image_entity::____add_child_container_id() {
+    assert_equal "$*" "12345 12346"
+  }
+  vedv::container_entity::set_vm_name() {
+    assert_equal "$*" "12346 container:bin-baam|crc:12346|"
+  }
+  vedv::container_entity::set_parent_image_id() {
+    assert_equal "$*" "12346 12345"
+  }
+  vedv::container_service::__publish_ports() {
+    assert_equal "$*" "12346 -p 8080:80/tcp -p 8082:82 -p 8081 -p 81/udp"
+  }
+  vedv::container_service::__publish_exposed_ports() {
+    assert_equal "$*" "12346"
+  }
+  vedv::vmobj_service::modify_system() {
+    assert_equal "$*" "container 12346 2 1024"
+  }
+
+  run vedv::container_service::create \
+    "$image" \
+    "$container_name" \
+    "$standalone" \
+    "$publish_ports" \
+    "$publish_all" \
+    $cpus \
+    $memory
+
+  assert_success
+  assert_output "12346 bin-baam"
 }
 
 # Tests for vedv::container_service::is_started()

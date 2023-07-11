@@ -1,0 +1,6 @@
+# lang: dockerfile
+FROM /tmp/vedv/test/files/alpine-x86_64.ova
+
+SYSTEM --cpus 3 --memory 740
+
+SYSTEM --cpus 5 --memory 868

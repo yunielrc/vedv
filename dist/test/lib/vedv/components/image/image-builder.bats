@@ -3019,3 +3019,74 @@ local -r var_9f57a558b3_VAR23=\"var3 var3\""
   assert_success
   assert_output ""
 }
+
+# Tests for vedv::image_builder::__layer_system()
+
+@test "vedv::image_builder::__layer_system() Should fail With empty image_id" {
+  local -r image_id=""
+  local -r cmd=""
+
+  run vedv::image_builder::__layer_system "$image_id" "$cmd"
+
+  assert_failure
+  assert_output "Argument 'image_id' is required"
+}
+
+@test "vedv::image_builder::__layer_system() Should fail With empty cmd" {
+  local -r image_id="12345"
+  local -r cmd=""
+
+  run vedv::image_builder::__layer_system "$image_id" "$cmd"
+
+  assert_failure
+  assert_output "Argument 'cmd' is required"
+}
+
+@test "vedv::image_builder::__layer_system() Should fail If cpus is empty" {
+  local -r image_id="12345"
+  local -r cmd="1 SYSTEM --cpus"
+
+  run vedv::image_builder::__layer_system "$image_id" "$cmd"
+
+  assert_failure
+  assert_output "Invalid number of arguments, expected at least 4, got 3"
+}
+
+@test "vedv::image_builder::__layer_system() Should fail If memory is empty" {
+  local -r image_id="12345"
+  local -r cmd="1 SYSTEM --cpus 2 --memory"
+
+  run vedv::image_builder::__layer_system "$image_id" "$cmd"
+
+  assert_failure
+  assert_output "Argument 'memory' no specified"
+}
+
+@test "vedv::image_builder::__layer_system() Should fail If __layer_execute_cmd fails" {
+  local -r image_id="12345"
+  local -r cmd="1 SYSTEM --cpus 2 --memory 512"
+
+  vedv::image_builder::__layer_execute_cmd() {
+    assert_equal "$*" "12345 1 SYSTEM --cpus 2 --memory 512 SYSTEM vedv::image_service::fs::set_system '12345' '2' '512'"
+    return 1
+  }
+
+  run vedv::image_builder::__layer_system "$image_id" "$cmd"
+
+  assert_failure
+  assert_output ""
+}
+
+@test "vedv::image_builder::__layer_system() Should succeed" {
+  local -r image_id="12345"
+  local -r cmd="1 SYSTEM --cpus 2 --memory 512"
+
+  vedv::image_builder::__layer_execute_cmd() {
+    assert_equal "$*" "12345 1 SYSTEM --cpus 2 --memory 512 SYSTEM vedv::image_service::fs::set_system '12345' '2' '512'"
+  }
+
+  run vedv::image_builder::__layer_system "$image_id" "$cmd"
+
+  assert_success
+  assert_output ""
+}

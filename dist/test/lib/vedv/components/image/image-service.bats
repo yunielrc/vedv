@@ -2006,16 +2006,138 @@ EOF
 }
 
 # Tests for vedv::image_service::cache_data()
-@test "vedv::image_service::cache_data() Should succeed" {
+@test "vedv::image_service::cache_data() Should fail If cache_data fails" {
   # Arrange
   local -r image_id="12345"
-  local -r data="data"
+  # Stub
+  vedv::vmobj_service::cache_data() {
+    assert_equal "$*" "image ${image_id}"
+    return 1
+  }
+  # Act
+  run vedv::image_service::cache_data "$image_id"
+  # Assert
+  assert_failure
+  assert_output "Failed to cache data for image '12345'"
+}
+
+@test "vedv::image_service::cache_data() Should fail If get_cpus fails" {
+  # Arrange
+  local -r image_id="12345"
   # Stub
   vedv::vmobj_service::cache_data() {
     assert_equal "$*" "image ${image_id}"
   }
+  vedv::image_service::fs::get_cpus() {
+    assert_equal "$*" "$image_id"
+    return 1
+  }
   # Act
-  run vedv::image_service::cache_data "$image_id" "$data"
+  run vedv::image_service::cache_data "$image_id"
+  # Assert
+  assert_failure
+  assert_output "Failed to get cpus for image ${image_id}"
+}
+
+@test "vedv::image_service::cache_data() Should fail If set_cpus fails" {
+  # Arrange
+  local -r image_id="12345"
+  # Stub
+  vedv::vmobj_service::cache_data() {
+    assert_equal "$*" "image ${image_id}"
+  }
+  vedv::image_service::fs::get_cpus() {
+    assert_equal "$*" "$image_id"
+    echo 2
+  }
+  vedv::image_entity::cache::set_cpus() {
+    assert_equal "$*" "${image_id} 2"
+    return 1
+  }
+  # Act
+  run vedv::image_service::cache_data "$image_id"
+  # Assert
+  assert_failure
+  assert_output "Failed to set cpus for image ${image_id}"
+}
+
+@test "vedv::image_service::cache_data() Should fail If get_memory fails" {
+  # Arrange
+  local -r image_id="12345"
+  # Stub
+  vedv::vmobj_service::cache_data() {
+    assert_equal "$*" "image ${image_id}"
+  }
+  vedv::image_service::fs::get_cpus() {
+    assert_equal "$*" "$image_id"
+    echo 2
+  }
+  vedv::image_entity::cache::set_cpus() {
+    assert_equal "$*" "${image_id} 2"
+  }
+  vedv::image_service::fs::get_memory() {
+    assert_equal "$*" "$image_id"
+    return 1
+  }
+  # Act
+  run vedv::image_service::cache_data "$image_id"
+  # Assert
+  assert_failure
+  assert_output "Failed to get memory for image 12345"
+}
+
+@test "vedv::image_service::cache_data() Should fail If set_memory fails" {
+  # Arrange
+  local -r image_id="12345"
+  # Stub
+  vedv::vmobj_service::cache_data() {
+    assert_equal "$*" "image ${image_id}"
+  }
+  vedv::image_service::fs::get_cpus() {
+    assert_equal "$*" "$image_id"
+    echo 2
+  }
+  vedv::image_entity::cache::set_cpus() {
+    assert_equal "$*" "${image_id} 2"
+  }
+  vedv::image_service::fs::get_memory() {
+    assert_equal "$*" "$image_id"
+    echo 512
+  }
+  vedv::image_entity::cache::set_memory() {
+    assert_equal "$*" "${image_id} 512"
+    return 1
+  }
+  # Act
+  run vedv::image_service::cache_data "$image_id"
+  # Assert
+  assert_failure
+  assert_output "Failed to set memory for image 12345"
+}
+
+@test "vedv::image_service::cache_data() Should succeed" {
+  # Arrange
+  local -r image_id="12345"
+  # Stub
+  vedv::vmobj_service::cache_data() {
+    assert_equal "$*" "image ${image_id}"
+  }
+  vedv::image_service::fs::get_cpus() {
+    assert_equal "$*" "$image_id"
+    echo 2
+  }
+  vedv::image_entity::cache::set_cpus() {
+    assert_equal "$*" "${image_id} 2"
+  }
+  vedv::image_service::fs::get_memory() {
+    assert_equal "$*" "$image_id"
+    echo 512
+  }
+  vedv::image_entity::cache::set_memory() {
+    assert_equal "$*" "${image_id} 512"
+  }
+  # Act
+  run vedv::image_service::cache_data "$image_id"
   # Assert
   assert_success
   assert_output ""
@@ -2911,4 +3033,111 @@ EOF
   }
 
   run vedv::image_service::export "$image_name_or_id" "$image_file" "$no_checksum"
+}
+
+# Tests for vedv::image_service::fs::get_cpus()
+@test "vedv::image_service::fs::get_cpus() Should fail If execute_cmd_by_id fails" {
+  local -r image_id="12345"
+  # Stub
+  vedv::vmobj_service::execute_cmd_by_id() {
+    assert_equal "$*" "image 12345 vedv-getcpus root <none>"
+    return 1
+  }
+
+  run vedv::image_service::fs::get_cpus "$image_id"
+
+  assert_failure
+  assert_output "Failed to get cpus for image: 12345"
+}
+
+@test "vedv::image_service::fs::get_cpus() Should succeed" {
+  local -r image_id="12345"
+  # Stub
+  vedv::vmobj_service::execute_cmd_by_id() {
+    assert_equal "$*" "image 12345 vedv-getcpus root <none>"
+    echo 'vedv'
+  }
+
+  run vedv::image_service::fs::get_cpus "$image_id"
+
+  assert_success
+  assert_output "vedv"
+}
+
+# Tests for vedv::image_service::fs::get_memory()
+@test "vedv::image_service::fs::get_memory() Should fail If execute_cmd_by_id fails" {
+  local -r image_id="12345"
+  # Stub
+  vedv::vmobj_service::execute_cmd_by_id() {
+    assert_equal "$*" "image 12345 vedv-getmemory root <none>"
+    return 1
+  }
+
+  run vedv::image_service::fs::get_memory "$image_id"
+
+  assert_failure
+  assert_output "Failed to get memory for image: 12345"
+}
+
+@test "vedv::image_service::fs::get_memory() Should succeed" {
+  local -r image_id="12345"
+  # Stub
+  vedv::vmobj_service::execute_cmd_by_id() {
+    assert_equal "$*" "image 12345 vedv-getmemory root <none>"
+    echo 'vedv'
+  }
+
+  run vedv::image_service::fs::get_memory "$image_id"
+
+  assert_success
+  assert_output "vedv"
+}
+
+# Tests for vedv::image_service::fs::set_system()
+@test "vedv::image_service::fs::set_system() Should fail With empty cpu and memory" {
+  local -r image_id="12345"
+  local -r cpus=""
+  local -r memory=""
+
+  run vedv::image_service::fs::set_system \
+    "$image_id" "$cpus" "$memory"
+
+  assert_failure
+  assert_output "At least one of cpus or memory must be set"
+}
+
+@test "vedv::image_service::fs::set_system() Should fail If execute_cmd_by_id fails" {
+  local -r image_id="12345"
+  local -r cpus=4
+  local -r memory=512
+
+  vedv::vmobj_service::execute_cmd_by_id() {
+    assert_equal "$*" "image 12345 vedv-setcpus '${cpus}'; vedv-setmemory '${memory}' root <none>"
+    return 1
+  }
+
+  run vedv::image_service::fs::set_system \
+    "$image_id" "$cpus" "$memory"
+
+  assert_failure
+  assert_output "Failed to modify system for image: 12345"
+}
+
+@test "vedv::image_service::fs::set_system() Should succeed" {
+  local -r image_id="12345"
+  local -r cpus=4
+  local -r memory=512
+
+  vedv::vmobj_service::execute_cmd_by_id() {
+    assert_equal "$*" "image 12345 vedv-setcpus '${cpus}'; vedv-setmemory '${memory}' root <none>"
+  }
+  vedv::vmobj_service::modify_system() {
+    assert_equal "$*" "image 12345 ${cpus} ${memory}"
+  }
+
+  run vedv::image_service::fs::set_system \
+    "$image_id" "$cpus" "$memory"
+
+  assert_success
+  assert_output ""
 }

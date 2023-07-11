@@ -83,7 +83,7 @@ setup() {
   run vedv::vmobj_entity::__validate_attribute "$type" "$attribute"
 
   assert_failure
-  assert_output --partial "Invalid attribute: att1, valid attributes are: vm_name|ssh_port|user_name|workdir|environment|exposed_ports|shell|parent_image_id"
+  assert_output --partial "Invalid attribute: att1, valid attributes are: vm_name|ssh_port|user_name|workdir|environment|exposed_ports|shell|cpus|memory|parent_image_id"
 }
 
 @test "vedv::vmobj_entity::__validate_attribute() Should succeed with valid attribute" {
@@ -733,7 +733,7 @@ setup() {
   run vedv::vmobj_entity::__get_attribute "$type" "$vmobj_id" "$attribute"
 
   assert_failure
-  assert_output "Invalid attribute: invalid, valid attributes are: vm_name|ssh_port|user_name|workdir|environment|exposed_ports|shell|parent_image_id"
+  assert_output "Invalid attribute: invalid, valid attributes are: vm_name|ssh_port|user_name|workdir|environment|exposed_ports|shell|cpus|memory|parent_image_id"
 }
 
 @test 'vedv::vmobj_entity::__get_attribute() Should fail If getting dictionary fails' {
@@ -803,7 +803,7 @@ setup() {
   run vedv::vmobj_entity::__set_attribute "$type" "$vmobj_id" "$attribute" "$value"
 
   assert_failure
-  assert_output --partial "Invalid attribute: invalid, valid attributes are: vm_name|ssh_port|user_name|workdir|environment|exposed_ports|shell|parent_image_id"
+  assert_output --partial "Invalid attribute: invalid, valid attributes are: vm_name|ssh_port|user_name|workdir|environment|exposed_ports|shell|cpus|memory|parent_image_id"
 }
 
 @test 'vedv::vmobj_entity::__set_attribute() Should succeed' {
@@ -855,7 +855,7 @@ setup() {
   run vedv::vmobj_entity::__create_new_vmobj_dict "$type"
 
   assert_success
-  assert_output '([user_name]="" [shell]="" [workdir]="" [exposed_ports]="" [parent_image_id]="" [ssh_port]="" [environment]="" [vm_name]="" )'
+  assert_output '([user_name]="" [shell]="" [workdir]="" [exposed_ports]="" [cpus]="" [parent_image_id]="" [memory]="" [ssh_port]="" [environment]="" [vm_name]="" )'
 }
 
 # Test vedv::vmobj_entity::set_ssh_port()
@@ -1939,4 +1939,132 @@ setup() {
 
   assert_success
   assert_output ""
+}
+
+# Test vedv::vmobj_entity::cache::set_cpus()
+
+@test 'vedv::vmobj_entity::cache::set_cpus() Should fail If __set_attribute fails' {
+  local -r type='container'
+  local -r vmobj_id='23456'
+  local -r value=2
+
+  vedv::vmobj_entity::__set_attribute() {
+    assert_equal "$*" 'container 23456 cpus 2'
+    return 1
+  }
+
+  run vedv::vmobj_entity::cache::set_cpus "$type" "$vmobj_id" "$value"
+
+  assert_failure
+  assert_output ''
+}
+
+@test 'vedv::vmobj_entity::cache::set_cpus() Should succeed' {
+  local -r type='container'
+  local -r vmobj_id='23456'
+  local -r value=2
+
+  vedv::vmobj_entity::__set_attribute() {
+    assert_equal "$*" 'container 23456 cpus 2'
+  }
+
+  run vedv::vmobj_entity::cache::set_cpus "$type" "$vmobj_id" "$value"
+
+  assert_success
+  assert_output ''
+}
+
+# Test vedv::vmobj_entity::cache::get_cpus()
+
+@test 'vedv::vmobj_entity::cache::get_cpus() Should fail If __get_attribute fails' {
+  local -r type='container'
+  local -r vmobj_id='23456'
+
+  vedv::vmobj_entity::__get_attribute() {
+    assert_equal "$*" 'container 23456 cpus'
+    return 1
+  }
+
+  run vedv::vmobj_entity::cache::get_cpus "$type" "$vmobj_id"
+
+  assert_failure
+  assert_output ''
+}
+
+@test 'vedv::vmobj_entity::cache::get_cpus() Should succeed' {
+  local -r type='container'
+  local -r vmobj_id='23456'
+
+  vedv::vmobj_entity::__get_attribute() {
+    assert_equal "$*" 'container 23456 cpus'
+  }
+
+  run vedv::vmobj_entity::cache::get_cpus "$type" "$vmobj_id"
+
+  assert_success
+  assert_output ''
+}
+
+# Test vedv::vmobj_entity::cache::set_memory()
+
+@test 'vedv::vmobj_entity::cache::set_memory() Should fail If __set_attribute fails' {
+  local -r type='container'
+  local -r vmobj_id='23456'
+  local -r value=512
+
+  vedv::vmobj_entity::__set_attribute() {
+    assert_equal "$*" 'container 23456 memory 512'
+    return 1
+  }
+
+  run vedv::vmobj_entity::cache::set_memory "$type" "$vmobj_id" "$value"
+
+  assert_failure
+  assert_output ''
+}
+
+@test 'vedv::vmobj_entity::cache::set_memory() Should succeed' {
+  local -r type='container'
+  local -r vmobj_id='23456'
+  local -r value=512
+
+  vedv::vmobj_entity::__set_attribute() {
+    assert_equal "$*" 'container 23456 memory 512'
+  }
+
+  run vedv::vmobj_entity::cache::set_memory "$type" "$vmobj_id" "$value"
+
+  assert_success
+  assert_output ''
+}
+
+# Test vedv::vmobj_entity::cache::get_memory()
+
+@test 'vedv::vmobj_entity::cache::get_memory() Should fail If __get_attribute fails' {
+  local -r type='container'
+  local -r vmobj_id='23456'
+
+  vedv::vmobj_entity::__get_attribute() {
+    assert_equal "$*" 'container 23456 memory'
+    return 1
+  }
+
+  run vedv::vmobj_entity::cache::get_memory "$type" "$vmobj_id"
+
+  assert_failure
+  assert_output ''
+}
+
+@test 'vedv::vmobj_entity::cache::get_memory() Should succeed' {
+  local -r type='container'
+  local -r vmobj_id='23456'
+
+  vedv::vmobj_entity::__get_attribute() {
+    assert_equal "$*" 'container 23456 memory'
+  }
+
+  run vedv::vmobj_entity::cache::get_memory "$type" "$vmobj_id"
+
+  assert_success
+  assert_output ''
 }

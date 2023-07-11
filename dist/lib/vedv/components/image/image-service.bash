@@ -1175,6 +1175,97 @@ vedv::image_service::fs::list_environment_vars() {
 }
 
 #
+# Save the number of memory on the image fs
+#
+# Arguments:
+#   image_id  string     image id
+#   memory    integer    memory
+#
+# Output:
+#  writes command output to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::image_service::fs::set_system() {
+  local -r image_id="$1"
+  local -ri cpus="$2"
+  local -ri memory="${3:-}"
+
+  local commands=''
+
+  if [[ $cpus -gt 0 ]]; then
+    commands="vedv-setcpus '${cpus}'; "
+  fi
+  if [[ "$memory" -gt 0 ]]; then
+    commands="${commands}vedv-setmemory '${memory}'"
+  fi
+  readonly commands
+
+  if [[ -z "$commands" ]]; then
+    err "At least one of cpus or memory must be set"
+    return "$ERR_INVAL_ARG"
+  fi
+
+  vedv::vmobj_service::execute_cmd_by_id 'image' "$image_id" "$commands" 'root' '<none>' || {
+    err "Failed to modify system for image: ${image_id}"
+    return "$ERR_IMAGE_OPERATION"
+  }
+
+  vedv::vmobj_service::modify_system \
+    'image' \
+    "$image_id" \
+    "$cpus" \
+    "$memory" >/dev/null
+}
+
+#
+# Get the number of cpus from the image fs
+#
+# Arguments:
+#   image_id  string    image id
+#
+# Output:
+#  writes command output to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::image_service::fs::get_cpus() {
+  local -r image_id="$1"
+
+  local -r cmd='vedv-getcpus'
+
+  vedv::vmobj_service::execute_cmd_by_id 'image' "$image_id" "$cmd" 'root' '<none>' || {
+    err "Failed to get cpus for image: ${image_id}"
+    return "$ERR_IMAGE_OPERATION"
+  }
+}
+
+#
+# Get the number of memory from the image fs
+#
+# Arguments:
+#   image_id  string    image id
+#
+# Output:
+#  writes command output to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::image_service::fs::get_memory() {
+  local -r image_id="$1"
+
+  local -r cmd='vedv-getmemory'
+
+  vedv::vmobj_service::execute_cmd_by_id 'image' "$image_id" "$cmd" 'root' '<none>' || {
+    err "Failed to get memory for image: ${image_id}"
+    return "$ERR_IMAGE_OPERATION"
+  }
+}
+
+#
 # Delete layer cache
 # This function is used to delete the layers others than
 # the first layer (FROM)
@@ -1335,7 +1426,34 @@ vedv::image_service::cache_data() {
 
   vedv::vmobj_service::cache_data \
     'image' \
-    "$image_id"
+    "$image_id" || {
+    err "Failed to cache data for image '${image_id}'"
+    return "$ERR_VMOBJ_OPERATION"
+  }
+
+  local cpus
+  cpus="$(vedv::image_service::fs::get_cpus "$image_id")" || {
+    err "Failed to get cpus for image ${image_id}"
+    return "$ERR_VMOBJ_OPERATION"
+  }
+  readonly cpus
+
+  vedv::image_entity::cache::set_cpus "$image_id" "$cpus" || {
+    err "Failed to set cpus for image ${image_id}"
+    return "$ERR_VMOBJ_OPERATION"
+  }
+
+  local memory
+  memory="$(vedv::image_service::fs::get_memory "$image_id")" || {
+    err "Failed to get memory for image ${image_id}"
+    return "$ERR_VMOBJ_OPERATION"
+  }
+  readonly memory
+
+  vedv::image_entity::cache::set_memory "$image_id" "$memory" || {
+    err "Failed to set memory for image ${image_id}"
+    return "$ERR_VMOBJ_OPERATION"
+  }
 }
 
 #

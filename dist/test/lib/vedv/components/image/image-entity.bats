@@ -1445,3 +1445,65 @@ EOF
   assert_success
   assert_output "https://nextcloud.loc"
 }
+
+# Test vedv::image_entity::get_cpus()
+@test 'vedv::image_entity::cache::get_cpus() Should succeed' {
+  # Setup
+  local -r image_id="ct1"
+  # Mock
+  vedv::vmobj_entity::cache::get_cpus() {
+    assert_equal "$*" "image ct1"
+  }
+  # Act
+  run vedv::image_entity::cache::get_cpus "$image_id"
+  # Assert
+  assert_success
+  assert_output ""
+}
+
+# Test vedv::image_entity::set_cpus()
+@test 'vedv::image_entity::cache::set_cpus() Should succeed' {
+  # Setup
+  local -r image_id="ct1"
+  local -r value="val1"
+  # Mock
+  vedv::vmobj_entity::cache::set_cpus() {
+    assert_equal "$*" "image ct1 val1"
+  }
+  # Act
+  run vedv::image_entity::cache::set_cpus "$image_id" "$value"
+  # Assert
+  assert_success
+  assert_output ""
+}
+
+# Test vedv::image_entity::get_memory()
+@test 'vedv::image_entity::cache::get_memory() Should succeed' {
+  # Setup
+  local -r image_id="ct1"
+  # Mock
+  vedv::vmobj_entity::cache::get_memory() {
+    assert_equal "$*" "image ct1"
+  }
+  # Act
+  run vedv::image_entity::cache::get_memory "$image_id"
+  # Assert
+  assert_success
+  assert_output ""
+}
+
+# Test vedv::image_entity::set_memory()
+@test 'vedv::image_entity::cache::set_memory() Should succeed' {
+  # Setup
+  local -r image_id="ct1"
+  local -r value="val1"
+  # Mock
+  vedv::vmobj_entity::cache::set_memory() {
+    assert_equal "$*" "image ct1 val1"
+  }
+  # Act
+  run vedv::image_entity::cache::set_memory "$image_id" "$value"
+  # Assert
+  assert_success
+  assert_output ""
+}

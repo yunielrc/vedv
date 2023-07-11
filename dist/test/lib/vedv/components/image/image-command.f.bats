@@ -641,3 +641,51 @@ vedv image export IMAGE FILE"
   assert_success
   assert_output --partial 'image123.ova: OK'
 }
+
+@test "vedv image build -t 'image123' ./cpus-memory.vedvfile, Should succeed" {
+  run vedv image build --force \
+    -t 'image123' \
+    'dist/test/lib/vedv/components/image/fixtures/vedvfiles/cpus-memory.vedvfile2'
+
+  assert_success
+  assert_output --regexp "created layer '.*' for command 'FROM'
+created layer '.*' for command 'SYSTEM'
+created layer '.*' for command 'SYSTEM'
+
+Build finished
+.* image123"
+
+  vedv container create -n 'container123' 'image123'
+
+  run vedv container exec --root 'container123' vedv-getcpus
+
+  assert_success
+  assert_output "5"
+
+  run vedv container exec --root 'container123' vedv-getmemory
+
+  assert_success
+  assert_output "868"
+
+  run vedv image build --force \
+    -t 'image123' \
+    'dist/test/lib/vedv/components/image/fixtures/vedvfiles/cpus-memory.vedvfile'
+
+  assert_success
+  assert_output --regexp "
+
+Build finished
+.* image123"
+
+  vedv container create -n 'container123' 'image123'
+
+  run vedv container exec --root 'container123' vedv-getcpus
+
+  assert_success
+  assert_output "3"
+
+  run vedv container exec --root 'container123' vedv-getmemory
+
+  assert_success
+  assert_output "740"
+}

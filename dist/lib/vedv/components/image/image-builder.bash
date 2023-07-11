@@ -1266,6 +1266,118 @@ vedv::image_builder::__layer_expose() {
 }
 
 #
+# Calculates the layer id for the CPUS command
+#
+# Arguments:
+#   cmd   string    cpus command (e.g. "1 CPUS 2")
+#
+# Output:
+#  Writes layer_id (string) to the stdout
+#
+# Returns:
+#  0 on success, non-zero on error.
+#
+vedv::image_builder::__layer_cpus_calc_id() {
+  local -r cmd="$1"
+  vedv::image_builder::__simple_layer_command_calc_id "$cmd" 'CPUS'
+}
+
+#
+# Calculates the layer id for the SYSTEM command
+#
+# Arguments:
+#   cmd   string    system command (e.g. "1 SYSTEM --cpus 2 --memory 128")
+#
+# Output:
+#  Writes layer_id (string) to the stdout
+#
+# Returns:
+#  0 on success, non-zero on error.
+#
+vedv::image_builder::__layer_system_calc_id() {
+  local -r cmd="$1"
+  vedv::image_builder::__simple_layer_command_calc_id "$cmd" 'SYSTEM'
+}
+
+#
+# Set the system cpus and memory
+#
+# Arguments:
+#   image_id  string    image id
+#   cmd       string    system command (e.g. "1 SYSTEM --cpus 2 --memory 128")
+#
+# Output:
+#  Writes command_output (text) to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::image_builder::__layer_system() {
+  local -r image_id="$1"
+  local -r cmd="$2"
+  # validate arguments
+  if [[ -z "$image_id" ]]; then
+    err "Argument 'image_id' is required"
+    return "$ERR_INVAL_ARG"
+  fi
+  if [[ -z "$cmd" ]]; then
+    err "Argument 'cmd' is required"
+    return "$ERR_INVAL_ARG"
+  fi
+  # do not allow escaped $ or $ in the command
+  if [[ "$cmd" == *"$UTILS_ENCODED_ESCVAR_PREFIX"* || "$cmd" == *"$UTILS_ENCODED_VAR_PREFIX"* ]]; then
+    err 'Invalid command, it must not contain: \$ or $'
+    return "$ERR_INVAL_ARG"
+  fi
+
+  set -o noglob
+  eval set -- "$cmd"
+  set +o noglob
+
+  if [[ $# -lt 4 ]]; then
+    err "Invalid number of arguments, expected at least 4, got $#"
+    return "$ERR_INVAL_ARG"
+  fi
+  shift 2 # skip command id and name
+
+  local cpus=''
+  local memory=''
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+    # options
+    -c | --cpus)
+      readonly cpus="${2:-}"
+      # validate argument
+      if [[ -z "$cpus" ]]; then
+        err "Argument 'cpus' no specified"
+        return "$ERR_INVAL_ARG"
+      fi
+      shift 2
+      ;;
+    -m | --memory)
+      readonly memory="${2:-}"
+      # validate argument
+      if [[ -z "$memory" ]]; then
+        err "Argument 'memory' no specified"
+        return "$ERR_INVAL_ARG"
+      fi
+      shift 2
+      ;;
+    esac
+  done
+  # validate command arguments
+  if [[ -z "$cpus" && -z "$memory" ]]; then
+    err "At least one of the arguments 'cpus' or 'memory' is required"
+    return "$ERR_INVAL_ARG"
+  fi
+
+  local -r exec_func="vedv::image_service::fs::set_system '${image_id}' '${cpus}' '${memory}'"
+
+  vedv::image_builder::__layer_execute_cmd "$image_id" "$cmd" "SYSTEM" "$exec_func"
+}
+
+#
 # Delete invalid layers
 #
 # Arguments:

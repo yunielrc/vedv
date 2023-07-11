@@ -221,7 +221,7 @@ vedv::ssh_client::copy() {
 vedv::ssh_client::wait_for_ssh_service() {
   local -r ip="$1"
   local -ri port=$2
-  local -ri timeout=${3:-35}
+  local -ri timeout=${3:-40}
 
   if ! utils::valid_ip "$ip"; then
     err "Invalid Argument 'ip': '${ip}'"

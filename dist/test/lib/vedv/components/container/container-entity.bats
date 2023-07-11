@@ -354,3 +354,65 @@ setup() {
   assert_success
   assert_output ""
 }
+
+# Test vedv::container_entity::get_cpus()
+@test 'vedv::container_entity::cache::get_cpus() Should succeed' {
+  # Setup
+  local -r container_id="ct1"
+  # Mock
+  vedv::vmobj_entity::cache::get_cpus() {
+    assert_equal "$*" "container ct1"
+  }
+  # Act
+  run vedv::container_entity::cache::get_cpus "$container_id"
+  # Assert
+  assert_success
+  assert_output ""
+}
+
+# Test vedv::container_entity::set_cpus()
+@test 'vedv::container_entity::cache::set_cpus() Should succeed' {
+  # Setup
+  local -r container_id="ct1"
+  local -r value="val1"
+  # Mock
+  vedv::vmobj_entity::cache::set_cpus() {
+    assert_equal "$*" "container ct1 val1"
+  }
+  # Act
+  run vedv::container_entity::cache::set_cpus "$container_id" "$value"
+  # Assert
+  assert_success
+  assert_output ""
+}
+
+# Test vedv::container_entity::get_memory()
+@test 'vedv::container_entity::cache::get_memory() Should succeed' {
+  # Setup
+  local -r container_id="ct1"
+  # Mock
+  vedv::vmobj_entity::cache::get_memory() {
+    assert_equal "$*" "container ct1"
+  }
+  # Act
+  run vedv::container_entity::cache::get_memory "$container_id"
+  # Assert
+  assert_success
+  assert_output ""
+}
+
+# Test vedv::container_entity::set_memory()
+@test 'vedv::container_entity::cache::set_memory() Should succeed' {
+  # Setup
+  local -r container_id="ct1"
+  local -r value="val1"
+  # Mock
+  vedv::vmobj_entity::cache::set_memory() {
+    assert_equal "$*" "container ct1 val1"
+  }
+  # Act
+  run vedv::container_entity::cache::set_memory "$container_id" "$value"
+  # Assert
+  assert_success
+  assert_output ""
+}

@@ -11,7 +11,7 @@ if false; then
 fi
 
 # CONSTANTS
-readonly VEDV_VMOBJ_ENTITY_VALID_ATTRIBUTES='vm_name|ssh_port|user_name|workdir|environment|exposed_ports|shell'
+readonly VEDV_VMOBJ_ENTITY_VALID_ATTRIBUTES='vm_name|ssh_port|user_name|workdir|environment|exposed_ports|shell|cpus|memory'
 
 readonly VEDV_VMOBJ_ENTITY_EREGEX_NAME='[[:lower:]](-|_|[[:lower:]]|[[:digit:]]){1,28}([[:lower:]]|[[:digit:]])'
 readonly VEDV_VMOBJ_ENTITY_EREGEX_ID='[[:digit:]]{6,11}'
@@ -1332,4 +1332,98 @@ vedv::vmobj_entity::cache::get_shell() {
     "$type" \
     "$vmobj_id" \
     'shell'
+}
+
+#
+# Set cpus
+#
+#
+# Arguments:
+#   type       string  type (e.g. 'container|image')
+#   vmobj_id   string  vmobj id
+#   cpus       string  cpus
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::vmobj_entity::cache::set_cpus() {
+  local -r type="$1"
+  local -r vmobj_id="$2"
+  local -ri value="$3"
+
+  vedv::vmobj_entity::__set_attribute \
+    "$type" \
+    "$vmobj_id" \
+    'cpus' \
+    "$value"
+}
+
+#
+# Get cpus
+#
+# Arguments:
+#   type      string  type (e.g. 'container|image')
+#   vmobj_id  string  vmobj id
+#
+# Output:
+#   Writes cpus (string) to the stdout.
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::vmobj_entity::cache::get_cpus() {
+  local -r type="$1"
+  local -r vmobj_id="$2"
+
+  vedv::vmobj_entity::__get_attribute \
+    "$type" \
+    "$vmobj_id" \
+    'cpus'
+}
+
+#
+# Set memory capacity in MB
+#
+#
+# Arguments:
+#   type       string   type (e.g. 'container|image')
+#   vmobj_id   string   vmobj id
+#   memory     integer  memory
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::vmobj_entity::cache::set_memory() {
+  local -r type="$1"
+  local -r vmobj_id="$2"
+  local -ri value="$3"
+
+  vedv::vmobj_entity::__set_attribute \
+    "$type" \
+    "$vmobj_id" \
+    'memory' \
+    "$value"
+}
+
+#
+# Get memory capacity in MB
+#
+# Arguments:
+#   type      string  type (e.g. 'container|image')
+#   vmobj_id  string  vmobj id
+#
+# Output:
+#   Writes memory (integer) to the stdout.
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::vmobj_entity::cache::get_memory() {
+  local -r type="$1"
+  local -r vmobj_id="$2"
+
+  vedv::vmobj_entity::__get_attribute \
+    "$type" \
+    "$vmobj_id" \
+    'memory'
 }

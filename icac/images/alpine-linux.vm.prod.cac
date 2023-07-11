@@ -30,6 +30,12 @@ chmod 0644 "${__VEDV_CONFIG_DIR}/layer/workdir"
 # create shell file
 touch "${__VEDV_CONFIG_DIR}/layer/shell"
 chmod 0644 "${__VEDV_CONFIG_DIR}/layer/shell"
+# create cpus file
+touch "${__VEDV_CONFIG_DIR}/layer/cpus"
+chmod 0644 "${__VEDV_CONFIG_DIR}/layer/cpus"
+# create memory file
+touch "${__VEDV_CONFIG_DIR}/layer/memory"
+chmod 0644 "${__VEDV_CONFIG_DIR}/layer/memory"
 
 # ADD USER
 adduser --disabled-password "$VEDV_USER"
@@ -343,5 +349,71 @@ cat "${__VEDV_CONFIG_DIR}/layer/expose"
 EOF
 
 chmod 0755 /usr/local/bin/vedv-getexpose_ports
+
+# add vedv-setcpus script
+cat <<EOF >/usr/local/bin/vedv-setcpus
+#!/usr/bin/env bash
+#
+# Set default cpus
+#
+
+set -eu
+
+if [[ "\$#" -ne 1 ]]; then
+  echo "usage: vedv-setcpus <cpus>" >&2
+  exit 1
+fi
+
+readonly VEDV_CPUS="\$1"
+
+echo "\$VEDV_CPUS" >"${__VEDV_CONFIG_DIR}/layer/cpus"
+EOF
+
+chmod 0755 /usr/local/bin/vedv-setcpus
+
+# add vedv-getcpus script
+cat <<EOF >/usr/local/bin/vedv-getcpus
+#!/usr/bin/env sh
+#
+# Get default vedv cpus
+#
+
+cat "${__VEDV_CONFIG_DIR}/layer/cpus"
+EOF
+
+chmod 0755 /usr/local/bin/vedv-getcpus
+
+# add vedv-setmemory script
+cat <<EOF >/usr/local/bin/vedv-setmemory
+#!/usr/bin/env bash
+#
+# Set default memory
+#
+
+set -eu
+
+if [[ "\$#" -ne 1 ]]; then
+  echo "usage: vedv-setmemory <memory>" >&2
+  exit 1
+fi
+
+readonly VEDV_MEMORY="\$1"
+
+echo "\$VEDV_MEMORY" >"${__VEDV_CONFIG_DIR}/layer/memory"
+EOF
+
+chmod 0755 /usr/local/bin/vedv-setmemory
+
+# add vedv-getmemory script
+cat <<EOF >/usr/local/bin/vedv-getmemory
+#!/usr/bin/env sh
+#
+# Get default vedv memory
+#
+
+cat "${__VEDV_CONFIG_DIR}/layer/memory"
+EOF
+
+chmod 0755 /usr/local/bin/vedv-getmemory
 
 echo '>> DONE!'

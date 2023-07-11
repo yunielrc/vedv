@@ -1627,6 +1627,74 @@ vedv::vmobj_service::fs::list_exposed_ports() {
 }
 
 #
+# Modify system hardware
+#
+# Arguments:
+#   type      string     type (e.g. 'container|image')
+#   vmobj_id  string     vmobj id
+#   cpus      int        cpus
+#   [memory]  int        memory
+#
+# Output:
+#  writes error message to the stderr
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::vmobj_service::modify_system() {
+  local -r type="$1"
+  local -r vmobj_id="$2"
+  local -ri cpus="$3"
+  local -ri memory="${4:-}"
+  # validate arguments
+  vedv::vmobj_entity::validate_type "$type" ||
+    return "$?"
+
+  if [[ -z "$vmobj_id" ]]; then
+    err "Invalid argument 'vmobj_id': it's empty"
+    return "$ERR_INVAL_ARG"
+  fi
+
+  if [[ $cpus -le 0 && $memory -le 0 ]]; then
+    err "At least one of cpus or memory must be set"
+    return "$ERR_INVAL_ARG"
+  fi
+
+  local vm_name=''
+  vm_name="$(vedv::vmobj_entity::get_vm_name "$type" "$vmobj_id")" || {
+    err "Failed to get vm name for ${type}: ${vmobj_id}"
+    return "$ERR_VMOBJ_OPERATION"
+  }
+  readonly vm_name
+
+  local vm_state=''
+  vm_state="$(vedv::hypervisor::get_state "$vm_name")" || {
+    err "Failed to get vm state for ${type}: ${vmobj_id}"
+    return "$ERR_VMOBJ_OPERATION"
+  }
+  readonly vm_state
+
+  if [[ "$vm_state" == 'saved' ]]; then
+    # start the vm and shutdown securely to discard the saved state
+    # without losing the last layer
+    vedv::vmobj_service::start_one "$type" "$vmobj_id" 'false' || {
+      err "Failed to start ${type}: '${vmobj_id}'"
+      return "$ERR_CONTAINER_OPERATION"
+    }
+  fi
+
+  vedv::vmobj_service::secure_stop_one "$type" "$vmobj_id" || {
+    err "Failed to secure stop ${type}: ${vmobj_id}"
+    return "$ERR_VMOBJ_OPERATION"
+  }
+
+  vedv::hypervisor::modifyvm "$vm_name" "$cpus" "$memory" 2>/dev/null || {
+    err "Failed to set cpus for ${type}: ${vmobj_id}"
+    return "$ERR_VMOBJ_OPERATION"
+  }
+}
+
+#
 # Save vmobj data on filesystem to vmobj entity.
 #
 # This function should be called after every image

@@ -906,129 +906,73 @@ vedv::hypervisor::assign_random_host_forwarding_port() {
 }
 vedv::virtualbox::assign_random_host_forwarding_port() { vedv::hypervisor::assign_random_host_forwarding_port "$@"; }
 
-# # THIS FUNCTION IS UNTESTED
-# # Mount guest fs on host
-# #
-# # Arguments:
-# #   vm_name string    virtual machine name
-# #
-# # Output:
-# #   writes mount point to stdout
-# #
-# # Returns:
-# #   0 on success, non-zero on error.
-# #
-# vedv::hypervisor::mount_guest_fs_on_host() {
-#   local -r vm_name="$1"
+#
+# Modify vm hardware.
+# If cpus and memory are 0 or empty, it will not be modified.
+#
+# Arguments:
+#   vm_name string  virtual machine name
+#   cpus    integer number of cpus
+#   memory  integer memory in MB
+#
+# Output:
+#   Writes error message to stderr on error.
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::hypervisor::modifyvm() {
+  local -r vm_name="$1"
+  local -ri cpus="$2"
+  local -ri memory="${3:-}"
 
-#   if [ -z "$vm_name" ]; then
-#     err "Argument 'vm_name' must not be empty"
-#     return "$ERR_INVAL_ARG"
-#   fi
+  if [[ -z "$vm_name" ]]; then
+    err "Argument 'vm_name' must not be empty"
+    return "$ERR_INVAL_ARG"
+  fi
 
-#   local vm_image=''
+  local options=''
 
-#   # get vm_image from vminfo
-#   local vminfo
-#   vminfo="$(VBoxManage showvminfo "$vm_name" --machinereadable)" || {
-#     err "Error getting vminfo of vm: ${vm_name}"
-#     return "$ERR_VIRTUALBOX_OPERATION"
-#   }
+  if [[ $cpus -gt 0 ]]; then
+    options="--cpus ${cpus} "
+  fi
+  if [[ "$memory" -gt 0 ]]; then
+    options="${options}--memory ${memory}"
+  fi
+  readonly options
 
-#   vm_image="$(echo "$vminfo" | grep -o '.*-ImageUUID-.*=".*"' | cut -d'=' -f2 | tr -d '"')" || :
-#   readonly vm_image
+  if [[ -z "$options" ]]; then
+    return 0
+  fi
 
-#   if [ -z "$vm_image" ]; then
-#     err "Error getting vm_image of vm: ${vm_name}"
-#     return "$ERR_VIRTUALBOX_OPERATION"
-#   fi
+  eval VBoxManage modifyvm "'${vm_name}'" "$options" &>/dev/null || {
+    err "Error modifying vm: ${vm_name}"
+    return "$ERR_VIRTUALBOX_OPERATION"
+  }
 
-#   local -r mount_point="/tmp/$(utils::crc_sum <<<"$vm_name")"
-#   local -r fuse_mount_point="${mount_point}-fuse"
+  return 0
+}
 
-#   if [[ -d "$mount_point" || -d "$fuse_mount_point" ]]; then
-#     vedv::hypervisor::umount_guest_fs_from_host "$vm_name"
-#   fi
+#
+# Show vm state
+#
+# Arguments:
+#   vm_name string  virtual machine name
+#
+# Output:
+#   Writes state (poweroff|running|saved|paused) to stdout.
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::hypervisor::get_state() {
+  local -r vm_name="$1"
 
-#   mkdir -p "$mount_point" || {
-#     err "Failed to create mount point"
-#     return "$ERR_VIRTUALBOX_OPERATION"
-#   }
+  if [ -z "$vm_name" ]; then
+    err "Argument 'vm_name' must not be empty"
+    return "$ERR_INVAL_ARG"
+  fi
 
-#   mkdir -p "$fuse_mount_point" || {
-#     err "Failed to create fuse mount point"
-#     return "$ERR_VIRTUALBOX_OPERATION"
-#   }
-
-#   vboximg-mount --image "$vm_image" -o allow_root "$fuse_mount_point"
-
-#   for vol in "${fuse_mount_point}/vol"/*; do
-#     [[ -f "$vol" ]] || continue
-
-#     sudo mount "$vol" "$mount_point" ||
-#       continue
-
-#     if [[ ! -d "${mount_point}/etc" ]]; then
-#       sudo umount "$mount_point"
-#       continue
-#     fi
-
-#     echo "$mount_point"
-#     return 0
-#   done
-
-#   vedv::hypervisor::umount_guest_fs_from_host "$vm_name"
-#   err "Failed to mount guest fs"
-#   return "$ERR_VIRTUALBOX_OPERATION"
-# }
-
-# # THIS FUNCTION IS UNTESTED
-# # Umount guest fs from host and delete mount point
-# #
-# # Arguments:
-# #   vm_name string    virtual machine name
-# #
-# # Returns:
-# #   0 on success, non-zero on error.
-# #
-# vedv::hypervisor::umount_guest_fs_from_host() {
-#   local -r vm_name="$1"
-
-#   if [ -z "$vm_name" ]; then
-#     err "Argument 'vm_name' must not be empty"
-#     return "$ERR_INVAL_ARG"
-#   fi
-
-#   local -r mount_point="/tmp/$(utils::crc_sum <<<"$vm_name")"
-#   local -r fuse_mount_point="${mount_point}-fuse"
-
-#   sudo umount "$mount_point" || {
-#     # umount: /<mnt>: not mounted.  # exit code 32
-#     if [[ $? != 32 ]]; then
-#       err "Failed to umount ${mount_point}"
-#       return "$ERR_VIRTUALBOX_OPERATION"
-#     fi
-#   }
-
-#   if [[ -d "$mount_point" ]]; then
-#     rmdir "$mount_point" || {
-#       err "Failed to remove ${mount_point}"
-#       return "$ERR_VIRTUALBOX_OPERATION"
-#     }
-#   fi
-
-#   umount "$fuse_mount_point" || {
-#     # umount: /<mnt>: not mounted.  # exit code 32
-#     if [[ $? != 32 ]]; then
-#       err "Failed to umount ${fuse_mount_point}"
-#       return "$ERR_VIRTUALBOX_OPERATION"
-#     fi
-#   }
-
-#   if [[ -d "$fuse_mount_point" ]]; then
-#     rmdir "$fuse_mount_point" || {
-#       err "Failed to remove ${fuse_mount_point}"
-#       return "$ERR_VIRTUALBOX_OPERATION"
-#     }
-#   fi
-# }
+  VBoxManage showvminfo --machinereadable "$vm_name" |
+    grep -Pom1 '^VMState="\K\w+(?=")' || :
+}

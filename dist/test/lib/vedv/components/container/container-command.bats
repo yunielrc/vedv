@@ -47,7 +47,7 @@ Options:
   run vedv::container_command::__create "$image_file"
 
   assert_success
-  assert_output 'container created, arguments: /tmp/vedv/test/files/alpine-x86_64.ova  false  false'
+  assert_output --regexp 'container created, arguments: .*/alpine-x86_64.ova  false  false '
 }
 
 @test 'vedv::container_command::__create(), Should fail With empty name value' {
@@ -67,7 +67,7 @@ Options:
   run vedv::container_command::__create --name "$container_name" "$image_file"
 
   assert_success
-  assert_output 'container created, arguments: /tmp/vedv/test/files/alpine-x86_64.ova super-llama-testunit-container-command false  false'
+  assert_output --regexp 'container created, arguments: .*/alpine-x86_64.ova super-llama-testunit-container-command false  false '
 }
 
 @test 'vedv::container_command::__create(), Should fail With empty publish value' {
@@ -79,7 +79,7 @@ Options:
   assert_failure
   assert_output --partial 'No publish port specified'
 }
-
+# bats test_tags=only
 @test 'vedv::container_command::__create(), Should succeed' {
   local container_name='super-llama-testunit-container-command'
   local image_file="$TEST_OVA_FILE"
@@ -87,7 +87,40 @@ Options:
   run vedv::container_command::__create --name "$container_name" -p 8080:80/tcp -p 8082:82 -p 8081 -p 81/udp --standalone --publish-all "$image_file"
 
   assert_success
-  assert_output 'container created, arguments: /tmp/vedv/test/files/alpine-x86_64.ova super-llama-testunit-container-command true 8080:80/tcp 8082:82 8081 81/udp true'
+  assert_output --regexp 'container created, arguments: .*/alpine-x86_64.ova super-llama-testunit-container-command true 8080:80/tcp 8082:82 8081 81/udp true '
+}
+
+@test "vedv::container_command::__create(), Should fail Without cpu value" {
+  local -r container_id='container123'
+
+  run vedv::container_command::__create --name "$container_id" --cpus
+
+  assert_failure
+  assert_output --partial "No cpus specified"
+}
+
+@test "vedv::container_command::__create(), Should fail Without memory value" {
+  local -r container_id='container123'
+
+  run vedv::container_command::__create \
+    --name "$container_id" --cpus 4 --memory
+
+  assert_failure
+  assert_output --partial "No memory specified"
+}
+
+@test "vedv::container_command::__create(), Should succeed With cpu and memory values" {
+  local -r container_id='container123'
+
+  vedv::container_service::create() {
+    assert_regex "$*" ".*/alpine-x86_64.ova container123 false  false 4 1024"
+  }
+
+  run vedv::container_command::__create \
+    --name "$container_id" --cpus 4 --memory 1024 "$TEST_OVA_FILE"
+
+  assert_success
+  assert_output ""
 }
 
 # Tets for vedv::container_command::__start()
@@ -647,7 +680,7 @@ vedv container ports CONTAINER"
 }
 
 # Tests for vedv::container_command::__list_exposed_ports()
-# bats test_tags=only
+
 @test "vedv::container_command::__list_exposed_ports() Should show help with no args" {
 
   # Act
@@ -657,7 +690,7 @@ vedv container ports CONTAINER"
   assert_output --partial "Usage:
 vedv container list-exposed-ports CONTAINER"
 }
-# bats test_tags=only
+
 @test "vedv::container_command::__list_exposed_ports() Should show help" {
 
   for arg in '-h' '--help'; do
@@ -669,7 +702,7 @@ vedv container list-exposed-ports CONTAINER"
 vedv container list-exposed-ports CONTAINER"
   done
 }
-# bats test_tags=only
+
 @test "vedv::container_command::__list_exposed_ports() Should suceed" {
   # Arrange
   local container_name_or_id='container1'

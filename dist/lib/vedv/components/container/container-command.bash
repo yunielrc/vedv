@@ -28,14 +28,41 @@ vedv::container_command::constructor() {
 }
 
 #
+# Show help for __create command
+#
+# Output:
+#  Writes the help to the stdout
+#
+vedv::container_command::__create_help() {
+  cat <<-HELPMSG
+Usage:
+${__VED_CONTAINER_COMMAND_SCRIPT_NAME} container create [FLAGS] [OPTIONS] IMAGE
+
+Create a new container
+
+Flags:
+  -h, --help                                show help
+  -s, --standalone                          create a standalone container
+  -P, --publish-all                         publish all exposed ports to random ports
+
+Options:
+  -n, --name <name>                         assign a name to the container
+  -p, --publish <host-port>:<port>[/proto]  publish a container's port(s) to the host.
+                                            proto is tcp or udp (default tcp)
+  -c, --cpus <cpus>                         number of CPUs
+  -m, --memory <memory>                     memory capacity
+HELPMSG
+}
+
+#
 # Create a new container
 #
 # Flags:
-#   -h | --help             Show help
-#   -s | --standalone       Create a standalone container
+#   -h, --help             Show help
+#   -s, --standalone       Create a standalone container
 #
 # Options:
-#   [-n | --name]           Container name
+#   [-n, --name]           Container name
 #
 # Arguments:
 #   IMAGE               Image name or an OVF file
@@ -52,6 +79,8 @@ vedv::container_command::__create() {
   local image=''
   local -a publish_ports=()
   local publish_all=false
+  local cpus=''
+  local memory=''
 
   if [[ $# == 0 ]]; then set -- '-h'; fi
 
@@ -65,6 +94,10 @@ vedv::container_command::__create() {
       ;;
     -s | --standalone)
       readonly standalone=true
+      shift
+      ;;
+    -P | --publish-all)
+      readonly publish_all=true
       shift
       ;;
     # options
@@ -89,9 +122,25 @@ vedv::container_command::__create() {
       publish_ports+=("$new_publish_port")
       shift 2
       ;;
-    -P | --publish-all)
-      readonly publish_all=true
-      shift
+    -c | --cpus)
+      readonly cpus="${2:-}"
+      # validate argument
+      if [[ -z "$cpus" ]]; then
+        err "No cpus specified\n"
+        vedv::container_command::__create_help
+        return "$ERR_INVAL_ARG"
+      fi
+      shift 2
+      ;;
+    -m | --memory)
+      readonly memory="${2:-}"
+      # validate argument
+      if [[ -z "$memory" ]]; then
+        err "No memory specified\n"
+        vedv::container_command::__create_help
+        return "$ERR_INVAL_ARG"
+      fi
+      shift 2
       ;;
     # arguments
     *)
@@ -112,32 +161,9 @@ vedv::container_command::__create() {
     "$name" \
     "$standalone" \
     "${publish_ports[*]}" \
-    "$publish_all"
-}
-
-#
-# Show help for __create command
-#
-# Output:
-#  Writes the help to the stdout
-#
-vedv::container_command::__create_help() {
-  cat <<-HELPMSG
-Usage:
-${__VED_CONTAINER_COMMAND_SCRIPT_NAME} container create [FLAGS] [OPTIONS] IMAGE
-
-Create a new container
-
-Flags:
-  -h, --help                                show help
-  -s, --standalone                          create a standalone container
-  -P, --publish-all                         publish all exposed ports to random ports
-
-Options:
-  -n, --name <name>                         assign a name to the container
-  -p, --publish <host-port>:<port>[/proto]  publish a container's port(s) to the host.
-                                            proto is tcp or udp (default tcp)
-HELPMSG
+    "$publish_all" \
+    "$cpus" \
+    "$memory"
 }
 
 #

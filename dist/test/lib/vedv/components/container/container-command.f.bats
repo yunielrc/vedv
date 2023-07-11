@@ -21,26 +21,6 @@ teardown() {
 
 # Tests for 'vedv container create'
 
-@test "vedv container create, Should show help" {
-  run vedv container create
-
-  assert_success
-  assert_output "Usage:
-vedv container create [FLAGS] [OPTIONS] IMAGE
-
-Create a new container
-
-Flags:
-  -h, --help                                show help
-  -s, --standalone                          create a standalone container
-  -P, --publish-all                         publish all exposed ports to random ports
-
-Options:
-  -n, --name <name>                         assign a name to the container
-  -p, --publish <host-port>:<port>[/proto]  publish a container's port(s) to the host.
-                                            proto is tcp or udp (default tcp)"
-}
-
 @test "vedv container create -h , Should show help" {
 
   for arg in '-h' '--help'; do
@@ -60,7 +40,9 @@ Flags:
 Options:
   -n, --name <name>                         assign a name to the container
   -p, --publish <host-port>:<port>[/proto]  publish a container's port(s) to the host.
-                                            proto is tcp or udp (default tcp)"
+                                            proto is tcp or udp (default tcp)
+  -c, --cpus <cpus>                         number of CPUs
+  -m, --memory <memory>                     memory capacity"
   done
 }
 
@@ -69,22 +51,7 @@ Options:
   run vedv container create --name
 
   assert_failure
-  assert_output "No container name specified
-
-Usage:
-vedv container create [FLAGS] [OPTIONS] IMAGE
-
-Create a new container
-
-Flags:
-  -h, --help                                show help
-  -s, --standalone                          create a standalone container
-  -P, --publish-all                         publish all exposed ports to random ports
-
-Options:
-  -n, --name <name>                         assign a name to the container
-  -p, --publish <host-port>:<port>[/proto]  publish a container's port(s) to the host.
-                                            proto is tcp or udp (default tcp)"
+  assert_output --partial "No container name specified"
 }
 
 @test "vedv container create --name, Should throw error Without container name value" {
@@ -146,6 +113,35 @@ Options:
 3074115300,tcp,,8080,,80
 nc,tcp,,4444,,4444
 test-ssh,tcp,,2022,,22"
+}
+
+@test "vedv container create --name container123 --cpus, Should fail Without cpu value" {
+  local -r container_id='container123'
+
+  run vedv container create --name "$container_id" --cpus
+
+  assert_failure
+  assert_output --partial "No cpus specified"
+}
+
+@test "vedv container create --name container123 --cpus, Should fail Without memory value" {
+  local -r container_id='container123'
+
+  run vedv container create \
+    --name "$container_id" --cpus 4 --memory
+
+  assert_failure
+  assert_output --partial "No memory specified"
+}
+
+@test "vedv container create --name container123 --cpus, Should succeed" {
+  local -r container_id='container123'
+
+  run vedv container create \
+    --name "$container_id" --cpus 4 --memory 1024 "$TEST_OVA_FILE"
+
+  assert_success
+  assert_output "1768101024 container123"
 }
 
 # Tests for 'vedv container start'

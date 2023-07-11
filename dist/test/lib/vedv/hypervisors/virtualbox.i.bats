@@ -830,3 +830,112 @@ http,tcp,,8080,,80'
 
   assert [ -f "$ova_file" ]
 }
+
+# Tests for vedv::hypervisor::modifyvm()
+@test "vedv::hypervisor::modifyvm(): Should fail With empty vm_name" {
+  local -r vm_name=""
+  local -ri cpus=""
+  local -ri memory=""
+
+  run vedv::hypervisor::modifyvm "$vm_name" "$cpus" "$memory"
+
+  assert_failure
+  assert_output "Argument 'vm_name' must not be empty"
+}
+
+@test "vedv::hypervisor::modifyvm(): Should succeed If cpus and memory are empty" {
+  local -r vm_name="vm_name"
+  local -ri cpus=""
+  local -ri memory=""
+
+  run vedv::hypervisor::modifyvm "$vm_name" "$cpus" "$memory"
+
+  assert_success
+  assert_output ""
+}
+
+@test "vedv::hypervisor::modifyvm(): Should fail If modifyvm fails" {
+  local -r vm_name="vm_name"
+  local -ri cpus=2
+  local -ri memory=512
+
+  VBoxManage() {
+    if [[ "$1" == "modifyvm" ]]; then
+      return 1
+    fi
+  }
+
+  run vedv::hypervisor::modifyvm "$vm_name" "$cpus" "$memory"
+
+  assert_failure
+  assert_output "Error modifying vm: vm_name"
+}
+
+@test "vedv::hypervisor::modifyvm(): Should succeed" {
+  local -r vm_name="image123"
+  local -ri cpus=3
+  local -ri memory=740
+
+  VBoxManage import "$TEST_OVA_FILE" --vsys 0 --vmname "$vm_name" &>/dev/null
+
+  VBoxManage() {
+    if [[ "$1" == "modifyvm" ]]; then
+      assert_equal "$*" "modifyvm image123 --cpus 3 --memory 740"
+    fi
+    command VBoxManage "$@"
+  }
+
+  run vedv::hypervisor::modifyvm "$vm_name" "$cpus" "$memory"
+
+  assert_success
+  assert_output ""
+
+  run VBoxManage showvminfo --machinereadable image123
+
+  assert_success
+  assert_output --regexp "cpus=${cpus}"
+  assert_output --regexp "memory=${memory}"
+}
+
+@test "vedv::hypervisor::get_state(): Should fail With empty vm_name" {
+  local -r vm_name=""
+
+  run vedv::hypervisor::get_state "$vm_name"
+
+  assert_failure
+  assert_output "Argument 'vm_name' must not be empty"
+}
+
+@test "vedv::hypervisor::get_state(): Should succeed" {
+  skip
+  local -r vm_name="image123"
+
+  VBoxManage import "$TEST_OVA_FILE" --vsys 0 --vmname "$vm_name" &>/dev/null || :
+
+  run vedv::hypervisor::get_state "$vm_name"
+
+  assert_success
+  assert_output ""
+
+  VBoxManage startvm "$vm_name" --type "headless" &>/dev/null
+
+  run vedv::hypervisor::get_state "$vm_name"
+
+  assert_success
+  assert_output ""
+
+  VBoxManage controlvm "$vm_name" savestate
+
+  run vedv::hypervisor::get_state "$vm_name"
+
+  assert_success
+  assert_output ""
+
+  VBoxManage startvm "$vm_name" --type "headless" &>/dev/null
+  VBoxManage controlvm "$vm_name" poweroff &>/dev/null
+
+  run vedv::hypervisor::get_state "$vm_name"
+
+  assert_success
+  assert_output ""
+}

@@ -1182,3 +1182,75 @@ vedv::image_entity::cache::set_shell() {
 
   vedv::vmobj_entity::cache::set_shell "$VEDV_IMAGE_ENTITY_TYPE" "$image_id" "$value"
 }
+
+#
+# Get cpus value
+#
+# Arguments:
+#   image_id  string  image id
+#
+# Output:
+#  Writes cpus (string) to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::image_entity::cache::get_cpus() {
+  local -r image_id="$1"
+
+  vedv::vmobj_entity::cache::get_cpus "$VEDV_IMAGE_ENTITY_TYPE" "$image_id"
+}
+
+#
+# Set cpus value
+#
+#
+# Arguments:
+#   image_id  string  image id
+#   cpus     string  user name
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::image_entity::cache::set_cpus() {
+  local -r image_id="$1"
+  local -r value="$2"
+
+  vedv::vmobj_entity::cache::set_cpus "$VEDV_IMAGE_ENTITY_TYPE" "$image_id" "$value"
+}
+
+#
+# Get memory value
+#
+# Arguments:
+#   image_id  string  image id
+#
+# Output:
+#  Writes memory (string) to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::image_entity::cache::get_memory() {
+  local -r image_id="$1"
+
+  vedv::vmobj_entity::cache::get_memory "$VEDV_IMAGE_ENTITY_TYPE" "$image_id"
+}
+
+#
+# Set memory value
+#
+#
+# Arguments:
+#   image_id  string  image id
+#   memory     string  user name
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::image_entity::cache::set_memory() {
+  local -r image_id="$1"
+  local -r value="$2"
+
+  vedv::vmobj_entity::cache::set_memory "$VEDV_IMAGE_ENTITY_TYPE" "$image_id" "$value"
+}

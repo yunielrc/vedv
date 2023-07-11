@@ -69,6 +69,8 @@ vedv::container_service::set_use_cache() {
 #   [standalone]      bool      create a standalone container (default: false)
 #   [publish_ports]   string[]  ports to be published
 #   [publish_all]     bool      publish all ports (default: false)
+#   [cpus]            int       number of cpus (default: 0)
+#   [memory]          int       memory size in MB (default: 0)
 #
 # Output:
 #  Writes container id and name (string) to the stdout
@@ -82,6 +84,8 @@ vedv::container_service::create() {
   local -r standalone="${3:-false}"
   local -r publish_ports="${4:-}"
   local -r publish_all="${5:-false}"
+  local -i cpus="${6:-0}"
+  local -i memory="${7:-0}"
   # validate arguments
   if [[ -z "$image" ]]; then
     err "Invalid argument 'image': it's empty"
@@ -224,11 +228,16 @@ vedv::container_service::create() {
       return "$ERR_CONTAINER_OPERATION"
     }
   fi
-  # UNTESTED
-  # vedv::container_entity::import_data "$container_id" || {
-  #   err "Failed to import data for container: '${container_name}'"
-  #   return "$ERR_CONTAINER_OPERATION"
-  # }
+
+  if [[ $cpus -gt 0 || $memory -gt 0 ]]; then
+    # set cpus, memory if the value is greater than 0
+    vedv::vmobj_service::modify_system \
+      'container' "$container_id" $cpus $memory >/dev/null || {
+      err "Failed to modify system for container: '${container_name}'"
+      return "$ERR_CONTAINER_OPERATION"
+    }
+  fi
+
   echo "${container_id} ${container_name}"
 }
 

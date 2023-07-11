@@ -2409,8 +2409,6 @@ EOF
 }
 
 # Tests for vedv::vmobj_service::fs::get_shell()
-# Tests for vedv::vmobj_service::fs::get_shell()
-
 @test "vedv::vmobj_service::fs::get_shell() Should fail If get_shell fails" {
   local -r type="container"
   local -r vmobj_id="12345"
@@ -2917,6 +2915,218 @@ EOF
   }
 
   run vedv::vmobj_service::after_remove "$type" "$vmobj_id"
+
+  assert_success
+  assert_output ""
+}
+
+# Tests for vedv::vmobj_service::modify_system()
+
+@test "vedv::vmobj_service::modify_system() Should fail With invalid type" {
+  local -r type="invalid"
+  local -r vmobj_id="1234567890"
+  local -r cpus="1"
+  local -r memory="1024"
+
+  run vedv::vmobj_service::modify_system \
+    "$type" "$vmobj_id" "$cpus" "$memory"
+
+  assert_failure
+  assert_output "Invalid type: invalid, valid types are: container|image"
+}
+
+@test "vedv::vmobj_service::modify_system() Should fail With empty vmobj_id" {
+  local -r type="image"
+  local -r vmobj_id=""
+  local -r cpus="1"
+  local -r memory="1024"
+
+  run vedv::vmobj_service::modify_system \
+    "$type" "$vmobj_id" "$cpus" "$memory"
+
+  assert_failure
+  assert_output "Invalid argument 'vmobj_id': it's empty"
+}
+
+@test "vedv::vmobj_service::modify_system() Should fail If cpus and memory are empty" {
+  local -r type="image"
+  local -r vmobj_id="1234567890"
+  local -r cpus=""
+  local -r memory=""
+
+  run vedv::vmobj_service::modify_system \
+    "$type" "$vmobj_id" "$cpus" "$memory"
+
+  assert_failure
+  assert_output "At least one of cpus or memory must be set"
+}
+
+@test "vedv::vmobj_service::modify_system() Should fail If cpus and memory are 0" {
+  local -r type="image"
+  local -r vmobj_id="1234567890"
+  local -r cpus="0"
+  local -r memory="0"
+
+  run vedv::vmobj_service::modify_system \
+    "$type" "$vmobj_id" "$cpus" "$memory"
+
+  assert_failure
+  assert_output "At least one of cpus or memory must be set"
+}
+
+@test "vedv::vmobj_service::modify_system() Should fail If get_vm_name fails" {
+  local -r type="image"
+  local -r vmobj_id="1234567890"
+  local -r cpus="4"
+  local -r memory="1024"
+
+  vedv::vmobj_entity::get_vm_name() {
+    assert_equal "$*" "image 1234567890"
+    return 1
+  }
+
+  run vedv::vmobj_service::modify_system \
+    "$type" "$vmobj_id" "$cpus" "$memory"
+
+  assert_failure
+  assert_output "Failed to get vm name for image: 1234567890"
+}
+
+@test "vedv::vmobj_service::modify_system() Should fail If get_state fails" {
+  local -r type="image"
+  local -r vmobj_id="1234567890"
+  local -r cpus="4"
+  local -r memory="1024"
+
+  vedv::vmobj_entity::get_vm_name() {
+    assert_equal "$*" "image 1234567890"
+    echo "image:image123|crc:1234567890"
+  }
+  vedv::hypervisor::get_state() {
+    assert_equal "$*" "image:image123|crc:1234567890"
+    return 1
+  }
+
+  run vedv::vmobj_service::modify_system \
+    "$type" "$vmobj_id" "$cpus" "$memory"
+
+  assert_failure
+  assert_output "Failed to get vm state for image: 1234567890"
+}
+
+@test "vedv::vmobj_service::modify_system() Should fail If start_one fails" {
+  local -r type="image"
+  local -r vmobj_id="1234567890"
+  local -r cpus="4"
+  local -r memory="1024"
+
+  vedv::vmobj_entity::get_vm_name() {
+    assert_equal "$*" "image 1234567890"
+    echo "image:image123|crc:1234567890"
+  }
+  vedv::hypervisor::get_state() {
+    assert_equal "$*" "image:image123|crc:1234567890"
+    echo "saved"
+  }
+  vedv::vmobj_service::start_one() {
+    assert_equal "$*" "image 1234567890 false"
+    return 1
+  }
+
+  run vedv::vmobj_service::modify_system \
+    "$type" "$vmobj_id" "$cpus" "$memory"
+
+  assert_failure
+  assert_output "Failed to start image: '1234567890'"
+}
+
+@test "vedv::vmobj_service::modify_system() Should fail If secure_stop_one fails" {
+  local -r type="image"
+  local -r vmobj_id="1234567890"
+  local -r cpus="4"
+  local -r memory="1024"
+
+  vedv::vmobj_entity::get_vm_name() {
+    assert_equal "$*" "image 1234567890"
+    echo "image:image123|crc:1234567890"
+  }
+  vedv::hypervisor::get_state() {
+    assert_equal "$*" "image:image123|crc:1234567890"
+    echo "saved"
+  }
+  vedv::vmobj_service::start_one() {
+    assert_equal "$*" "image 1234567890 false"
+  }
+  vedv::vmobj_service::secure_stop_one() {
+    assert_equal "$*" "image 1234567890"
+    return 1
+  }
+
+  run vedv::vmobj_service::modify_system \
+    "$type" "$vmobj_id" "$cpus" "$memory"
+
+  assert_failure
+  assert_output "Failed to secure stop image: 1234567890"
+}
+
+@test "vedv::vmobj_service::modify_system() Should fail If modifyvm fails" {
+  local -r type="image"
+  local -r vmobj_id="1234567890"
+  local -r cpus="4"
+  local -r memory="1024"
+
+  vedv::vmobj_entity::get_vm_name() {
+    assert_equal "$*" "image 1234567890"
+    echo "image:image123|crc:1234567890"
+  }
+  vedv::hypervisor::get_state() {
+    assert_equal "$*" "image:image123|crc:1234567890"
+    echo "saved"
+  }
+  vedv::vmobj_service::start_one() {
+    assert_equal "$*" "image 1234567890 false"
+  }
+  vedv::vmobj_service::secure_stop_one() {
+    assert_equal "$*" "image 1234567890"
+  }
+  vedv::hypervisor::modifyvm() {
+    assert_equal "$*" "image:image123|crc:1234567890 4 1024"
+    return 1
+  }
+
+  run vedv::vmobj_service::modify_system \
+    "$type" "$vmobj_id" "$cpus" "$memory"
+
+  assert_failure
+  assert_output "Failed to set cpus for image: 1234567890"
+}
+
+@test "vedv::vmobj_service::modify_system() Should succeed" {
+  local -r type="image"
+  local -r vmobj_id="1234567890"
+  local -r cpus="4"
+  local -r memory="1024"
+
+  vedv::vmobj_entity::get_vm_name() {
+    assert_equal "$*" "image 1234567890"
+    echo "image:image123|crc:1234567890"
+  }
+  vedv::hypervisor::get_state() {
+    assert_equal "$*" "image:image123|crc:1234567890"
+    echo "saved"
+  }
+  vedv::vmobj_service::start_one() {
+    assert_equal "$*" "image 1234567890 false"
+  }
+  vedv::vmobj_service::secure_stop_one() {
+    assert_equal "$*" "image 1234567890"
+  }
+  vedv::hypervisor::modifyvm() {
+    assert_equal "$*" "image:image123|crc:1234567890 4 1024"
+  }
+
+  run vedv::vmobj_service::modify_system \
+    "$type" "$vmobj_id" "$cpus" "$memory"
 
   assert_success
   assert_output ""

@@ -388,7 +388,7 @@ vedv::container_entity::cache::set_exposed_ports() {
 # Get shell value
 #
 # Arguments:
-#   container_id  string  container id
+#  container_id  string  container id
 #
 # Output:
 #  Writes shell (string) to the stdout
@@ -418,4 +418,76 @@ vedv::container_entity::cache::set_shell() {
   local -r value="$2"
 
   vedv::vmobj_entity::cache::set_shell "$VEDV_CONTAINER_ENTITY_TYPE" "$container_id" "$value"
+}
+
+#
+# Get cpus value
+#
+# Arguments:
+#  container_id  string  container id
+#
+# Output:
+#  Writes cpus (string) to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::container_entity::cache::get_cpus() {
+  local -r container_id="$1"
+
+  vedv::vmobj_entity::cache::get_cpus "$VEDV_CONTAINER_ENTITY_TYPE" "$container_id"
+}
+
+#
+# Set cpus value
+#
+#
+# Arguments:
+#   container_id  string  container id
+#   cpus          string  user name
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::container_entity::cache::set_cpus() {
+  local -r container_id="$1"
+  local -r value="$2"
+
+  vedv::vmobj_entity::cache::set_cpus "$VEDV_CONTAINER_ENTITY_TYPE" "$container_id" "$value"
+}
+
+#
+# Get memory in MB
+#
+# Arguments:
+#  container_id  string  container id
+#
+# Output:
+#  Writes memory (string) to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::container_entity::cache::get_memory() {
+  local -r container_id="$1"
+
+  vedv::vmobj_entity::cache::get_memory "$VEDV_CONTAINER_ENTITY_TYPE" "$container_id"
+}
+
+#
+# Set memory value in MB
+#
+#
+# Arguments:
+#   container_id  string  container id
+#   memory          string  user name
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::container_entity::cache::set_memory() {
+  local -r container_id="$1"
+  local -r value="$2"
+
+  vedv::vmobj_entity::cache::set_memory "$VEDV_CONTAINER_ENTITY_TYPE" "$container_id" "$value"
 }

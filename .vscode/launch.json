@@ -76,8 +76,12 @@
         "container",
         "create",
         "-n",
-        "container123",
-        "/tmp/vedv/test/files/alpine-x86_64.ova"
+        "ct2",
+        "--cpus",
+        "2",
+        "--memory",
+        "512",
+        "image123"
       ]
     },
     {
@@ -216,7 +220,7 @@
       "type": "bashdb",
       "request": "launch",
       "name": "Bash-Debug (vedv image build ...)",
-      "cwd": "${workspaceFolder}/dist/test/lib/vedv/components/image/fixtures",
+      "cwd": "${workspaceFolder}",
       "env": {
         "VEDV_HADOLINT_ENABLED": "false"
       },
@@ -225,8 +229,9 @@
         "image",
         "build",
         "-t",
-        "bimage1",
-        "Vedvfile"
+        "image123",
+        "--force",
+        "dist/test/lib/vedv/components/image/fixtures/vedvfiles/cpus-memory.vedvfile2"
       ]
     },
     {
