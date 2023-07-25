@@ -434,7 +434,7 @@ Previous layer restored"
   local -r image='image'
   local -r image_name='image_name'
   # Stub
-  vedv::image_service::pull() {
+  vedv::image_service::import_from_any() {
     assert_equal "$*" "${image} ${image_name}"
     return 1
   }
@@ -451,7 +451,7 @@ Previous layer restored"
 
   local -r cmd="1 FROM ${image}"
   # Stub
-  vedv::image_service::pull() {
+  vedv::image_service::import_from_any() {
     assert_equal "$*" "${image} ${image_name}"
     echo 'image_id'
   }
@@ -471,7 +471,7 @@ Previous layer restored"
 
   local -r cmd="1 FROM ${image}"
   # Stub
-  vedv::image_service::pull() {
+  vedv::image_service::import_from_any() {
     assert_equal "$*" "${image} ${image_name}"
     echo 'image_id'
   }
@@ -488,7 +488,7 @@ Previous layer restored"
   local -r image='image'
   local -r image_name='image_name'
   # Stub
-  vedv::image_service::pull() {
+  vedv::image_service::import_from_any() {
     assert_equal "$*" "${image} ${image_name}"
     echo 'image_id'
   }

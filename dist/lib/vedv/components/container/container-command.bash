@@ -36,7 +36,7 @@ vedv::container_command::constructor() {
 vedv::container_command::__create_help() {
   cat <<-HELPMSG
 Usage:
-${__VED_CONTAINER_COMMAND_SCRIPT_NAME} container create [FLAGS] [OPTIONS] IMAGE
+${__VED_CONTAINER_COMMAND_SCRIPT_NAME} container create [FLAGS] [OPTIONS] IMAGE_NAME|URL|FILE|FQN
 
 Create a new container
 
@@ -58,14 +58,14 @@ HELPMSG
 # Create a new container
 #
 # Flags:
-#   -h, --help             Show help
-#   -s, --standalone       Create a standalone container
+#   -h, --help                        Show help
+#   -s, --standalone                  Create a standalone container
 #
 # Options:
-#   [-n, --name]           Container name
+#   [-n, --name]                      Container name
 #
 # Arguments:
-#   IMAGE               Image name or an OVF file
+#   IMAGE_NAME|URL|FILE|FQN   Image name, url, file or fully qualified name
 #
 # Output:
 #  Writes container ID to the stdout

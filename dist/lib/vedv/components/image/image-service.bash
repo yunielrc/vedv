@@ -12,6 +12,7 @@ if false; then
   . './../../ssh-client.bash'
   . './../../hypervisors/virtualbox.bash'
   . '../container/container-service.bash'
+  . '../registry/registry-service.bash'
 fi
 
 # VARIABLES
@@ -184,7 +185,6 @@ vedv::image_service::import() {
   # Output
   echo "${image_id} ${image_name}"
 }
-vedv::image_service::__pull_from_file() { vedv::image_service::import "$@"; }
 
 #
 # Import an image from a url
@@ -195,7 +195,7 @@ vedv::image_service::__pull_from_file() { vedv::image_service::import "$@"; }
 #   [checksum_url]      string  checksum url (algorithm: sha256sum)
 #
 # Output:
-#  Writes image name or image id to the stdout
+#  Writes image id and name (string) to the stdout
 #
 # Returns:
 #   0 on success, non-zero on error.
@@ -273,11 +273,12 @@ vedv::image_service::import_from_url() {
 }
 
 #
-# Pull an OVF file from a registry or file
-# and create an image
+# Import an image from file, registry or url
+# If parameter image is a name it print the image name and exit without
+# checking if the image exists.
 #
 # Arguments:
-#   image         string  image name or an OVF file that will be pulled
+#   image         string  image name, url, file or fully qualified name
 #   [image_name]  string  image name (default: OVF file name)
 #
 # Output:
@@ -286,22 +287,41 @@ vedv::image_service::import_from_url() {
 # Returns:
 #   0 on success, non-zero on error.
 #
-vedv::image_service::pull() {
-  # IMPL: test this function
-  # TODO: validate fields and test
+vedv::image_service::import_from_any() {
   local -r image="$1"
   local -r image_name="${2:-}"
 
+  if [[ "$(vedv::vmobj_entity::is_name "$image")" == true ]]; then
+    echo "0000000000 ${image}"
+    return 0
+  fi
+
   if [[ -f "$image" ]]; then
-    vedv::image_service::__pull_from_file "$image" "$image_name" || {
-      err "Error pulling image '${image}' from file"
+    vedv::image_service::import "$image" "$image_name" || {
+      err "Error importing image from file: ${image}"
       return "$ERR_IMAGE_OPERATION"
     }
-  else
-    # IMPL: Pull an OVF image from a registry
-    err "Not implemented: 'vedv::image_service::__pull_from_registry'"
-    return "$ERR_NOTIMPL"
+    return 0
   fi
+
+  if utils::is_url "$image"; then
+    vedv::image_service::import_from_url "$image" "$image_name" || {
+      err "Error importing image from url: ${image}"
+      return "$ERR_IMAGE_OPERATION"
+    }
+    return 0
+  fi
+
+  if [[ "$(vedv::image_entity::is_image_fqn "$image")" == true ]]; then
+    vedv::registry_service::pull "$image" "$image_name" || {
+      err "Error importing image from registry: ${image}"
+      return "$ERR_IMAGE_OPERATION"
+    }
+    return 0
+  fi
+
+  err "Invalid image argument format, it must be a image name, url, file or fully qualified name"
+  return "$ERR_INVAL_ARG"
 }
 
 #

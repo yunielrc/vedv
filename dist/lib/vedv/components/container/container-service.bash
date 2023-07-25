@@ -64,7 +64,7 @@ vedv::container_service::set_use_cache() {
 # Create a container from an image
 #
 # Arguments:
-#   image             string    image name or image file
+#   image             string    Image name, url, file path or fqn
 #   [container_name]  string    container name
 #   [standalone]      bool      create a standalone container (default: false)
 #   [publish_ports]   string[]  ports to be published
@@ -106,21 +106,22 @@ vedv::container_service::create() {
     fi
   fi
 
-  local image_name
+  local gen_image_name
 
-  if [[ -f "$image" ]]; then
-    image_name="$(petname)" || {
-      err "Failed to generate a random name"
-      return "$ERR_CONTAINER_OPERATION"
-    }
-    vedv::image_service::pull "$image" "$image_name" &>/dev/null || {
-      err "Failed to pull image: '${image}'"
-      return "$ERR_CONTAINER_OPERATION"
-    }
-  else
-    image_name="$image"
-  fi
-  readonly image_name
+  gen_image_name="$(petname)" || {
+    err "Failed to generate a random name"
+    return "$ERR_CONTAINER_OPERATION"
+  }
+  readonly gen_image_name
+
+  local image_id_name
+  image_id_name="$(vedv::image_service::import_from_any "$image" "$gen_image_name")" || {
+    err "Failed to import image: ${image}"
+    return "$ERR_CONTAINER_OPERATION"
+  }
+  readonly image_id_name
+
+  local -r image_name="${image_id_name##*' '}"
 
   local image_vm_name
   image_vm_name="$(vedv::image_entity::get_vm_name_by_image_name "$image_name")" || {

@@ -187,7 +187,7 @@ Failed to get registry user"
   run vedv registry push 'admin@alpine-test/alpine-14'
 
   assert_failure
-  assert_output --partial "Failed to export image 'alpine-14' to"
+  assert_output --partial "Error exporting image to file:"
 }
 
 @test "vedv registry push --name alpine-14, Should succeed" {

@@ -728,7 +728,7 @@ utils::download_file() {
     return "$ERR_INVAL_ARG"
   fi
 
-  wget --header "$__VEDV_UTILS_USER_AGENT" -qO "$file" "$url" || {
+  wget --header "${__VEDV_UTILS_USER_AGENT:-}" -qO "$file" "$url" || {
     err "error downloading file"
     return "$ERR_DOWNLOAD"
   }

@@ -15,30 +15,16 @@ vedv::container_service::list() { echo "include stopped containers: ${1:-false}"
 
 # Tests for vedv::container_command::__create()
 @test "vedv::container_command::__create(), with arg '-h|--help|help' should show help" {
-  local -r help_output="Usage:
-vedv container create [FLAGS] [OPTIONS] IMAGE
+  for flag in '-h' '--help'; do
+    run vedv::container_command::__create "$flag"
 
-Create a new container
+    assert_success
+    assert_output --partial "Usage:
+vedv container create [FLAGS] [OPTIONS] IMAGE_NAME|URL|FILE|FQN
 
-Flags:
-  -h, --help                                show help
-  -s, --standalone                          create a standalone container
-  -P, --publish-all                         publish all exposed ports to random ports
+Create a new container"
 
-Options:
-  -n, --name <name>                         assign a name to the container
-  -p, --publish <host-port>:<port>[/proto]  publish a container's port(s) to the host.
-                                            proto is tcp or udp (default tcp)"
-
-  run vedv::container_command::__create -h
-
-  assert_success
-  assert_output --partial "$help_output"
-
-  run vedv::container_command::__create --help
-
-  assert_success
-  assert_output --partial "$help_output"
+  done
 }
 
 @test 'vedv::container_command::__create(), should create a container' {

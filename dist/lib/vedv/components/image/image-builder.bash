@@ -322,7 +322,7 @@ vedv::image_builder::__layer_from() {
   fi
 
   local image_id_name
-  image_id_name="$(vedv::image_service::pull "$image" "$image_name")" || {
+  image_id_name="$(vedv::image_service::import_from_any "$image" "$image_name")" || {
     err "Failed to pull image '${image}'"
     return "$ERR_IMAGE_BUILDER_OPERATION"
   }

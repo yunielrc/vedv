@@ -78,7 +78,7 @@ setup_file() {
   assert_output "Failed to generate a random name"
 }
 
-@test "vedv::container_service::create() Should fail If image_service::pull fails" {
+@test "vedv::container_service::create() Should fail If image_service::import_from_any fails" {
   local -r image="$TEST_OVA_FILE"
   local -r container_name='container1'
 
@@ -88,7 +88,7 @@ setup_file() {
   }
   petname() { echo "image_name"; }
 
-  vedv::image_service::pull() {
+  vedv::image_service::import_from_any() {
     assert_equal "$*" "${TEST_OVA_FILE} image_name"
     return 1
   }
@@ -96,7 +96,7 @@ setup_file() {
   run vedv::container_service::create "$image" "$container_name"
 
   assert_failure
-  assert_output --partial "Failed to pull image:"
+  assert_output --partial "Failed to import image:"
 }
 
 @test "vedv::container_service::create() Should fail If get_vm_name_by_image_name fails" {
@@ -107,12 +107,13 @@ setup_file() {
     assert_equal "$*" "container1"
     echo false
   }
-  petname() {
-    assert_equal "$*" "INVALID_CALL"
+  petname() { echo "image_name"; }
+
+  vedv::image_service::import_from_any() {
+    assert_equal "$*" "image1 image_name"
+    echo "0000000000 image1"
   }
-  vedv::image_service::pull() {
-    assert_equal "$*" "INVALID_CALL"
-  }
+
   vedv::image_entity::get_vm_name_by_image_name() {
     assert_equal "$*" "image1"
     return 1
@@ -132,11 +133,11 @@ setup_file() {
     assert_equal "$*" "container1"
     echo false
   }
-  petname() {
-    assert_equal "$*" "INVALID_CALL"
-  }
-  vedv::image_service::pull() {
-    assert_equal "$*" "INVALID_CALL"
+  petname() { echo "image_name"; }
+
+  vedv::image_service::import_from_any() {
+    assert_equal "$*" "image1 image_name"
+    echo "0000000000 image1"
   }
   vedv::image_entity::get_vm_name_by_image_name() {
     assert_equal "$*" "image1"
@@ -156,11 +157,11 @@ setup_file() {
     assert_equal "$*" "container1"
     echo false
   }
-  petname() {
-    assert_equal "$*" "INVALID_CALL"
-  }
-  vedv::image_service::pull() {
-    assert_equal "$*" "INVALID_CALL"
+  petname() { echo "image_name"; }
+
+  vedv::image_service::import_from_any() {
+    assert_equal "$*" "image1 image_name"
+    echo "0000000000 image1"
   }
   vedv::image_entity::get_vm_name_by_image_name() {
     assert_equal "$*" "image1"
@@ -185,11 +186,11 @@ setup_file() {
     assert_equal "$*" "container1"
     echo false
   }
-  petname() {
-    assert_equal "$*" "INVALID_CALL"
-  }
-  vedv::image_service::pull() {
-    assert_equal "$*" "INVALID_CALL"
+  petname() { echo "image_name"; }
+
+  vedv::image_service::import_from_any() {
+    assert_equal "$*" "image1 image_name"
+    echo "0000000000 image1"
   }
   vedv::image_entity::get_vm_name_by_image_name() {
     assert_equal "$*" "image1"
@@ -218,11 +219,11 @@ setup_file() {
     assert_equal "$*" "container1"
     echo false
   }
-  petname() {
-    assert_equal "$*" "INVALID_CALL"
-  }
-  vedv::image_service::pull() {
-    assert_equal "$*" "INVALID_CALL"
+  petname() { echo "image_name"; }
+
+  vedv::image_service::import_from_any() {
+    assert_equal "$*" "image1 image_name"
+    echo "0000000000 image1"
   }
   vedv::image_entity::get_vm_name_by_image_name() {
     assert_equal "$*" "image1"
@@ -255,11 +256,11 @@ setup_file() {
     assert_equal "$*" "container1"
     echo false
   }
-  petname() {
-    assert_equal "$*" "INVALID_CALL"
-  }
-  vedv::image_service::pull() {
-    assert_equal "$*" "INVALID_CALL"
+  petname() { echo "image_name"; }
+
+  vedv::image_service::import_from_any() {
+    assert_equal "$*" "image1 image_name"
+    echo "0000000000 image1"
   }
   vedv::image_entity::get_vm_name_by_image_name() {
     assert_equal "$*" "image1"
@@ -300,11 +301,11 @@ setup_file() {
     assert_equal "$*" "INVALID_CALL"
     echo false
   }
-  petname() {
-    assert_equal "$*" "INVALID_CALL"
-  }
-  vedv::image_service::pull() {
-    assert_equal "$*" "INVALID_CALL"
+  petname() { echo "image_name"; }
+
+  vedv::image_service::import_from_any() {
+    assert_equal "$*" "image1 image_name"
+    echo "0000000000 image1"
   }
   vedv::image_entity::get_vm_name_by_image_name() {
     assert_equal "$*" "image1"
@@ -349,11 +350,11 @@ setup_file() {
     assert_equal "$*" "container1"
     echo false
   }
-  petname() {
-    assert_equal "$*" "INVALID_CALL"
-  }
-  vedv::image_service::pull() {
-    assert_equal "$*" "INVALID_CALL"
+  petname() { echo "image_name"; }
+
+  vedv::image_service::import_from_any() {
+    assert_equal "$*" "image1 image_name"
+    echo "0000000000 image1"
   }
   vedv::image_entity::get_vm_name_by_image_name() {
     assert_equal "$*" "image1"
@@ -401,11 +402,11 @@ setup_file() {
     assert_equal "$*" "container1"
     echo false
   }
-  petname() {
-    assert_equal "$*" "INVALID_CALL"
-  }
-  vedv::image_service::pull() {
-    assert_equal "$*" "INVALID_CALL"
+  petname() { echo "image_name"; }
+
+  vedv::image_service::import_from_any() {
+    assert_equal "$*" "image1 image_name"
+    echo "0000000000 image1"
   }
   vedv::image_entity::get_vm_name_by_image_name() {
     assert_equal "$*" "image1"
@@ -457,11 +458,11 @@ setup_file() {
     assert_equal "$*" "container1"
     echo false
   }
-  petname() {
-    assert_equal "$*" "INVALID_CALL"
-  }
-  vedv::image_service::pull() {
-    assert_equal "$*" "INVALID_CALL"
+  petname() { echo "image_name"; }
+
+  vedv::image_service::import_from_any() {
+    assert_equal "$*" "image1 image_name"
+    echo "0000000000 image1"
   }
   vedv::image_entity::get_vm_name_by_image_name() {
     assert_equal "$*" "image1"
@@ -517,11 +518,11 @@ setup_file() {
     assert_equal "$*" "container1"
     echo false
   }
-  petname() {
-    assert_equal "$*" "INVALID_CALL"
-  }
-  vedv::image_service::pull() {
-    assert_equal "$*" "INVALID_CALL"
+  petname() { echo "image_name"; }
+
+  vedv::image_service::import_from_any() {
+    assert_equal "$*" "image1 image_name"
+    echo "0000000000 image1"
   }
   vedv::image_entity::get_vm_name_by_image_name() {
     assert_equal "$*" "image1"
@@ -580,11 +581,11 @@ setup_file() {
     assert_equal "$*" "container1"
     echo false
   }
-  petname() {
-    assert_equal "$*" "INVALID_CALL"
-  }
-  vedv::image_service::pull() {
-    assert_equal "$*" "INVALID_CALL"
+  petname() { echo "image_name"; }
+
+  vedv::image_service::import_from_any() {
+    assert_equal "$*" "image1 image_name"
+    echo "0000000000 image1"
   }
   vedv::image_entity::get_vm_name_by_image_name() {
     assert_equal "$*" "image1"
@@ -646,11 +647,11 @@ setup_file() {
     assert_equal "$*" "container1"
     echo false
   }
-  petname() {
-    assert_equal "$*" "INVALID_CALL"
-  }
-  vedv::image_service::pull() {
-    assert_equal "$*" "INVALID_CALL"
+  petname() { echo "image_name"; }
+
+  vedv::image_service::import_from_any() {
+    assert_equal "$*" "image1 image_name"
+    echo "0000000000 image1"
   }
   vedv::image_entity::get_vm_name_by_image_name() {
     assert_equal "$*" "image1"
@@ -715,11 +716,11 @@ setup_file() {
     assert_equal "$*" "container1"
     echo false
   }
-  petname() {
-    assert_equal "$*" "INVALID_CALL"
-  }
-  vedv::image_service::pull() {
-    assert_equal "$*" "INVALID_CALL"
+  petname() { echo "image_name"; }
+
+  vedv::image_service::import_from_any() {
+    assert_equal "$*" "image1 image_name"
+    echo "0000000000 image1"
   }
   vedv::image_entity::get_vm_name_by_image_name() {
     assert_equal "$*" "image1"
@@ -792,11 +793,11 @@ setup_file() {
     assert_equal "$*" "container1"
     echo false
   }
-  petname() {
-    assert_equal "$*" "INVALID_CALL"
-  }
-  vedv::image_service::pull() {
-    assert_equal "$*" "INVALID_CALL"
+  petname() { echo "image_name"; }
+
+  vedv::image_service::import_from_any() {
+    assert_equal "$*" "image1 image_name"
+    echo "0000000000 image1"
   }
   vedv::image_entity::get_vm_name_by_image_name() {
     assert_equal "$*" "image1"
@@ -873,11 +874,11 @@ setup_file() {
     assert_equal "$*" "container1"
     echo false
   }
-  petname() {
-    assert_equal "$*" "INVALID_CALL"
-  }
-  vedv::image_service::pull() {
-    assert_equal "$*" "INVALID_CALL"
+  petname() { echo "image_name"; }
+
+  vedv::image_service::import_from_any() {
+    assert_equal "$*" "image1 image_name"
+    echo "0000000000 image1"
   }
   vedv::image_entity::get_vm_name_by_image_name() {
     assert_equal "$*" "image1"
@@ -959,11 +960,11 @@ setup_file() {
     assert_equal "$*" "container1"
     echo false
   }
-  petname() {
-    assert_equal "$*" "INVALID_CALL"
-  }
-  vedv::image_service::pull() {
-    assert_equal "$*" "INVALID_CALL"
+  petname() { echo "image_name"; }
+
+  vedv::image_service::import_from_any() {
+    assert_equal "$*" "image1 image_name"
+    echo "0000000000 image1"
   }
   vedv::image_entity::get_vm_name_by_image_name() {
     assert_equal "$*" "image1"
@@ -1050,11 +1051,11 @@ setup_file() {
     assert_equal "$*" "container1"
     echo false
   }
-  petname() {
-    assert_equal "$*" "INVALID_CALL"
-  }
-  vedv::image_service::pull() {
-    assert_equal "$*" "INVALID_CALL"
+  petname() { echo "image_name"; }
+
+  vedv::image_service::import_from_any() {
+    assert_equal "$*" "image1 image_name"
+    echo "0000000000 image1"
   }
   vedv::image_entity::get_vm_name_by_image_name() {
     assert_equal "$*" "image1"

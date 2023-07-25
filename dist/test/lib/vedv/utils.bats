@@ -2,7 +2,8 @@
 load test_helper
 
 setup() {
-  utils::constructor "$TEST_TMP_DIR"
+  utils::constructor "$TEST_TMP_DIR" \
+    'User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36'
   export __VEDV_UTILS_TMP_DIR
 }
 

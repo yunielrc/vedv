@@ -3141,3 +3141,128 @@ EOF
   assert_success
   assert_output ""
 }
+
+# Tests for vedv::image_service::import_from_any()
+@test "vedv::image_service::import_from_any() Should succeed" {
+  local -r image='alpine-14'
+  local -r image_name=""
+
+  # Stub
+  vedv::vmobj_entity::is_name() {
+    assert_equal "$*" "$image"
+    echo true
+  }
+
+  run vedv::image_service::import_from_any \
+    "$image" \
+    "$image_name"
+
+  assert_success
+  assert_output "0000000000 alpine-14"
+}
+
+@test "vedv::image_service::import_from_any() Should fail If import fails" {
+  local -r image="$TEST_OVA_FILE"
+  local -r image_name=""
+
+  # Stub
+  vedv::vmobj_entity::is_name() {
+    assert_equal "$*" "$image"
+    echo false
+  }
+  vedv::image_service::import() {
+    assert_equal "$*" "${image} ${image_name}"
+    return 1
+  }
+
+  run vedv::image_service::import_from_any \
+    "$image" \
+    "$image_name"
+
+  assert_failure
+  assert_output "Error importing image from file: ${image}"
+}
+
+@test "vedv::image_service::import_from_any() Should fail If import_from_url fails" {
+  local -r image='http://files.get/image'
+  local -r image_name=""
+
+  # Stub
+  vedv::vmobj_entity::is_name() {
+    assert_equal "$*" "$image"
+    echo false
+  }
+  vedv::image_service::import() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::image_service::import_from_url() {
+    assert_equal "$*" "${image} ${image_name}"
+    return 1
+  }
+
+  run vedv::image_service::import_from_any \
+    "$image" \
+    "$image_name"
+
+  assert_failure
+  assert_output "Error importing image from url: ${image}"
+}
+
+@test "vedv::image_service::import_from_any() Should fail If pull fails" {
+  local -r image='admin@alpine-test/alpine-14'
+  local -r image_name=""
+
+  # Stub
+  vedv::vmobj_entity::is_name() {
+    assert_equal "$*" "$image"
+    echo false
+  }
+  vedv::image_service::import() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::image_service::import_from_url() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::registry_service::pull() {
+    assert_equal "$*" "${image} ${image_name}"
+    return 1
+  }
+
+  run vedv::image_service::import_from_any \
+    "$image" \
+    "$image_name"
+
+  assert_failure
+  assert_output "Error importing image from registry: ${image}"
+}
+
+@test "vedv::image_service::import_from_any() Should fail If image argument has invalid format" {
+  local -r image='invalid_format'
+  local -r image_name=""
+
+  # Stub
+  vedv::vmobj_entity::is_name() {
+    assert_equal "$*" "$image"
+    echo false
+  }
+  vedv::image_service::import() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::image_service::import_from_url() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::registry_service::pull() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::vmobj_entity::is_name() {
+    assert_equal "$*" "$image"
+    echo false
+  }
+
+  run vedv::image_service::import_from_any \
+    "$image" \
+    "$image_name"
+
+  assert_failure
+  assert_output "Invalid image argument format, it must be a image name, url, file or fully qualified name"
+}

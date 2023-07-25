@@ -82,7 +82,7 @@ vedv::registry_service::__get_public_image_real_owner() {
 #   [no_cache]      bool    do not use cache when downloading the image
 #
 # Output:
-#  Writes image name or image id to the stdout
+#  Writes image id and name (string) to the stdout
 #
 # Returns:
 #   0 on success, non-zero on error.
