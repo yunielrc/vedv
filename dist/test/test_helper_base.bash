@@ -22,13 +22,14 @@ export -f vedv
 # DOWNLOAD OVA FILE
 if [[ ! -f "$TEST_OVA_FILE" ]]; then
   (
+    readonly user_agent='User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36'
     # TODO: change if [[ $# == 0 ]]; then; set -- '-h'; fi
     [[ ! -d "${TEST_OVA_FILE%/*}" ]] &&
       mkdir -p "${TEST_OVA_FILE%/*}"
 
     cd "${TEST_OVA_FILE%/*}" || exit
-    wget -O "${TEST_OVA_FILE##*/}" "$TEST_OVA_URL"
-    wget -O "${TEST_OVA_FILE##*/}.sha256sum" "$TEST_OVA_CHECKSUM"
+    wget --header "$user_agent" -O "${TEST_OVA_FILE##*/}" "$TEST_OVA_URL"
+    wget --header "$user_agent" -O "${TEST_OVA_FILE##*/}.sha256sum" "$TEST_OVA_CHECKSUM"
 
     sha256sum -c "${TEST_OVA_FILE##*/}.sha256sum"
   )

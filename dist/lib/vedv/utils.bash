@@ -44,6 +44,7 @@ readonly UTILS_HTTP_URL_EREGEX="(https?://)?${UTILS_DOMAIN_NAME_EREGEX}"
 #
 utils::constructor() {
   readonly __VEDV_UTILS_TMP_DIR="$1"
+  readonly __VEDV_UTILS_USER_AGENT="${2:-}"
 }
 
 err() {
@@ -727,7 +728,7 @@ utils::download_file() {
     return "$ERR_INVAL_ARG"
   fi
 
-  wget -qO "$file" "$url" || {
+  wget --header "$__VEDV_UTILS_USER_AGENT" -qO "$file" "$url" || {
     err "error downloading file"
     return "$ERR_DOWNLOAD"
   }
