@@ -383,7 +383,6 @@ HELPMSG
 #   0 on success, non-zero on error.
 #
 vedv::image_command::__pull() {
-
   # shellcheck disable=SC2317
   vedv::registry_command::__pull_help() {
     vedv::image_command::__pull_help
@@ -391,6 +390,61 @@ vedv::image_command::__pull() {
   readonly -f vedv::registry_command::__pull_help
 
   vedv::registry_command::__pull "$@"
+}
+
+#
+# Show help for __push command
+#
+# Output:
+#  Writes the help to the stdout
+#
+vedv::image_command::__push_help() {
+  cat <<-HELPMSG
+Usage:
+${__VED_REGISTRY_COMMAND_SCRIPT_NAME} image push [FLAGS] [OPTIONS] [DOMAIN/]USER@COLLECTION/NAME
+
+Upload an image to a registry
+
+Aliases:
+  ${__VED_IMAGE_COMMAND_SCRIPT_NAME} registry push
+
+Flags:
+  -h, --help          show help
+
+Options:
+  -n, --name <name>   name of the image that will be pushed to the registry,
+                      if not specified, the name on fqn will be used
+
+HELPMSG
+}
+
+#
+# Upload an image to a registry
+#
+# Flags:
+#   -h, --help          show help
+#
+# Options:
+#   -n, --name <name>   name of the image that will be pushed to the registry,
+#                       if not specified, the name on fqn will be used
+#
+# Arguments:
+#   IMAGE_FQN               string  scheme: [domain/]user@collection/name
+#
+# Output:
+#   Writes image name to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::image_command::__push() {
+  # shellcheck disable=SC2317
+  vedv::registry_command::__push_help() {
+    vedv::image_command::__push_help
+  }
+  readonly -f vedv::registry_command::__push_help
+
+  vedv::registry_command::__push "$@"
 }
 
 #
@@ -748,6 +802,7 @@ Commands:
   from-url        import an image from a url
   build           build an image from a Vedvfile
   pull            download an image from the registry
+  push            upload an image to a registry
   list            list images
   remove          remove one or more images
   remove-cache    remove unused cache images
@@ -769,6 +824,11 @@ vedv::image_command::run_cmd() {
     pull)
       shift
       vedv::image_command::__pull "$@"
+      return $?
+      ;;
+    push)
+      shift
+      vedv::image_command::__push "$@"
       return $?
       ;;
     ls | list)

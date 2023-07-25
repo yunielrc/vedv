@@ -679,3 +679,54 @@ Build finished
   assert_success
   assert_output "740"
 }
+
+# Tests for vedv image push()
+@test "vedv image push ,Should show help" {
+
+  for flag in '' '-h' '--help'; do
+    run vedv image push $flag
+
+    assert_success
+    assert_output --partial "Usage:
+vedv image push [FLAGS] [OPTIONS] [DOMAIN/]USER@COLLECTION/NAME"
+  done
+}
+
+@test "vedv image push, Should fail With missing image_name" {
+
+  for opt in '-n' '--name'; do
+    run vedv image push $opt
+
+    assert_failure
+    assert_output --partial "No image name specified"
+  done
+}
+
+@test "vedv image push, Should fail With missing image_fqn" {
+  run vedv image push --name 'alpine-14'
+
+  assert_failure
+  assert_output --partial "Missing argument 'IMAGE_FQN'"
+}
+
+@test "vedv image push, Should fail With invalid image_fqn" {
+  run vedv image push 'admin/alpine-test/alpine-14'
+
+  assert_failure
+  assert_output "Invalid argument 'admin/alpine-test/alpine-14'"
+}
+
+@test "vedv image push, Should fail With invalid image_name" {
+  run vedv image push --name '_invalid/name' 'admin@alpine-test/alpine-14'
+
+  assert_failure
+  assert_output "Invalid argument '_invalid/name'"
+}
+
+@test "vedv image push, Should fail With invalid image domain" {
+  run vedv image push 'nextcloud123.loc/admin@alpine-test/alpine-14'
+
+  assert_failure
+  assert_output "Registry 'https://nextcloud123.loc' not found in credentials dict
+Failed to get registry user"
+}

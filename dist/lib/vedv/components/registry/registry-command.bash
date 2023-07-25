@@ -39,6 +39,9 @@ ${__VED_REGISTRY_COMMAND_SCRIPT_NAME} registry push [FLAGS] [OPTIONS] [DOMAIN/]U
 
 Upload an image to a registry
 
+Aliases:
+  ${__VED_REGISTRY_COMMAND_SCRIPT_NAME} image pull
+
 Flags:
   -h, --help          show help
 

@@ -482,3 +482,14 @@ vedv image export IMAGE FILE"
   assert_success
   assert_output ""
 }
+
+# Tests for vedv::image_command::__push()
+@test "vedv::image_command::__push() Should succeed" {
+
+  vedv::registry_command::__push() { :; }
+
+  run vedv::image_command::__push
+
+  assert_success
+  assert_output ''
+}
