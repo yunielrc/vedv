@@ -8,6 +8,7 @@
 if false; then
   . '../../utils.bash'
   . './image-service.bash'
+  . '../registry/registry-command.bash'
 fi
 
 # VARIABLES
@@ -337,48 +338,6 @@ vedv::image_command::__import_from_url() {
 }
 
 #
-# Pull an image from a registry or file
-#
-# Flags:
-#   [-h | --help]  Show help
-#
-# Arguments:
-#   IMAGE          Image name or an OVF file
-#
-# Output:
-#  Writes image name to the stdout
-#
-# Returns:
-#   0 on success, non-zero on error.
-#
-vedv::image_command::__pull() {
-  local image=''
-
-  if [[ $# == 0 ]]; then set -- '-h'; fi
-
-  while [[ $# -gt 0 ]]; do
-    case "$1" in
-    -h | --help)
-      vedv::image_command::__pull_help
-      return 0
-      ;;
-    *)
-      if [[ -z "$image" ]]; then
-        image="$1"
-        shift
-      else
-        err "Invalid argument: ${1}\n"
-        vedv::image_command::__pull_help
-        return "$ERR_INVAL_ARG"
-      fi
-      ;;
-    esac
-  done
-
-  vedv::image_service::pull "$image"
-}
-
-#
 # Show help for __pull command
 #
 # Output:
@@ -387,10 +346,51 @@ vedv::image_command::__pull() {
 vedv::image_command::__pull_help() {
   cat <<-HELPMSG
 Usage:
-${__VED_IMAGE_COMMAND_SCRIPT_NAME} image pull IMAGE_FILE
+${__VED_IMAGE_COMMAND_SCRIPT_NAME} image pull [FLAGS] [OPTIONS] [DOMAIN/]USER@COLLECTION/NAME
 
-Pull an image from a file
+Download an image from the registry
+
+Aliases:
+  ${__VED_IMAGE_COMMAND_SCRIPT_NAME} registry pull
+
+Flags:
+  -h, --help            show help
+  --no-cache            do not use cache when downloading the image
+
+Options:
+  -n, --name <name>     image name
+
 HELPMSG
+}
+
+#
+# Download an image from the registry
+#
+# Flags:
+#   -h, --help          show help
+#   --no-cache          do not use cache when downloading the image
+#
+# Options:
+#   -n, --name <name>   image name
+#
+# Arguments:
+#   IMAGE_FQN           string  scheme: [domain/]user@collection/name
+#
+# Output:
+#   Writes image name to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::image_command::__pull() {
+
+  # shellcheck disable=SC2317
+  vedv::registry_command::__pull_help() {
+    vedv::image_command::__pull_help
+  }
+  readonly -f vedv::registry_command::__pull_help
+
+  vedv::registry_command::__pull "$@"
 }
 
 #
@@ -747,7 +747,7 @@ Commands:
   export          export an image to a file
   from-url        import an image from a url
   build           build an image from a Vedvfile
-  pull            pull an image from a registry or file
+  pull            download an image from the registry
   list            list images
   remove          remove one or more images
   remove-cache    remove unused cache images

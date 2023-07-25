@@ -21,37 +21,20 @@ vedv::image_service::remove() {
   :
 }
 
-@test "vedv::image_command::__pull, with invalid arg throw an error" {
-  run vedv::image_command::__pull 'image_file' 'invalid_arg'
+# Tests for vedv::image_command::__pull()
+@test "vedv::image_command::__pull(), should pull an image" {
 
-  assert_failure 69
-  assert_output --partial 'Invalid argument: invalid_arg'
-}
-
-@test "vedv::image_command::__pull, with arg '-h|--help|help' should show help" {
-  local -r help_output='vedv image pull IMAGE'
-
-  run vedv::image_command::__pull -h
-
-  assert_success
-  assert_output --partial "$help_output"
-
-  run vedv::image_command::__pull --help
-
-  assert_success
-  assert_output --partial "$help_output"
-}
-
-@test "vedv::image_command::__pull, should pull an image" {
-
-  vedv::image_service::pull() { echo "image pulled ${1}"; }
+  vedv::registry_command::__pull() {
+    assert_equal "$*" 'image_file'
+  }
 
   run vedv::image_command::__pull 'image_file'
 
   assert_success
-  assert_output 'image pulled image_file'
+  assert_output ''
 }
 
+# Tests for vedv::image_command::__list()
 @test "vedv::image_command::__list(), with arg '-h|--help|help' should show help" {
   local -r help_output='vedv image ls'
 
@@ -81,6 +64,7 @@ vedv::image_service::remove() {
   assert_output --partial "vedv::image_service::list"
 }
 
+# Tests for vedv::image_command::__rm()
 @test "vedv::image_command::__rm(), with arg '-h|--help|help' should show help" {
   local -r help_output='vedv image rm [FLAGS] IMAGE [IMAGE...]'
 
@@ -104,6 +88,7 @@ vedv::image_service::remove() {
   assert_output "vedv::image_service::__rm ${image_name_or_id} false"
 }
 
+# Tests for vedv::image_command::run_cmd()
 @test "vedv::image_command::run_cmd, with invalid arg throw an error" {
   run vedv::image_command::run_cmd invalid_cmd
 

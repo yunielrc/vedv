@@ -26,52 +26,42 @@ teardown() {
     mkdir -p "$TEST_IMAGE_TMP_DIR"
 }
 
-# Tests for 'vedv image pull'
-@test "vedv image pull, Should show help" {
+# Tests for vedv image pull
+@test "vedv image pull ,Should show help" {
 
-  run vedv image pull
-
-  assert_success
-  assert_output "Usage:
-vedv image pull IMAGE_FILE
-
-Pull an image from a file"
-}
-
-@test "vedv image pull -h , Should show help" {
-
-  for arg in '-h' '--help'; do
-    run vedv image pull "$arg"
+  for flag in '' '-h' '--help'; do
+    run vedv image pull $flag
 
     assert_success
-    assert_output "Usage:
-vedv image pull IMAGE_FILE
-
-Pull an image from a file"
+    assert_output --partial "Usage:
+vedv image pull [FLAGS] [OPTIONS] [DOMAIN/]USER@COLLECTION/NAME"
   done
 }
 
-@test "vedv image pull, Should pull the image" {
+@test "vedv image pull ,Should fail With missing image_name" {
 
-  run vedv image pull "$TEST_OVA_FILE"
+  for opt in '-n' '--name'; do
+    run vedv image pull $opt
 
-  local -r image_name="$(vedv image list | head -n 1 | awk '{print $2}')"
-
-  assert_success
-  assert_output --partial "$image_name"
+    assert_failure
+    assert_output --partial "No image name specified"
+  done
 }
 
-@test "vedv image pull, Should show error with invalid argument" {
+@test "vedv image pull ,Should fail With missing image_fqn" {
 
-  run vedv image pull "$TEST_OVA_FILE" 'invalid_arg'
+  run vedv image pull --name 'alpine-14'
 
-  assert_failure "$ERR_INVAL_ARG"
-  assert_output 'Invalid argument: invalid_arg
+  assert_failure
+  assert_output --partial "Missing argument 'IMAGE_FQN'"
+}
 
-Usage:
-vedv image pull IMAGE_FILE
+@test "vedv image pull ,Should fail with invalid image fqn" {
 
-Pull an image from a file'
+  run vedv image pull --name 'my-alpine-14' 'admin_alpine/alpine-14'
+
+  assert_failure
+  assert_output "Invalid argument 'admin_alpine/alpine-14'"
 }
 
 # Tests for 'vedv image list'
@@ -100,7 +90,7 @@ Aliases:
 
 @test "vedv image list, Should list images" {
 
-  vedv image pull "$TEST_OVA_FILE"
+  vedv image import "$TEST_OVA_FILE"
 
   run vedv image list
 
@@ -131,7 +121,7 @@ Flags:
 
 @test "vedv image rm, Should remove the image" {
 
-  vedv image pull "$TEST_OVA_FILE"
+  vedv image import "$TEST_OVA_FILE"
 
   local -r image_name="$(vedv image list | head -n 1 | awk '{print $2}')"
 
@@ -143,7 +133,7 @@ Flags:
 
 @test "vedv image rm, Should do nothing without passing an image" {
 
-  vedv image pull "$TEST_OVA_FILE"
+  vedv image import "$TEST_OVA_FILE"
   run vedv image rm
 
   assert_success
@@ -176,7 +166,7 @@ Remove unused cache images"
 
 @test "vedv image remove-cache, Should remove unused caches" {
 
-  vedv image pull "$TEST_OVA_FILE"
+  vedv image import "$TEST_OVA_FILE"
   local -r image_name="$(vedv image list | head -n 1 | awk '{print $2}')"
 
   run vedv image remove-cache

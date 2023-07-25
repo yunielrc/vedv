@@ -124,6 +124,9 @@ ${__VED_REGISTRY_COMMAND_SCRIPT_NAME} registry pull [FLAGS] [OPTIONS] [DOMAIN/]U
 
 Download an image from the registry
 
+Aliases:
+  ${__VED_REGISTRY_COMMAND_SCRIPT_NAME} image pull
+
 Flags:
   -h, --help            show help
   --no-cache            do not use cache when downloading the image
@@ -145,7 +148,7 @@ HELPMSG
 #   -n, --name <name>   image name
 #
 # Arguments:
-#   IMAGE_FQN               string  scheme: [domain/]user@collection/name
+#   IMAGE_FQN           string  scheme: [domain/]user@collection/name
 #
 # Output:
 #   Writes image name to the stdout
@@ -220,6 +223,7 @@ Flags:
 
 Commands:
   pull          download an image from the registry
+  push          upload an image to a registry
 
 Run '${__VED_REGISTRY_COMMAND_SCRIPT_NAME} registry COMMAND --help' for more information on a command.
 HELPMSG
