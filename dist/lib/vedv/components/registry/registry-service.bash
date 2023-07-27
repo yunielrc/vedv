@@ -295,6 +295,10 @@ vedv::registry_service::push() {
   local -r remote_image_file="/00-user-images/${rel_file_path}"
   local -r remote_checksum_file="${remote_image_file}.sha256sum"
 
+  # remove temporary files
+  # shellcheck disable=SC2064
+  trap "rm -f '$image_file' '$checksum_file'" INT TERM EXIT
+
   vedv::registry_api_client::create_directory "$remote_directory" "$registry_url" || {
     err "Error creating directory '${remote_directory}'"
     return "$ERR_REGISTRY_OPERATION"
