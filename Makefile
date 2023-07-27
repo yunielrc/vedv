@@ -18,8 +18,21 @@ test-name:
 untested:
 	./tools/untested $(f)
 
-configure-manjaro-dev:
+manjaro-dev-configure:
 	./icac/manjaro.local.dev.cac
 
-setup-nextcloud-dev:
-	./icac/nextcloud/nextcloud.multipass.dev.iac
+nextcloud-dev-setup:
+	./icac/nextcloud/nextcloud.vbox.dev.iac
+
+nextcloud-dev-stop:
+	sudo -u root VBoxManage controlvm nextcloud-dev acpipowerbutton
+
+nextcloud-dev-destroy:
+	sudo -u root VBoxManage controlvm nextcloud-dev poweroff && \
+		sudo -u root VBoxManage unregistervm nextcloud-dev --delete
+
+nextcloud-dev-start:
+	sudo -u root VBoxManage startvm nextcloud-dev --type headless
+
+nextcloud-dev-status:
+	sudo -u root VBoxManage showvminfo nextcloud-dev | grep State

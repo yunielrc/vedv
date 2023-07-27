@@ -59,6 +59,8 @@ setup_nextcloud() {
 
     cd nextcloud-docker-dev
 
+    git checkout fea393d7ed2fe241a35bb9bce4311b0ea805e320
+
     if [[ -n "$(docker container ls -qaf "name=.*nextcloud.*")" ]]; then
       docker compose down -v
     fi
@@ -127,8 +129,8 @@ load_fixtures() {
 
           rm -f alpine-13.ova alpine-13.ova.sha256sum || :
 
-          wget -O alpine-13.ova.sha256sum "$NC_OVA_CHECKSUM_URL"
-          wget -O alpine-13.ova "$NC_OVA_URL"
+          wget --header "$USER_AGENT" -O alpine-13.ova.sha256sum "$NC_OVA_CHECKSUM_URL"
+          wget --header "$USER_AGENT" -O alpine-13.ova "$NC_OVA_URL"
 
           local remote_file_name=''
           remote_file_name="$(grep -Pom1 '\s\K\S+.ova' alpine-13.ova.sha256sum)"

@@ -2,8 +2,6 @@
 load ./../test_helper
 
 setup_file() {
-  nextcloud_start
-
   vedv::registry_nextcloud_api_client::constructor \
     "([${TEST_NC_URL}]=\"${TEST_NC_USER}:${TEST_NC_PASSWORD}\"\
   [http://nextcloud2.loc]=\"jane:jane\"\

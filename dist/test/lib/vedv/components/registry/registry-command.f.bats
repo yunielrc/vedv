@@ -21,7 +21,6 @@ teardown() {
 setup_file() {
   teardown
   delete_vms_directory
-  nextcloud_start
 }
 
 # Tests for vedv registry help

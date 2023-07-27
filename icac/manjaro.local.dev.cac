@@ -24,7 +24,7 @@ sudo npm install -g \
   commitizen \
   cz-conventional-changelog
 
-sudo snap install multipass
+# sudo snap install multipass
 
 # Configure
 git config core.hooksPath .githooks

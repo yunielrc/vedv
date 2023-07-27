@@ -2,8 +2,6 @@
 load test_helper
 
 setup_file() {
-  multipass stop nextcloud-dev || :
-
   delete_vms_directory
   export VED_HADOLINT_CONFIG="$TEST_HADOLINT_CONFIG"
   export VEDV_HADOLINT_ENABLED=false

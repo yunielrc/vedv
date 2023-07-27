@@ -2,8 +2,6 @@
 load test_helper
 
 setup_file() {
-  multipass stop nextcloud-dev || :
-
   delete_vms_directory
 }
 

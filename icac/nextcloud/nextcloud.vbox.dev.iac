@@ -1,0 +1,110 @@
+#!/usr/bin/env bash
+
+#
+# Provision Nextcloud VM with VirtualBox
+#
+
+set -eu
+
+cd "$(dirname "${BASH_SOURCE[0]}")"
+
+. ../../.env
+
+# CONSTANTS
+readonly SCRIPT_NAME="${0##*/}"
+
+readonly VM_NAME="nextcloud-dev"
+# root user is required for using port 80, 443 on virtualbox
+readonly VBOX_USER='root'
+readonly VM_USER='user'
+readonly VM_PASSWORD='user'
+readonly VM_SSH_PORT=40022
+readonly VM_IP='127.0.0.1'
+readonly TMP_DIR="/var/tmp/${SCRIPT_NAME}"
+readonly USER_AGENT="$USER_AGENT"
+readonly UBUNTU_OVA_FILE_URL="$NC_UBUNTU_OVA_FILE_URL"
+readonly UBUNTU_OVA_SUM_FILE_URL="$NC_UBUNTU_OVA_SUM_FILE_URL"
+readonly OVA_FILE="ubuntu-server.ova"
+readonly OVA_SUM_FILE="${OVA_FILE}.sha256sum"
+
+# Add user if not exists
+if ! id "$VBOX_USER" &>/dev/null; then
+  sudo useradd -m -p "$(openssl passwd -1 "${RANDOM}${RANDOM}")" "$VBOX_USER"
+fi
+
+VBoxManage() {
+  sudo -u "$VBOX_USER" VBoxManage "$@"
+}
+
+# Import VM if not exists
+if ! VBoxManage showvminfo "$VM_NAME" &>/dev/null; then
+  # Download OVA file if not exists
+  if [[ ! -f "${TMP_DIR}/${OVA_FILE}" ]]; then
+
+    [[ ! -d "$TMP_DIR" ]] &&
+      mkdir -p "$TMP_DIR"
+    (
+      cd "$TMP_DIR" ||
+        exit
+
+      wget --header "$USER_AGENT" -O "$OVA_SUM_FILE" "$UBUNTU_OVA_SUM_FILE_URL"
+      wget --header "$USER_AGENT" -O "$OVA_FILE" "$UBUNTU_OVA_FILE_URL"
+
+      sha256sum -c "$OVA_SUM_FILE"
+    )
+  fi
+
+  VBoxManage import "${TMP_DIR}/${OVA_FILE}" --vsys 0 --vmname "$VM_NAME"
+fi
+
+# Configure
+if ! VBoxManage showvminfo "$VM_NAME" | grep -qP 'State:\s+running'; then
+  VBoxManage startvm "$VM_NAME" --type headless
+  echo 'Waiting 30s for sshd to be ready...'
+  sleep 30
+fi
+
+# Configure vm domain on local
+readonly NC_HOSTS_G_BRE='\snextcloud.loc\s*$'
+
+if grep -q "$NC_HOSTS_G_BRE" /etc/hosts; then
+  sudo sed -i "/${NC_HOSTS_G_BRE}/d" /etc/hosts
+fi
+
+sudo tee -a /etc/hosts <<<"${VM_IP} nextcloud.loc"
+
+# Configure vm
+vm_copy() {
+  local -r source="$1"
+  local -r destination="$2"
+
+  # shellcheck disable=SC2086
+  sshpass -p "$VM_PASSWORD" \
+    scp -r -T -o 'ConnectTimeout=2' \
+    -o 'UserKnownHostsFile=/dev/null' \
+    -o 'PubkeyAuthentication=no' \
+    -o 'StrictHostKeyChecking=no' \
+    -o 'LogLevel=ERROR' \
+    -P "$VM_SSH_PORT" \
+    $source "${VM_USER}@${VM_IP}:${destination}" 2>/dev/null
+}
+
+vm_copy ../../.env '~'
+vm_copy ./nextcloud.ct.dev.cac '~'
+vm_copy ./nextcloud.vm.dev.cac '~'
+
+vm_copy ./root-vm/tmp/* /tmp
+
+vm_exec() {
+  sshpass -p "$VM_PASSWORD" \
+    ssh -o 'ConnectTimeout=2' \
+    -o 'UserKnownHostsFile=/dev/null' \
+    -o 'PubkeyAuthentication=no' \
+    -o 'StrictHostKeyChecking=no' \
+    -o 'LogLevel=ERROR' \
+    -p "$VM_SSH_PORT" \
+    "${VM_USER}@${VM_IP}" "$*"
+}
+# shellcheck disable=SC2016
+vm_exec 'sudo groupadd docker; sudo usermod -aG docker "$USER"'
+vm_exec bash ./nextcloud.vm.dev.cac
