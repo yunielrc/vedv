@@ -130,3 +130,26 @@ vedv registry push [FLAGS] [OPTIONS] [DOMAIN/]USER@COLLECTION/NAME"
   assert_success
   assert_output ""
 }
+
+# Tests for vedv::registry_command::__cache_clean
+@test "vedv::registry_command::__cache_clean() Should show help" {
+
+  for flag in '-h' '--help'; do
+    run vedv::registry_command::__cache_clean "$flag"
+
+    assert_success
+    assert_output --partial "Usage:
+vedv registry cache-clean"
+  done
+}
+
+@test "vedv::registry_command::__cache_clean() Should succeed" {
+  vedv::registry_service::cache_clean() {
+    assert_equal "$*" ""
+  }
+
+  run vedv::registry_command::__cache_clean
+
+  assert_success
+  assert_output ''
+}

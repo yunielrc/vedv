@@ -159,6 +159,7 @@ vedv::__initialize_components() {
     "$VEDV_REGISTRY_API_CLIENT_CREDENTIALS_DICT_STR" \
     "$VEDV_REGISTRY_API_CLIENT_MAIN_URL" \
     "$VEDV_REGISTRY_API_CLIENT_CONNECT_TIMEOUT"
+
   vedv::registry_service::constructor \
     "$VEDV_REGISTRY_CACHE_DIR" \
     "$VEDV_IMAGE_EXPORTED_DIR"

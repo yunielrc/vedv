@@ -15,7 +15,13 @@ teardown() {
   curl "${TEST_NC_URL}/remote.php/dav/files/admin/00-user-images/${TEST_NC_USER}@alpine-test/" \
     --fail --silent --show-error \
     --user "${TEST_NC_USER}:${TEST_NC_PASSWORD}" \
-    --request DELETE || :
+    --request DELETE &>/dev/null || :
+
+  # remove registry cache files
+  if [[ -d "$REGISTRY_CACHE_DIR" ]]; then
+    find "$REGISTRY_CACHE_DIR" -type f \
+      \( -name '*.ova' -o -name '*.ova.sha256sum' \) -delete
+  fi
 }
 
 setup_file() {
@@ -205,4 +211,34 @@ Failed to get registry user"
 
   assert_success
   assert_output ""
+}
+
+# Tests for vedv registry cache-clean
+@test "vedv registry cache-clean, Should show help" {
+
+  for flag in '-h' '--help'; do
+    run vedv registry cache-clean "$flag"
+
+    assert_success
+    assert_output --partial "Usage:
+vedv registry cache-clean"
+  done
+}
+
+@test "vedv registry cache-clean, Should succeed" {
+  vedv registry pull --name 'my-alpine-13' 'admin@alpine/alpine-13' &>/dev/null
+
+  run vedv registry cache-clean
+
+  assert_success
+  assert_output --regexp '^[[:digit:]]+M$'
+
+  run_wrapper() {
+    du -sh "$REGISTRY_CACHE_DIR" | awk '{print $1}'
+  }
+
+  run run_wrapper
+
+  assert_success
+  assert_output --regexp '^([[:digit:]]|\.)+K$'
 }

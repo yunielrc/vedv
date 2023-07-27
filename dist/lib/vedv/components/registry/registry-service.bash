@@ -310,3 +310,28 @@ vedv::registry_service::push() {
     return "$ERR_REGISTRY_OPERATION"
   }
 }
+
+#
+# clean the registry cache
+#
+# Output:
+#   Writes the space freed to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::registry_service::cache_clean() {
+
+  local -r registry_cache_dir="$(vedv::registry_service::__get_registry_cache_dir)"
+
+  local space_freed
+  space_freed="$(du -sh "$registry_cache_dir" | awk '{print $1}')" ||
+    return "$ERR_REGISTRY_OPERATION"
+  readonly space_freed
+
+  find "$registry_cache_dir" -type f \
+    \( -name '*.ova' -o -name '*.ova.sha256sum' \) -delete ||
+    return "$ERR_REGISTRY_OPERATION"
+
+  echo "$space_freed"
+}

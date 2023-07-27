@@ -209,6 +209,58 @@ vedv::registry_command::__pull() {
 }
 
 #
+# Show help for __cache_clean command
+#
+# Output:
+#  Writes the help to the stdout
+#
+vedv::registry_command::__cache_clean_help() {
+  cat <<-HELPMSG
+Usage:
+${__VED_REGISTRY_COMMAND_SCRIPT_NAME} registry cache-clean
+
+clean the registry cache
+
+Flags:
+  -h, --help            show help
+
+HELPMSG
+}
+
+#
+# clean the registry cache
+#
+# Flags:
+#   -h, --help          show help
+#
+# Output:
+#   Writes the # of files removed and space freed to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::registry_command::__cache_clean() {
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+    # flags
+    -h | --help)
+      vedv::registry_command::__cache_clean_help
+      return 0
+      ;;
+    # arguments
+    *)
+      err "Invalid parameter: ${1}\n"
+      vedv::registry_command::__cache_clean_help
+      return "$ERR_INVAL_ARG"
+      ;;
+    esac
+  done
+
+  vedv::registry_service::cache_clean
+}
+
+#
 # Show help
 #
 # Output:
@@ -227,6 +279,7 @@ Flags:
 Commands:
   pull          download an image from the registry
   push          upload an image to a registry
+  cache-clean   clean the registry cache
 
 Run '${__VED_REGISTRY_COMMAND_SCRIPT_NAME} registry COMMAND --help' for more information on a command.
 HELPMSG
@@ -249,6 +302,11 @@ vedv::registry_command::run_cmd() {
     push)
       shift
       vedv::registry_command::__push "$@"
+      return $?
+      ;;
+    cache-clean)
+      shift
+      vedv::registry_command::__cache_clean "$@"
       return $?
       ;;
     *)
