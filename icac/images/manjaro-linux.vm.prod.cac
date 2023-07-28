@@ -1,0 +1,17 @@
+#!/usr/bin/env sh
+
+# Configure the alpine linux image vm for vedv
+
+set -eu
+
+# INSTALL PACKAGES
+
+# INSTALL OPENSSH
+pacman -Syu --noconfirm --needed openssh
+# configure sshd
+systemctl enable --now sshd.service
+
+# INSTALL RSYNC
+pacman -Syu --noconfirm --needed rsync
+# configure rsyncd
+systemctl enable --now rsyncd.service

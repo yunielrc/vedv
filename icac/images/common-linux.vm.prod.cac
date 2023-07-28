@@ -1,0 +1,395 @@
+#!/usr/bin/env sh
+
+# Configure the alpine linux image vm for vedv
+
+set -eu
+
+# ENVIRONMENT
+readonly VEDV_USER="${VEDV_USER:-vedv}"
+readonly VEDV_PASS="${VEDV_PASS:-vedv}"
+
+# CONSTANTS
+readonly __VEDV_CONFIG_DIR='/etc/vedv-guest'
+
+# SETUP VEDV CONFIG
+mkdir -p "${__VEDV_CONFIG_DIR}/layer"
+# define linux distro
+echo 'manjaro' >"${__VEDV_CONFIG_DIR}/distro"
+chmod 0444 "${__VEDV_CONFIG_DIR}/distro"
+# create environment file
+touch "${__VEDV_CONFIG_DIR}/layer/env"
+chmod 0644 "${__VEDV_CONFIG_DIR}/layer/env"
+# link /etc/profile.d/vedv-env.sh to vedv environment file
+ln -sf "${__VEDV_CONFIG_DIR}/layer/env" /etc/profile.d/vedv-env.sh
+# create expose file
+touch "${__VEDV_CONFIG_DIR}/layer/expose"
+chmod 0644 "${__VEDV_CONFIG_DIR}/layer/expose"
+# create workdir file
+touch "${__VEDV_CONFIG_DIR}/layer/workdir"
+chmod 0644 "${__VEDV_CONFIG_DIR}/layer/workdir"
+# create shell file
+touch "${__VEDV_CONFIG_DIR}/layer/shell"
+chmod 0644 "${__VEDV_CONFIG_DIR}/layer/shell"
+# create cpus file
+touch "${__VEDV_CONFIG_DIR}/layer/cpus"
+chmod 0644 "${__VEDV_CONFIG_DIR}/layer/cpus"
+# create memory file
+touch "${__VEDV_CONFIG_DIR}/layer/memory"
+chmod 0644 "${__VEDV_CONFIG_DIR}/layer/memory"
+# define default user
+echo "$VEDV_USER" >"${__VEDV_CONFIG_DIR}/layer/user"
+chmod 0644 "${__VEDV_CONFIG_DIR}/layer/user"
+
+# ADD USER
+useradd -m "$VEDV_USER"
+echo "${VEDV_USER}:${VEDV_PASS}" | chpasswd
+# add user to wheel group
+usermod -aG wheel "$VEDV_USER"
+
+# CHANGE ROOT PASSWORD
+echo "root:${VEDV_PASS}" | chpasswd
+
+# CONFIGURE SUDOERS
+echo "%wheel ALL=(ALL) NOPASSWD: ALL" >/etc/sudoers.d/wheel-nopasswd
+chmod 0440 /etc/sudoers.d/wheel-nopasswd
+
+# CONFIGURE SSHD
+sed -i \
+  -e 's/^#\?\s*PermitRootLogin .*/PermitRootLogin yes/' \
+  -e 's/^#\?\s*PasswordAuthentication .*/PasswordAuthentication yes/' \
+  /etc/ssh/sshd_config
+
+# ADD VEDV STANDARD SCRIPTS
+
+# add vedv-adduser script
+cat <<'EOF' >/usr/local/bin/vedv-adduser
+#!/usr/bin/env bash
+#
+# Add a user to the system
+#
+
+set -eu
+
+if [[ "$#" -ne 2 ]]; then
+  echo "usage: vedv-adduser <username> <password>" >&2
+  exit 1
+fi
+
+readonly VEDV_USER="$1"
+readonly VEDV_PASS="$2"
+
+if id "$VEDV_USER" &>/dev/null; then
+  echo "user '${VEDV_USER}' already exists"
+  exit 0
+fi
+
+useradd -m "$VEDV_USER"
+echo "${VEDV_USER}:${VEDV_PASS}" | chpasswd
+usermod -aG wheel "$VEDV_USER"
+
+usermod -s "$(vedv-getshell)" "$VEDV_USER"
+EOF
+
+chmod 0755 /usr/local/bin/vedv-adduser
+
+# add vedv-setuser script
+cat <<EOF >/usr/local/bin/vedv-setuser
+#!/usr/bin/env bash
+#
+# Set default vedv user
+#
+
+set -eu
+
+if [[ "\$#" -ne 1 ]]; then
+  echo "usage: vedv-setuser <username>" >&2
+  exit 1
+fi
+
+readonly VEDV_USER="\$1"
+
+if ! id "\$VEDV_USER" &>/dev/null; then
+  echo "user '\${VEDV_USER}' does not exist" >&2
+  exit 1
+fi
+
+echo "\$VEDV_USER" >"${__VEDV_CONFIG_DIR}/layer/user"
+
+readonly workdir="\$(vedv-getworkdir)"
+
+if [[ -n "\$workdir" ]]; then
+  chown -R "\${VEDV_USER}:\${VEDV_USER}" "\$workdir"
+fi
+EOF
+
+chmod 0755 /usr/local/bin/vedv-setuser
+
+# add vedv-getuser script
+cat <<EOF >/usr/local/bin/vedv-getuser
+#!/usr/bin/env sh
+#
+# Get default vedv user
+#
+
+cat "${__VEDV_CONFIG_DIR}/layer/user"
+EOF
+
+chmod 0755 /usr/local/bin/vedv-getuser
+
+# add vedv-setworkdir script
+cat <<EOF >/usr/local/bin/vedv-setworkdir
+#!/usr/bin/env bash
+#
+# Set workdir
+#
+
+set -eu
+
+if [[ "\$#" -ne 2 ]]; then
+  echo "usage: vedv-setworkdir <workdir> <owner>" >&2
+  exit 1
+fi
+
+readonly VEDV_WORKDIR="\$1"
+readonly VEDV_OWNER="\$2"
+
+if ! id "\$VEDV_OWNER" &>/dev/null; then
+  echo "user '\${VEDV_OWNER}' does not exist" >&2
+  exit 1
+fi
+
+readonly VEDV_OWNER_HOME="\$(eval echo ~"\$VEDV_OWNER")"
+cd "\$VEDV_OWNER_HOME" || exit 1
+
+if [[ ! -d "\$VEDV_WORKDIR" ]]; then
+  mkdir -p "\$VEDV_WORKDIR"
+fi
+chown -R "\${VEDV_OWNER}:\${VEDV_OWNER}" "\$VEDV_WORKDIR"
+
+readonly FULL_VEDV_WORKDIR="\$(realpath "\$VEDV_WORKDIR")"
+
+echo "\$FULL_VEDV_WORKDIR" >"${__VEDV_CONFIG_DIR}/layer/workdir"
+
+echo "\$FULL_VEDV_WORKDIR"
+EOF
+
+chmod 0755 /usr/local/bin/vedv-setworkdir
+
+# add vedv-getworkdir script
+cat <<EOF >/usr/local/bin/vedv-getworkdir
+#!/usr/bin/env sh
+#
+# Get workdir
+#
+
+cat "${__VEDV_CONFIG_DIR}/layer/workdir"
+EOF
+
+chmod 0755 /usr/local/bin/vedv-getworkdir
+
+# add the environment variable NAME=nalyd to all users
+cat <<EOF >/usr/local/bin/vedv-addenv_var
+#!/usr/bin/env bash
+#
+# Add an environment variable to all users
+#
+
+set -eu
+
+if [[ "\$#" -ne 1 ]]; then
+  echo "usage: vedv-addenv_var <NAME=value>" >&2
+  exit 1
+fi
+
+readonly VEDV_ENV_VAR="\$1"
+
+readonly sh_var_regex='^[a-zA-Z_][a-zA-Z0-9_]*=[^=].+$'
+
+if [[ ! "\$VEDV_ENV_VAR" =~ \$sh_var_regex ]]; then
+  echo "env_var it's not a valid sh variable" >&2
+  exit 1
+fi
+
+echo "\$VEDV_ENV_VAR" >>"${__VEDV_CONFIG_DIR}/layer/env"
+EOF
+
+chmod 0755 /usr/local/bin/vedv-addenv_var
+
+# get the environment variables
+cat <<EOF >/usr/local/bin/vedv-getenv_vars
+#!/usr/bin/env sh
+#
+# Get the environment variables
+#
+
+cat "${__VEDV_CONFIG_DIR}/layer/env"
+EOF
+
+chmod 0755 /usr/local/bin/vedv-getenv_vars
+
+# add vedv-setshell script
+cat <<EOF >/usr/local/bin/vedv-setshell
+#!/usr/bin/env bash
+#
+# Set default shell
+#
+
+set -eu
+
+if [[ "\$#" -ne 1 ]]; then
+  echo "usage: vedv-setshell <shell>" >&2
+  exit 1
+fi
+
+readonly VEDV_SHELL="\$1"
+
+if ! command -v "\$VEDV_SHELL" &>/dev/null; then
+  echo "shell '\${VEDV_SHELL}' does not exist" >&2
+  exit 1
+fi
+
+readonly VEDV_SHELL_FILE="\$(command -v "\$VEDV_SHELL")"
+
+for user in root \$(getent passwd | grep ':/home' | cut -f1 -d:); do
+  usermod -s "\$VEDV_SHELL_FILE" "\$user"
+done
+
+echo "\$VEDV_SHELL_FILE" >"${__VEDV_CONFIG_DIR}/layer/shell"
+EOF
+
+chmod 0755 /usr/local/bin/vedv-setshell
+
+# add vedv-getshell script
+cat <<EOF >/usr/local/bin/vedv-getshell
+#!/usr/bin/env sh
+#
+# Get default vedv shell
+#
+
+cat "${__VEDV_CONFIG_DIR}/layer/shell"
+EOF
+
+chmod 0755 /usr/local/bin/vedv-getshell
+
+# add expose ports
+cat <<EOF >/usr/local/bin/vedv-addexpose_ports
+#!/usr/bin/env bash
+#
+# Add expose ports
+#
+
+set -eu
+
+if [[ "\$#" -eq 0 ]]; then
+  echo "usage: vedv-addexpose_ports <EXPOSE_PORT1> [EXPOSE_PORT2] [...]" >&2
+  exit 1
+fi
+
+readonly EXPOSE_PORTS="\$*"
+
+readonly EXPOSE_PORTS_REGEX='^[[:digit:]]+(/(tcp|udp))?([[:space:]]+[[:digit:]]+(/(tcp|udp))?)*$'
+
+if [[ ! "\$EXPOSE_PORTS" =~ \$EXPOSE_PORTS_REGEX ]]; then
+  echo "expose ports are invalid" >&2
+  exit 1
+fi
+
+readonly EXPOSE_FILE="${__VEDV_CONFIG_DIR}/layer/expose"
+
+IFS=' ' read -ra EXPOSE_PORTS_ARR <<<"\$EXPOSE_PORTS"
+{
+  for port in "\${EXPOSE_PORTS_ARR[@]}"; do
+    if [[ "\$port" =~ ^[[:digit:]]+$ ]]; then
+      echo "\$port/tcp"
+      continue
+    fi
+    echo "\$port"
+  done
+} >>"\$EXPOSE_FILE"
+# sort and remove duplicates ignoring case
+readonly TMP_FILE="\$(mktemp)"
+sort -f -u "\$EXPOSE_FILE" >"\$TMP_FILE"
+mv "\$TMP_FILE" "\$EXPOSE_FILE"
+EOF
+
+chmod 0755 /usr/local/bin/vedv-addexpose_ports
+
+# get expose ports
+cat <<EOF >/usr/local/bin/vedv-getexpose_ports
+#!/usr/bin/env sh
+#
+# Get expose ports
+#
+
+cat "${__VEDV_CONFIG_DIR}/layer/expose"
+EOF
+
+chmod 0755 /usr/local/bin/vedv-getexpose_ports
+
+# add vedv-setcpus script
+cat <<EOF >/usr/local/bin/vedv-setcpus
+#!/usr/bin/env bash
+#
+# Set default cpus
+#
+
+set -eu
+
+if [[ "\$#" -ne 1 ]]; then
+  echo "usage: vedv-setcpus <cpus>" >&2
+  exit 1
+fi
+
+readonly VEDV_CPUS="\$1"
+
+echo "\$VEDV_CPUS" >"${__VEDV_CONFIG_DIR}/layer/cpus"
+EOF
+
+chmod 0755 /usr/local/bin/vedv-setcpus
+
+# add vedv-getcpus script
+cat <<EOF >/usr/local/bin/vedv-getcpus
+#!/usr/bin/env sh
+#
+# Get default vedv cpus
+#
+
+cat "${__VEDV_CONFIG_DIR}/layer/cpus"
+EOF
+
+chmod 0755 /usr/local/bin/vedv-getcpus
+
+# add vedv-setmemory script
+cat <<EOF >/usr/local/bin/vedv-setmemory
+#!/usr/bin/env bash
+#
+# Set default memory
+#
+
+set -eu
+
+if [[ "\$#" -ne 1 ]]; then
+  echo "usage: vedv-setmemory <memory>" >&2
+  exit 1
+fi
+
+readonly VEDV_MEMORY="\$1"
+
+echo "\$VEDV_MEMORY" >"${__VEDV_CONFIG_DIR}/layer/memory"
+EOF
+
+chmod 0755 /usr/local/bin/vedv-setmemory
+
+# add vedv-getmemory script
+cat <<EOF >/usr/local/bin/vedv-getmemory
+#!/usr/bin/env sh
+#
+# Get default vedv memory
+#
+
+cat "${__VEDV_CONFIG_DIR}/layer/memory"
+EOF
+
+chmod 0755 /usr/local/bin/vedv-getmemory
+
+echo '>> DONE!'
