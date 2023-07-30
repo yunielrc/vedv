@@ -231,7 +231,7 @@ vedv registry cache-clean"
   run vedv registry cache-clean
 
   assert_success
-  assert_output --regexp '^[[:digit:]]+M$'
+  assert_output --regexp '^space_freed: [[:digit:]]+M$'
 
   run_wrapper() {
     du -sh "$REGISTRY_CACHE_DIR" | awk '{print $1}'

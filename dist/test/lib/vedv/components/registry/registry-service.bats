@@ -881,7 +881,7 @@ For security reasons, the image can not be downloaded"
 }
 
 # Tests for vedv::registry_service::cache_clean()
-@test "vedv::registry_service::cache_clean() Should fail If get_domain fails" {
+@test "vedv::registry_service::cache_clean() Should succeed" {
   vedv::registry_service::__get_registry_cache_dir() {
     mktemp -d
   }
@@ -889,5 +889,5 @@ For security reasons, the image can not be downloaded"
   run vedv::registry_service::cache_clean
 
   assert_success
-  assert_output '0'
+  assert_output 'space_freed: 0'
 }

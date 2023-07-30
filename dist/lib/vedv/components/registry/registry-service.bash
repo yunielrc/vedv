@@ -337,5 +337,5 @@ vedv::registry_service::cache_clean() {
     \( -name '*.ova' -o -name '*.ova.sha256sum' \) -delete ||
     return "$ERR_REGISTRY_OPERATION"
 
-  echo "$space_freed"
+  echo "space_freed: ${space_freed}"
 }
