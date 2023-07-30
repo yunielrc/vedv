@@ -8,12 +8,14 @@ setup_file() {
     "$(mktemp -d)" \
     'container|image' \
     '([image]="" [container]="parent_image_id")' \
-    "$TEST_SSH_USER"
+    "$TEST_SSH_USER" \
+    "$TEST_SSH_PASSWORD"
 
   export __VEDV_VMOBJ_ENTITY_MEMORY_CACHE_DIR
   export __VEDV_VMOBJ_ENTITY_TYPE
   export __VEDV_VMOBJ_ENTITY_VALID_ATTRIBUTES_DICT_STR
   export __VEDV_DEFAULT_USER
+  export __VEDV_DEFAULT_PASSWORD
 }
 
 setup() {
@@ -83,7 +85,7 @@ setup() {
   run vedv::vmobj_entity::__validate_attribute "$type" "$attribute"
 
   assert_failure
-  assert_output --partial "Invalid attribute: att1, valid attributes are: vm_name|ssh_port|user_name|workdir|environment|exposed_ports|shell|cpus|memory|parent_image_id"
+  assert_output --partial "Invalid attribute: att1, valid attributes are: vm_name|ssh_port|user_name|workdir|environment|exposed_ports|shell|cpus|memory|password|parent_image_id"
 }
 
 @test "vedv::vmobj_entity::__validate_attribute() Should succeed with valid attribute" {
@@ -733,7 +735,7 @@ setup() {
   run vedv::vmobj_entity::__get_attribute "$type" "$vmobj_id" "$attribute"
 
   assert_failure
-  assert_output "Invalid attribute: invalid, valid attributes are: vm_name|ssh_port|user_name|workdir|environment|exposed_ports|shell|cpus|memory|parent_image_id"
+  assert_output "Invalid attribute: invalid, valid attributes are: vm_name|ssh_port|user_name|workdir|environment|exposed_ports|shell|cpus|memory|password|parent_image_id"
 }
 
 @test 'vedv::vmobj_entity::__get_attribute() Should fail If getting dictionary fails' {
@@ -803,7 +805,7 @@ setup() {
   run vedv::vmobj_entity::__set_attribute "$type" "$vmobj_id" "$attribute" "$value"
 
   assert_failure
-  assert_output --partial "Invalid attribute: invalid, valid attributes are: vm_name|ssh_port|user_name|workdir|environment|exposed_ports|shell|cpus|memory|parent_image_id"
+  assert_output --partial "Invalid attribute: invalid, valid attributes are: vm_name|ssh_port|user_name|workdir|environment|exposed_ports|shell|cpus|memory|password|parent_image_id"
 }
 
 @test 'vedv::vmobj_entity::__set_attribute() Should succeed' {
@@ -855,7 +857,7 @@ setup() {
   run vedv::vmobj_entity::__create_new_vmobj_dict "$type"
 
   assert_success
-  assert_output '([user_name]="" [shell]="" [workdir]="" [exposed_ports]="" [cpus]="" [parent_image_id]="" [memory]="" [ssh_port]="" [environment]="" [vm_name]="" )'
+  assert_output '([user_name]="" [shell]="" [workdir]="" [exposed_ports]="" [cpus]="" [parent_image_id]="" [memory]="" [ssh_port]="" [environment]="" [vm_name]="" [password]="" )'
 }
 
 # Test vedv::vmobj_entity::set_ssh_port()
@@ -2067,4 +2069,68 @@ setup() {
 
   assert_success
   assert_output ''
+}
+
+# Test vedv::vmobj_entity::set_password()
+
+@test 'vedv::vmobj_entity::set_password() Should fail If __set_attribute fails' {
+  local -r type='invalid'
+  local -r vmobj_id='23456'
+  local -r value=2022
+
+  vedv::vmobj_entity::__set_attribute() {
+    assert_equal "$*" 'invalid 23456 password 2022'
+    return 1
+  }
+
+  run vedv::vmobj_entity::set_password "$type" "$vmobj_id" "$value"
+
+  assert_failure
+  assert_output ''
+}
+
+@test 'vedv::vmobj_entity::set_password() Should succeed' {
+  local -r type='invalid'
+  local -r vmobj_id='23456'
+  local -r value=2022
+
+  vedv::vmobj_entity::__set_attribute() {
+    assert_equal "$*" 'invalid 23456 password 2022'
+  }
+
+  run vedv::vmobj_entity::set_password "$type" "$vmobj_id" "$value"
+
+  assert_success
+  assert_output ''
+}
+
+# Test vedv::vmobj_entity::get_password()
+
+@test 'vedv::vmobj_entity::get_password() Should fail If __get_attribute fails' {
+  local -r type='invalid'
+  local -r vmobj_id='23456'
+
+  vedv::vmobj_entity::__get_attribute() {
+    assert_equal "$*" 'invalid 23456 password'
+    return 1
+  }
+
+  run vedv::vmobj_entity::get_password "$type" "$vmobj_id"
+
+  assert_failure
+  assert_output ''
+}
+
+@test 'vedv::vmobj_entity::get_password() Should succeed' {
+  local -r type='invalid'
+  local -r vmobj_id='23456'
+
+  vedv::vmobj_entity::__get_attribute() {
+    assert_equal "$*" 'invalid 23456 password'
+  }
+
+  run vedv::vmobj_entity::get_password "$type" "$vmobj_id"
+
+  assert_success
+  assert_output 'vedv'
 }

@@ -11,7 +11,7 @@ if false; then
 fi
 
 # CONSTANTS
-readonly VEDV_VMOBJ_ENTITY_VALID_ATTRIBUTES='vm_name|ssh_port|user_name|workdir|environment|exposed_ports|shell|cpus|memory'
+readonly VEDV_VMOBJ_ENTITY_VALID_ATTRIBUTES='vm_name|ssh_port|user_name|workdir|environment|exposed_ports|shell|cpus|memory|password'
 
 readonly VEDV_VMOBJ_ENTITY_EREGEX_NAME='[[:lower:]](-|_|[[:lower:]]|[[:digit:]]){1,28}([[:lower:]]|[[:digit:]])'
 readonly VEDV_VMOBJ_ENTITY_EREGEX_ID='[[:digit:]]{6,11}'
@@ -29,6 +29,7 @@ readonly VEDV_VMOBJ_ENTITY_BREGEX_ID='[[:digit:]]\{6,11\}'
 #   type                      string   type (e.g. 'container|image')
 #   valid_attributes_dict_str string   (eg: $(arr2str valid_attributes_dict))
 #   default_user              string   default user
+#   default_password          string   default password
 #
 vedv::vmobj_entity::constructor() {
   __VEDV_VMOBJ_ENTITY_MEMORY_CACHE_DIR="$1"
@@ -36,7 +37,8 @@ vedv::vmobj_entity::constructor() {
   # This doesn't work on tests
   # declare -rn __VEDV_VMOBJ_ENTITY_VALID_ATTRIBUTES_DICT="$2"
   readonly __VEDV_VMOBJ_ENTITY_VALID_ATTRIBUTES_DICT_STR="$3"
-  readonly __VEDV_DEFAULT_USER="${4:-vedv}"
+  readonly __VEDV_DEFAULT_USER="$4"
+  readonly __VEDV_DEFAULT_PASSWORD="$5"
 
   # validate arguments
   if [[ -z "$__VEDV_VMOBJ_ENTITY_MEMORY_CACHE_DIR" ]]; then
@@ -67,6 +69,10 @@ vedv::vmobj_entity::constructor() {
   fi
   if [[ -z "$__VEDV_DEFAULT_USER" ]]; then
     err "Argument 'default_user' must not be empty"
+    return "$ERR_INVAL_ARG"
+  fi
+  if [[ -z "$__VEDV_DEFAULT_PASSWORD" ]]; then
+    err "Argument 'default_password' must not be empty"
     return "$ERR_INVAL_ARG"
   fi
 }
@@ -1083,6 +1089,59 @@ vedv::vmobj_entity::get_ssh_port() {
     "$type" \
     "$vmobj_id" \
     'ssh_port'
+}
+
+#
+# Set password
+#
+# Arguments:
+#   type      string  type (e.g. 'container|image')
+#   vmobj_id  string  vmobj id
+#   password  int     ssh port
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::vmobj_entity::set_password() {
+  local -r type="$1"
+  local -r vmobj_id="$2"
+  local -r value="$3"
+
+  vedv::vmobj_entity::__set_attribute \
+    "$type" \
+    "$vmobj_id" \
+    'password' \
+    "$value"
+}
+
+#
+# Get password
+#
+# Arguments:
+#   type      string  type (e.g. 'container|image')
+#   vmobj_id  string  vmobj id
+#
+# Output:
+#   Writes password (int) to the stdout.
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::vmobj_entity::get_password() {
+  local -r type="$1"
+  local -r vmobj_id="$2"
+
+  local password=''
+  password="$(vedv::vmobj_entity::__get_attribute "$type" "$vmobj_id" 'password')" ||
+    return $?
+  readonly password
+
+  if [[ -n "$password" ]]; then
+    echo "$password"
+    return 0
+  fi
+
+  echo "$__VEDV_DEFAULT_PASSWORD"
 }
 
 #

@@ -6,19 +6,21 @@ setup_file() {
     "$(mktemp -d)" \
     'container|image' \
     '([image]="" [container]="parent_image_id")' \
-    "$TEST_SSH_USER"
+    "$TEST_SSH_USER" \
+    "$TEST_SSH_PASSWORD"
 
   export __VEDV_VMOBJ_ENTITY_MEMORY_CACHE_DIR
+  export __VEDV_VMOBJ_ENTITY_TYPE
   export __VEDV_VMOBJ_ENTITY_VALID_ATTRIBUTES_DICT_STR
   export __VEDV_DEFAULT_USER
+  export __VEDV_DEFAULT_PASSWORD
 
   vedv::vmobj_service::constructor \
     "$TEST_SSH_IP" \
-    "$TEST_SSH_USER" \
-    "$TEST_SSH_PASSWORD"
+    "$TEST_SSH_USER"
+
   export __VEDV_VMOBJ_SERVICE_SSH_IP
   export __VEDV_VMOBJ_SERVICE_SSH_USER
-  export __VEDV_VMOBJ_SERVICE_SSH_PASSWORD
 }
 
 # Tests for vedv::container_service::create()

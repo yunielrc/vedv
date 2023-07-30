@@ -219,10 +219,11 @@
     {
       "type": "bashdb",
       "request": "launch",
-      "name": "Bash-Debug (vedv image build ...)",
+      "name": "Bash-Debug (vedv image build ... copy-chown-chmod.vedvfile)",
       "cwd": "${workspaceFolder}",
       "env": {
-        "VEDV_HADOLINT_ENABLED": "false"
+        "VEDV_HADOLINT_ENABLED": "false",
+        "VEDV_CHANGE_PASSWORD_ON_IMPORT": "false"
       },
       "program": "${workspaceFolder}/dist/usr/bin/vedv",
       "args": [
@@ -231,7 +232,7 @@
         "-t",
         "image123",
         "--force",
-        "dist/test/lib/vedv/components/image/fixtures/vedvfiles/cpus-memory.vedvfile2"
+        "dist/test/lib/vedv/components/image/fixtures/copy-chown-chmod.vedvfile"
       ]
     },
     {

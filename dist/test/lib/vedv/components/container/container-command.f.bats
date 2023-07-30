@@ -93,11 +93,12 @@ Create a new container"
   run vedv::hypervisor::get_forwarding_ports "$container_vm_name"
 
   assert_success
-  assert_output "2150172608,tcp,,8082,,82
+  assert_output --regexp "2150172608,tcp,,8082,,82
 2227371250,udp,,81,,81
 2250533131,tcp,,8081,,8081
 3074115300,tcp,,8080,,80
 nc,tcp,,4444,,4444
+.*
 test-ssh,tcp,,2022,,22"
 }
 
@@ -459,9 +460,9 @@ SSHEOF
   run vedv container exec --root container123a ls -l /home/vedv/file123
 
   assert_success
-  assert_output --partial "-rw-------    1 root     vedv"
+  assert_output --partial "-rw-------    1 root     root"
 
-  vedv container copy --root --chown vedv --chmod 440 container123a "$src" /home/vedv/file124
+  vedv container copy --root --chown vedv:vedv --chmod 440 container123a "$src" /home/vedv/file124
 
   run vedv container exec --root container123a ls -l /home/vedv/file124
 

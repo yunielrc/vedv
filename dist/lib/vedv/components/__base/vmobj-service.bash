@@ -21,7 +21,6 @@ fi
 # Arguments:
 #  ssh_ip            string           ssh ip address
 #  ssh_user          string           ssh user
-#  ssh_password      string           ssh password
 #  [use_cache_dict]  <string, bool>   default: false, not use cache
 #
 # Returns:
@@ -30,8 +29,7 @@ fi
 vedv::vmobj_service::constructor() {
   readonly __VEDV_VMOBJ_SERVICE_SSH_IP="$1"
   readonly __VEDV_VMOBJ_SERVICE_SSH_USER="$2"
-  readonly __VEDV_VMOBJ_SERVICE_SSH_PASSWORD="$3"
-  __VEDV_VMOBJ_SERVICE_USE_CACHE_DICT="${4:-}"
+  __VEDV_VMOBJ_SERVICE_USE_CACHE_DICT="${3:-}"
 }
 
 #
@@ -878,7 +876,10 @@ vedv::vmobj_service::__exec_ssh_func() {
   # shellcheck disable=SC2034
   local -r ip="$__VEDV_VMOBJ_SERVICE_SSH_IP"
   # shellcheck disable=SC2034
-  local -r password="$__VEDV_VMOBJ_SERVICE_SSH_PASSWORD"
+  local password
+  password="$(vedv::vmobj_entity::get_password "$type" "$vmobj_id")" ||
+    return $?
+  readonly password
 
   local port
   port="$(vedv::vmobj_entity::get_ssh_port "$type" "$vmobj_id")" || {
@@ -1238,8 +1239,12 @@ vedv::vmobj_service::fs::set_user() {
   if [[ "$cur_user_name" == "$user_name" ]]; then
     return 0
   fi
+  local password
+  password="$(vedv::vmobj_entity::get_password "$type" "$vmobj_id")" ||
+    return $?
+  readonly password
   # create user if it doesn't exist
-  local -r cmd="vedv-adduser '${user_name}' '${__VEDV_VMOBJ_SERVICE_SSH_PASSWORD}' && vedv-setuser '${user_name}'"
+  local -r cmd="vedv-adduser '${user_name}' '${password}' && vedv-setuser '${user_name}'"
 
   vedv::vmobj_service::execute_cmd_by_id "$type" "$vmobj_id" "$cmd" 'root' '<none>' &>/dev/null || {
     err "Failed to set user '${user_name}' to ${type}: ${vmobj_id}"
@@ -1782,6 +1787,51 @@ vedv::vmobj_service::cache_data() {
 
   vedv::vmobj_entity::cache::set_exposed_ports "$type" "$vmobj_id" "$eports" || {
     err "Failed to set exposed ports for ${type}"
+    return "$ERR_VMOBJ_OPERATION"
+  }
+}
+
+#
+# Change the password of all users
+#
+# Arguments:
+#   type       string    type (e.g. 'container|image')
+#   vmobj_id   string    vmobj id
+#   new_passw  string    new password
+#
+# Output:
+#   Writes error message to the stderr
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::vmobj_service::change_users_password() {
+  local -r type="$1"
+  local -r vmobj_id="$2"
+  local -r new_passw="$3"
+  # validate arguments
+  vedv::vmobj_entity::validate_type "$type" ||
+    return "$?"
+
+  if [[ -z "$vmobj_id" ]]; then
+    err "Invalid argument 'vmobj_id': it's empty"
+    return "$ERR_INVAL_ARG"
+  fi
+
+  if [[ -z "$new_passw" ]]; then
+    err "Invalid argument 'new_passw': it's empty"
+    return "$ERR_INVAL_ARG"
+  fi
+
+  local -r cmd="vedv-change_users_password '${new_passw}'"
+
+  vedv::vmobj_service::execute_cmd_by_id "$type" "$vmobj_id" "$cmd" 'root' '<none>' || {
+    err "Failed to change password for ${type}: ${vmobj_id}"
+    return "$ERR_VMOBJ_OPERATION"
+  }
+
+  vedv::vmobj_entity::set_password "$type" "$vmobj_id" "$new_passw" || {
+    err "Failed to set password for ${type}: ${vmobj_id}"
     return "$ERR_VMOBJ_OPERATION"
   }
 }

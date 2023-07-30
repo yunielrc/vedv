@@ -495,12 +495,47 @@ vedv image import IMAGE_FILE"
   assert_success
   assert_output --partial 'image123'
 }
+
 @test "vedv image import -n image123 image_file, Should succeed" {
 
   run vedv image import -n 'image123' "$TEST_OVA_FILE"
 
   assert_success
   assert_output --partial 'image123'
+}
+
+@test "vedv image import -n image123 image_file, Should change the password" {
+
+  export VEDV_CHANGE_PASSWORD_ON_IMPORT=true
+
+  run vedv image import -n 'image123' "$TEST_OVA_FILE"
+
+  assert_success
+  assert_output --partial 'image123'
+
+  local password
+  password="$(VBoxManage getextradata 'image:image123|crc:3876716962|' user-data |
+    grep -Po '\[password\]="\K[^"]+(?=")')"
+
+  vedv container create -n 'container123' 'image123'
+
+  vedv container start -w 'container123'
+
+  local port
+  port="$(VBoxManage getextradata 'container:container123|crc:1768101024|' user-data |
+    grep -Po '\[ssh_port\]="\K[^"]+(?=")')"
+
+  run sshpass -p "$password" \
+    ssh -T -o 'ConnectTimeout=2' \
+    -o 'UserKnownHostsFile=/dev/null' \
+    -o 'PubkeyAuthentication=no' \
+    -o 'StrictHostKeyChecking=no' \
+    -o 'LogLevel=ERROR' \
+    -p "$port" \
+    "${TEST_SSH_USER}@${TEST_SSH_IP}" 'echo $USER'
+
+  assert_success
+  assert_output 'vedv'
 }
 
 # Tests for vedv image from-url

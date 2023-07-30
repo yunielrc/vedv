@@ -74,6 +74,8 @@ ${VEDV_REGISTRY_API_CLIENT_CREDENTIALS_DICT_STR:-"$REGISTRY_API_CLIENT_CREDENTIA
 readonly VEDV_REGISTRY_API_CLIENT_MAIN_URL="\
 ${VEDV_REGISTRY_API_CLIENT_MAIN_URL:-"$REGISTRY_API_CLIENT_MAIN_URL"}"
 readonly VEDV_REGISTRY_API_CLIENT_CONNECT_TIMEOUT="${VEDV_REGISTRY_API_CLIENT_CONNECT_TIMEOUT:-"${REGISTRY_API_CLIENT_CONNECT_TIMEOUT:-5}"}"
+# IMAGE
+readonly VEDV_CHANGE_PASSWORD_ON_IMPORT="${VEDV_CHANGE_PASSWORD_ON_IMPORT:-"${CHANGE_PASSWORD_ON_IMPORT:-false}"}"
 
 # CREATE DIRECTORIES
 vedv::__create_dirs() {
@@ -123,14 +125,14 @@ vedv::__initialize_components() {
     "$VEDV_MEMORY_CACHE_DIR" \
     "$vmobj_types" \
     "$(arr2str vmobj_types_attributes_dict)" \
-    "$VEDV_SSH_USER"
+    "$VEDV_SSH_USER" \
+    "$VEDV_SSH_PASSWORD"
   # shellcheck disable=SC2034
   local -rA vedv_vmobj_service_use_cache_dict=([container]=true [image]=true)
 
   vedv::vmobj_service::constructor \
     "$VEDV_SSH_IP" \
     "$VEDV_SSH_USER" \
-    "$VEDV_SSH_PASSWORD" \
     "$(arr2str vedv_vmobj_service_use_cache_dict)"
 
   # image
@@ -145,7 +147,11 @@ vedv::__initialize_components() {
     "$VEDV_HADOLINT_ENABLED" \
     "$VEDV_BASE_VEDVFILEIGNORE" \
     "$vedvfileignore_path"
-  vedv::image_service::constructor "$VEDV_IMAGE_IMPORTED_DIR"
+
+  vedv::image_service::constructor \
+    "$VEDV_IMAGE_IMPORTED_DIR" \
+    "$VEDV_CHANGE_PASSWORD_ON_IMPORT"
+
   vedv::image_builder::constructor \
     "$VEDV_MEMORY_CACHE_DIR" \
     "$VEDV_NO_WAIT_AFTER_BUILD"

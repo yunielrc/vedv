@@ -23,13 +23,16 @@ fi
 # Constructor
 #
 # Arguments:
-#   image_imported_dir   string    path to the image tmp directory
+#   image_imported_dir          string    path to the image tmp directory
+#   change_password_on_import   bool      change all users password to a generated
+#                                         one for security reasons
 #
 # Returns:
 #   0 on success, non-zero on error.
 #
 vedv::image_service::constructor() {
   readonly __VEDV_IMAGE_SERVICE_IMPORTED_DIR="$1"
+  readonly __VEDV_IMAGE_SERVICE_CHANGE_PASSWORD_ON_IMPORT="$2"
 }
 
 #
@@ -46,6 +49,19 @@ vedv::image_service::get_use_cache() {
 }
 
 #
+# Change password on import
+#
+# Output:
+#  writes true or false to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::image_service::get_change_password_on_import() {
+  echo "$__VEDV_IMAGE_SERVICE_CHANGE_PASSWORD_ON_IMPORT"
+}
+
+#
 # Set use cache for images
 #
 # Arguments:
@@ -57,6 +73,26 @@ vedv::image_service::set_use_cache() {
   local -r value="$1"
 
   vedv::vmobj_service::set_use_cache 'image' "$value"
+}
+
+#
+# Change the password of all users in the image with a generated one
+#
+# Arguments:
+#   image_id  string  image id
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::image_service::__gen_change_password() {
+  local -r image_id="$1"
+
+  local -r password="$(utils::gen_password)"
+
+  vedv::vmobj_service::change_users_password 'image' "$image_id" "$password" || {
+    err "Error setting password for image: '${image_id}'"
+    return "$ERR_IMAGE_OPERATION"
+  }
 }
 
 #
@@ -159,10 +195,6 @@ vedv::image_service::import() {
     return "$ERR_IMAGE_OPERATION"
   }
 
-  vedv::image_service::create_layer_from "$image_id" "$image_file" >/dev/null || {
-    err "Error creating the first layer for image '${image_id}'"
-    return "$ERR_IMAGE_OPERATION"
-  }
   # Data gathering
   if [[ -z "$image_name" ]]; then
     image_name="$(vedv::image_entity::get_image_name_by_vm_name "$image_vm_name")" || {
@@ -182,6 +214,30 @@ vedv::image_service::import() {
     err "Error setting attribute ova file sum '${_ova_file_sum}' to the image '${image_name}'"
     return "$ERR_IMAGE_OPERATION"
   }
+
+  # change all users password to a generated one for security reasons
+  local -r change_password="$(vedv::image_service::get_change_password_on_import)"
+
+  if [[ "$change_password" == true ]]; then
+
+    vedv::image_service::__gen_change_password "$image_id" >/dev/null || {
+      err "Error changing password for image '${image_id}'"
+      return "$ERR_IMAGE_OPERATION"
+    }
+    vedv::image_service::stop "$image_id" >/dev/null || {
+      err "Error stopping image '${image_id}'"
+      return "$ERR_IMAGE_OPERATION"
+    }
+  fi
+
+  # this layer must be created after any modification to the image file system
+  # while importing it, because containers are created from the last layer
+  # of the image
+  vedv::image_service::create_layer_from "$image_id" "$image_file" >/dev/null || {
+    err "Error creating the first layer for image '${image_id}'"
+    return "$ERR_IMAGE_OPERATION"
+  }
+
   # Output
   echo "${image_id} ${image_name}"
 }

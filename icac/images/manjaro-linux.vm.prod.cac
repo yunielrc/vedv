@@ -7,11 +7,11 @@ set -eu
 # INSTALL PACKAGES
 
 # INSTALL OPENSSH
-pacman -Syu --noconfirm --needed openssh
+pacman -Sy --noconfirm --needed openssh
 # configure sshd
 systemctl enable --now sshd.service
 
 # INSTALL RSYNC
-pacman -Syu --noconfirm --needed rsync
+pacman -Sy --noconfirm --needed rsync
 # configure rsyncd
 systemctl enable --now rsyncd.service

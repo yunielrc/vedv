@@ -64,6 +64,10 @@ utils::gen_id() {
   uuidgen | cksum | cut -d' ' -f1
 }
 
+utils::gen_password() {
+  openssl rand -hex 10
+}
+
 #
 # Compute crc sum of a given text or file
 #

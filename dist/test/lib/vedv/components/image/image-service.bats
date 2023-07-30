@@ -8,23 +8,25 @@ setup_file() {
     "$(mktemp -d)" \
     'container|image' \
     '([image]="" [container]="parent_image_id")' \
-    "$TEST_SSH_USER"
-
-  export __VEDV_VMOBJ_ENTITY_MEMORY_CACHE_DIR
-  export __VEDV_VMOBJ_ENTITY_VALID_ATTRIBUTES_DICT_STR
-  export __VEDV_DEFAULT_USER
-
-  vedv::vmobj_service::constructor \
-    "$TEST_SSH_IP" \
     "$TEST_SSH_USER" \
     "$TEST_SSH_PASSWORD"
 
+  export __VEDV_VMOBJ_ENTITY_MEMORY_CACHE_DIR
+  export __VEDV_VMOBJ_ENTITY_TYPE
+  export __VEDV_VMOBJ_ENTITY_VALID_ATTRIBUTES_DICT_STR
+  export __VEDV_DEFAULT_USER
+  export __VEDV_DEFAULT_PASSWORD
+
+  vedv::vmobj_service::constructor \
+    "$TEST_SSH_IP" \
+    "$TEST_SSH_USER"
+
   export __VEDV_VMOBJ_SERVICE_SSH_IP
   export __VEDV_VMOBJ_SERVICE_SSH_USER
-  export __VEDV_VMOBJ_SERVICE_SSH_PASSWORD
 
-  vedv::image_service::constructor "$TEST_IMAGE_TMP_DIR"
+  vedv::image_service::constructor "$TEST_IMAGE_TMP_DIR" 'false'
   export __VEDV_IMAGE_SERVICE_IMPORTED_DIR
+  export __VEDV_IMAGE_SERVICE_CHANGE_PASSWORD_ON_IMPORT
 }
 
 setup() {
@@ -500,69 +502,6 @@ teardown() {
   assert_failure
   assert_output "Failed to clear child container ids for image: '133456'"
 }
-@test "vedv::image_service::import() Should fail If create_layer_from fails" {
-  local -r image_file="$TEST_OVA_FILE"
-  local -r image_name=""
-  local -r checksum_file="/tmp/f31d50798a.ova.sha256sum"
-
-  vedv::image_service::exists_with_name() {
-    assert_equal "$*" "INVALID_CALL"
-    echo false
-  }
-  utils::sha256sum_check() {
-    assert_equal "$*" "$checksum_file"
-  }
-  utils::crc_sum() {
-    assert_equal "$*" "$image_file"
-    echo "123456"
-  }
-  vedv::image_cache_entity::get_vm_name() {
-    assert_equal "$*" "123456"
-    echo "image-cache|crc:123456|"
-  }
-  vedv::hypervisor::exists_vm_with_partial_name() {
-    assert_equal "$*" "image-cache|crc:123456|"
-    echo false
-  }
-  vedv::hypervisor::import() {
-    assert_equal "$*" "$image_file image-cache|crc:123456|"
-  }
-  vedv::image_entity::gen_vm_name() {
-    assert_equal "$*" ""
-    echo "image:gen-name|crc:133456|"
-  }
-  vedv::hypervisor::clonevm_link() {
-    assert_equal "$*" "image-cache|crc:123456| image:gen-name|crc:133456|"
-  }
-  vedv::image_entity::get_id_by_vm_name() {
-    assert_equal "$*" "image:gen-name|crc:133456|"
-    echo '133456'
-  }
-  vedv::vmobj_service::after_create() {
-    assert_equal "$*" "image 133456"
-  }
-  vedv::image_entity::set_vm_name() {
-    assert_equal "$*" "133456 image:gen-name|crc:133456|"
-  }
-  vedv::image_entity::____clear_child_container_ids() {
-    assert_equal "$*" "133456"
-  }
-  vedv::image_service::create_layer_from() {
-    assert_equal "$*" "133456 ${image_file}"
-  }
-  vedv::image_service::create_layer_from() {
-    assert_equal "$*" "133456 ${image_file}"
-    return 1
-  }
-
-  run vedv::image_service::import \
-    "$image_file" \
-    "$image_name" \
-    "$checksum_file"
-
-  assert_failure
-  assert_output "Error creating the first layer for image '133456'"
-}
 
 @test "vedv::image_service::import() Should fail If get_image_name_by_vm_name fails" {
   local -r image_file="$TEST_OVA_FILE"
@@ -610,9 +549,6 @@ teardown() {
   }
   vedv::image_entity::____clear_child_container_ids() {
     assert_equal "$*" "133456"
-  }
-  vedv::image_service::create_layer_from() {
-    assert_equal "$*" "133456 ${image_file}"
   }
   vedv::image_entity::get_image_name_by_vm_name() {
     assert_equal "$*" "image:gen-name|crc:133456|"
@@ -674,9 +610,6 @@ teardown() {
   }
   vedv::image_entity::____clear_child_container_ids() {
     assert_equal "$*" "133456"
-  }
-  vedv::image_service::create_layer_from() {
-    assert_equal "$*" "133456 ${image_file}"
   }
   vedv::image_entity::get_image_name_by_vm_name() {
     assert_equal "$*" "image:gen-name|crc:133456|"
@@ -743,9 +676,6 @@ teardown() {
   vedv::image_entity::____clear_child_container_ids() {
     assert_equal "$*" "133456"
   }
-  vedv::image_service::create_layer_from() {
-    assert_equal "$*" "133456 ${image_file}"
-  }
   vedv::image_entity::get_image_name_by_vm_name() {
     assert_equal "$*" "image:gen-name|crc:133456|"
     echo "image:gen-name|crc:133456|"
@@ -765,6 +695,320 @@ teardown() {
 
   assert_failure
   assert_output "Error setting attribute ova file sum '123456' to the image 'image:gen-name|crc:133456|'"
+}
+
+@test "vedv::image_service::import() Should fail If __gen_change_password fails" {
+  local -r image_file="$TEST_OVA_FILE"
+  local -r image_name=""
+  local -r checksum_file="/tmp/f31d50798a.ova.sha256sum"
+
+  vedv::image_service::exists_with_name() {
+    assert_equal "$*" "INVALID_CALL"
+    echo false
+  }
+  utils::sha256sum_check() {
+    assert_equal "$*" "$checksum_file"
+  }
+  utils::crc_sum() {
+    assert_equal "$*" "$image_file"
+    echo "123456"
+  }
+  vedv::image_cache_entity::get_vm_name() {
+    assert_equal "$*" "123456"
+    echo "image-cache|crc:123456|"
+  }
+  vedv::hypervisor::exists_vm_with_partial_name() {
+    assert_equal "$*" "image-cache|crc:123456|"
+    echo false
+  }
+  vedv::hypervisor::import() {
+    assert_equal "$*" "$image_file image-cache|crc:123456|"
+  }
+  vedv::image_entity::gen_vm_name() {
+    assert_equal "$*" ""
+    echo "image:gen-name|crc:133456|"
+  }
+  vedv::hypervisor::clonevm_link() {
+    assert_equal "$*" "image-cache|crc:123456| image:gen-name|crc:133456|"
+  }
+  vedv::image_entity::get_id_by_vm_name() {
+    assert_equal "$*" "image:gen-name|crc:133456|"
+    echo '133456'
+  }
+  vedv::vmobj_service::after_create() {
+    assert_equal "$*" "image 133456"
+  }
+  vedv::image_entity::set_vm_name() {
+    assert_equal "$*" "133456 image:gen-name|crc:133456|"
+  }
+  vedv::image_entity::____clear_child_container_ids() {
+    assert_equal "$*" "133456"
+  }
+  vedv::image_entity::get_image_name_by_vm_name() {
+    assert_equal "$*" "image:gen-name|crc:133456|"
+    echo "image:gen-name|crc:133456|"
+  }
+  vedv::image_entity::set_image_cache() {
+    assert_equal "$*" "133456 image-cache|crc:123456|"
+  }
+  vedv::image_entity::set_ova_file_sum() {
+    assert_equal "$*" "133456 123456"
+  }
+  vedv::image_service::__gen_change_password() {
+    assert_equal "$*" "133456"
+    return 1
+  }
+  vedv::image_service::get_change_password_on_import() {
+    assert_equal "$*" ""
+    echo "true"
+  }
+
+  run vedv::image_service::import \
+    "$image_file" \
+    "$image_name" \
+    "$checksum_file"
+
+  assert_failure
+  assert_output "Error changing password for image '133456'"
+}
+
+@test "vedv::image_service::import() Should fail If image_service::stop fails" {
+  local -r image_file="$TEST_OVA_FILE"
+  local -r image_name=""
+  local -r checksum_file="/tmp/f31d50798a.ova.sha256sum"
+
+  vedv::image_service::exists_with_name() {
+    assert_equal "$*" "INVALID_CALL"
+    echo false
+  }
+  utils::sha256sum_check() {
+    assert_equal "$*" "$checksum_file"
+  }
+  utils::crc_sum() {
+    assert_equal "$*" "$image_file"
+    echo "123456"
+  }
+  vedv::image_cache_entity::get_vm_name() {
+    assert_equal "$*" "123456"
+    echo "image-cache|crc:123456|"
+  }
+  vedv::hypervisor::exists_vm_with_partial_name() {
+    assert_equal "$*" "image-cache|crc:123456|"
+    echo false
+  }
+  vedv::hypervisor::import() {
+    assert_equal "$*" "$image_file image-cache|crc:123456|"
+  }
+  vedv::image_entity::gen_vm_name() {
+    assert_equal "$*" ""
+    echo "image:gen-name|crc:133456|"
+  }
+  vedv::hypervisor::clonevm_link() {
+    assert_equal "$*" "image-cache|crc:123456| image:gen-name|crc:133456|"
+  }
+  vedv::image_entity::get_id_by_vm_name() {
+    assert_equal "$*" "image:gen-name|crc:133456|"
+    echo '133456'
+  }
+  vedv::vmobj_service::after_create() {
+    assert_equal "$*" "image 133456"
+  }
+  vedv::image_entity::set_vm_name() {
+    assert_equal "$*" "133456 image:gen-name|crc:133456|"
+  }
+  vedv::image_entity::____clear_child_container_ids() {
+    assert_equal "$*" "133456"
+  }
+  vedv::image_entity::get_image_name_by_vm_name() {
+    assert_equal "$*" "image:gen-name|crc:133456|"
+    echo "image:gen-name|crc:133456|"
+  }
+  vedv::image_entity::set_image_cache() {
+    assert_equal "$*" "133456 image-cache|crc:123456|"
+  }
+  vedv::image_entity::set_ova_file_sum() {
+    assert_equal "$*" "133456 123456"
+  }
+  vedv::image_service::__gen_change_password() {
+    assert_equal "$*" "133456"
+  }
+  vedv::image_service::stop() {
+    assert_equal "$*" "133456"
+    return 1
+  }
+  vedv::image_service::get_change_password_on_import() {
+    assert_equal "$*" ""
+    echo "true"
+  }
+
+  run vedv::image_service::import \
+    "$image_file" \
+    "$image_name" \
+    "$checksum_file"
+
+  assert_failure
+  assert_output "Error stopping image '133456'"
+}
+
+@test "vedv::image_service::import() Should fail If create_layer_from fails" {
+  local -r image_file="$TEST_OVA_FILE"
+  local -r image_name=""
+  local -r checksum_file="/tmp/f31d50798a.ova.sha256sum"
+
+  vedv::image_service::exists_with_name() {
+    assert_equal "$*" "INVALID_CALL"
+    echo false
+  }
+  utils::sha256sum_check() {
+    assert_equal "$*" "$checksum_file"
+  }
+  utils::crc_sum() {
+    assert_equal "$*" "$image_file"
+    echo "123456"
+  }
+  vedv::image_cache_entity::get_vm_name() {
+    assert_equal "$*" "123456"
+    echo "image-cache|crc:123456|"
+  }
+  vedv::hypervisor::exists_vm_with_partial_name() {
+    assert_equal "$*" "image-cache|crc:123456|"
+    echo false
+  }
+  vedv::hypervisor::import() {
+    assert_equal "$*" "$image_file image-cache|crc:123456|"
+  }
+  vedv::image_entity::gen_vm_name() {
+    assert_equal "$*" ""
+    echo "image:gen-name|crc:133456|"
+  }
+  vedv::hypervisor::clonevm_link() {
+    assert_equal "$*" "image-cache|crc:123456| image:gen-name|crc:133456|"
+  }
+  vedv::image_entity::get_id_by_vm_name() {
+    assert_equal "$*" "image:gen-name|crc:133456|"
+    echo '133456'
+  }
+  vedv::vmobj_service::after_create() {
+    assert_equal "$*" "image 133456"
+  }
+  vedv::image_entity::set_vm_name() {
+    assert_equal "$*" "133456 image:gen-name|crc:133456|"
+  }
+  vedv::image_entity::____clear_child_container_ids() {
+    assert_equal "$*" "133456"
+  }
+  vedv::image_entity::get_image_name_by_vm_name() {
+    assert_equal "$*" "image:gen-name|crc:133456|"
+    echo "image:gen-name|crc:133456|"
+  }
+  vedv::image_entity::set_image_cache() {
+    assert_equal "$*" "133456 image-cache|crc:123456|"
+  }
+  vedv::image_entity::set_ova_file_sum() {
+    assert_equal "$*" "133456 123456"
+  }
+  vedv::image_service::__gen_change_password() {
+    assert_equal "$*" "133456"
+  }
+  vedv::image_service::stop() {
+    assert_equal "$*" "133456"
+  }
+  vedv::image_service::create_layer_from() {
+    assert_equal "$*" "133456 ${image_file}"
+    return 1
+  }
+  vedv::image_service::get_change_password_on_import() {
+    assert_equal "$*" ""
+    echo "true"
+  }
+
+  run vedv::image_service::import \
+    "$image_file" \
+    "$image_name" \
+    "$checksum_file"
+
+  assert_failure
+  assert_output "Error creating the first layer for image '133456'"
+}
+
+@test "vedv::image_service::import() Should succeed changing password" {
+  local -r image_file="$TEST_OVA_FILE"
+  local -r image_name=""
+  local -r checksum_file="/tmp/f31d50798a.ova.sha256sum"
+
+  vedv::image_service::exists_with_name() {
+    assert_equal "$*" "INVALID_CALL"
+    echo false
+  }
+  utils::sha256sum_check() {
+    assert_equal "$*" "$checksum_file"
+  }
+  utils::crc_sum() {
+    assert_equal "$*" "$image_file"
+    echo "123456"
+  }
+  vedv::image_cache_entity::get_vm_name() {
+    assert_equal "$*" "123456"
+    echo "image-cache|crc:123456|"
+  }
+  vedv::hypervisor::exists_vm_with_partial_name() {
+    assert_equal "$*" "image-cache|crc:123456|"
+    echo false
+  }
+  vedv::hypervisor::import() {
+    assert_equal "$*" "$image_file image-cache|crc:123456|"
+  }
+  vedv::image_entity::gen_vm_name() {
+    assert_equal "$*" ""
+    echo "image:gen-name|crc:133456|"
+  }
+  vedv::hypervisor::clonevm_link() {
+    assert_equal "$*" "image-cache|crc:123456| image:gen-name|crc:133456|"
+  }
+  vedv::image_entity::get_id_by_vm_name() {
+    assert_equal "$*" "image:gen-name|crc:133456|"
+    echo '133456'
+  }
+  vedv::vmobj_service::after_create() {
+    assert_equal "$*" "image 133456"
+  }
+  vedv::image_entity::set_vm_name() {
+    assert_equal "$*" "133456 image:gen-name|crc:133456|"
+  }
+  vedv::image_entity::____clear_child_container_ids() {
+    assert_equal "$*" "133456"
+  }
+  vedv::image_entity::get_image_name_by_vm_name() {
+    assert_equal "$*" "image:gen-name|crc:133456|"
+    echo "image:gen-name|crc:133456|"
+  }
+  vedv::image_entity::set_image_cache() {
+    assert_equal "$*" "133456 image-cache|crc:123456|"
+  }
+  vedv::image_entity::set_ova_file_sum() {
+    assert_equal "$*" "133456 123456"
+  }
+  vedv::image_service::__gen_change_password() {
+    assert_equal "$*" "133456"
+  }
+  vedv::image_service::stop() {
+    assert_equal "$*" "133456"
+  }
+  vedv::image_service::create_layer_from() {
+    assert_equal "$*" "133456 ${image_file}"
+  }
+  vedv::image_service::get_change_password_on_import() {
+    assert_equal "$*" ""
+    echo "true"
+  }
+
+  run vedv::image_service::import \
+    "$image_file" \
+    "$image_name" \
+    "$checksum_file"
+
+  assert_success
+  assert_output "133456 image:gen-name|crc:133456|"
 }
 
 @test "vedv::image_service::import() Should succeed" {
@@ -814,9 +1058,6 @@ teardown() {
   vedv::image_entity::____clear_child_container_ids() {
     assert_equal "$*" "133456"
   }
-  vedv::image_service::create_layer_from() {
-    assert_equal "$*" "133456 ${image_file}"
-  }
   vedv::image_entity::get_image_name_by_vm_name() {
     assert_equal "$*" "image:gen-name|crc:133456|"
     echo "gen-name"
@@ -826,6 +1067,9 @@ teardown() {
   }
   vedv::image_entity::set_ova_file_sum() {
     assert_equal "$*" "133456 123456"
+  }
+  vedv::image_service::create_layer_from() {
+    assert_equal "$*" "133456 ${image_file}"
   }
 
   run vedv::image_service::import \

@@ -7,24 +7,24 @@ setup_file() {
     "$(mktemp -d)" \
     'container|image' \
     '([image]="" [container]="parent_image_id")' \
-    "$TEST_SSH_USER"
+    "$TEST_SSH_USER" \
+    "$TEST_SSH_PASSWORD"
 
   export __VEDV_VMOBJ_ENTITY_MEMORY_CACHE_DIR
   export __VEDV_VMOBJ_ENTITY_TYPE
   export __VEDV_VMOBJ_ENTITY_VALID_ATTRIBUTES_DICT_STR
   export __VEDV_DEFAULT_USER
+  export __VEDV_DEFAULT_PASSWORD
   # shellcheck disable=SC2034
   local -rA vedv_vmobj_service_use_cache_dict=([container]=true)
 
   vedv::vmobj_service::constructor \
     "$TEST_SSH_IP" \
     "$TEST_SSH_USER" \
-    "$TEST_SSH_PASSWORD" \
     "$(arr2str vedv_vmobj_service_use_cache_dict)"
 
   export __VEDV_VMOBJ_SERVICE_SSH_IP
   export __VEDV_VMOBJ_SERVICE_SSH_USER
-  export __VEDV_VMOBJ_SERVICE_SSH_PASSWORD
   export __VEDV_VMOBJ_SERVICE_USE_CACHE_DICT
 }
 
@@ -1267,6 +1267,10 @@ EOF
   vedv::vmobj_service::start_one() {
     assert_equal "$*" "container 12345 true"
   }
+  vedv::vmobj_entity::get_password() {
+    assert_equal "$*" "container 12345"
+    echo "vedv"
+  }
   vedv::vmobj_entity::get_ssh_port() {
     assert_equal "$*" "container 12345"
     return 1
@@ -1289,6 +1293,10 @@ EOF
   }
   vedv::vmobj_service::start_one() {
     assert_equal "$*" "container 12345 true"
+  }
+  vedv::vmobj_entity::get_password() {
+    assert_equal "$*" "container 12345"
+    echo "vedv"
   }
   vedv::vmobj_entity::get_ssh_port() {
     assert_equal "$*" "container 12345"
@@ -1316,6 +1324,10 @@ EOF
   }
   vedv::vmobj_service::start_one() {
     assert_equal "$*" "container 12345 true"
+  }
+  vedv::vmobj_entity::get_password() {
+    assert_equal "$*" "container 12345"
+    echo "vedv"
   }
   vedv::vmobj_entity::get_ssh_port() {
     assert_equal "$*" "container 12345"
@@ -1823,8 +1835,12 @@ EOF
     assert_equal "$*" "container 12345"
     echo "vedv"
   }
+  vedv::vmobj_entity::get_password() {
+    assert_equal "$*" "container 12345"
+    echo "vedv"
+  }
   vedv::vmobj_service::execute_cmd_by_id() {
-    assert_equal "$*" "container 12345 vedv-adduser 'user' '${__VEDV_VMOBJ_SERVICE_SSH_PASSWORD}' && vedv-setuser 'user' root <none>"
+    assert_equal "$*" "container 12345 vedv-adduser 'user' '' && vedv-setuser 'user' root <none>"
     return 1
   }
 
@@ -1843,8 +1859,12 @@ EOF
     assert_equal "$*" "container 12345"
     echo "vedv"
   }
+  vedv::vmobj_entity::get_password() {
+    assert_equal "$*" "container 12345"
+    echo "vedv"
+  }
   vedv::vmobj_service::execute_cmd_by_id() {
-    assert_equal "$*" "container 12345 vedv-adduser 'user' '${__VEDV_VMOBJ_SERVICE_SSH_PASSWORD}' && vedv-setuser 'user' root <none>"
+    assert_equal "$*" "container 12345 vedv-adduser 'user' 'vedv' && vedv-setuser 'user' root <none>"
   }
 
   run vedv::vmobj_service::fs::set_user "$type" "$vmobj_id" "$user_name"
@@ -3127,6 +3147,99 @@ EOF
 
   run vedv::vmobj_service::modify_system \
     "$type" "$vmobj_id" "$cpus" "$memory"
+
+  assert_success
+  assert_output ""
+}
+
+# Tests for vedv::vmobj_service::change_users_password()
+@test "vedv::vmobj_service::change_users_password() Should fail With invalid type" {
+  local -r type="invalid"
+  local -r vmobj_id="1234567890"
+  local -r new_passw="vedv"
+
+  run vedv::vmobj_service::change_users_password \
+    "$type" "$vmobj_id" "$new_passw"
+
+  assert_failure
+  assert_output "Invalid type: invalid, valid types are: container|image"
+}
+
+@test "vedv::vmobj_service::change_users_password() Should fail With empty vmobj_id" {
+  local -r type="container"
+  local -r vmobj_id=""
+  local -r new_passw="vedv"
+
+  run vedv::vmobj_service::change_users_password \
+    "$type" "$vmobj_id" "$new_passw"
+
+  assert_failure
+  assert_output "Invalid argument 'vmobj_id': it's empty"
+}
+
+@test "vedv::vmobj_service::change_users_password() Should fail With empty new_passw" {
+  local -r type="container"
+  local -r vmobj_id="1234567890"
+  local -r new_passw=""
+
+  run vedv::vmobj_service::change_users_password \
+    "$type" "$vmobj_id" "$new_passw"
+
+  assert_failure
+  assert_output "Invalid argument 'new_passw': it's empty"
+}
+
+@test "vedv::vmobj_service::change_users_password() Should fail If execute_cmd_by_id fails" {
+  local -r type="container"
+  local -r vmobj_id="1234567890"
+  local -r new_passw="vedv"
+
+  vedv::vmobj_service::execute_cmd_by_id() {
+    assert_equal "$*" "container 1234567890 vedv-change_users_password 'vedv' root <none>"
+    return 1
+  }
+
+  run vedv::vmobj_service::change_users_password \
+    "$type" "$vmobj_id" "$new_passw"
+
+  assert_failure
+  assert_output "Failed to change password for container: 1234567890"
+}
+
+@test "vedv::vmobj_service::change_users_password() Should fail If set_password fails" {
+  local -r type="container"
+  local -r vmobj_id="1234567890"
+  local -r new_passw="vedv"
+
+  vedv::vmobj_service::execute_cmd_by_id() {
+    assert_equal "$*" "container 1234567890 vedv-change_users_password 'vedv' root <none>"
+  }
+  vedv::vmobj_entity::set_password() {
+    assert_equal "$*" "container 1234567890 vedv"
+    return 1
+  }
+
+  run vedv::vmobj_service::change_users_password \
+    "$type" "$vmobj_id" "$new_passw"
+
+  assert_failure
+  assert_output "Failed to set password for container: 1234567890"
+}
+
+@test "vedv::vmobj_service::change_users_password() Should succeed" {
+  local -r type="container"
+  local -r vmobj_id="1234567890"
+  local -r new_passw="vedv"
+
+  vedv::vmobj_service::execute_cmd_by_id() {
+    assert_equal "$*" "container 1234567890 vedv-change_users_password 'vedv' root <none>"
+  }
+  vedv::vmobj_entity::set_password() {
+    assert_equal "$*" "container 1234567890 vedv"
+  }
+
+  run vedv::vmobj_service::change_users_password \
+    "$type" "$vmobj_id" "$new_passw"
 
   assert_success
   assert_output ""
