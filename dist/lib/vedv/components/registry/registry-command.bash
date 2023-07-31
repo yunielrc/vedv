@@ -63,7 +63,7 @@ HELPMSG
 #                       if not specified, the name on fqn will be used
 #
 # Arguments:
-#   IMAGE_FQN               string  scheme: [domain/]user@collection/name
+#   IMAGE_FQN           string  scheme: [domain/]user@collection/name
 #
 # Output:
 #   Writes image name to the stdout
@@ -112,6 +112,118 @@ vedv::registry_command::__push() {
   vedv::registry_service::push \
     "$image_fqn" \
     "$image_name"
+}
+
+#
+# Show help for __push_link command
+#
+# Output:
+#  Writes the help to the stdout
+#
+vedv::registry_command::__push_link_help() {
+  cat <<-HELPMSG
+Usage:
+${__VED_REGISTRY_COMMAND_SCRIPT_NAME} registry push-link [FLAGS] [OPTIONS] [DOMAIN/]USER@COLLECTION/NAME
+
+Upload an image link to a registry
+
+Aliases:
+  ${__VED_REGISTRY_COMMAND_SCRIPT_NAME} image push-link
+
+Flags:
+  -h, --help                    show help
+
+Mandatory Options:
+  --image-url <url>             image url that will be used as a link
+  --checksum-url  <file|url>    checksum url of the image
+
+
+HELPMSG
+}
+
+#
+# Upload an image link to a registry
+#
+# Flags:
+#   -h, --help                    show help
+#
+# Mandatory Options:
+#   --image-url <url>             image url that will be used as a link
+#   --checksum-url  <file|url>    checksum url of the image
+#
+# Arguments:
+#   IMAGE_FQN                     string  scheme: [domain/]user@collection/name
+#
+# Output:
+#   Writes image name to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::registry_command::__push_link() {
+  local image_url=''
+  local checksum_url=''
+  local image_fqn=''
+
+  if [[ $# == 0 ]]; then set -- '-h'; fi
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+    # flags
+    -h | --help)
+      vedv::registry_command::__push_link_help
+      return 0
+      ;;
+    # mandatory options
+    --image-url)
+      readonly image_url="${2:-}"
+      # validate argument
+      if [[ -z "$image_url" ]]; then
+        err "No image_url argument\n"
+        vedv::registry_command::__push_link_help
+        return "$ERR_INVAL_ARG"
+      fi
+      shift 2
+      ;;
+    --checksum-url)
+      readonly checksum_url="${2:-}"
+      # validate argument
+      if [[ -z "$checksum_url" ]]; then
+        err "No checksum_url argument\n"
+        vedv::registry_command::__push_link_help
+        return "$ERR_INVAL_ARG"
+      fi
+      shift 2
+      ;;
+    # arguments
+    *)
+      readonly image_fqn="$1"
+      break
+      ;;
+    esac
+  done
+
+  # validate parameters
+  if [[ -z "$image_url" ]]; then
+    err "No image_url specified\n"
+    vedv::registry_command::__push_link_help
+    return "$ERR_INVAL_ARG"
+  fi
+  if [[ -z "$checksum_url" ]]; then
+    err "No checksum_url specified\n"
+    vedv::registry_command::__push_link_help
+    return "$ERR_INVAL_ARG"
+  fi
+  if [[ -z "$image_fqn" ]]; then
+    err "Missing argument 'IMAGE_FQN'\n"
+    vedv::registry_command::__push_link_help
+    return "$ERR_INVAL_ARG"
+  fi
+
+  vedv::registry_service::push_link \
+    "$image_url" \
+    "$checksum_url" \
+    "$image_fqn"
 }
 
 #
@@ -279,6 +391,7 @@ Flags:
 Commands:
   pull          download an image from the registry
   push          upload an image to a registry
+  push-link     upload an image link to a registry
   cache-clean   clean the registry cache
 
 Run '${__VED_REGISTRY_COMMAND_SCRIPT_NAME} registry COMMAND --help' for more information on a command.
@@ -302,6 +415,11 @@ vedv::registry_command::run_cmd() {
     push)
       shift
       vedv::registry_command::__push "$@"
+      return $?
+      ;;
+    push-link)
+      shift
+      vedv::registry_command::__push_link "$@"
       return $?
       ;;
     cache-clean)

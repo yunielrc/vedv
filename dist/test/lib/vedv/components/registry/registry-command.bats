@@ -153,3 +153,59 @@ vedv registry cache-clean"
   assert_success
   assert_output ''
 }
+
+# Tests for vedv::registry_command::__push_link()
+@test "vedv::registry_command::__push_link() Should show help" {
+  for flag in '' '-h' '--help'; do
+    run vedv::registry_command::__push_link $flag
+
+    assert_success
+    assert_output --partial "Usage:
+vedv registry push-link [FLAGS] [OPTIONS] [DOMAIN/]USER@COLLECTION/NAME"
+  done
+}
+
+@test "vedv::registry_command::__push_link() Should fail With missing image_url arg" {
+  run vedv::registry_command::__push_link --image-url
+
+  assert_failure
+  assert_output --partial "No image_url argument"
+}
+
+@test "vedv::registry_command::__push_link() Should fail Without checksum_url" {
+  run vedv::registry_command::__push_link --image-url "$TEST_OVA_URL"
+
+  assert_failure
+  assert_output --partial "No checksum_url specified"
+}
+
+@test "vedv::registry_command::__push_link() Should fail With missing checksum_url arg" {
+  run vedv::registry_command::__push_link \
+    --image-url "$TEST_OVA_URL" --checksum-url
+
+  assert_failure
+  assert_output --partial "No checksum_url argument"
+}
+
+@test "vedv::registry_command::__push_link() Should fail With missing image_fqn" {
+
+  run vedv::registry_command::__push_link \
+    --image-url "$TEST_OVA_URL" --checksum-url "$TEST_OVA_CHECKSUM_URL"
+
+  assert_failure
+  assert_output --partial "Missing argument 'IMAGE_FQN'"
+}
+
+@test "vedv::registry_command::__push_link() Should succeed" {
+  vedv::registry_service::push_link() {
+    assert_regex "$*" "https?://.* https?://.* admin@alpine-test/alpine-14-link"
+  }
+
+  run vedv::registry_command::__push_link \
+    --image-url "$TEST_OVA_URL" \
+    --checksum-url "$TEST_OVA_CHECKSUM_URL" \
+    'admin@alpine-test/alpine-14-link'
+
+  assert_success
+  assert_output ""
+}

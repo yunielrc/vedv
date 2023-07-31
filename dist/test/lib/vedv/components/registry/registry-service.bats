@@ -473,68 +473,61 @@ For security reasons, the image can not be downloaded"
   assert_output ""
 }
 
-# Tests for vedv::registry_service::push()
-@test "vedv::registry_service::push() Should fail If validate_image_fqn fails" {
+# Tests for vedv::registry_service::__push()
+@test "vedv::registry_service::__push() Should fail If validate_image_fqn fails" {
   local -r image_fqn=''
-  local -r image_name=''
+  local -r image_export_func=''
 
   vedv::image_entity::validate_image_fqn() {
     assert_equal "$*" "$image_fqn"
     return 1
   }
 
-  run vedv::registry_service::push \
-    "$image_fqn" "$image_name"
+  run vedv::registry_service::__push \
+    "$image_fqn" "$image_export_func"
 
   assert_failure
   assert_output ""
 }
 
-@test "vedv::registry_service::push() Should fail If get_name_from_fqn fails" {
+@test "vedv::registry_service::__push() Should fail If image_export_func is empty" {
   local -r image_fqn='nextcloud.loc/admin@alpine/alpine-14'
-  local -r image_name=''
+  local -r image_export_func=''
 
   vedv::image_entity::validate_image_fqn() {
-    assert_equal "$*" "$image_fqn"
-  }
-  vedv::image_entity::get_name_from_fqn() {
     assert_equal "$*" "$image_fqn"
     return 1
   }
 
-  run vedv::registry_service::push \
-    "$image_fqn" "$image_name"
+  run vedv::registry_service::__push \
+    "$image_fqn" "$image_export_func"
 
   assert_failure
   assert_output ""
 }
 
-@test "vedv::registry_service::push() Should fail If validate_name fails" {
+@test "vedv::registry_service::__push() Should fail If get_name_from_fqn fails" {
   local -r image_fqn='nextcloud.loc/admin@alpine/alpine-14'
-  local -r image_name='_invalid_name'
+  local -r image_export_func=':'
 
   vedv::image_entity::validate_image_fqn() {
     assert_equal "$*" "$image_fqn"
   }
   vedv::image_entity::get_name_from_fqn() {
     assert_equal "$*" "$image_fqn"
-    echo 'alpine-14'
-  }
-  vedv::image_entity::validate_name() {
-    assert_equal "$*" "$image_name"
     return 1
   }
 
-  run vedv::registry_service::push \
-    "$image_fqn" "$image_name"
+  run vedv::registry_service::__push \
+    "$image_fqn" "$image_export_func"
 
   assert_failure
   assert_output ""
 }
 
-@test "vedv::registry_service::push() Should fail If get_url_from_fqn fails" {
+@test "vedv::registry_service::__push() Should fail If get_url_from_fqn fails" {
   local -r image_fqn='nextcloud.loc/admin@alpine/alpine-14'
-  local -r image_name='alpine'
+  local -r image_export_func=':'
 
   vedv::image_entity::validate_image_fqn() {
     assert_equal "$*" "$image_fqn"
@@ -542,25 +535,22 @@ For security reasons, the image can not be downloaded"
   vedv::image_entity::get_name_from_fqn() {
     assert_equal "$*" "$image_fqn"
     echo 'alpine-14'
-  }
-  vedv::image_entity::validate_name() {
-    assert_equal "$*" "$image_name"
   }
   vedv::image_entity::get_url_from_fqn() {
     assert_equal "$*" "$image_fqn"
     return 1
   }
 
-  run vedv::registry_service::push \
-    "$image_fqn" "$image_name"
+  run vedv::registry_service::__push \
+    "$image_fqn" "$image_export_func"
 
   assert_failure
   assert_output ""
 }
 
-@test "vedv::registry_service::push() Should fail If get_user fails" {
+@test "vedv::registry_service::__push() Should fail If get_user fails" {
   local -r image_fqn='nextcloud.loc/admin@alpine/alpine-14'
-  local -r image_name='alpine'
+  local -r image_export_func=':'
 
   vedv::image_entity::validate_image_fqn() {
     assert_equal "$*" "$image_fqn"
@@ -568,9 +558,6 @@ For security reasons, the image can not be downloaded"
   vedv::image_entity::get_name_from_fqn() {
     assert_equal "$*" "$image_fqn"
     echo 'alpine-14'
-  }
-  vedv::image_entity::validate_name() {
-    assert_equal "$*" "$image_name"
   }
   vedv::image_entity::get_url_from_fqn() {
     assert_equal "$*" "$image_fqn"
@@ -581,16 +568,16 @@ For security reasons, the image can not be downloaded"
     return 1
   }
 
-  run vedv::registry_service::push \
-    "$image_fqn" "$image_name"
+  run vedv::registry_service::__push \
+    "$image_fqn" "$image_export_func"
 
   assert_failure
   assert_output "Failed to get registry user"
 }
 
-@test "vedv::registry_service::push() Should fail If get_user_from_fqn fails" {
+@test "vedv::registry_service::__push() Should fail If get_user_from_fqn fails" {
   local -r image_fqn='nextcloud.loc/admin@alpine/alpine-14'
-  local -r image_name='alpine'
+  local -r image_export_func=':'
 
   vedv::image_entity::validate_image_fqn() {
     assert_equal "$*" "$image_fqn"
@@ -598,9 +585,6 @@ For security reasons, the image can not be downloaded"
   vedv::image_entity::get_name_from_fqn() {
     assert_equal "$*" "$image_fqn"
     echo 'alpine-14'
-  }
-  vedv::image_entity::validate_name() {
-    assert_equal "$*" "$image_name"
   }
   vedv::image_entity::get_url_from_fqn() {
     assert_equal "$*" "$image_fqn"
@@ -615,16 +599,16 @@ For security reasons, the image can not be downloaded"
     return 1
   }
 
-  run vedv::registry_service::push \
-    "$image_fqn" "$image_name"
+  run vedv::registry_service::__push \
+    "$image_fqn" "$image_export_func"
 
   assert_failure
   assert_output ""
 }
 
-@test "vedv::registry_service::push() Should fail If image_owner != registry_user" {
+@test "vedv::registry_service::__push() Should fail If image_owner != registry_user" {
   local -r image_fqn='nextcloud.loc/jane@alpine/alpine-14'
-  local -r image_name='alpine'
+  local -r image_export_func=':'
 
   vedv::image_entity::validate_image_fqn() {
     assert_equal "$*" "$image_fqn"
@@ -632,9 +616,6 @@ For security reasons, the image can not be downloaded"
   vedv::image_entity::get_name_from_fqn() {
     assert_equal "$*" "$image_fqn"
     echo 'alpine-14'
-  }
-  vedv::image_entity::validate_name() {
-    assert_equal "$*" "$image_name"
   }
   vedv::image_entity::get_url_from_fqn() {
     assert_equal "$*" "$image_fqn"
@@ -649,16 +630,16 @@ For security reasons, the image can not be downloaded"
     echo 'jane'
   }
 
-  run vedv::registry_service::push \
-    "$image_fqn" "$image_name"
+  run vedv::registry_service::__push \
+    "$image_fqn" "$image_export_func"
 
   assert_failure
   assert_output "Image can not be uploaded, user on fqn must be 'admin'"
 }
 
-@test "vedv::registry_service::push() Should fail If export fails" {
+@test "vedv::registry_service::__push() Should fail If image_export_func fails" {
   local -r image_fqn='nextcloud.loc/admin@alpine/alpine-14'
-  local -r image_name='alpine'
+  local -r image_export_func='vedv::registry_service::image_export_func'
 
   vedv::image_entity::validate_image_fqn() {
     assert_equal "$*" "$image_fqn"
@@ -667,9 +648,7 @@ For security reasons, the image can not be downloaded"
     assert_equal "$*" "$image_fqn"
     echo 'alpine-14'
   }
-  vedv::image_entity::validate_name() {
-    assert_equal "$*" "$image_name"
-  }
+
   vedv::image_entity::get_url_from_fqn() {
     assert_equal "$*" "$image_fqn"
     echo 'https://nextcloud.loc'
@@ -682,21 +661,20 @@ For security reasons, the image can not be downloaded"
     assert_equal "$*" "$image_fqn"
     echo 'admin'
   }
-  vedv::image_service::export() {
-    assert_regex "$*" "${image_name} /tmp/tmp\..*/alpine-14.ova"
+  vedv::registry_service::image_export_func() {
     return 1
   }
 
-  run vedv::registry_service::push \
-    "$image_fqn" "$image_name"
+  run vedv::registry_service::__push \
+    "$image_fqn" "$image_export_func"
 
   assert_failure
-  assert_output --regexp "Error exporting image to file: '/tmp/tmp\..*/alpine-14.ova'"
+  assert_output --regexp "Error exporting image to: '/tmp/tmp\..*/alpine-14.ova'"
 }
 
-@test "vedv::registry_service::push() Should fail If get_rel_file_path_from_fqn fails" {
+@test "vedv::registry_service::__push() Should fail If get_rel_file_path_from_fqn fails" {
   local -r image_fqn='nextcloud.loc/admin@alpine/alpine-14'
-  local -r image_name='alpine'
+  local -r image_export_func=':'
 
   vedv::image_entity::validate_image_fqn() {
     assert_equal "$*" "$image_fqn"
@@ -705,9 +683,7 @@ For security reasons, the image can not be downloaded"
     assert_equal "$*" "$image_fqn"
     echo 'alpine-14'
   }
-  vedv::image_entity::validate_name() {
-    assert_equal "$*" "$image_name"
-  }
+
   vedv::image_entity::get_url_from_fqn() {
     assert_equal "$*" "$image_fqn"
     echo 'https://nextcloud.loc'
@@ -719,25 +695,22 @@ For security reasons, the image can not be downloaded"
   vedv::image_entity::get_user_from_fqn() {
     assert_equal "$*" "$image_fqn"
     echo 'admin'
-  }
-  vedv::image_service::export() {
-    assert_regex "$*" "${image_name} /tmp/tmp\..*/alpine-14.ova"
   }
   vedv::image_entity::get_rel_file_path_from_fqn() {
     assert_equal "$*" "$image_fqn"
     return 1
   }
 
-  run vedv::registry_service::push \
-    "$image_fqn" "$image_name"
+  run vedv::registry_service::__push \
+    "$image_fqn" "$image_export_func"
 
   assert_failure
   assert_output ""
 }
 
-@test "vedv::registry_service::push() Should fail If create_directory fails" {
+@test "vedv::registry_service::__push() Should fail If create_directory fails" {
   local -r image_fqn='nextcloud.loc/admin@alpine/alpine-14'
-  local -r image_name='alpine'
+  local -r image_export_func=':'
 
   vedv::image_entity::validate_image_fqn() {
     assert_equal "$*" "$image_fqn"
@@ -746,9 +719,7 @@ For security reasons, the image can not be downloaded"
     assert_equal "$*" "$image_fqn"
     echo 'alpine-14'
   }
-  vedv::image_entity::validate_name() {
-    assert_equal "$*" "$image_name"
-  }
+
   vedv::image_entity::get_url_from_fqn() {
     assert_equal "$*" "$image_fqn"
     echo 'https://nextcloud.loc'
@@ -760,9 +731,6 @@ For security reasons, the image can not be downloaded"
   vedv::image_entity::get_user_from_fqn() {
     assert_equal "$*" "$image_fqn"
     echo 'admin'
-  }
-  vedv::image_service::export() {
-    assert_regex "$*" "${image_name} /tmp/tmp\..*/alpine-14.ova"
   }
   vedv::image_entity::get_rel_file_path_from_fqn() {
     assert_equal "$*" "$image_fqn"
@@ -773,16 +741,16 @@ For security reasons, the image can not be downloaded"
     return 1
   }
 
-  run vedv::registry_service::push \
-    "$image_fqn" "$image_name"
+  run vedv::registry_service::__push \
+    "$image_fqn" "$image_export_func"
 
   assert_failure
   assert_output "Error creating directory '/00-user-images/admin@alpine'"
 }
 
-@test "vedv::registry_service::push() Should fail If upload_file checksum_file fails" {
+@test "vedv::registry_service::__push() Should fail If upload_file checksum_file fails" {
   local -r image_fqn='nextcloud.loc/admin@alpine/alpine-14'
-  local -r image_name='alpine'
+  local -r image_export_func=':'
 
   vedv::image_entity::validate_image_fqn() {
     assert_equal "$*" "$image_fqn"
@@ -791,9 +759,7 @@ For security reasons, the image can not be downloaded"
     assert_equal "$*" "$image_fqn"
     echo 'alpine-14'
   }
-  vedv::image_entity::validate_name() {
-    assert_equal "$*" "$image_name"
-  }
+
   vedv::image_entity::get_url_from_fqn() {
     assert_equal "$*" "$image_fqn"
     echo 'https://nextcloud.loc'
@@ -805,9 +771,6 @@ For security reasons, the image can not be downloaded"
   vedv::image_entity::get_user_from_fqn() {
     assert_equal "$*" "$image_fqn"
     echo 'admin'
-  }
-  vedv::image_service::export() {
-    assert_regex "$*" "${image_name} /tmp/tmp\..*/alpine-14.ova"
   }
   vedv::image_entity::get_rel_file_path_from_fqn() {
     assert_equal "$*" "$image_fqn"
@@ -821,16 +784,16 @@ For security reasons, the image can not be downloaded"
     return 1
   }
 
-  run vedv::registry_service::push \
-    "$image_fqn" "$image_name"
+  run vedv::registry_service::__push \
+    "$image_fqn" "$image_export_func"
 
   assert_failure
   assert_output "Error uploading image checksum to '/00-user-images/admin@alpine/alpine-14.ova.sha256sum'"
 }
 
-@test "vedv::registry_service::push() Should fail If upload_file image_file  fails" {
+@test "vedv::registry_service::__push() Should fail If upload_file image_file  fails" {
   local -r image_fqn='nextcloud.loc/admin@alpine/alpine-14'
-  local -r image_name='alpine'
+  local -r image_export_func=':'
 
   vedv::image_entity::validate_image_fqn() {
     assert_equal "$*" "$image_fqn"
@@ -839,9 +802,7 @@ For security reasons, the image can not be downloaded"
     assert_equal "$*" "$image_fqn"
     echo 'alpine-14'
   }
-  vedv::image_entity::validate_name() {
-    assert_equal "$*" "$image_name"
-  }
+
   vedv::image_entity::get_url_from_fqn() {
     assert_equal "$*" "$image_fqn"
     echo 'https://nextcloud.loc'
@@ -853,9 +814,6 @@ For security reasons, the image can not be downloaded"
   vedv::image_entity::get_user_from_fqn() {
     assert_equal "$*" "$image_fqn"
     echo 'admin'
-  }
-  vedv::image_service::export() {
-    assert_regex "$*" "${image_name} /tmp/tmp\..*/alpine-14.ova"
   }
   vedv::image_entity::get_rel_file_path_from_fqn() {
     assert_equal "$*" "$image_fqn"
@@ -870,16 +828,16 @@ For security reasons, the image can not be downloaded"
     fi
   }
 
-  run vedv::registry_service::push \
-    "$image_fqn" "$image_name"
+  run vedv::registry_service::__push \
+    "$image_fqn" "$image_export_func"
 
   assert_failure
   assert_output "Error uploading image file to '/00-user-images/admin@alpine/alpine-14.ova'"
 }
 
-@test "vedv::registry_service::push() Should succeed" {
+@test "vedv::registry_service::__push() Should succeed" {
   local -r image_fqn='nextcloud.loc/admin@alpine/alpine-14'
-  local -r image_name='alpine'
+  local -r image_export_func=':'
 
   vedv::image_entity::validate_image_fqn() {
     assert_equal "$*" "$image_fqn"
@@ -888,9 +846,7 @@ For security reasons, the image can not be downloaded"
     assert_equal "$*" "$image_fqn"
     echo 'alpine-14'
   }
-  vedv::image_entity::validate_name() {
-    assert_equal "$*" "$image_name"
-  }
+
   vedv::image_entity::get_url_from_fqn() {
     assert_equal "$*" "$image_fqn"
     echo 'https://nextcloud.loc'
@@ -902,9 +858,6 @@ For security reasons, the image can not be downloaded"
   vedv::image_entity::get_user_from_fqn() {
     assert_equal "$*" "$image_fqn"
     echo 'admin'
-  }
-  vedv::image_service::export() {
-    assert_regex "$*" "${image_name} /tmp/tmp\..*/alpine-14.ova"
   }
   vedv::image_entity::get_rel_file_path_from_fqn() {
     assert_equal "$*" "$image_fqn"
@@ -923,8 +876,286 @@ For security reasons, the image can not be downloaded"
     return 1
   }
 
-  run vedv::registry_service::push \
-    "$image_fqn" "$image_name"
+  run vedv::registry_service::__push \
+    "$image_fqn" "$image_export_func"
+
+  assert_success
+  assert_output ""
+}
+
+# Tests for vedv::registry_service::__push_image_exporter()
+@test "vedv::registry_service::__push_image_exporter() Should fail If image_name is empty" {
+  local -r image_name=''
+  local -r image_file=''
+
+  run vedv::registry_service::__push_image_exporter \
+    "$image_name" "$image_file"
+
+  assert_failure
+  assert_output "image_name can not be empty"
+}
+
+@test "vedv::registry_service::__push_image_exporter() Should fail If image_file is empty" {
+  local -r image_name='image1'
+  local -r image_file=''
+
+  run vedv::registry_service::__push_image_exporter \
+    "$image_name" "$image_file"
+
+  assert_failure
+  assert_output "image_file can not be empty"
+}
+
+@test "vedv::registry_service::__push_image_exporter() Should fail If export fails" {
+  local -r image_name='image1'
+  local -r image_file='image1.ova'
+
+  vedv::image_service::export() {
+    assert_equal "$*" "image1 image1.ova"
+    return 1
+  }
+
+  run vedv::registry_service::__push_image_exporter \
+    "$image_name" "$image_file"
+
+  assert_failure
+  assert_output --partial "Error exporting image to file: "
+}
+
+@test "vedv::registry_service::__push_image_exporter() Should succeed" {
+  local -r image_name='image1'
+  local -r image_file='image1.ova'
+
+  vedv::image_service::export() {
+    assert_equal "$*" "image1 image1.ova"
+  }
+
+  run vedv::registry_service::__push_image_exporter \
+    "$image_name" "$image_file"
+
+  assert_success
+  assert_output ""
+}
+
+# Tests for vedv::registry_service::push()
+@test "vedv::registry_service::push() Should fail With invalid image name" {
+  local -r image_fqn='nextcloud.loc/admin@alpine/alpine-14'
+  local -r image_name='/invalid/'
+
+  run vedv::registry_service::push "$image_fqn" "$image_name"
+
+  assert_failure
+  assert_output "Invalid argument '/invalid/'"
+}
+
+@test "vedv::registry_service::push() Should fail If get_name_from_fqn fails" {
+  local -r image_fqn='nextcloud.loc/admin@alpine/alpine-14'
+  local -r image_name=''
+
+  vedv::image_entity::get_name_from_fqn() {
+    assert_equal "$*" "$image_fqn"
+    return 1
+  }
+
+  run vedv::registry_service::push "$image_fqn" "$image_name"
+
+  assert_failure
+  assert_output --partial "Failed to get image name from fqn:"
+}
+
+@test "vedv::registry_service::push() Should fail If __push fails" {
+  local -r image_fqn='nextcloud.loc/admin@alpine/alpine-14'
+  local -r image_name=''
+
+  vedv::image_entity::get_name_from_fqn() {
+    assert_equal "$*" "$image_fqn"
+    echo 'image1'
+  }
+  vedv::registry_service::__push() {
+    assert_equal "$*" "${image_fqn} vedv::registry_service::__push_image_exporter 'image1' \"\$image_file\""
+    return 1
+  }
+
+  run vedv::registry_service::push "$image_fqn" "$image_name"
+
+  assert_failure
+  assert_output "Error pushing image to registry"
+}
+
+@test "vedv::registry_service::push() Should succeed" {
+  local -r image_fqn='nextcloud.loc/admin@alpine/alpine-14'
+  local -r image_name=''
+
+  vedv::image_entity::get_name_from_fqn() {
+    assert_equal "$*" "$image_fqn"
+    echo 'image1'
+  }
+  vedv::registry_service::__push() {
+    assert_equal "$*" "${image_fqn} vedv::registry_service::__push_image_exporter 'image1' \"\$image_file\""
+  }
+
+  run vedv::registry_service::push "$image_fqn" "$image_name"
+
+  assert_success
+  assert_output ""
+}
+
+# Tests for vedv::registry_service::__push_link_image_exporter()
+@test "vedv::registry_service::__push_link_image_exporter() Should fail With empty image_file" {
+  local -r image_file=""
+  local -r checksum_file=""
+  local -r image_url=""
+  local -r checksum_url=""
+
+  run vedv::registry_service::__push_link_image_exporter \
+    "$image_file" "$checksum_file" "$image_url" "$checksum_url"
+
+  assert_failure
+  assert_output "image_file can not be empty"
+}
+
+@test "vedv::registry_service::__push_link_image_exporter() Should fail With empty checksum_file" {
+  local -r image_file="file"
+  local -r checksum_file=""
+  local -r image_url=""
+  local -r checksum_url=""
+
+  run vedv::registry_service::__push_link_image_exporter \
+    "$image_file" "$checksum_file" "$image_url" "$checksum_url"
+
+  assert_failure
+  assert_output "checksum_file can not be empty"
+}
+
+@test "vedv::registry_service::__push_link_image_exporter() Should fail With invalid image_url" {
+  local -r image_file="file"
+  local -r checksum_file="file.sha256sum"
+  local -r image_url="invalid"
+  local -r checksum_url=""
+
+  run vedv::registry_service::__push_link_image_exporter \
+    "$image_file" "$checksum_file" "$image_url" "$checksum_url"
+
+  assert_failure
+  assert_output "image_url is not valid"
+}
+
+@test "vedv::registry_service::__push_link_image_exporter() Should fail With invalid checksum_url" {
+  local -r image_file="file"
+  local -r checksum_file="file.sha256sum"
+  local -r image_url="http://registry.get/image1"
+  local -r checksum_url="invalid"
+
+  run vedv::registry_service::__push_link_image_exporter \
+    "$image_file" "$checksum_file" "$image_url" "$checksum_url"
+
+  assert_failure
+  assert_output "checksum_url is not valid"
+}
+
+@test "vedv::registry_service::__push_link_image_exporter() Should fail If creating image link fails" {
+  local -r image_file="$(mktemp)"
+  local -r checksum_file="file.sha256sum"
+  local -r image_url="http://registry.get/image1"
+  local -r checksum_url="http://registry.get/image1.sha256sum"
+
+  chmod -w "$image_file"
+
+  run vedv::registry_service::__push_link_image_exporter \
+    "$image_file" "$checksum_file" "$image_url" "$checksum_url"
+
+  assert_failure
+  assert_output --partial "Error creating image link:"
+}
+
+@test "vedv::registry_service::__push_link_image_exporter() Should fail If download_file fails" {
+  local -r image_file="$(mktemp)"
+  local -r checksum_file="file.sha256sum"
+  local -r image_url="http://registry.get/image1"
+  local -r checksum_url="http://registry.get/image1.sha256sum"
+
+  utils::download_file() {
+    assert_equal "$*" "${checksum_url} ${checksum_file}"
+    return 1
+  }
+
+  run vedv::registry_service::__push_link_image_exporter \
+    "$image_file" "$checksum_file" "$image_url" "$checksum_url"
+
+  assert_failure
+  assert_output --partial "Error downloading checksum from url: "
+}
+
+@test "vedv::registry_service::__push_link_image_exporter() Should fail If sed fails" {
+  local -r image_file="$(mktemp)"
+  local -r checksum_file="/tmp/vedv/fileabc123456.sha256sum"
+  local -r image_url="http://registry.get/image1"
+  local -r checksum_url="http://registry.get/image1.sha256sum"
+
+  utils::download_file() {
+    assert_equal "$*" "${checksum_url} ${checksum_file}"
+  }
+
+  run vedv::registry_service::__push_link_image_exporter \
+    "$image_file" "$checksum_file" "$image_url" "$checksum_url"
+
+  assert_failure
+  assert_output --partial "Error updating checksum file: "
+}
+
+# Tests for vedv::registry_service::push_link()
+@test "vedv::registry_service::push_link() Should fail With invalid image_url" {
+  local -r image_url='invalid'
+  local -r checksum_url=''
+  local -r image_fqn=''
+
+  run vedv::registry_service::push_link \
+    "$image_url" "$checksum_url" "$image_fqn"
+
+  assert_failure
+  assert_output "image_url is not valid"
+}
+
+@test "vedv::registry_service::push_link() Should fail With invalid checksum_url" {
+  local -r image_url='http://registry.get/image1'
+  local -r checksum_url='invalid'
+  local -r image_fqn=''
+
+  run vedv::registry_service::push_link \
+    "$image_url" "$checksum_url" "$image_fqn"
+
+  assert_failure
+  assert_output "checksum_url is not valid"
+}
+
+@test "vedv::registry_service::push_link() Should fail If push fails" {
+  local -r image_url='http://registry.get/image1'
+  local -r checksum_url='http://registry.get/image1.sha256sum'
+  local -r image_fqn='nextcloud.loc/admin@alpine/alpine-14'
+
+  vedv::registry_service::__push() {
+    assert_equal "$*" "${image_fqn} vedv::registry_service::__push_link_image_exporter \"\$image_file\" \"\$checksum_file\" '${image_url}' '${checksum_url}'"
+    return 1
+  }
+
+  run vedv::registry_service::push_link \
+    "$image_url" "$checksum_url" "$image_fqn"
+
+  assert_failure
+  assert_output "Error pushing image link to registry"
+}
+
+@test "vedv::registry_service::push_link() Should succeed" {
+  local -r image_url='http://registry.get/image1'
+  local -r checksum_url='http://registry.get/image1.sha256sum'
+  local -r image_fqn='nextcloud.loc/admin@alpine/alpine-14'
+
+  vedv::registry_service::__push() {
+    assert_equal "$*" "${image_fqn} vedv::registry_service::__push_link_image_exporter \"\$image_file\" \"\$checksum_file\" '${image_url}' '${checksum_url}'"
+  }
+
+  run vedv::registry_service::push_link \
+    "$image_url" "$checksum_url" "$image_fqn"
 
   assert_success
   assert_output ""

@@ -132,7 +132,7 @@ vedv::registry_service::__download_image_from_link() {
 
   utils::download_file "$image_url" "$downloaded_image_file" || {
     err "Error downloading image from url: '${image_url}'"
-    return "$ERR_IMAGE_OPERATION"
+    return "$ERR_REGISTRY_OPERATION"
   }
 }
 
@@ -288,39 +288,35 @@ vedv::registry_service::pull() {
 }
 
 #
-# Upload an image to a registry
+# Upload an image to a registry (base function)
 #
 # Arguments:
-#   image_fqn     string  e.g.: nextcloud.loc/admin@alpine/alpine-13
-#                         scheme: [domain/]user@collection/image-name
-#   [image_name]  string  name of the image that will be pushed to the registry
-#                         if not specified, the name on fqn will be used
+#   image_fqn           string      e.g.: nextcloud.loc/admin@alpine/alpine-13
+#   image_export_func   string      function that export the files to be
+#                                   uploaded
 #
 # Output:
-#  Writes image name or image id to the stdout
+#   Writes image name or image id to the stdout
 #
 # Returns:
 #   0 on success, non-zero on error.
 #
-vedv::registry_service::push() {
+vedv::registry_service::__push() {
   local -r image_fqn="$1"
-  local image_name="${2:-}"
+  local -r image_export_func="$2"
   # validate arguments
   vedv::image_entity::validate_image_fqn "$image_fqn" ||
-    return "$?"
+    return "$ERR_INVAL_ARG"
+
+  if [[ -z "$image_export_func" ]]; then
+    err "image_export_func can not be empty"
+    return "$ERR_INVAL_ARG"
+  fi
 
   local fqn_image_name=''
   fqn_image_name="$(vedv::image_entity::get_name_from_fqn "$image_fqn")" ||
     return $?
   readonly fqn_image_name
-
-  if [[ -n "$image_name" ]]; then
-    vedv::image_entity::validate_name "$image_name" ||
-      return "$?"
-  else
-    image_name="$fqn_image_name"
-  fi
-  readonly image_name
 
   local registry_url=''
   registry_url="$(vedv::image_entity::get_url_from_fqn "$image_fqn")" ||
@@ -349,10 +345,8 @@ vedv::registry_service::push() {
   local -r image_file="${tmp_dir}/${fqn_image_name}.ova"
   local -r checksum_file="${image_file}.sha256sum"
 
-  vedv::image_service::export \
-    "$image_name" \
-    "$image_file" || {
-    err "Error exporting image to file: '${image_file}'"
+  eval "$image_export_func" || {
+    err "Error exporting image to: '${image_file}'"
     return "$ERR_REGISTRY_OPERATION"
   }
 
@@ -381,6 +375,167 @@ vedv::registry_service::push() {
 
   vedv::registry_api_client::upload_file "$image_file" "$remote_image_file" "$registry_url" || {
     err "Error uploading image file to '${remote_image_file}'"
+    return "$ERR_REGISTRY_OPERATION"
+  }
+}
+
+#
+# Export image file and checksum file to a directory
+#
+# Arguments:
+#   image_name   string   name of the image that will be exported
+#   image_file   string   path for the exported image file
+#
+# Output:
+#  Writes errors to sdterr
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::registry_service::__push_image_exporter() {
+  local -r image_name="$1"
+  local -r image_file="$2"
+  # validate arguments
+  if [[ -z "$image_name" ]]; then
+    err "image_name can not be empty"
+    return "$ERR_INVAL_ARG"
+  fi
+  if [[ -z "$image_file" ]]; then
+    err "image_file can not be empty"
+    return "$ERR_INVAL_ARG"
+  fi
+
+  vedv::image_service::export \
+    "$image_name" \
+    "$image_file" || {
+    err "Error exporting image to file: '${image_file}'"
+    return "$ERR_REGISTRY_OPERATION"
+  }
+}
+
+#
+# Upload an image to a registry
+#
+# Arguments:
+#   image_fqn     string  e.g.: nextcloud.loc/admin@alpine/alpine-13
+#                         scheme: [domain/]user@collection/image-name
+#   [image_name]  string  name of the image that will be pushed to the registry
+#                         if not specified, the name on fqn will be used
+#
+# Output:
+#  Writes image name or image id to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::registry_service::push() {
+  local -r image_fqn="$1"
+  local image_name="${2:-}"
+  # validate arguments
+  if [[ -n "$image_name" ]]; then
+    vedv::image_entity::validate_name "$image_name" ||
+      return "$?"
+  else
+    image_name="$(vedv::image_entity::get_name_from_fqn "$image_fqn")" || {
+      err "Failed to get image name from fqn: '${image_fqn}'"
+      return "$ERR_INVAL_ARG"
+    }
+  fi
+  readonly image_name
+
+  local -r image_export_func="vedv::registry_service::__push_image_exporter '${image_name}' \"\$image_file\""
+
+  vedv::registry_service::__push "$image_fqn" "$image_export_func" || {
+    err "Error pushing image to registry"
+    return "$ERR_REGISTRY_OPERATION"
+  }
+}
+
+#
+# Export image link file and checksum file to a directory
+#
+# Arguments:
+#   image_file    string  path to the image file
+#   checksum_file string  path to the checksum file
+#   image_url     string  image url that will be used as a link
+#   checksum_url  string  checksum url of the image
+#
+# Output:
+#  Writes errors to sdterr
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::registry_service::__push_link_image_exporter() {
+  local -r image_file="$1"
+  local -r checksum_file="$2"
+  local -r image_url="$3"
+  local -r checksum_url="$4"
+  # validate arguments
+  if [[ -z "$image_file" ]]; then
+    err "image_file can not be empty"
+    return "$ERR_INVAL_ARG"
+  fi
+  if [[ -z "$checksum_file" ]]; then
+    err "checksum_file can not be empty"
+    return "$ERR_INVAL_ARG"
+  fi
+  if ! utils::is_url "$image_url"; then
+    err "image_url is not valid"
+    return "$ERR_INVAL_ARG"
+  fi
+  if ! utils::is_url "$checksum_url"; then
+    err "checksum_url is not valid"
+    return "$ERR_INVAL_ARG"
+  fi
+
+  echo "$image_url" >"$image_file" || {
+    err "Error creating image link: '${image_file}'"
+    return "$ERR_REGISTRY_OPERATION"
+  }
+  utils::download_file "$checksum_url" "$checksum_file" || {
+    err "Error downloading checksum from url: '${checksum_url}'"
+    return "$ERR_IMAGE_OPERATION"
+  }
+
+  sed -i "s/\s\S\+\.ova\s*$/ ${image_file##*/}/" "$checksum_file" || {
+    err "Error updating checksum file: '${checksum_file}'"
+    return "$ERR_REGISTRY_OPERATION"
+  }
+}
+
+#
+# Upload an image link to a registry
+#
+# Arguments:
+#   image_url     string    image url that will be used as a link
+#   checksum_url  string    checksum url of the image
+#   image_fqn     string    e.g.: nextcloud.loc/admin@alpine/alpine-13
+#
+# Output:
+#   Writes image name or image id to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::registry_service::push_link() {
+  local -r image_url="$1"
+  local -r checksum_url="$2"
+  local -r image_fqn="$3"
+  # validate arguments
+  if ! utils::is_url "$image_url"; then
+    err "image_url is not valid"
+    return "$ERR_INVAL_ARG"
+  fi
+  if ! utils::is_url "$checksum_url"; then
+    err "checksum_url is not valid"
+    return "$ERR_INVAL_ARG"
+  fi
+
+  local -r image_export_func="vedv::registry_service::__push_link_image_exporter \"\$image_file\" \"\$checksum_file\" '${image_url}' '${checksum_url}'"
+
+  vedv::registry_service::__push "$image_fqn" "$image_export_func" || {
+    err "Error pushing image link to registry"
     return "$ERR_REGISTRY_OPERATION"
   }
 }

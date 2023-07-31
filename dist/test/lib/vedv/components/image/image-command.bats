@@ -493,3 +493,14 @@ vedv image export IMAGE FILE"
   assert_success
   assert_output ''
 }
+
+# Tests for vedv::image_command::__push_link()
+@test "vedv::image_command::__push_link() Should succeed" {
+
+  vedv::registry_command::__push_link() { :; }
+
+  run vedv::image_command::__push_link
+
+  assert_success
+  assert_output ''
+}

@@ -137,7 +137,7 @@ For security reasons, the image can not be downloaded"
   assert_output '3955640179 my-alpine-15'
 }
 
-# Tests for vedv registry push()
+# Tests for vedv registry push
 @test "vedv registry push ,Should show help" {
 
   for flag in '' '-h' '--help'; do
@@ -170,7 +170,7 @@ vedv registry push [FLAGS] [OPTIONS] [DOMAIN/]USER@COLLECTION/NAME"
   run vedv registry push 'admin/alpine-test/alpine-14'
 
   assert_failure
-  assert_output "Invalid argument 'admin/alpine-test/alpine-14'"
+  assert_output --partial "Invalid argument 'admin/alpine-test/alpine-14'"
 }
 
 @test "vedv registry push, Should fail With invalid image_name" {
@@ -185,14 +185,16 @@ vedv registry push [FLAGS] [OPTIONS] [DOMAIN/]USER@COLLECTION/NAME"
 
   assert_failure
   assert_output "Registry 'https://nextcloud123.loc' not found in credentials dict
-Failed to get registry user"
+Failed to get registry user
+Error pushing image to registry"
 }
 
 @test "vedv registry push, Should fail With invalid user on fqn" {
   run vedv registry push 'jane@alpine-test/alpine-14'
 
   assert_failure
-  assert_output "Image can not be uploaded, user on fqn must be 'admin'"
+  assert_output "Image can not be uploaded, user on fqn must be 'admin'
+Error pushing image to registry"
 }
 
 @test "vedv registry push --name alpine-14, Should fail if image not exists" {
@@ -218,6 +220,70 @@ Failed to get registry user"
 
   assert_success
   assert_output ""
+
+  run vedv registry pull --name 'alp-14-2' 'admin@alpine-test/alpine-14-1'
+
+  assert_success
+  assert_output "4258011170 alp-14-2"
+}
+
+# Tests for vedv registry push-link
+
+@test "vedv registry push-link,  Should show help" {
+  for flag in '' '-h' '--help'; do
+    run vedv registry push-link $flag
+
+    assert_success
+    assert_output --partial "Usage:
+vedv registry push-link [FLAGS] [OPTIONS] [DOMAIN/]USER@COLLECTION/NAME"
+  done
+}
+
+@test "vedv registry push-link,  Should fail With missing image_url arg" {
+  run vedv registry push-link --image-url
+
+  assert_failure
+  assert_output --partial "No image_url argument"
+}
+
+@test "vedv registry push-link,  Should fail Without checksum_url" {
+  run vedv registry push-link --image-url "$TEST_OVA_URL"
+
+  assert_failure
+  assert_output --partial "No checksum_url specified"
+}
+
+@test "vedv registry push-link,  Should fail With missing checksum_url arg" {
+  run vedv registry push-link \
+    --image-url "$TEST_OVA_URL" --checksum-url
+
+  assert_failure
+  assert_output --partial "No checksum_url argument"
+}
+
+@test "vedv registry push-link,  Should fail With missing image_fqn" {
+
+  run vedv registry push-link \
+    --image-url "$TEST_OVA_URL" --checksum-url "$TEST_OVA_CHECKSUM_URL"
+
+  assert_failure
+  assert_output --partial "Missing argument 'IMAGE_FQN'"
+}
+
+@test "vedv registry push-link --image-url, Should push an image link" {
+
+  run vedv registry push-link \
+    --image-url "$TEST_OVA_URL" \
+    --checksum-url "$TEST_OVA_CHECKSUM_URL" \
+    'admin@alpine-test/alpine-14-link'
+
+  assert_success
+  assert_output ""
+
+  run vedv registry pull --name 'alp-14-1' 'admin@alpine-test/alpine-14-link'
+
+  assert_success
+  assert_output "4289064363 alp-14-1"
 }
 
 # Tests for vedv registry cache-clean

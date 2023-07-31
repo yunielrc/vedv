@@ -1,6 +1,6 @@
 #!/usr/bin/env sh
 
-# Configure the alpine linux image vm for vedv
+# Configure common linux image vm for vedv
 
 set -eu
 

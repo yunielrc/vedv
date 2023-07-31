@@ -448,6 +448,62 @@ vedv::image_command::__push() {
 }
 
 #
+# Show help for __push_link command
+#
+# Output:
+#  Writes the help to the stdout
+#
+vedv::image_command::__push_link_help() {
+  cat <<-HELPMSG
+Usage:
+${__VED_IMAGE_COMMAND_SCRIPT_NAME} image push-link [FLAGS] [OPTIONS] [DOMAIN/]USER@COLLECTION/NAME
+
+Upload an image link to a registry
+
+Aliases:
+  ${__VED_IMAGE_COMMAND_SCRIPT_NAME} registry push-link
+
+Flags:
+  -h, --help                    show help
+
+Mandatory Options:
+  --image-url <url>             image url that will be used as a link
+  --checksum-url  <file|url>    checksum url of the image
+
+
+HELPMSG
+}
+
+#
+# Upload an image link to a registry
+#
+# Flags:
+#   -h, --help                    show help
+#
+# Mandatory Options:
+#   --image-url <url>             image url that will be used as a link
+#   --checksum-url  <file|url>    checksum url of the image
+#
+# Arguments:
+#   IMAGE_FQN                     string  scheme: [domain/]user@collection/name
+#
+# Output:
+#   Writes image name to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::image_command::__push_link() {
+  # shellcheck disable=SC2317
+  vedv::registry_command::__push_link_help() {
+    vedv::image_command::__push_link_help
+  }
+  readonly -f vedv::registry_command::__push_link_help
+
+  vedv::registry_command::__push_link "$@"
+}
+
+#
 # List images
 #
 # Flags:
@@ -803,6 +859,7 @@ Commands:
   build           build an image from a Vedvfile
   pull            download an image from the registry
   push            upload an image to a registry
+  push-link       upload an image link to a registry
   list            list images
   remove          remove one or more images
   remove-cache    remove unused cache images
@@ -829,6 +886,11 @@ vedv::image_command::run_cmd() {
     push)
       shift
       vedv::image_command::__push "$@"
+      return $?
+      ;;
+    push-link)
+      shift
+      vedv::image_command::__push_link "$@"
       return $?
       ;;
     ls | list)

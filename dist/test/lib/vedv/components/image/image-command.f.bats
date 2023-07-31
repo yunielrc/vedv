@@ -746,7 +746,8 @@ vedv image push [FLAGS] [OPTIONS] [DOMAIN/]USER@COLLECTION/NAME"
   run vedv image push 'admin/alpine-test/alpine-14'
 
   assert_failure
-  assert_output "Invalid argument 'admin/alpine-test/alpine-14'"
+  assert_output "Invalid argument 'admin/alpine-test/alpine-14'
+Failed to get image name from fqn: 'admin/alpine-test/alpine-14'"
 }
 
 @test "vedv image push, Should fail With invalid image_name" {
@@ -761,5 +762,59 @@ vedv image push [FLAGS] [OPTIONS] [DOMAIN/]USER@COLLECTION/NAME"
 
   assert_failure
   assert_output "Registry 'https://nextcloud123.loc' not found in credentials dict
-Failed to get registry user"
+Failed to get registry user
+Error pushing image to registry"
+}
+
+# Tests for vedv image push-link
+@test "vedv image push-link,  Should show help" {
+  for flag in '' '-h' '--help'; do
+    run vedv image push-link $flag
+
+    assert_success
+    assert_output --partial "Usage:
+vedv image push-link [FLAGS] [OPTIONS] [DOMAIN/]USER@COLLECTION/NAME"
+  done
+}
+
+@test "vedv image push-link,  Should fail With missing image_url arg" {
+  run vedv image push-link --image-url
+
+  assert_failure
+  assert_output --partial "No image_url argument"
+}
+
+@test "vedv image push-link,  Should fail Without checksum_url" {
+  run vedv image push-link --image-url "$TEST_OVA_URL"
+
+  assert_failure
+  assert_output --partial "No checksum_url specified"
+}
+
+@test "vedv image push-link,  Should fail With missing checksum_url arg" {
+  run vedv image push-link \
+    --image-url "$TEST_OVA_URL" --checksum-url
+
+  assert_failure
+  assert_output --partial "No checksum_url argument"
+}
+
+@test "vedv image push-link,  Should fail With missing image_fqn" {
+
+  run vedv image push-link \
+    --image-url "$TEST_OVA_URL" --checksum-url "$TEST_OVA_CHECKSUM_URL"
+
+  assert_failure
+  assert_output --partial "Missing argument 'IMAGE_FQN'"
+}
+
+@test "vedv image push-link --image-url, Should push an image link" {
+
+  run vedv image push-link \
+    --image-url "$TEST_OVA_URL" \
+    --checksum-url "$TEST_OVA_CHECKSUM_URL" \
+    'admin@alpine-test/alpine-14-link'
+
+  assert_success
+  assert_output ""
 }
