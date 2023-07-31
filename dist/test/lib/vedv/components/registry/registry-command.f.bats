@@ -100,7 +100,7 @@ Failed to get registry user"
   run vedv registry pull --name 'my-alpine-14' 'admin@alpine/alpine-14'
 
   assert_failure
-  assert_output --regexp "Error importing image from file: '.*admin@alpine__alpine-14.ova'"
+  assert_output --partial "Error downloading image from link file:"
 }
 
 @test "vedv registry pull ,Should fail with invalid image owner" {
@@ -128,6 +128,13 @@ For security reasons, the image can not be downloaded"
 
   assert_success
   assert_output "3955640179 my-alpine-15"
+}
+
+@test "vedv registry pull ,Should succeed from link" {
+  run vedv registry pull --name 'my-alpine-15' 'admin@alpine/alpine-15'
+
+  assert_success
+  assert_output '3955640179 my-alpine-15'
 }
 
 # Tests for vedv registry push()

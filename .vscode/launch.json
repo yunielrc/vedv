@@ -323,9 +323,10 @@
       "args": [
         "registry",
         "pull",
+        "--no-cache",
         "--name",
-        "my-alpine-14",
-        "nextcloud2.loc/admin@alpine/alpine-14"
+        "my-alpine-15",
+        "admin@alpine/alpine-15"
       ]
     },
   ]

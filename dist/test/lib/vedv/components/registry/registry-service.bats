@@ -296,7 +296,9 @@ For security reasons, the image can not be downloaded"
       touch "$_image_file"
     fi
   }
-
+  vedv::registry_service::__download_image_from_link() {
+    assert_regex "$*" "/tmp/tmp.*/nextcloud2.loc/jane@macos__macos-monterey.ova /tmp/tmp.*/nextcloud2.loc/jane@macos__macos-monterey.ova"
+  }
   vedv::image_service::import() {
     assert_equal "$*" "${_image_file} ${image_name} ${_checksum_file}"
   }
@@ -381,6 +383,49 @@ For security reasons, the image can not be downloaded"
   assert_output "Error downloading image file '/01-public-images/jane@macos/macos-monterey.ova'"
 }
 
+@test "vedv::registry_service::pull() Should fail If __download_image_from_link fails" {
+  local -r image_fqn='nextcloud2.loc/jane@macos/macos-monterey'
+  local -r image_name=''
+  local -r no_cache=''
+
+  vedv::image_entity::validate_name() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::registry_api_client::get_user() {
+    assert_equal "$*" "https://nextcloud2.loc"
+    echo 'admin'
+  }
+  vedv::registry_service::__get_public_image_real_owner() {
+    assert_equal "$*" "${image_fqn} https://nextcloud2.loc"
+    echo 'jane'
+  }
+  vedv::registry_api_client::get_domain() {
+    assert_equal "$*" "https://nextcloud2.loc"
+    echo 'nextcloud2.loc'
+  }
+  vedv::registry_api_client::download_file() {
+    if [[ "$1" == *"macos-monterey.ova.sha256sum" ]]; then
+      assert_regex "$*" "/01-public-images/jane@macos/macos-monterey.ova.sha256sum /tmp/.*/nextcloud2.loc/jane@macos__macos-monterey.ova.sha256sum https://nextcloud2.loc"
+      touch "$2"
+      return 0
+    fi
+    if [[ "$1" == *"macos-monterey.ova" ]]; then
+      assert_regex "$*" "/01-public-images/jane@macos/macos-monterey.ova /tmp/.*/nextcloud2.loc/jane@macos__macos-monterey.ova https://nextcloud2.loc"
+      return 0
+    fi
+  }
+  vedv::registry_service::__download_image_from_link() {
+    assert_regex "$*" "/tmp/tmp.*/nextcloud2.loc/jane@macos__macos-monterey.ova /tmp/tmp.*/nextcloud2.loc/jane@macos__macos-monterey.ova"
+    return 1
+  }
+
+  run vedv::registry_service::pull \
+    "$image_fqn" "$image_name" "$no_cache"
+
+  assert_failure
+  assert_output --partial "Error downloading image from link file:"
+}
+
 @test "vedv::registry_service::pull() Should succeed" {
   local -r image_fqn='nextcloud2.loc/jane@macos/macos-monterey'
   local -r image_name=''
@@ -412,6 +457,11 @@ For security reasons, the image can not be downloaded"
       return 0
     fi
   }
+
+  vedv::registry_service::__download_image_from_link() {
+    assert_regex "$*" "/tmp/tmp.*/nextcloud2.loc/jane@macos__macos-monterey.ova /tmp/tmp.*/nextcloud2.loc/jane@macos__macos-monterey.ova"
+  }
+
   vedv::image_service::import() {
     assert_regex "$*" "/tmp/.*/nextcloud2.loc/jane@macos__macos-monterey.ova ${image_name} /tmp/.*/nextcloud2.loc/jane@macos__macos-monterey.ova.sha256sum"
   }
@@ -890,4 +940,169 @@ For security reasons, the image can not be downloaded"
 
   assert_success
   assert_output 'space_freed: 0'
+}
+
+# Tests for vedv::registry_service::__download_image_from_link()
+@test "vedv::registry_service::__download_image_from_link() Should faild If image_file not exists" {
+  local -r image_file=''
+  local -r downloaded_image_file=''
+
+  run vedv::registry_service::__download_image_from_link \
+    "$image_file" "$downloaded_image_file"
+
+  assert_failure
+  assert_output "image_file does not exist"
+}
+@test "vedv::registry_service::__download_image_from_link() Should faild If downloaded_image_file is empty" {
+  local -r image_file="$TEST_OVA_FILE"
+  local -r downloaded_image_file=''
+
+  run vedv::registry_service::__download_image_from_link \
+    "$image_file" "$downloaded_image_file"
+
+  assert_failure
+  assert_output "downloaded_image_file is empty"
+}
+
+@test "vedv::registry_service::__download_image_from_link() Should faild If du fails" {
+  local -r image_file="$TEST_OVA_FILE"
+  local -r downloaded_image_file="$(mktemp)"
+
+  awk() {
+    if [[ ! -t 0 ]]; then
+      if [[ "$(cat -)" == *"$TEST_OVA_FILE" ]]; then
+        return 1
+      fi
+      cat - | awk
+    fi
+  }
+
+  run vedv::registry_service::__download_image_from_link \
+    "$image_file" "$downloaded_image_file"
+
+  assert_failure
+  assert_output "Failed to get image file size: '${TEST_OVA_FILE}'"
+}
+
+@test "vedv::registry_service::__download_image_from_link() Should faild If mv fails" {
+  local -r image_file="$TEST_OVA_FILE"
+  local -r downloaded_image_file="$(mktemp)"
+
+  mv() {
+    if [[ "$*" == "${image_file} ${downloaded_image_file}" ]]; then
+      return 1
+    fi
+    mv "$@"
+  }
+
+  run vedv::registry_service::__download_image_from_link \
+    "$image_file" "$downloaded_image_file"
+
+  assert_failure
+  assert_output --partial "Failed to move image file:"
+}
+
+@test "vedv::registry_service::__download_image_from_link() Should succeed if image is not a link" {
+  local -r image_file="$TEST_OVA_FILE"
+  local -r downloaded_image_file="$(mktemp)"
+
+  mv() {
+    if [[ "$*" != "${image_file} ${downloaded_image_file}" ]]; then
+      mv "$@"
+    fi
+  }
+
+  run vedv::registry_service::__download_image_from_link \
+    "$image_file" "$downloaded_image_file"
+
+  assert_success
+  assert_output ''
+}
+
+@test "vedv::registry_service::__download_image_from_link() Should succeed if image is not a link and src = dest" {
+  local -r image_file="$TEST_OVA_FILE"
+  local -r downloaded_image_file="$TEST_OVA_FILE"
+
+  mv() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+
+  run vedv::registry_service::__download_image_from_link \
+    "$image_file" "$downloaded_image_file"
+
+  assert_success
+  assert_output ''
+}
+
+@test "vedv::registry_service::__download_image_from_link() Should fail With empty image_file" {
+  local -r image_file="$(mktemp)"
+  local -r downloaded_image_file="$(mktemp)"
+
+  mv() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+
+  run vedv::registry_service::__download_image_from_link \
+    "$image_file" "$downloaded_image_file"
+
+  assert_failure
+  assert_output 'image_url is not valid'
+}
+
+@test "vedv::registry_service::__download_image_from_link() Should fail With invalid url in image_file" {
+  local -r image_file="$(mktemp)"
+  local -r downloaded_image_file="$(mktemp)"
+
+  echo 'invalid_url' >"$image_file"
+
+  mv() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+
+  run vedv::registry_service::__download_image_from_link \
+    "$image_file" "$downloaded_image_file"
+
+  assert_failure
+  assert_output 'image_url is not valid'
+}
+
+@test "vedv::registry_service::__download_image_from_link() Should fail If download_file fails" {
+  local -r image_file="$(mktemp)"
+  local -r downloaded_image_file="$(mktemp)"
+
+  echo 'http://get.file/image.ova' >"$image_file"
+
+  mv() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+  utils::download_file() {
+    assert_equal "$*" "http://get.file/image.ova ${downloaded_image_file}"
+    return 1
+  }
+
+  run vedv::registry_service::__download_image_from_link \
+    "$image_file" "$downloaded_image_file"
+
+  assert_failure
+  assert_output "Error downloading image from url: 'http://get.file/image.ova'"
+}
+
+@test "vedv::registry_service::__download_image_from_link() Should succeed" {
+  local -r image_file="$(mktemp)"
+  local -r downloaded_image_file="$(mktemp)"
+
+  echo 'http://get.file/image.ova' >"$image_file"
+
+  mv() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+  utils::download_file() {
+    assert_equal "$*" "http://get.file/image.ova ${downloaded_image_file}"
+  }
+
+  run vedv::registry_service::__download_image_from_link \
+    "$image_file" "$downloaded_image_file"
+
+  assert_success
+  assert_output ""
 }

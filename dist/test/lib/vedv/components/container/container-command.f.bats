@@ -93,12 +93,11 @@ Create a new container"
   run vedv::hypervisor::get_forwarding_ports "$container_vm_name"
 
   assert_success
-  assert_output --regexp "2150172608,tcp,,8082,,82
+  assert_output "2150172608,tcp,,8082,,82
 2227371250,udp,,81,,81
 2250533131,tcp,,8081,,8081
 3074115300,tcp,,8080,,80
 nc,tcp,,4444,,4444
-.*
 test-ssh,tcp,,2022,,22"
 }
 

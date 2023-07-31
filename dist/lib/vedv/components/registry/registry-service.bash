@@ -73,6 +73,70 @@ vedv::registry_service::__get_public_image_real_owner() {
 }
 
 #
+# Download an image if it is a link.
+# A link is a text file that only contains the url to the image.
+#
+# Arguments:
+#   image_file              string  path to the image file
+#   downloaded_image_file   string  path to the downloaded image file
+#
+# Output:
+#  Writes error message to the stderr
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::registry_service::__download_image_from_link() {
+  local -r image_file="$1"
+  local -r downloaded_image_file="$2"
+  # validate arguments
+  if [[ ! -f "$image_file" ]]; then
+    err "image_file does not exist"
+    return "$ERR_INVAL_ARG"
+  fi
+  if [[ -z "$downloaded_image_file" ]]; then
+    err "downloaded_image_file is empty"
+    return "$ERR_INVAL_ARG"
+  fi
+  # check that image is a link
+  # size in bytes
+  local size
+  size="$(du -b "$image_file" | awk '{print $1}')" || {
+    err "Failed to get image file size: '${image_file}'"
+    return "$ERR_REGISTRY_OPERATION"
+  }
+  readonly size
+
+  if [[ "$size" -gt 1024 ]]; then
+    # the image is not a link and is already downloaded
+    if [[ "$image_file" != "$downloaded_image_file" ]]; then
+      mv "$image_file" "$downloaded_image_file" || {
+        err "Failed to move image file: '${image_file}'"
+        return "$ERR_REGISTRY_OPERATION"
+      }
+    fi
+    return 0
+  fi
+
+  local image_url
+  image_url="$(<"$image_file")" || {
+    err "Failed to get image url from file: '${image_file}'"
+    return "$ERR_REGISTRY_OPERATION"
+  }
+  readonly image_url
+
+  if ! utils::is_url "$image_url"; then
+    err "image_url is not valid"
+    return "$ERR_INVAL_ARG"
+  fi
+
+  utils::download_file "$image_url" "$downloaded_image_file" || {
+    err "Error downloading image from url: '${image_url}'"
+    return "$ERR_IMAGE_OPERATION"
+  }
+}
+
+#
 # Download an image from a registry
 #
 # Arguments:
@@ -207,6 +271,12 @@ vedv::registry_service::pull() {
       return "$ERR_COPY_FILE"
     }
   fi
+
+  vedv::registry_service::__download_image_from_link "$image_file" "$image_file" || {
+    err "Error downloading image from link file: '${image_file}'"
+    return "$ERR_REGISTRY_OPERATION"
+  }
+
   # Check and import the image
   vedv::image_service::import \
     "$image_file" \
