@@ -1507,3 +1507,46 @@ EOF
   assert_success
   assert_output ""
 }
+
+# Tests for vedv::image_entity::get_layer_count()
+@test "vedv::image_entity::get_layer_count() Should With invalid image_id" {
+  # Setup
+  local -r image_id=""
+
+  # Act
+  run vedv::image_entity::get_layer_count "$image_id"
+  # Assert
+  assert_failure
+  assert_output "Invalid argument ''"
+}
+
+@test "vedv::image_entity::get_layer_count() Should fail If get_layers_ids fails" {
+  # Setup
+  local -r image_id="1234567890"
+  # Mock
+  vedv::image_entity::get_layers_ids() {
+    assert_equal "$*" "1234567890"
+    echo "234567890 334567890 434567890"
+    return 1
+  }
+  # Act
+  run vedv::image_entity::get_layer_count "$image_id"
+  # Assert
+  assert_failure
+  assert_output "Failed to get layers ids for image '1234567890'"
+}
+
+@test "vedv::image_entity::get_layer_count() Should succeed" {
+  # Setup
+  local -r image_id="1234567890"
+  # Mock
+  vedv::image_entity::get_layers_ids() {
+    assert_equal "$*" "1234567890"
+    echo "234567890 334567890 434567890"
+  }
+  # Act
+  run vedv::image_entity::get_layer_count "$image_id"
+  # Assert
+  assert_success
+  assert_output "3"
+}

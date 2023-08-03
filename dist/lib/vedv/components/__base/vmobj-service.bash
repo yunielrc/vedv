@@ -1250,6 +1250,11 @@ vedv::vmobj_service::fs::set_user() {
     err "Failed to set user '${user_name}' to ${type}: ${vmobj_id}"
     return "$ERR_VMOBJ_OPERATION"
   }
+  # cache data
+  vedv::vmobj_entity::cache::set_user_name "$type" "$vmobj_id" "$user_name" || {
+    err "Failed to set user to ${type}: ${vmobj_id}"
+    return "$ERR_VMOBJ_OPERATION"
+  }
 }
 
 #
@@ -1339,8 +1344,15 @@ vedv::vmobj_service::fs::set_workdir() {
 
   local -r cmd="vedv-setworkdir '${workdir}' '${user_name}'"
 
-  vedv::vmobj_service::execute_cmd_by_id "$type" "$vmobj_id" "$cmd" 'root' '<none>' || {
+  local workdir_path
+  workdir_path="$(vedv::vmobj_service::execute_cmd_by_id "$type" "$vmobj_id" "$cmd" 'root' '<none>')" || {
     err "Failed to set workdir '${workdir}' to ${type}: ${vmobj_id}"
+    return "$ERR_VMOBJ_OPERATION"
+  }
+  readonly workdir_path
+  # cache data
+  vedv::vmobj_entity::cache::set_workdir "$type" "$vmobj_id" "$workdir_path" || {
+    err "Failed to set workdir to ${type}: ${vmobj_id}"
     return "$ERR_VMOBJ_OPERATION"
   }
 }
@@ -1402,8 +1414,15 @@ vedv::vmobj_service::fs::set_shell() {
 
   local -r cmd="vedv-setshell '${shell}'"
 
-  vedv::vmobj_service::execute_cmd_by_id "$type" "$vmobj_id" "$cmd" 'root' '<none>' || {
+  local shell_path
+  shell_path="$(vedv::vmobj_service::execute_cmd_by_id "$type" "$vmobj_id" "$cmd" 'root' '<none>')" || {
     err "Failed to set shell '${shell}' to ${type}: ${vmobj_id}"
+    return "$ERR_VMOBJ_OPERATION"
+  }
+  readonly shell_path
+  # cache data
+  vedv::vmobj_entity::cache::set_shell "$type" "$vmobj_id" "$shell_path" || {
+    err "Failed to set shell to ${type}: ${vmobj_id}"
     return "$ERR_VMOBJ_OPERATION"
   }
 }
@@ -1477,8 +1496,15 @@ vedv::vmobj_service::fs::add_environment_var() {
 
   local -r cmd="vedv-addenv_var $'${env_var}'"
 
-  vedv::vmobj_service::execute_cmd_by_id "$type" "$vmobj_id" "$cmd" 'root' '<none>' || {
+  local _env
+  _env="$(vedv::vmobj_service::execute_cmd_by_id "$type" "$vmobj_id" "$cmd" 'root' '<none>')" || {
     err "Failed to add environment variable '${env_var}' to ${type}: ${vmobj_id}"
+    return "$ERR_VMOBJ_OPERATION"
+  }
+  readonly _env
+  # cache data
+  vedv::vmobj_entity::cache::set_environment "$type" "$vmobj_id" "$_env" || {
+    err "Failed to set env for ${type}: ${vmobj_id}"
     return "$ERR_VMOBJ_OPERATION"
   }
 }
@@ -1559,8 +1585,15 @@ vedv::vmobj_service::fs::add_exposed_ports() {
 
   local -r cmd="vedv-addexpose_ports $'${eports}'"
 
-  vedv::vmobj_service::execute_cmd_by_id "$type" "$vmobj_id" "$cmd" 'root' '<none>' || {
+  local eports_list
+  eports_list="$(vedv::vmobj_service::execute_cmd_by_id "$type" "$vmobj_id" "$cmd" 'root' '<none>')" || {
     err "Failed to add expose ports '${eports}' to ${type}: ${vmobj_id}"
+    return "$ERR_VMOBJ_OPERATION"
+  }
+  readonly eports_list
+  # cache data
+  vedv::vmobj_entity::cache::set_exposed_ports "$type" "$vmobj_id" "$eports_list" || {
+    err "Failed to set exposed ports for ${type}: ${vmobj_id}"
     return "$ERR_VMOBJ_OPERATION"
   }
 }
@@ -1700,13 +1733,41 @@ vedv::vmobj_service::modify_system() {
 }
 
 #
+# Get data dictionary from vmobj filesystem
+# This function doesn't have cached data
+#
+# Arguments:
+#   type      string     type (e.g. 'container|image')
+#   vmobj_id  string     vmobj name or id
+#
+# Output:
+#  writes data_dictionary_str (string) to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::vmobj_service::fs::get_data_dictionary() {
+  local -r type="$1"
+  local -r vmobj_id="$2"
+  # validate arguments
+  vedv::vmobj_entity::validate_type "$type" ||
+    return "$?"
+
+  if [[ -z "$vmobj_id" ]]; then
+    err "Invalid argument 'vmobj_id': it's empty"
+    return "$ERR_INVAL_ARG"
+  fi
+
+  local -r cmd='vedv-getdata_dictionary'
+
+  vedv::vmobj_service::execute_cmd_by_id "$type" "$vmobj_id" "$cmd" 'root' '<none>' || {
+    err "Failed to get data dictionary of ${type}: ${vmobj_id}"
+    return "$ERR_VMOBJ_OPERATION"
+  }
+}
+
+#
 # Save vmobj data on filesystem to vmobj entity.
-#
-# This function should be called after every image
-# build to save the filesystem data to the vmobj
-# entity for faster access in any context except
-# during image build.
-#
 #
 # Arguments:
 #   type      string    type (e.g. 'container|image')
@@ -1730,63 +1791,44 @@ vedv::vmobj_service::cache_data() {
     return "$ERR_INVAL_ARG"
   fi
 
-  local user_name
-  user_name="$(vedv::vmobj_service::fs::get_user "$type" "$vmobj_id")" || {
+  local data_dict_str
+  data_dict_str="$(vedv::vmobj_service::fs::get_data_dictionary "$type" "$vmobj_id")" || {
     err "Failed to get user name for ${type}"
     return "$ERR_VMOBJ_OPERATION"
   }
-  readonly user_name
+  readonly data_dict_str
 
-  vedv::vmobj_entity::cache::set_user_name "$type" "$vmobj_id" "$user_name" || {
-    err "Failed to set user name for ${type}"
-    return "$ERR_VMOBJ_OPERATION"
-  }
+  local -A data_dict
+  eval data_dict="$data_dict_str" ||
+    return $?
+  readonly data_dict
 
-  local workdir
-  workdir="$(vedv::vmobj_service::fs::get_workdir "$type" "$vmobj_id")" || {
-    err "Failed to get workdir for ${type}"
-    return "$ERR_VMOBJ_OPERATION"
-  }
-  readonly workdir
+  # ['remote_obj_prop']=['vmobj_entity_prop']
+  local -A data_dict_key_map=(
+    ['user_name']='user_name'
+    ['workdir']='workdir'
+    ['environment']='environment'
+    ['exposed_ports']='exposed_ports'
+    ['shell']='shell'
+    ['cpus']='cpus'
+    ['memory']='memory'
+  )
 
-  vedv::vmobj_entity::cache::set_workdir "$type" "$vmobj_id" "$workdir" || {
-    err "Failed to set workdir for ${type}"
-    return "$ERR_VMOBJ_OPERATION"
-  }
+  local -A new_dict=()
 
-  local shell
-  shell="$(vedv::vmobj_service::fs::get_shell "$type" "$vmobj_id")" || {
-    err "Failed to get shell for ${type}"
-    return "$ERR_VMOBJ_OPERATION"
-  }
-  readonly shell
+  for key in "${!data_dict[@]}"; do
+    local map_key="${data_dict_key_map[$key]}"
+    new_dict["$map_key"]="${data_dict[$key]}"
+  done
+  # shellcheck disable=SC2034
+  readonly new_dict
 
-  vedv::vmobj_entity::cache::set_shell "$type" "$vmobj_id" "$shell" || {
-    err "Failed to set shell for ${type}"
-    return "$ERR_VMOBJ_OPERATION"
-  }
+  local new_dict_str
+  new_dict_str="$(arr2str new_dict)"
+  readonly new_dict_str
 
-  local env
-  env="$(vedv::vmobj_service::fs::list_environment_vars "$type" "$vmobj_id")" || {
-    err "Failed to get env for ${type}"
-    return "$ERR_VMOBJ_OPERATION"
-  }
-  readonly env
-
-  vedv::vmobj_entity::cache::set_environment "$type" "$vmobj_id" "$env" || {
-    err "Failed to set env for ${type}"
-    return "$ERR_VMOBJ_OPERATION"
-  }
-
-  local eports
-  eports="$(vedv::vmobj_service::fs::list_exposed_ports "$type" "$vmobj_id")" || {
-    err "Failed to get exposed ports for ${type}"
-    return "$ERR_VMOBJ_OPERATION"
-  }
-  readonly eports
-
-  vedv::vmobj_entity::cache::set_exposed_ports "$type" "$vmobj_id" "$eports" || {
-    err "Failed to set exposed ports for ${type}"
+  vedv::vmobj_entity::set_dictionary "$type" "$vmobj_id" "$new_dict_str" || {
+    err "Failed to set data dict for ${type}: ${vmobj_id}"
     return "$ERR_VMOBJ_OPERATION"
   }
 }

@@ -1514,7 +1514,7 @@ vedv::image_builder::__load_env_vars() {
 #
 # Build image from Vedvfile
 #
-# On build failure the image is corrupted and deleted if:
+# On build failure the image is corrupted and must be deleted if:
 # 1 - The first layer creation fails. The FROM command
 # 2 - A layer deletion fails
 # 3 - A layer creation fails and the previous layer restoration fails too.
@@ -1619,14 +1619,14 @@ vedv::image_builder::__build() {
 
   if [[ -n "$image_id" ]]; then
 
-    local from_val_res
-    from_val_res="$(vedv::image_builder::__validate_layer_from "$image_id" "$from_cmd")" || {
+    local is_valid_layer_from
+    is_valid_layer_from="$(vedv::image_builder::__validate_layer_from "$image_id" "$from_cmd")" || {
       err "Failed to validate layer from for image '${image_name}'"
       return "$ERR_IMAGE_BUILDER_OPERATION"
     }
-    readonly from_val_res
+    readonly is_valid_layer_from
 
-    if [[ "$from_val_res" == 'invalid' ]]; then
+    if [[ "$is_valid_layer_from" == 'invalid' ]]; then
       vedv::image_service::remove "$image_id" 'true' >/dev/null || {
         err "Failed to remove image '${image_name}'"
         return "$ERR_IMAGE_BUILDER_OPERATION"
@@ -1651,6 +1651,14 @@ vedv::image_builder::__build() {
     echo 'Build finished'
     echo "${image_id} ${image_name}"
   }
+
+  local -i initial_layer_count
+  initial_layer_count="$(vedv::image_entity::get_layer_count "$image_id")" || {
+    err "Failed to get layer count for image '${image_name}'"
+    return "$ERR_IMAGE_BUILDER_OPERATION"
+  }
+  readonly initial_layer_count
+
   # first_invalid_layer_pos` is the command position where the build start,
   # all previous commands of this position are ignored because their layers are valid
   local -i first_invalid_cmd_pos
@@ -1671,6 +1679,24 @@ vedv::image_builder::__build() {
     err "The first command must be valid because it's the command 'FROM'"
     return "$ERR_IMAGE_BUILDER_OPERATION"
   fi
+
+  local -i current_layer_count
+  current_layer_count="$(vedv::image_entity::get_layer_count "$image_id")" || {
+    err "Failed to get layer count for image '${image_name}'"
+    return "$ERR_IMAGE_BUILDER_OPERATION"
+  }
+  readonly current_layer_count
+  # If any layer was deleted, the cached data is obsolete and must be updated
+  if [[ "$initial_layer_count" != "$current_layer_count" ]]; then
+    # start=$(date +%s%N)
+    vedv::image_service::cache_data "$image_id" || {
+      err "Failed to cache data for image '${image_name}'"
+      return "$ERR_IMAGE_BUILDER_OPERATION"
+    }
+    # end=$(date +%s%N)
+    # echo "time vedv::image_service::cache_data: $(((end - start) / 1000000)) ms."
+  fi
+
   if [[ $first_invalid_cmd_pos -eq -1 ]]; then
     __print_build_success_msg
     return 0
@@ -1812,7 +1838,7 @@ vedv::image_builder::build() {
   # So, the image data cache, included in the created containers, will be used
   # on any other context except this.
 
-  vedv::image_service::set_use_cache 'false'
+  vedv::image_service::set_use_cache 'true'
 
   vedv::image_builder::__build "$vedvfile" "$image_name" || {
     err "The build proccess has failed."
@@ -1824,18 +1850,10 @@ vedv::image_builder::build() {
 
   if [[ -n "$image_id" ]]; then
     ___on_build_ends_64695() {
-      # cache data
-      # The cached data can not be used by the image during build.
-      # On container creation when the image is cloned this data is cloned too.
-      vedv::image_service::cache_data "$image_id" || {
-        err "Failed to cache data for image '${image_name}'"
-        return "$ERR_IMAGE_BUILDER_OPERATION"
-      }
       vedv::image_service::stop "$image_id" >/dev/null || {
         err "Failed to stop the image '${image_name}'.You must stop it."
         return "$ERR_IMAGE_BUILDER_OPERATION"
       }
-
     }
 
     if [[ "$no_wait_after_build" == true ]]; then

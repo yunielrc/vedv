@@ -238,6 +238,24 @@
     {
       "type": "bashdb",
       "request": "launch",
+      "name": "Bash-Debug (vedv image build -n image5  ./Vedvfile5)",
+      "cwd": "${workspaceFolder}/dist/test/lib/vedv/components/image/fixtures",
+      "env": {
+        "VEDV_HADOLINT_ENABLED": "false",
+        "VEDV_CHANGE_PASSWORD_ON_IMPORT": "false"
+      },
+      "program": "${workspaceFolder}/dist/usr/bin/vedv",
+      "args": [
+        "image",
+        "build",
+        "-n",
+        "image1",
+        "./Vedvfile5"
+      ]
+    },
+    {
+      "type": "bashdb",
+      "request": "launch",
       "name": "Bash-Debug (vedv container login)",
       "env": {
         "VEDV_HADOLINT_ENABLED": "false"

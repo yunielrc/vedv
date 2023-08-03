@@ -1850,6 +1850,33 @@ EOF
   assert_output "Failed to set user 'user' to container: 12345"
 }
 
+@test "vedv::vmobj_service::fs::set_user() Should fail If cache::set_user_name fails" {
+  local -r type="container"
+  local -r vmobj_id=12345
+  local -r user_name="user"
+
+  vedv::vmobj_service::fs::get_user() {
+    assert_equal "$*" "container 12345"
+    echo "vedv"
+  }
+  vedv::vmobj_entity::get_password() {
+    assert_equal "$*" "container 12345"
+    echo "vedv"
+  }
+  vedv::vmobj_service::execute_cmd_by_id() {
+    assert_equal "$*" "container 12345 vedv-adduser 'user' 'vedv' && vedv-setuser 'user' root <none>"
+  }
+  vedv::vmobj_entity::cache::set_user_name() {
+    assert_equal "$*" "container 12345 user"
+    return 1
+  }
+
+  run vedv::vmobj_service::fs::set_user "$type" "$vmobj_id" "$user_name"
+
+  assert_failure
+  assert_output "Failed to set user to container: 12345"
+}
+
 @test "vedv::vmobj_service::fs::set_user() Should succeed" {
   local -r type="container"
   local -r vmobj_id=12345
@@ -1865,6 +1892,9 @@ EOF
   }
   vedv::vmobj_service::execute_cmd_by_id() {
     assert_equal "$*" "container 12345 vedv-adduser 'user' 'vedv' && vedv-setuser 'user' root <none>"
+  }
+  vedv::vmobj_entity::cache::set_user_name() {
+    assert_equal "$*" "container 12345 user"
   }
 
   run vedv::vmobj_service::fs::set_user "$type" "$vmobj_id" "$user_name"
@@ -1968,7 +1998,7 @@ EOF
   assert_output "Failed to set workdir 'workdir1' to container: 22345"
 }
 
-@test "vedv::vmobj_service::fs::set_workdir() Should Succeed" {
+@test "vedv::vmobj_service::fs::set_workdir() Should fail If cache::set_workdir fails" {
   local -r type="container"
   local -r vmobj_id="22345"
   local -r workdir="workdir1"
@@ -1983,6 +2013,38 @@ EOF
   }
   vedv::vmobj_service::execute_cmd_by_id() {
     assert_equal "$*" "container 22345 vedv-setworkdir 'workdir1' 'vedv' root <none>"
+    echo "/home/vedv/workdir1"
+  }
+  vedv::vmobj_entity::cache::set_workdir() {
+    assert_equal "$*" "container 22345 /home/vedv/workdir1"
+    return 1
+  }
+
+  run vedv::vmobj_service::fs::set_workdir "$type" "$vmobj_id" "$workdir"
+
+  assert_failure
+  assert_output "Failed to set workdir to container: 22345"
+}
+
+@test "vedv::vmobj_service::fs::set_workdir() Should succeed" {
+  local -r type="container"
+  local -r vmobj_id="22345"
+  local -r workdir="workdir1"
+
+  vedv::vmobj_service::fs::get_workdir() {
+    assert_equal "$*" "container 22345"
+    echo "workdir2"
+  }
+  vedv::vmobj_service::fs::get_user() {
+    assert_equal "$*" "container 22345"
+    echo "vedv"
+  }
+  vedv::vmobj_service::execute_cmd_by_id() {
+    assert_equal "$*" "container 22345 vedv-setworkdir 'workdir1' 'vedv' root <none>"
+    echo "/home/vedv/workdir1"
+  }
+  vedv::vmobj_entity::cache::set_workdir() {
+    assert_equal "$*" "container 22345 /home/vedv/workdir1"
   }
 
   run vedv::vmobj_service::fs::set_workdir "$type" "$vmobj_id" "$workdir"
@@ -2216,13 +2278,49 @@ EOF
   assert_output "Failed to add environment variable 'env_var1' to container: 22345"
 }
 
+@test "vedv::vmobj_service::fs::add_environment_var() Should fail If cache::set_environment fails" {
+  local -r type="container"
+  local -r vmobj_id="22345"
+  local -r env_var='EVAR3="VALUE 3"'
+
+  vedv::vmobj_service::execute_cmd_by_id() {
+    assert_equal "$*" "container 22345 vedv-addenv_var $'EVAR3=\"VALUE 3\"' root <none>"
+    cat <<EOF
+EVAR1='VALUE1'
+EVAR2='VALUE2'
+EVAR3="VALUE 3"
+EOF
+  }
+  vedv::vmobj_entity::cache::set_environment() {
+    assert_equal "$*" "container 22345 EVAR1='VALUE1'
+EVAR2='VALUE2'
+EVAR3=\"VALUE 3\""
+    return 1
+  }
+
+  run vedv::vmobj_service::fs::add_environment_var "$type" "$vmobj_id" "$env_var"
+
+  assert_failure
+  assert_output "Failed to set env for container: 22345"
+}
+
 @test "vedv::vmobj_service::fs::add_environment_var() Should succeed" {
   local -r type="container"
   local -r vmobj_id="22345"
-  local -r env_var="env_var1"
+  local -r env_var='EVAR3="VALUE 3"'
 
   vedv::vmobj_service::execute_cmd_by_id() {
-    assert_equal "$*" "container 22345 vedv-addenv_var $'env_var1' root <none>"
+    assert_equal "$*" "container 22345 vedv-addenv_var $'EVAR3=\"VALUE 3\"' root <none>"
+    cat <<EOF
+EVAR1='VALUE1'
+EVAR2='VALUE2'
+EVAR3="VALUE 3"
+EOF
+  }
+  vedv::vmobj_entity::cache::set_environment() {
+    assert_equal "$*" "container 22345 EVAR1='VALUE1'
+EVAR2='VALUE2'
+EVAR3=\"VALUE 3\""
   }
 
   run vedv::vmobj_service::fs::add_environment_var "$type" "$vmobj_id" "$env_var"
@@ -2232,8 +2330,6 @@ EOF
 }
 
 # Tests for vedv::vmobj_service::fs::list_environment_vars()
-# Tests for vedv::vmobj_service::fs::list_environment_vars()
-
 @test "vedv::vmobj_service::fs::list_environment_vars() Should fail If get_environment fails" {
   local -r type="container"
   local -r vmobj_id="12345"
@@ -2413,6 +2509,27 @@ EOF
   assert_output "Failed to set shell 'sh' to container: 12345"
 }
 
+@test "vedv::vmobj_service::fs::set_shell(): Should fail If cache::set_shell fails" {
+  local -r type="container"
+  local -r vmobj_id=12345
+  local -r shell="shell"
+
+  vedv::vmobj_service::execute_cmd_by_id() {
+    assert_equal "$*" "container 12345 vedv-setshell 'shell' root <none>"
+    echo '/bin/shell'
+  }
+
+  vedv::vmobj_entity::cache::set_shell() {
+    assert_equal "$*" "container 12345 /bin/shell"
+    return 1
+  }
+
+  run vedv::vmobj_service::fs::set_shell "$type" "$vmobj_id" "$shell"
+
+  assert_failure
+  assert_output "Failed to set shell to container: 12345"
+}
+
 @test "vedv::vmobj_service::fs::set_shell(): Should succeed" {
   local -r type="container"
   local -r vmobj_id=12345
@@ -2420,6 +2537,11 @@ EOF
 
   vedv::vmobj_service::execute_cmd_by_id() {
     assert_equal "$*" "container 12345 vedv-setshell 'shell' root <none>"
+    echo '/bin/shell'
+  }
+
+  vedv::vmobj_entity::cache::set_shell() {
+    assert_equal "$*" "container 12345 /bin/shell"
   }
 
   run vedv::vmobj_service::fs::set_shell "$type" "$vmobj_id" "$shell"
@@ -2576,13 +2698,53 @@ EOF
   assert_output "Failed to add expose ports '8081/udp' to container: 22345"
 }
 
+@test "vedv::vmobj_service::fs::add_exposed_ports() Should fail If cache::set_exposed_ports fails" {
+  local -r type="container"
+  local -r vmobj_id="22345"
+  local -r ports="8083/tcp"
+
+  vedv::vmobj_service::execute_cmd_by_id() {
+    assert_equal "$*" "container 22345 vedv-addexpose_ports $'8083/tcp' root <none>"
+    cat <<EOF
+8080/tcp
+8081/tcp
+8082/tcp
+8083/tcp
+EOF
+  }
+  vedv::vmobj_entity::cache::set_exposed_ports() {
+    assert_equal "$*" "container 22345 8080/tcp
+8081/tcp
+8082/tcp
+8083/tcp"
+    return 1
+  }
+
+  run vedv::vmobj_service::fs::add_exposed_ports "$type" "$vmobj_id" "$ports"
+
+  assert_failure
+  assert_output "Failed to set exposed ports for container: 22345"
+}
+
 @test "vedv::vmobj_service::fs::add_exposed_ports() Should succeed" {
   local -r type="container"
   local -r vmobj_id="22345"
-  local -r ports="8081/tcp"
+  local -r ports="8083/tcp"
 
   vedv::vmobj_service::execute_cmd_by_id() {
-    assert_equal "$*" "container 22345 vedv-addexpose_ports $'8081/tcp' root <none>"
+    assert_equal "$*" "container 22345 vedv-addexpose_ports $'8083/tcp' root <none>"
+    cat <<EOF
+8080/tcp
+8081/tcp
+8082/tcp
+8083/tcp
+EOF
+  }
+  vedv::vmobj_entity::cache::set_exposed_ports() {
+    assert_equal "$*" "container 22345 8080/tcp
+8081/tcp
+8082/tcp
+8083/tcp"
   }
 
   run vedv::vmobj_service::fs::add_exposed_ports "$type" "$vmobj_id" "$ports"
@@ -2591,7 +2753,6 @@ EOF
   assert_output ""
 }
 
-# Tests for vedv::vmobj_service::fs::list_exposed_ports_by_id()
 # Tests for vedv::vmobj_service::fs::list_exposed_ports_by_id()
 
 @test "vedv::vmobj_service::fs::list_exposed_ports_by_id() Should fail If get_exposed_ports fails" {
@@ -2746,44 +2907,52 @@ EOF
   assert_output "Invalid argument 'vmobj_id': it's empty"
 }
 
+@test "vedv::vmobj_service::cache_data() Should fail If get_data_dictionary fails" {
+  local -r type="container"
+  local -r vmobj_id="1234567890"
+
+  vedv::vmobj_service::fs::get_data_dictionary() {
+    assert_equal "$*" "container 1234567890"
+    return 1
+  }
+
+  run vedv::vmobj_service::cache_data "$type" "$vmobj_id"
+
+  assert_failure
+  assert_output "Failed to get user name for container"
+}
+
+@test "vedv::vmobj_service::cache_data() Should fail If set_dictionary fails" {
+  local -r type="container"
+  local -r vmobj_id="1234567890"
+
+  vedv::vmobj_service::fs::get_data_dictionary() {
+    assert_equal "$*" "container 1234567890"
+    echo '( [user_name]="vedv" [workdir]="/home/vedv" [environment]="EVAR1=VALUE1" [shell]="/bin/shell" [exposed_ports]="8080/tcp" [cpus]="2" [memory]="1024")'
+  }
+
+  vedv::vmobj_entity::set_dictionary() {
+    assert_equal "$*" 'container 1234567890 ([user_name]="vedv" [shell]="/bin/shell" [workdir]="/home/vedv" [exposed_ports]="8080/tcp" [cpus]="2" [memory]="1024" [environment]="EVAR1=VALUE1" )'
+    return 1
+  }
+
+  run vedv::vmobj_service::cache_data "$type" "$vmobj_id"
+
+  assert_failure
+  assert_output "Failed to set data dict for container: 1234567890"
+}
+
 @test "vedv::vmobj_service::cache_data() Should succeed" {
   local -r type="container"
-  local -r vmobj_id="12345"
+  local -r vmobj_id="1234567890"
 
-  vedv::vmobj_service::fs::get_user() {
-    assert_equal "$*" "container 12345"
-    echo "vedv"
+  vedv::vmobj_service::fs::get_data_dictionary() {
+    assert_equal "$*" "container 1234567890"
+    echo '( [user_name]="vedv" [workdir]="/home/vedv" [environment]="EVAR1=VALUE1" [shell]="/bin/shell" [exposed_ports]="8080/tcp" [cpus]="2" [memory]="1024")'
   }
-  vedv::vmobj_entity::cache::set_user_name() {
-    assert_equal "$*" "container 12345 vedv"
-  }
-  vedv::vmobj_service::fs::get_workdir() {
-    assert_equal "$*" "container 12345"
-    echo "/home/vedv"
-  }
-  vedv::vmobj_entity::cache::set_workdir() {
-    assert_equal "$*" "container 12345 /home/vedv"
-  }
-  vedv::vmobj_service::fs::get_shell() {
-    assert_equal "$*" "container 12345"
-    echo "bash"
-  }
-  vedv::vmobj_entity::cache::set_shell() {
-    assert_equal "$*" "container 12345 bash"
-  }
-  vedv::vmobj_service::fs::list_environment_vars() {
-    assert_equal "$*" "container 12345"
-    echo "VAR1=VAL1 VAR2=VAL2"
-  }
-  vedv::vmobj_entity::cache::set_environment() {
-    assert_equal "$*" "container 12345 VAR1=VAL1 VAR2=VAL2"
-  }
-  vedv::vmobj_service::fs::list_exposed_ports() {
-    assert_equal "$*" "container 12345"
-    echo "80/tcp 443/tcp"
-  }
-  vedv::vmobj_entity::cache::set_exposed_ports() {
-    assert_equal "$*" "container 12345 80/tcp 443/tcp"
+
+  vedv::vmobj_entity::set_dictionary() {
+    assert_equal "$*" 'container 1234567890 ([user_name]="vedv" [shell]="/bin/shell" [workdir]="/home/vedv" [exposed_ports]="8080/tcp" [cpus]="2" [memory]="1024" [environment]="EVAR1=VALUE1" )'
   }
 
   run vedv::vmobj_service::cache_data "$type" "$vmobj_id"
@@ -2791,8 +2960,6 @@ EOF
   assert_success
   assert_output ""
 }
-
-# Tests for vedv::vmobj_service::start_one_batch()
 
 @test "vedv::vmobj_service::start_one_batch() Should succeed" {
   local -r type="container"
@@ -3240,6 +3407,60 @@ EOF
 
   run vedv::vmobj_service::change_users_password \
     "$type" "$vmobj_id" "$new_passw"
+
+  assert_success
+  assert_output ""
+}
+
+# Tests for vedv::vmobj_service::fs::get_data_dictionary()
+@test "vedv::vmobj_service::fs::get_data_dictionary() Should fail With invalid type" {
+  local -r type="invalid"
+  local -r vmobj_id=""
+
+  run vedv::vmobj_service::fs::get_data_dictionary \
+    "$type" "$vmobj_id"
+
+  assert_failure
+  assert_output --partial "Invalid type: invalid, valid types are:"
+}
+
+@test "vedv::vmobj_service::fs::get_data_dictionary() Should fail With empty vmobj_id" {
+  local -r type="container"
+  local -r vmobj_id=""
+
+  run vedv::vmobj_service::fs::get_data_dictionary \
+    "$type" "$vmobj_id"
+
+  assert_failure
+  assert_output "Invalid argument 'vmobj_id': it's empty"
+}
+
+@test "vedv::vmobj_service::fs::get_data_dictionary() Should fail If execute_cmd_by_id" {
+  local -r type="container"
+  local -r vmobj_id=""
+
+  vedv::vmobj_service::execute_cmd_by_id() {
+    assert_equal "$*" "container 1234567890 vedv-getdata_dictionary root <none>"
+    return 1
+  }
+
+  run vedv::vmobj_service::fs::get_data_dictionary \
+    "$type" "$vmobj_id"
+
+  assert_failure
+  assert_output "Invalid argument 'vmobj_id': it's empty"
+}
+
+@test "vedv::vmobj_service::fs::get_data_dictionary() Should succeed" {
+  local -r type="container"
+  local -r vmobj_id="1234567890"
+
+  vedv::vmobj_service::execute_cmd_by_id() {
+    assert_equal "$*" "container 1234567890 vedv-getdata_dictionary root <none>"
+  }
+
+  run vedv::vmobj_service::fs::get_data_dictionary \
+    "$type" "$vmobj_id"
 
   assert_success
   assert_output ""

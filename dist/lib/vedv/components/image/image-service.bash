@@ -1499,35 +1499,16 @@ vedv::image_service::cache::list_exposed_ports() {
 #
 vedv::image_service::cache_data() {
   local -r image_id="$1"
+  # validate arguments
+  if [[ -z "$image_id" ]]; then
+    err "Invalid argument 'image_id': it's empty"
+    return "$ERR_INVAL_ARG"
+  fi
 
   vedv::vmobj_service::cache_data \
     'image' \
     "$image_id" || {
     err "Failed to cache data for image '${image_id}'"
-    return "$ERR_VMOBJ_OPERATION"
-  }
-
-  local cpus
-  cpus="$(vedv::image_service::fs::get_cpus "$image_id")" || {
-    err "Failed to get cpus for image ${image_id}"
-    return "$ERR_VMOBJ_OPERATION"
-  }
-  readonly cpus
-
-  vedv::image_entity::cache::set_cpus "$image_id" "$cpus" || {
-    err "Failed to set cpus for image ${image_id}"
-    return "$ERR_VMOBJ_OPERATION"
-  }
-
-  local memory
-  memory="$(vedv::image_service::fs::get_memory "$image_id")" || {
-    err "Failed to get memory for image ${image_id}"
-    return "$ERR_VMOBJ_OPERATION"
-  }
-  readonly memory
-
-  vedv::image_entity::cache::set_memory "$image_id" "$memory" || {
-    err "Failed to set memory for image ${image_id}"
     return "$ERR_VMOBJ_OPERATION"
   }
 }

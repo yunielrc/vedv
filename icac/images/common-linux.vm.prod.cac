@@ -170,7 +170,7 @@ readonly FULL_VEDV_WORKDIR="\$(realpath "\$VEDV_WORKDIR")"
 
 echo "\$FULL_VEDV_WORKDIR" >"${__VEDV_CONFIG_DIR}/layer/workdir"
 
-echo "\$FULL_VEDV_WORKDIR"
+vedv-getworkdir
 EOF
 
 chmod 0755 /usr/local/bin/vedv-setworkdir
@@ -211,6 +211,8 @@ if [[ ! "\$VEDV_ENV_VAR" =~ \$sh_var_regex ]]; then
 fi
 
 echo "\$VEDV_ENV_VAR" >>"${__VEDV_CONFIG_DIR}/layer/env"
+
+vedv-getenv_vars
 EOF
 
 chmod 0755 /usr/local/bin/vedv-addenv_var
@@ -255,6 +257,8 @@ for user in root \$(getent passwd | grep ':/home' | cut -f1 -d:); do
 done
 
 echo "\$VEDV_SHELL_FILE" >"${__VEDV_CONFIG_DIR}/layer/shell"
+
+vedv-getshell
 EOF
 
 chmod 0755 /usr/local/bin/vedv-setshell
@@ -310,6 +314,8 @@ IFS=' ' read -ra EXPOSE_PORTS_ARR <<<"\$EXPOSE_PORTS"
 readonly TMP_FILE="\$(mktemp)"
 sort -f -u "\$EXPOSE_FILE" >"\$TMP_FILE"
 mv "\$TMP_FILE" "\$EXPOSE_FILE"
+
+vedv-getexpose_ports
 EOF
 
 chmod 0755 /usr/local/bin/vedv-addexpose_ports
@@ -415,5 +421,29 @@ done
 EOF
 
 chmod 0755 /usr/local/bin/vedv-change_users_password
+
+# add vedv-getdata_dictionary script
+cat <<'EOF' >/usr/local/bin/vedv-getdata_dictionary
+#!/usr/bin/env bash
+
+set -eu
+
+declare -A data_dict=(
+  ['user_name']="$(vedv-getuser)"
+  ['workdir']="$(vedv-getworkdir)"
+  ['environment']="$(vedv-getenv_vars)"
+  ['exposed_ports']="$(vedv-getexpose_ports)"
+  ['shell']="$(vedv-getshell)"
+  ['cpus']="$(vedv-getcpus)"
+  ['memory']="$(vedv-getmemory)"
+)
+
+arr_text="$(declare -p data_dict)"
+
+echo "${arr_text#*=}"
+
+EOF
+
+chmod 0755 /usr/local/bin/vedv-getdata_dictionary
 
 echo '>> DONE!'

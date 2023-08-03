@@ -951,6 +951,34 @@ vedv::image_entity::get_layers_ids() {
 }
 
 #
+# Get layer count
+#
+# Arguments:
+#   image_id string       image id
+#
+# Output:
+#  Writes layers count (int) to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::image_entity::get_layer_count() {
+  local -r image_id="$1"
+  # validate arguments
+  vedv::image_entity::validate_id "$image_id" ||
+    return "$?"
+
+  local -a layer_ids
+  # shellcheck disable=SC2207
+  layer_ids=($(vedv::image_entity::get_layers_ids "$image_id")) || {
+    err "Failed to get layers ids for image '${image_id}'"
+    return "$ERR_IMAGE_OPERATION"
+  }
+
+  echo "${#layer_ids[@]}"
+}
+
+#
 # Get snapshot name by layer id
 #
 # Arguments:

@@ -1284,7 +1284,7 @@ vedv::vmobj_entity::cache::set_environment() {
 #   vmobj_id  string  vmobj id
 #
 # Output:
-#   Writes environment (string) to the stdout.
+#   Writes environment (text) to the stdout.
 #
 # Returns:
 #   0 on success, non-zero on error.

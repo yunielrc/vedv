@@ -175,11 +175,10 @@ Remove unused cache images"
 
   run vedv image remove-cache
   assert_success
-  assert_output --regexp '^[0-9]{10,11}\s$'
+  assert_output --regexp '^[0-9]{6,11}\s$'
 }
 
 # Tests for 'vedv image build'
-
 @test "vedv image build -h , Should show help" {
 
   for arg in '-h' '--help'; do

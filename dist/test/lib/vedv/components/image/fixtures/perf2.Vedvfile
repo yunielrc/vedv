@@ -1,0 +1,16 @@
+FROM /tmp/vedv/test/files/alpine-x86_64.ova
+
+
+SHELL sh
+EXPOSE 8081
+ENV NAME1='nalyd "1'
+USER nalyd
+WORKDIR nalydworkdir
+RUN touch file1
+
+SHELL bash
+EXPOSE 8082
+ENV NAME2="vedv '2"
+USER vedv
+WORKDIR vedvworkdir
+RUN touch file3
