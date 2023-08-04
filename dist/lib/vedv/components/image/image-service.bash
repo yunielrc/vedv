@@ -7,7 +7,6 @@
 if false; then
   . './../../utils.bash'
   . './image-entity.bash'
-  . './image-builder.bash'
   . './../__base/vmobj-service.bash'
   . './../../ssh-client.bash'
   . './../../hypervisors/virtualbox.bash'
@@ -1398,38 +1397,6 @@ vedv::image_service::delete_layer_cache() {
     err "Failed to restore layer '${layer_from_id}' for image '${image_id}'"
     return "$ERR_IMAGE_OPERATION"
   }
-}
-
-#
-# Build an image from a Vedvfile,
-#
-# Arguments:
-#   vedvfile              string  Vedvfile full path
-#   [image_name]          string  name of the image
-#   [force]               bool    force the build, removing child containers if the image has
-#   [no_cache]            bool    do not use cache when building the image
-#   [no_wait_after_build] bool    if true, it will not wait for the
-#                                 image to save data cache and stopping
-#
-# Output:
-#   writes process result
-#
-# Returns:
-#   0 on success, non-zero on error.
-#
-vedv::image_service::build() {
-  local -r vedvfile="$1"
-  local -r image_name="${2:-}"
-  local -r force="${3:-false}"
-  local -r no_cache="${4:-false}"
-  local -r no_wait_after_build="${5:-}"
-
-  vedv::image_builder::build \
-    "$vedvfile" \
-    "$image_name" \
-    "$force" \
-    "$no_cache" \
-    "$no_wait_after_build"
 }
 
 #

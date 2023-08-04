@@ -14,12 +14,13 @@ if false; then
   # __base
   . './../../lib/vedv/components/__base/vmobj-service.bash'
   . './../../lib/vedv/components/__base/vmobj-entity.bash'
+  # builder
+  . './../../lib/vedv/components/builder/builder-service.bash'
+  . './../../lib/vedv/components/builder/builder-vedvfile-service.bash'
   # image
   . './../../lib/vedv/components/image/image-service.bash'
   . './../../lib/vedv/components/image/image-entity.bash'
   . './../../lib/vedv/components/image/image-command.bash'
-  . './../../lib/vedv/components/image/image-builder.bash'
-  . './../../lib/vedv/components/image/image-vedvfile-service.bash'
   # container
   . './../../lib/vedv/components/container/container-service.bash'
   . './../../lib/vedv/components/container/container-entity.bash'
@@ -135,26 +136,31 @@ vedv::__initialize_components() {
     "$VEDV_SSH_USER" \
     "$(arr2str vedv_vmobj_service_use_cache_dict)"
 
-  # image
+  # builder
   local vedvfileignore_path=''
   if [[ -f "./.vedvfileignore" ]]; then
     vedvfileignore_path="${PWD}/.vedvfileignore"
   fi
   readonly vedvfileignore_path
 
-  vedv::image_vedvfile_service::constructor \
+  vedv::builder_vedvfile_service::constructor \
     "$VEDV_HADOLINT_CONFIG" \
     "$VEDV_HADOLINT_ENABLED" \
     "$VEDV_BASE_VEDVFILEIGNORE" \
     "$vedvfileignore_path"
 
+  vedv::builder_command::constructor \
+    "$__VEDV_SCRIPT_NAME"
+
+  vedv::builder_service::constructor \
+    "$VEDV_MEMORY_CACHE_DIR" \
+    "$VEDV_NO_WAIT_AFTER_BUILD"
+
+  # image
   vedv::image_service::constructor \
     "$VEDV_IMAGE_IMPORTED_DIR" \
     "$VEDV_CHANGE_PASSWORD_ON_IMPORT"
 
-  vedv::image_builder::constructor \
-    "$VEDV_MEMORY_CACHE_DIR" \
-    "$VEDV_NO_WAIT_AFTER_BUILD"
   vedv::image_command::constructor "$__VEDV_SCRIPT_NAME"
 
   # container
@@ -186,6 +192,7 @@ Flags:
 Management Commands:
   container     manage containers
   image         manage images
+  builder       manage builder
   registry      manage registry
 
 Run '${__VEDV_SCRIPT_NAME} COMMAND --help' for more information on a command.
@@ -193,7 +200,7 @@ HELPMSG
 }
 
 vedv::__on_exit() {
-  vedv::image_builder::on_exit
+  vedv::builder_service::on_exit
 }
 trap vedv::__on_exit INT TERM EXIT
 
@@ -229,6 +236,11 @@ vedv::__run_cmd() {
   while [[ $# -gt 0 ]]; do
     case "$1" in
     # arguments
+    builder)
+      shift
+      vedv::builder_command::run_cmd "$@"
+      return $?
+      ;;
     image)
       shift
       vedv::image_command::run_cmd "$@"

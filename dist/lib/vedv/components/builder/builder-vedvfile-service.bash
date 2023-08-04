@@ -21,11 +21,11 @@ readonly VEDVFILE_SUPPORTED_COMMANDS='FROM|RUN|COPY|USER|WORKDIR|ENV|SHELL|EXPOS
 # Returns:
 #   0 on success, non-zero on error.
 #
-vedv::image_vedvfile_service::constructor() {
-  readonly __VEDV_IMAGE_VEDVFILE_HADOLINT_CONFIG="$1"
-  readonly __VEDV_IMAGE_VEDVFILE_HADOLINT_ENABLED="$2"
-  readonly __VEDV_IMAGE_VEDVFILE_BASE_VEDVFILEIGNORE_PATH="$3"
-  readonly __VEDV_IMAGE_VEDVFILE_VEDVFILEIGNORE_PATH="$4"
+vedv::builder_vedvfile_service::constructor() {
+  readonly __VEDV_BUILDER_VEDVFILE_HADOLINT_CONFIG="$1"
+  readonly __VEDV_BUILDER_VEDVFILE_HADOLINT_ENABLED="$2"
+  readonly __VEDV_BUILDER_VEDVFILE_BASE_VEDVFILEIGNORE_PATH="$3"
+  readonly __VEDV_BUILDER_VEDVFILE_VEDVFILEIGNORE_PATH="$4"
 }
 
 __vedvfile-parser() {
@@ -45,7 +45,7 @@ __vedvfile-parser() {
 # Returns:
 #   0 on success, 1 otherwise
 #
-vedv::image_vedvfile_service::__are_supported_commands() {
+vedv::builder_vedvfile_service::__are_supported_commands() {
   local -r commands="$1"
 
   if [[ -z "$commands" ]]; then
@@ -91,7 +91,7 @@ vedv::image_vedvfile_service::__are_supported_commands() {
 # Returns:
 #   0 on success, 1 otherwise
 #
-vedv::image_vedvfile_service::__validate_file() {
+vedv::builder_vedvfile_service::__validate_file() {
   local -r vedvfile="$1"
 
   if [ ! -f "$vedvfile" ]; then
@@ -101,10 +101,10 @@ vedv::image_vedvfile_service::__validate_file() {
 
   local -r commands="$(cat "$vedvfile")"
 
-  vedv::image_vedvfile_service::__are_supported_commands "$commands" ||
+  vedv::builder_vedvfile_service::__are_supported_commands "$commands" ||
     return 1
 
-  if [[ "$__VEDV_IMAGE_VEDVFILE_HADOLINT_ENABLED" == true ]] && ! hadolint --config "$__VEDV_IMAGE_VEDVFILE_HADOLINT_CONFIG" "$vedvfile" >/dev/null; then
+  if [[ "$__VEDV_BUILDER_VEDVFILE_HADOLINT_ENABLED" == true ]] && ! hadolint --config "$__VEDV_BUILDER_VEDVFILE_HADOLINT_CONFIG" "$vedvfile" >/dev/null; then
     err "Hadolint validation fail"
     return 1
   fi
@@ -113,7 +113,7 @@ vedv::image_vedvfile_service::__validate_file() {
 }
 
 #
-# Build an image from a Vedvfile
+# Get commands from a vedvfile
 #
 # Arguments:
 #   vedvfile  string  Vedvfile full path
@@ -124,7 +124,7 @@ vedv::image_vedvfile_service::__validate_file() {
 # Returns:
 #   0 on success, non-zero on error.
 #
-vedv::image_vedvfile_service::get_commands() {
+vedv::builder_vedvfile_service::get_commands() {
   local -r vedvfile="$1"
 
   if [ ! -f "$vedvfile" ]; then
@@ -140,7 +140,7 @@ vedv::image_vedvfile_service::get_commands() {
   local -r vedvfile_parsed_file="$(mktemp)"
   echo "$vedvfile_parsed" >"$vedvfile_parsed_file"
 
-  vedv::image_vedvfile_service::__validate_file "$vedvfile_parsed_file" ||
+  vedv::builder_vedvfile_service::__validate_file "$vedvfile_parsed_file" ||
     return "$ERR_INVAL_ARG"
 
   nl -w 1 -s'  ' <<<"$vedvfile_parsed"
@@ -158,7 +158,7 @@ vedv::image_vedvfile_service::get_commands() {
 # Returns:
 #   0 on success, non-zero on error.
 #
-vedv::image_vedvfile_service::get_cmd_name() {
+vedv::builder_vedvfile_service::get_cmd_name() {
   local -r _cmd="$1"
 
   if [[ -z "$_cmd" ]]; then
@@ -174,7 +174,7 @@ vedv::image_vedvfile_service::get_cmd_name() {
   fi
   readonly cmd_arr
 
-  vedv::image_vedvfile_service::__are_supported_commands "${cmd_arr[*]}" ||
+  vedv::builder_vedvfile_service::__are_supported_commands "${cmd_arr[*]}" ||
     return "$ERR_INVAL_VALUE"
   # COPY --root source/ dest/ -> COPY
   echo "${cmd_arr[0]}"
@@ -192,7 +192,7 @@ vedv::image_vedvfile_service::get_cmd_name() {
 # Returns:
 #   0 on success, non-zero on error.
 #
-vedv::image_vedvfile_service::get_cmd_body() {
+vedv::builder_vedvfile_service::get_cmd_body() {
   local -r _cmd="$1"
 
   if [[ -z "$_cmd" ]]; then
@@ -209,7 +209,7 @@ vedv::image_vedvfile_service::get_cmd_body() {
   fi
   readonly cmd_arr
 
-  vedv::image_vedvfile_service::__are_supported_commands "${cmd_arr[*]}" ||
+  vedv::builder_vedvfile_service::__are_supported_commands "${cmd_arr[*]}" ||
     return "$ERR_INVAL_VALUE"
   # COPY --root source/ dest/ -> --root source/ dest/
   echo "${cmd_arr[*]:1}"
@@ -224,24 +224,24 @@ vedv::image_vedvfile_service::get_cmd_body() {
 # Returns:
 #   0 on success, non-zero on error.
 #
-vedv:image_vedvfile_service::get_joined_vedvfileignore() {
+vedv:builder_vedvfile_service::get_joined_vedvfileignore() {
 
-  if [[ ! -f "$__VEDV_IMAGE_VEDVFILE_BASE_VEDVFILEIGNORE_PATH" ]]; then
-    err "File ${__VEDV_IMAGE_VEDVFILE_BASE_VEDVFILEIGNORE_PATH} does not exist"
+  if [[ ! -f "$__VEDV_BUILDER_VEDVFILE_BASE_VEDVFILEIGNORE_PATH" ]]; then
+    err "File ${__VEDV_BUILDER_VEDVFILE_BASE_VEDVFILEIGNORE_PATH} does not exist"
     return "$ERR_INVAL_VALUE"
   fi
 
   local vedvfileignore_path
   readonly cmd_arr
-  if [[ ! -f "$__VEDV_IMAGE_VEDVFILE_VEDVFILEIGNORE_PATH" ]]; then
-    vedvfileignore_path="$__VEDV_IMAGE_VEDVFILE_BASE_VEDVFILEIGNORE_PATH"
+  if [[ ! -f "$__VEDV_BUILDER_VEDVFILE_VEDVFILEIGNORE_PATH" ]]; then
+    vedvfileignore_path="$__VEDV_BUILDER_VEDVFILE_BASE_VEDVFILEIGNORE_PATH"
   else
     vedvfileignore_path="$(mktemp)" || {
       err "Failed to create temporary file"
       return 1
     }
-    cat "$__VEDV_IMAGE_VEDVFILE_BASE_VEDVFILEIGNORE_PATH" \
-      "$__VEDV_IMAGE_VEDVFILE_VEDVFILEIGNORE_PATH" >"$vedvfileignore_path"
+    cat "$__VEDV_BUILDER_VEDVFILE_BASE_VEDVFILEIGNORE_PATH" \
+      "$__VEDV_BUILDER_VEDVFILE_VEDVFILEIGNORE_PATH" >"$vedvfileignore_path"
   fi
 
   echo "$vedvfileignore_path"
@@ -253,8 +253,8 @@ vedv:image_vedvfile_service::get_joined_vedvfileignore() {
 # Output:
 #  Writes the file path to stdout
 #
-vedv:image_vedvfile_service::get_base_vedvfileignore_path() {
-  echo "$__VEDV_IMAGE_VEDVFILE_BASE_VEDVFILEIGNORE_PATH"
+vedv:builder_vedvfile_service::get_base_vedvfileignore_path() {
+  echo "$__VEDV_BUILDER_VEDVFILE_BASE_VEDVFILEIGNORE_PATH"
 }
 
 #
@@ -263,6 +263,6 @@ vedv:image_vedvfile_service::get_base_vedvfileignore_path() {
 # Output:
 #  Writes the file path to stdout
 #
-vedv:image_vedvfile_service::get_vedvfileignore_path() {
-  echo "$__VEDV_IMAGE_VEDVFILE_VEDVFILEIGNORE_PATH"
+vedv:builder_vedvfile_service::get_vedvfileignore_path() {
+  echo "$__VEDV_BUILDER_VEDVFILE_VEDVFILEIGNORE_PATH"
 }

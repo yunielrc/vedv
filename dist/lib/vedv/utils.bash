@@ -24,11 +24,11 @@ readonly ERR_CHECKSUM=93
 readonly ERR_FILE_EXISTS=94
 readonly ERR_DOWNLOAD=95
 readonly ERR_FAILED_CREATE_DIR=96
-readonly ERR_IMAGE_BUILDER_OPERATION=97
+readonly ERR_BUILDER_SERVICE_OPERATION=97
 readonly ERR_REGISTRY_OPERATION=98
 readonly ERR_COPY_FILE=99
-# This error code can only be throwed by vedv::image_builder::__layer_execute_cmd()
-readonly ERR_IMAGE_BUILDER_LAYER_CREATION_FAILURE_PREV_RESTORATION_FAIL=100
+# This error code can only be throwed by vedv::builder_service::__layer_execute_cmd()
+readonly ERR_BUILDER_SERVICE_LAYER_CREATION_FAILURE_PREV_RESTORATION_FAIL=100
 #
 readonly UTILS_ENCODED_VAR_PREFIX='var_9f57a558b3_'
 readonly UTILS_ENCODED_ESCVAR_PREFIX='escvar_fc064fcc7e_'

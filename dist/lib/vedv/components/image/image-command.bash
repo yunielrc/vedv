@@ -6,8 +6,8 @@
 
 # this is only for code completion
 if false; then
-  . '../../utils.bash'
   . './image-service.bash'
+  . '../builder/builder-command.bash'
   . '../registry/registry-command.bash'
 fi
 
@@ -663,6 +663,34 @@ HELPMSG
 }
 
 #
+# Show help for __rm command
+#
+# Output:
+#  Writes the help to the stdout
+#
+vedv::image_command::__build_help() {
+  cat <<-HELPMSG
+Usage:
+${__VED_IMAGE_COMMAND_SCRIPT_NAME} image build [FLAGS] [OPTIONS] VEDVFILE
+
+Build an image from a Vedvfile
+
+Aliases:
+  ${__VED_IMAGE_COMMAND_SCRIPT_NAME} builder build
+
+Flags:
+  -h, --help    show the help
+  --force       force the build removing the image containers
+  --no-cache    do not use cache when building the image
+  --no-wait     it will not wait for the image to save data cache
+                and stopping.
+
+Options:
+  -n, --name <name>   image name
+HELPMSG
+}
+
+#
 # Build an image from a Vedvfile
 #
 # Flags:
@@ -685,88 +713,13 @@ HELPMSG
 #   0 on success, non-zero on error.
 #
 vedv::image_command::__build() {
-  local vedvfile='Vedvfile'
-  local image_name=''
-  local force=false
-  local no_cache=false
-  local no_wait_after_build=''
-
-  while [[ $# -gt 0 ]]; do
-
-    case "$1" in
-    # Flags
-    -h | --help)
-      vedv::image_command::__build_help
-      return 0
-      ;;
-    --force)
-      readonly force=true
-      shift
-      ;;
-    --no-cache)
-      readonly no_cache=true
-      shift
-      ;;
-    --no-wait)
-      readonly no_wait_after_build=true
-      shift
-      ;;
-    # Options
-    -n | --name | -t)
-      image_name="${2:-}"
-      # validate argument
-      if [[ -z "$image_name" ]]; then
-        err "No image name specified\n"
-        vedv::image_command::__build_help
-        return "$ERR_INVAL_ARG"
-      fi
-      shift 2
-      ;;
-    # Arguments
-    *)
-      readonly vedvfile="${1:-}"
-      break
-      ;;
-    esac
-  done
-
-  if [[ -z "$vedvfile" ]]; then
-    err "Missing argument 'VEDVFILE'\n"
+  # shellcheck disable=SC2317
+  vedv::builder_command::__build_help() {
     vedv::image_command::__build_help
-    return "$ERR_INVAL_ARG"
-  fi
+  }
+  readonly -f vedv::builder_command::__build_help
 
-  vedv::image_service::build \
-    "$vedvfile" \
-    "$image_name" \
-    "$force" \
-    "$no_cache" \
-    "$no_wait_after_build"
-}
-
-#
-# Show help for __rm command
-#
-# Output:
-#  Writes the help to the stdout
-#
-vedv::image_command::__build_help() {
-  cat <<-HELPMSG
-Usage:
-${__VED_IMAGE_COMMAND_SCRIPT_NAME} image build [FLAGS] [OPTIONS] VEDVFILE
-
-Build an image from a Vedvfile
-
-Flags:
-  -h, --help    show the help
-  --force       force the build removing the image containers
-  --no-cache    do not use cache when building the image
-  --no-wait     it will not wait for the image to save data cache
-                and stopping.
-
-Options:
-  -n, --name <name>   image name
-HELPMSG
+  vedv::builder_command::__build "$@"
 }
 
 #

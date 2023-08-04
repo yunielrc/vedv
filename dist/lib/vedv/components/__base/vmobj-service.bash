@@ -1138,7 +1138,7 @@ vedv::vmobj_service::copy_by_id() {
   readonly _workdir
 
   local vedvfileignore
-  vedvfileignore="$(vedv:image_vedvfile_service::get_joined_vedvfileignore)" || {
+  vedvfileignore="$(vedv:builder_vedvfile_service::get_joined_vedvfileignore)" || {
     err "Failed to get joined vedvfileignore"
     return "$ERR_VMOBJ_OPERATION"
   }

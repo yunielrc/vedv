@@ -1634,7 +1634,7 @@ EOF
   vedv::vmobj_service::fs::get_workdir() {
     assert_equal "$*" "INVALID_CALL"
   }
-  vedv:image_vedvfile_service::get_joined_vedvfileignore() {
+  vedv:builder_vedvfile_service::get_joined_vedvfileignore() {
     return 1
   }
 
@@ -1655,7 +1655,7 @@ EOF
   vedv::vmobj_service::fs::get_workdir() {
     assert_equal "$*" "INVALID_CALL"
   }
-  vedv:image_vedvfile_service::get_joined_vedvfileignore() {
+  vedv:builder_vedvfile_service::get_joined_vedvfileignore() {
     echo "/tmp/vedvfileignore"
   }
   vedv::vmobj_service::__exec_ssh_func() {
@@ -1682,7 +1682,7 @@ EOF
   vedv::vmobj_service::fs::get_workdir() {
     assert_equal "$*" "INVALID_CALL"
   }
-  vedv:image_vedvfile_service::get_joined_vedvfileignore() {
+  vedv:builder_vedvfile_service::get_joined_vedvfileignore() {
     echo "/tmp/vedvfileignore"
   }
   vedv::vmobj_service::__exec_ssh_func() {

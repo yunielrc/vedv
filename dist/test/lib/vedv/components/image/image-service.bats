@@ -2351,26 +2351,6 @@ EOF
   assert_output ""
 }
 
-# Tests for vedv::image_service::build()
-@test "vedv::image_service::build() Should succeed" {
-  # Arrange
-  local -r vedvfile="vedvfile1"
-  local -r image_name="image1"
-  local -r force="true"
-  local -r no_cache="true"
-
-  local -r no_wait_after_build="true"
-  # Stub
-  vedv::image_builder::build() {
-    assert_equal "$*" "${vedvfile} ${image_name} ${force} ${no_cache} ${no_wait_after_build}"
-  }
-  # Act
-  run vedv::image_service::build "$vedvfile" "$image_name" "$force" "$no_cache" "$no_wait_after_build"
-  # Assert
-  assert_success
-  assert_output ""
-}
-
 # Tests for vedv::image_service::import_from_url()
 @test "vedv::image_service::import_from_url() Should fail If image_url is empty" {
   # Arrange
