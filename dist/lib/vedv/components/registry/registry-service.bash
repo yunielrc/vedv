@@ -250,9 +250,7 @@ vedv::registry_service::pull() {
 
   local -r checksum_file="${image_file}.sha256sum"
 
-  if [[ "$no_cache" == false && -f "$image_file" ]]; then
-    echo "Image '${image_fqn}' already exists in the cache, skipping download"
-  else
+  if [[ "$no_cache" == true || ! -f "$image_file" ]]; then
     # Download the image and checksum file
     vedv::registry_api_client::download_file "$remote_checksum_file" "$checksum_file" "$registry_url" || {
       err "Error downloading image checksum '${remote_checksum_file}'"

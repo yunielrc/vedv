@@ -790,7 +790,7 @@ vedv::image_entity::has_containers() {
 #   index    int          layer index
 #
 # Output:
-#  Writes layers_ids (string) to the stdout
+#  Writes layers_id (string) to the stdout
 #
 # Returns:
 #   0 on success, non-zero on error.

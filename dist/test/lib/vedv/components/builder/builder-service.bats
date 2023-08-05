@@ -60,37 +60,6 @@ vedv:builder_vedvfile_service::get_vedvfileignore_path() {
   assert_output "Failed to get cmd name from cmd: '$cmd'"
 }
 
-@test "vedv::builder_service::__create_layer(): Should fail If fail to get image vm name" {
-  local -r image_id="123"
-  local -r cmd="1 RUN echo hello"
-
-  vedv::image_entity::get_vm_name() {
-    assert_equal "$*" "$image_id"
-    return 1
-  }
-
-  run vedv::builder_service::__create_layer "$image_id" "$cmd"
-
-  assert_failure
-  assert_output "Failed to get vm name for image with id '123'"
-}
-
-@test "vedv::builder_service::__create_layer(): Should fail If vm name is empty" {
-  local -r image_id="123"
-  local -r cmd="1 RUN echo hello"
-
-  vedv::image_entity::get_vm_name() {
-    assert_equal "$*" "$image_id"
-    echo ''
-    return 0
-  }
-
-  run vedv::builder_service::__create_layer "$image_id" "$cmd"
-
-  assert_failure
-  assert_output "There is not vm for image with id '123'"
-}
-
 @test "vedv::builder_service::__create_layer(): Should fail If fail to get layer id" {
   local -r image_id="123"
   local -r cmd="1 RUN echo hello"
@@ -110,7 +79,7 @@ vedv:builder_vedvfile_service::get_vedvfileignore_path() {
   assert_output "Failed to calculate layer id for cmd: '$cmd'"
 }
 
-@test "vedv::builder_service::__create_layer(), Should fail If fail to take snapshot" {
+@test "vedv::builder_service::__create_layer(), Should fail If fail to create_layer" {
   local -r image_id="image_id"
   local -r cmd="1 RUN echo hello"
 
@@ -124,15 +93,15 @@ vedv:builder_vedvfile_service::get_vedvfileignore_path() {
     echo "layer_id"
     return 0
   }
-  vedv::hypervisor::take_snapshot() {
-    assert_equal "$*" "image:image1|crc:image_id| layer:RUN|id:layer_id|"
+  vedv::image_service::create_layer() {
+    assert_equal "$*" "${image_id} RUN layer_id"
     return 1
   }
   # run the tested function
   run vedv::builder_service::__create_layer "$image_id" "$cmd"
 
-  assert_failure "$ERR_BUILDER_SERVICE_OPERATION"
-  assert_output "Failed to create layer 'layer:RUN|id:layer_id|' for image 'image_id', code: 1"
+  assert_failure
+  assert_output "Failed to create layer 'RUN' for image 'image_id'"
 }
 
 @test "vedv::builder_service::__create_layer(), Should success" {
@@ -149,15 +118,14 @@ vedv:builder_vedvfile_service::get_vedvfileignore_path() {
     echo "layer_id"
     return 0
   }
-  vedv::hypervisor::take_snapshot() {
-    assert_equal "$*" "image:image1|crc:image_id| layer:RUN|id:layer_id|"
-    return 0
+  vedv::image_service::create_layer() {
+    assert_equal "$*" "${image_id} RUN layer_id"
   }
 
   run vedv::builder_service::__create_layer "$image_id" "$cmd"
 
   assert_success
-  assert_output "layer_id"
+  assert_output ""
 }
 
 # Test for vedv::builder_service::__calc_command_layer_id()
@@ -413,233 +381,64 @@ Previous layer restored"
   assert_output "layer_id"
 }
 
-# Tests for vedv::builder_service::__layer_from() function
-@test "vedv::builder_service::__layer_from(), Should fail With empty 'image' argument" {
-  # Run program with invalid arguments
-  run vedv::builder_service::__layer_from "" "image_name"
+# Tests for vedv::builder_service::__layer_from()
+@test "vedv::builder_service::__layer_from() Should fail With empty 'image_id" {
+  local -r image_id=""
+  local -r cmd=""
+
+  run vedv::builder_service::__layer_from "$image_id" "$cmd"
 
   assert_failure
-  assert_output "Argument 'image' is required"
-}
-
-@test "vedv::builder_service::__layer_from(), Should fail With empty 'image_name' argument" {
-  # Run program with invalid arguments
-  run vedv::builder_service::__layer_from 'image' ''
-
-  assert_failure
-  assert_output "Argument 'image_name' is required"
-}
-
-@test "vedv::builder_service::__layer_from(), Should fail if pull fails" {
-  local -r image='image'
-  local -r image_name='image_name'
-  # Stub
-  vedv::image_service::import_from_any() {
-    assert_equal "$*" "${image} ${image_name}"
-    return 1
-  }
-
-  run vedv::builder_service::__layer_from 'image' 'image_name'
-
-  assert_failure
-  assert_output "Failed to pull image '${image}'"
-}
-
-@test "vedv::builder_service::__layer_from(), Should fail if get_first_layer_id fails" {
-  local -r image='image'
-  local -r image_name='image_name'
-
-  local -r cmd="1 FROM ${image}"
-  # Stub
-  vedv::image_service::import_from_any() {
-    assert_equal "$*" "${image} ${image_name}"
-    echo 'image_id'
-  }
-  vedv::image_entity::get_first_layer_id() {
-    assert_equal "$*" "image_id"
-    return 1
-  }
-  run vedv::builder_service::__layer_from 'image' 'image_name'
-
-  assert_failure
-  assert_output "Failed to get first layer id for image 'image_id'"
-}
-
-@test "vedv::builder_service::__layer_from(), Should fail if layer_id is empty" {
-  local -r image='image'
-  local -r image_name='image_name'
-
-  local -r cmd="1 FROM ${image}"
-  # Stub
-  vedv::image_service::import_from_any() {
-    assert_equal "$*" "${image} ${image_name}"
-    echo 'image_id'
-  }
-  vedv::image_entity::get_first_layer_id() {
-    assert_equal "$*" "image_id"
-  }
-  run vedv::builder_service::__layer_from 'image' 'image_name'
-
-  assert_failure
-  assert_output "'layer_id' must not be empty"
-}
-
-@test "vedv::builder_service::__layer_from(), Should success" {
-  local -r image='image'
-  local -r image_name='image_name'
-  # Stub
-  vedv::image_service::import_from_any() {
-    assert_equal "$*" "${image} ${image_name}"
-    echo 'image_id'
-  }
-  vedv::image_entity::get_first_layer_id() {
-    assert_equal "$*" "image_id"
-    echo 'layer_id'
-  }
-
-  run vedv::builder_service::__layer_from 'image' 'image_name'
-
-  assert_success
-  assert_output 'image_id'
-}
-
-# Tests for vedv::builder_service::__validate_layer_from() function
-
-@test "vedv::builder_service::__validate_layer_from(), Should fail With empty 'image_id' argument" {
-
-  run vedv::builder_service::__validate_layer_from "" "from_cmd"
-
-  assert_failure "$ERR_INVAL_ARG"
   assert_output "Argument 'image_id' is required"
 }
 
-@test "vedv::builder_service::__validate_layer_from(), Should fail With empty 'from_cmd' argument" {
-  run vedv::builder_service::__validate_layer_from "image1" ""
+@test "vedv::builder_service::__layer_from() Should fail With empty 'cmd'" {
+  local -r image_id="1234567890"
+  local -r cmd=""
 
-  assert_failure "$ERR_INVAL_ARG"
-  assert_output "Argument 'from_cmd' is required"
+  run vedv::builder_service::__layer_from "$image_id" "$cmd"
+
+  assert_failure
+  assert_output "Argument 'cmd' is required"
 }
 
-@test "vedv::builder_service::__validate_layer_from(), Should fail on error getting from_file_sum" {
-  local -r image_id="image_id"
-  local -r from_cmd="1 FROM ${TEST_OVA_FILE}"
+@test 'vedv::builder_service::__layer_from() Should fail If cmd has $' {
+  local -r image_id="1234567890"
+  local -r cmd="RUN ls ${UTILS_ENCODED_ESCVAR_PREFIX}name"
 
-  vedv::builder_service::__layer_from_calc_id() {
-    assert_equal "$*" "$from_cmd"
+  run vedv::builder_service::__layer_from "$image_id" "$cmd"
+
+  assert_failure
+  assert_output 'Invalid command, it must not contain: \$ or $'
+}
+
+@test 'vedv::builder_service::__layer_from() Should fail If __create_layer fails' {
+  local -r image_id="1234567890"
+  local -r cmd="RUN ls"
+
+  vedv::builder_service::__create_layer() {
+    assert_equal "$*" "${image_id} ${cmd}"
     return 1
   }
 
-  run vedv::builder_service::__validate_layer_from "$image_id" "$from_cmd"
+  run vedv::builder_service::__layer_from "$image_id" "$cmd"
 
   assert_failure
-  assert_output "Failed to cal id for: '${from_cmd}'"
+  assert_output "Failed to create layer for image '1234567890'"
 }
 
-@test "vedv::builder_service::__validate_layer_from(), Should fail If from_file_sum is empty" {
-  local -r image_id="image_id"
-  local -r from_cmd="FROM ${TEST_OVA_FILE}"
+@test 'vedv::builder_service::__layer_from() Should success' {
+  local -r image_id="1234567890"
+  local -r cmd="RUN ls"
 
-  vedv::builder_vedvfile_service::get_cmd_body() {
-    assert_equal "$*" "$from_cmd"
-    echo "$TEST_OVA_FILE"
-  }
-  vedv::builder_service::__layer_from_calc_id() {
-    assert_equal "$*" "$from_cmd"
+  vedv::builder_service::__create_layer() {
+    assert_equal "$*" "${image_id} ${cmd}"
   }
 
-  run vedv::builder_service::__validate_layer_from "$image_id" "$from_cmd"
-
-  assert_failure
-  assert_output "from_file_sum' must not be empty"
-}
-
-@test "vedv::builder_service::__validate_layer_from(), Should fail on error getting image_file_sum" {
-  local -r image_id="image_id"
-  local -r from_cmd="FROM ${TEST_OVA_FILE}"
-
-  vedv::builder_vedvfile_service::get_cmd_body() {
-    assert_equal "$*" "$from_cmd"
-    echo "$TEST_OVA_FILE"
-  }
-  vedv::builder_service::__layer_from_calc_id() {
-    assert_equal "$*" "$from_cmd"
-    echo "1234"
-  }
-  vedv::image_entity::get_ova_file_sum() {
-    assert_equal "$*" "$image_id"
-    return 1
-  }
-
-  run vedv::builder_service::__validate_layer_from "$image_id" "$from_cmd"
-
-  assert_failure
-  assert_output "Failed to get ova file sum for image with id 'image_id'"
-}
-
-@test "vedv::builder_service::__validate_layer_from(), Should fail If image_file_sum is empty" {
-  local -r image_id="image_id"
-  local -r from_cmd="FROM ${TEST_OVA_FILE}"
-
-  vedv::builder_vedvfile_service::get_cmd_body() {
-    assert_equal "$*" "$from_cmd"
-    echo "$TEST_OVA_FILE"
-  }
-  vedv::builder_service::__layer_from_calc_id() {
-    assert_equal "$*" "$from_cmd"
-    echo "1234"
-  }
-  vedv::image_entity::get_ova_file_sum() {
-    assert_equal "$*" "$image_id"
-  }
-
-  run vedv::builder_service::__validate_layer_from "$image_id" "$from_cmd"
-
-  assert_failure
-  assert_output "image_file_sum' must not be empty"
-}
-
-@test "vedv::builder_service::__validate_layer_from(), Should be 'invalid' When OVA file sum is different from the original one" {
-  local -r image_id="image_id"
-  local -r from_cmd="FROM ${TEST_OVA_FILE}"
-
-  vedv::builder_vedvfile_service::get_cmd_body() {
-    assert_equal "$*" "$from_cmd"
-    echo "$TEST_OVA_FILE"
-  }
-  vedv::builder_service::__layer_from_calc_id() {
-    assert_equal "$*" "$from_cmd"
-    echo "1234"
-  }
-  vedv::image_entity::get_ova_file_sum() {
-    assert_equal "$*" "$image_id"
-    echo "4567"
-  }
-  run vedv::builder_service::__validate_layer_from "$image_id" "$from_cmd"
+  run vedv::builder_service::__layer_from "$image_id" "$cmd"
 
   assert_success
-  assert_output "invalid"
-}
-
-@test "vedv::builder_service::__validate_layer_from(), Should success When OVA file sum is the same as the original one" {
-  local -r image_id="image_id"
-  local -r from_cmd="FROM ${TEST_OVA_FILE}"
-
-  vedv::builder_vedvfile_service::get_cmd_body() {
-    assert_equal "$*" "$from_cmd"
-    echo "$TEST_OVA_FILE"
-  }
-  vedv::builder_service::__layer_from_calc_id() {
-    assert_equal "$*" "$from_cmd"
-    echo "1234"
-  }
-  vedv::image_entity::get_ova_file_sum() {
-    assert_equal "$*" "$image_id"
-    echo "1234"
-  }
-  run vedv::builder_service::__validate_layer_from "$image_id" "$from_cmd"
-
-  assert_success
-  assert_output 'valid'
+  assert_output ""
 }
 
 # Tests for vedv::builder_service::__layer_copy_calc_id()
@@ -1081,7 +880,7 @@ Previous layer restored"
   assert_output "Failed to get first invalid positions between two arrays"
 }
 
-@test "vedv::builder_service::__delete_invalid_layers() Should fails If first invalid cmd pos equals to 0" {
+@test "vedv::builder_service::__delete_invalid_layers() Should suceed If first invalid cmd pos equals to 0" {
   # Arrange
   local -r image_id="image_id"
   local -r cmds="1 FROM /tmp/alpine-x86_64.ova
@@ -1108,8 +907,8 @@ Previous layer restored"
   # Act
   run vedv::builder_service::__delete_invalid_layers "$image_id" "$cmds"
   # Assert
-  assert_failure "$ERR_BUILDER_SERVICE_OPERATION"
-  assert_output "The first command must be valid because it's the command 'FROM'"
+  assert_success
+  assert_output "0"
 }
 
 @test "vedv::builder_service::__delete_invalid_layers() Should fails If fails to delete the first layer" {
@@ -1245,7 +1044,7 @@ Previous layer restored"
   assert_output "File '${vedvfile}' does not exist"
 }
 
-@test "vedv::builder_service::__build() Should gen image_name IF empty" {
+@test "vedv::builder_service::__build() Should gen image_name If empty" {
   # Arrange
   local -r vedvfile="dist/test/lib/vedv/components/image/fixtures/Vedvfile"
   local -r image_name=""
@@ -1332,48 +1131,12 @@ Previous layer restored"
   assert_output "Failed to get image id for image '${image_name}'"
 }
 
-@test "vedv::builder_service::__build() Should fail On error validating layer from" {
+@test "vedv::builder_service::__build() Should fail If __create_image_by_from_cmd fails" {
   # Arrange
   local -r vedvfile="dist/test/lib/vedv/components/image/fixtures/Vedvfile"
   local -r image_name="my-image-name"
 
   local -r from_cmd="1 FROM my_image"
-  local -r image_id="image-id"
-  # Stub
-
-  petname() {
-    assert_equal "$*" "INVALID_CALL"
-  }
-  vedv::builder_vedvfile_service::get_commands() {
-    assert_equal "$*" "$vedvfile"
-    echo "$from_cmd"
-  }
-  utils::str_encode_vars() {
-    assert_equal "$*" "$from_cmd"
-    echo "$from_cmd"
-  }
-  vedv::image_entity::get_id_by_image_name() {
-    assert_equal "$*" "$image_name"
-    echo 'image-id'
-  }
-  vedv::builder_service::__validate_layer_from() {
-    assert_equal "$*" "${image_id} ${from_cmd}"
-    false
-  }
-  # Act
-  run vedv::builder_service::__build "$vedvfile" "$image_name"
-  # Assert
-  assert_failure "$ERR_BUILDER_SERVICE_OPERATION"
-  assert_output "Failed to validate layer from for image '${image_name}'"
-}
-
-@test "vedv::builder_service::__build() Should fail to remove the image" {
-  # Arrange
-  local -r vedvfile="dist/test/lib/vedv/components/image/fixtures/Vedvfile"
-  local -r image_name="my-image-name"
-
-  local -r from_cmd="1 FROM my_image"
-  local -r image_id="image-id"
   # Stub
   petname() {
     assert_equal "$*" "INVALID_CALL"
@@ -1388,223 +1151,25 @@ Previous layer restored"
   }
   vedv::image_entity::get_id_by_image_name() {
     assert_equal "$*" "$image_name"
-    echo 'image-id'
+    echo ""
   }
-  vedv::builder_service::__validate_layer_from() {
-    assert_equal "$*" "${image_id} ${from_cmd}"
-    echo 'invalid'
-  }
-  vedv::image_service::remove() {
-    assert_equal "$*" "${image_id} true"
-    false
-  }
-  # Act
-  run vedv::builder_service::__build "$vedvfile" "$image_name"
-  # Assert
-  assert_failure "$ERR_BUILDER_SERVICE_OPERATION"
-  assert_output "Failed to remove image '${image_name}'"
-}
-
-@test "vedv::builder_service::__build() Should fail to get cmd body" {
-  # Arrange
-  local -r vedvfile="dist/test/lib/vedv/components/image/fixtures/Vedvfile"
-  local -r image_name="my-image-name"
-
-  local -r from_cmd="1 FROM my_image"
-  local -r image_id="image-id"
-  # Stub
-
-  petname() {
-    assert_equal "$*" "INVALID_CALL"
-  }
-  vedv::builder_vedvfile_service::get_commands() {
-    assert_equal "$*" "$vedvfile"
-    echo "$from_cmd"
-  }
-  utils::str_encode_vars() {
-    assert_equal "$*" "$from_cmd"
-    echo "$from_cmd"
-  }
-  vedv::image_entity::get_id_by_image_name() {
-    assert_equal "$*" "$image_name"
-    echo 'image-id'
-  }
-  vedv::builder_service::__validate_layer_from() {
-    assert_equal "$*" "${image_id} ${from_cmd}"
-    echo 'invalid'
-  }
-  vedv::image_service::remove() {
-    assert_equal "$*" "${image_id} true"
-  }
-  vedv::builder_vedvfile_service::get_cmd_body() {
-    assert_equal "$*" "$from_cmd"
+  vedv::builder_service::__create_image_by_from_cmd() {
+    assert_equal "$*" "${from_cmd} ${image_name}"
     return 1
   }
   # Act
   run vedv::builder_service::__build "$vedvfile" "$image_name"
   # Assert
   assert_failure
-  assert_output "Failed to get cmd body from Vedvfile '${vedvfile}'"
+  assert_output "Failed to create image 'my-image-name'"
 }
 
-@test "vedv::builder_service::__build() Should fail creating layer from" {
+@test "vedv::builder_service::__build() Should fail If get_layer_count fails" {
   # Arrange
   local -r vedvfile="dist/test/lib/vedv/components/image/fixtures/Vedvfile"
   local -r image_name="my-image-name"
 
   local -r from_cmd="1 FROM my_image"
-  local -r image_id="image-id"
-  # Stub
-
-  petname() {
-    assert_equal "$*" "INVALID_CALL"
-  }
-  vedv::builder_vedvfile_service::get_commands() {
-    assert_equal "$*" "$vedvfile"
-    echo "$from_cmd"
-  }
-  utils::str_encode_vars() {
-    assert_equal "$*" "$from_cmd"
-    echo "$from_cmd"
-  }
-  vedv::image_entity::get_id_by_image_name() {
-    assert_equal "$*" "$image_name"
-    echo 'image-id'
-  }
-  vedv::builder_service::__validate_layer_from() {
-    assert_equal "$*" "${image_id} ${from_cmd}"
-    echo 'invalid'
-  }
-  vedv::image_service::remove() {
-    assert_regex "$*" "(${image_name}|${image_id}) true"
-  }
-  vedv::builder_vedvfile_service::get_cmd_body() {
-    assert_equal "$*" "$from_cmd"
-    echo "$vedvfile"
-  }
-  vedv::builder_service::__layer_from() {
-    # shellcheck disable=SC2154
-    assert_equal "$*" "${from_body} ${image_name}"
-    false
-  }
-  # Act
-  run vedv::builder_service::__build "$vedvfile" "$image_name"
-  # Assert
-  assert_failure "$ERR_BUILDER_SERVICE_OPERATION"
-  assert_output "Failed to create the layer for command '1 FROM my_image'
-The image 'my-image-name' is corrupted and its going to be deleted.
-The image 'my-image-name' was removed."
-}
-
-@test "vedv::builder_service::__build() Should fail If get_layers_ids fails" {
-  # Arrange
-  local -r vedvfile="dist/test/lib/vedv/components/image/fixtures/Vedvfile"
-  local -r image_name="my-image-name"
-
-  local -r from_cmd="1 FROM my_image"
-  local -r image_id="image-id"
-  # Stub
-
-  petname() {
-    assert_equal "$*" "INVALID_CALL"
-  }
-  vedv::builder_vedvfile_service::get_commands() {
-    assert_equal "$*" "$vedvfile"
-    echo "$from_cmd"
-  }
-  utils::str_encode_vars() {
-    assert_equal "$*" "$from_cmd"
-    echo "$from_cmd"
-  }
-  vedv::image_entity::get_id_by_image_name() {
-    assert_equal "$*" "$image_name"
-    echo 'image-id'
-  }
-  vedv::builder_service::__validate_layer_from() {
-    assert_equal "$*" "${image_id} ${from_cmd}"
-    echo 'invalid'
-  }
-  vedv::image_service::remove() {
-    assert_regex "$*" "(${image_name}|${image_id}) true"
-  }
-  vedv::builder_vedvfile_service::get_cmd_body() {
-    assert_equal "$*" "$from_cmd"
-    echo "$vedvfile"
-  }
-  vedv::builder_service::__layer_from() {
-    # shellcheck disable=SC2154
-    assert_equal "$*" "${from_body} ${image_name}"
-  }
-  vedv::image_entity::get_layers_ids() {
-    assert_equal "$*" "$image_id"
-    return 1
-  }
-  # Act
-  run vedv::builder_service::__build "$vedvfile" "$image_name"
-  # Assert
-  assert_failure "$ERR_BUILDER_SERVICE_OPERATION"
-  assert_output "Failed to get layers ids for image 'my-image-name'. Try build the image again with --no-cache."
-}
-
-@test "vedv::builder_service::__build() Should fail If restore_last_layer fails On valid layer from" {
-  # Arrange
-  local -r vedvfile="dist/test/lib/vedv/components/image/fixtures/Vedvfile"
-  local -r image_name="my-image-name"
-
-  local -r from_cmd="1 FROM my_image"
-  local -r image_id="image-id"
-  # Stub
-
-  petname() {
-    assert_equal "$*" "INVALID_CALL"
-  }
-  vedv::builder_vedvfile_service::get_commands() {
-    assert_equal "$*" "$vedvfile"
-    echo "$from_cmd"
-  }
-  utils::str_encode_vars() {
-    assert_equal "$*" "$from_cmd"
-    echo "$from_cmd"
-  }
-  vedv::image_entity::get_id_by_image_name() {
-    assert_equal "$*" "$image_name"
-    echo 'image-id'
-  }
-  vedv::builder_service::__validate_layer_from() {
-    assert_equal "$*" "${image_id} ${from_cmd}"
-    echo 'valid'
-  }
-  vedv::image_service::remove() {
-    assert_regex "$*" "INVALID_CALL"
-  }
-  vedv::builder_vedvfile_service::get_cmd_body() {
-    assert_equal "$*" "INVALID_CALL"
-  }
-  vedv::builder_service::__layer_from() {
-    # shellcheck disable=SC2154
-    assert_equal "$*" "INVALID_CALL"
-  }
-  vedv::image_entity::get_layers_ids() {
-    assert_equal "$*" "INVALID_CALL"
-  }
-  vedv::image_service::restore_last_layer() {
-    assert_equal "$*" "$image_id"
-    return 1
-  }
-  # Act
-  run vedv::builder_service::__build "$vedvfile" "$image_name"
-  # Assert
-  assert_failure "$ERR_BUILDER_SERVICE_OPERATION"
-  assert_output "Failed to restore layer last layer for image 'image-id'. Try build the image again with --no-cache."
-}
-
-@test "vedv::builder_service::__build() Should call __layer_from If image_id is empty" {
-  # Arrange
-  local -r vedvfile="dist/test/lib/vedv/components/image/fixtures/Vedvfile"
-  local -r image_name="my-image-name"
-
-  local -r from_cmd="1 FROM my_image"
-  local -r image_id="image-id"
   # Stub
   petname() {
     assert_equal "$*" "INVALID_CALL"
@@ -1619,111 +1184,36 @@ The image 'my-image-name' was removed."
   }
   vedv::image_entity::get_id_by_image_name() {
     assert_equal "$*" "$image_name"
+    echo "1234567890"
   }
-  vedv::builder_service::__validate_layer_from() {
+  vedv::builder_service::__create_image_by_from_cmd() {
     assert_equal "$*" "INVALID_CALL"
-  }
-  vedv::image_service::remove() {
-    assert_equal "$*" "my-image-name true"
-  }
-  vedv::builder_vedvfile_service::get_cmd_body() {
-    assert_equal "$*" "$from_cmd"
-    echo "$vedvfile"
-  }
-  vedv::image_entity::get_layers_ids() {
-    assert_equal "$*" "INVALID_CALL"
-  }
-  vedv::image_service::restore_last_layer() {
-    assert_equal "$*" "INVALID_CALL"
-  }
-  vedv::builder_service::__layer_from() {
-    assert_equal "$*" "${from_body} ${image_name}"
-    false
-  }
-  # Act
-  run vedv::builder_service::__build "$vedvfile" "$image_name"
-  # Assert
-  assert_failure "$ERR_BUILDER_SERVICE_OPERATION"
-  assert_output "Failed to create the layer for command '1 FROM my_image'
-The image 'my-image-name' is corrupted and its going to be deleted.
-The image 'my-image-name' was removed."
-}
-
-@test "vedv::builder_service::__build() Should fail If first get_layer_count fails" {
-  # Arrange
-  local -r vedvfile="dist/test/lib/vedv/components/image/fixtures/Vedvfile"
-  local -r image_name="my-image-name"
-
-  local -r from_cmd="1 FROM my_image"
-  local -r image_id="image-id"
-  local -r cmds="1 FROM /tmp/alpine-x86_64.ova
-2 COPY homefs/* /home/vedv/
-3 COPY home.config /home/vedv/
-4 RUN ls -la /home/vedv/"
-  # Stub
-
-  petname() {
-    assert_equal "$*" "INVALID_CALL"
-  }
-  vedv::builder_vedvfile_service::get_commands() {
-    assert_equal "$*" "$vedvfile"
-    echo "$cmds"
-  }
-  utils::str_encode_vars() {
-    assert_equal "$*" "$from_cmd"
-    echo "$from_cmd"
-  }
-  vedv::image_entity::get_id_by_image_name() {
-    assert_equal "$*" "$image_name"
-  }
-  vedv::builder_service::__validate_layer_from() {
-    assert_equal "$*" "INVALID_CALL"
-  }
-  vedv::image_service::remove() {
-    assert_equal "$*" "INVALID_CALL"
-  }
-  vedv::builder_vedvfile_service::get_cmd_body() {
-    assert_equal "$*" "$from_cmd"
-    echo "$vedvfile"
-  }
-  vedv::builder_service::__layer_from() {
-    assert_equal "$*" "${from_body} ${image_name}"
-    echo "$image_id"
-  }
-  vedv::image_entity::get_layers_ids() {
-    assert_equal "$*" "$image_id"
-    echo "12345 123456"
   }
   vedv::image_entity::get_layer_count() {
-    assert_equal "$*" "$image_id"
+    assert_equal "$*" "1234567890"
     return 1
   }
   # Act
   run vedv::builder_service::__build "$vedvfile" "$image_name"
   # Assert
   assert_failure
-  assert_output --partial "Failed to get layer count for image '${image_name}'"
+  assert_output "Failed to get layer count for image 'my-image-name'"
 }
 
-@test "vedv::builder_service::__build() Should fail to delete invalid layers" {
+@test "vedv::builder_service::__build() Should fail If __delete_invalid_layers fails" {
   # Arrange
-  local -r vedvfile="dist/test/lib/vedv/components/image/fixtures/Vedvfile"
-  local -r image_name="my-image-name"
+  local -r vedvfile="dist/test/lib/vedv/components/builder/fixtures/Vedvfile"
+  local -r image_name="image1"
 
+  local commands_encvars="$(<"$vedvfile")"
   local -r from_cmd="1 FROM my_image"
-  local -r image_id="image-id"
-  local -r cmds="1 FROM /tmp/alpine-x86_64.ova
-2 COPY homefs/* /home/vedv/
-3 COPY home.config /home/vedv/
-4 RUN ls -la /home/vedv/"
   # Stub
-
   petname() {
     assert_equal "$*" "INVALID_CALL"
   }
   vedv::builder_vedvfile_service::get_commands() {
     assert_equal "$*" "$vedvfile"
-    echo "$cmds"
+    echo "$from_cmd"
   }
   utils::str_encode_vars() {
     assert_equal "$*" "$from_cmd"
@@ -1731,92 +1221,58 @@ The image 'my-image-name' was removed."
   }
   vedv::image_entity::get_id_by_image_name() {
     assert_equal "$*" "$image_name"
+    echo "1234567890"
   }
-  vedv::builder_service::__validate_layer_from() {
+  vedv::builder_service::__create_image_by_from_cmd() {
     assert_equal "$*" "INVALID_CALL"
-  }
-  vedv::image_service::remove() {
-    assert_equal "$*" "INVALID_CALL"
-  }
-  vedv::builder_vedvfile_service::get_cmd_body() {
-    assert_equal "$*" "$from_cmd"
-    echo "$vedvfile"
-  }
-  vedv::builder_service::__layer_from() {
-    assert_equal "$*" "${from_body} ${image_name}"
-    echo "$image_id"
-  }
-  vedv::image_entity::get_layers_ids() {
-    assert_equal "$*" "$image_id"
-    echo "12345 123456"
   }
   vedv::image_entity::get_layer_count() {
-    assert_equal "$*" "$image_id"
-    echo 1
+    assert_equal "$*" "1234567890"
+    echo 0
   }
   vedv::builder_service::__delete_invalid_layers() {
-    assert_equal "$*" "${image_id} ${cmds}"
-    false
+    assert_equal "$*" "1234567890 ${commands_encvars}"
+    return 1
   }
   # Act
   run vedv::builder_service::__build "$vedvfile" "$image_name"
   # Assert
   assert_failure
-  assert_output --partial "Failed deleting invalid layers for image '${image_name}'"
+  assert_output "Failed deleting invalid layers for image 'image1'. Try build the image again with --no-cache."
 }
 
 @test "vedv::builder_service::__build() Should fail If first_invalid_layer_pos < -1 or > commands_length length" {
   # Arrange
-  local -r vedvfile="dist/test/lib/vedv/components/image/fixtures/Vedvfile"
-  local -r image_name="my-image-name"
-  local -r from_cmd="1 FROM my_image"
-  local -r vfile_cmds="${from_cmd}
-2 RUN echo 'hello world'"
-  local -r image_id="image-id"
-  # Stub
+  local -r vedvfile="dist/test/lib/vedv/components/builder/fixtures/Vedvfile"
+  local -r image_name="image1"
 
+  local commands_encvars="$(<"$vedvfile")"
+  local -r from_cmd="1 FROM my_image"
+  # Stub
   petname() {
     assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::builder_vedvfile_service::get_commands() {
+    assert_equal "$*" "$vedvfile"
+    echo "$from_cmd"
   }
   utils::str_encode_vars() {
     assert_equal "$*" "$from_cmd"
     echo "$from_cmd"
   }
-  vedv::builder_vedvfile_service::get_commands() {
-    assert_equal "$*" "$vedvfile"
-    echo "$vfile_cmds"
-  }
   vedv::image_entity::get_id_by_image_name() {
     assert_equal "$*" "$image_name"
-    echo 'image-id'
+    echo "1234567890"
   }
-  vedv::builder_vedvfile_service::get_cmd_body() {
-    assert_equal "$*" "$from_cmd"
-    echo 'my_image'
-  }
-  vedv::builder_service::__validate_layer_from() {
-    assert_equal "$*" "${image_id} ${from_cmd}"
-    echo 'valid'
-  }
-  vedv::image_service::remove() {
+  vedv::builder_service::__create_image_by_from_cmd() {
     assert_equal "$*" "INVALID_CALL"
-  }
-  vedv::builder_service::__layer_from() {
-    assert_equal "$*" "INVALID_CALL"
-  }
-  vedv::image_entity::get_layers_ids() {
-    assert_equal "$*" "$image_id"
-    echo "12345 123456"
   }
   vedv::image_entity::get_layer_count() {
-    assert_equal "$*" "$image_id"
-    echo 1
-  }
-  vedv::image_service::restore_last_layer() {
-    assert_equal "$*" "$image_id"
+    assert_equal "$*" "1234567890"
+    echo 0
   }
   vedv::builder_service::__delete_invalid_layers() {
-    assert_equal "$*" "${image_id} ${vfile_cmds}"
+    assert_equal "$*" "1234567890 ${commands_encvars}"
     echo -2
   }
   # Act
@@ -1827,7 +1283,7 @@ The image 'my-image-name' was removed."
 
   # Stub
   vedv::builder_service::__delete_invalid_layers() {
-    assert_equal "$*" "${image_id} ${vfile_cmds}"
+    assert_equal "$*" "1234567890 ${commands_encvars}"
     echo 2
   }
   # Act
@@ -1837,113 +1293,133 @@ The image 'my-image-name' was removed."
   assert_output --partial "Invalid first invalid layer position"
 }
 
-@test "vedv::builder_service::__build() Should fail if first_invalid_cmd_pos = 0" {
+@test "vedv::builder_service::__build() Should fail If ::remove fails" {
   # Arrange
-  local -r vedvfile="dist/test/lib/vedv/components/image/fixtures/Vedvfile"
-  local -r image_name="my-image-name"
+  local -r vedvfile="dist/test/lib/vedv/components/builder/fixtures/Vedvfile"
+  local -r image_name="image1"
 
+  local commands_encvars="$(<"$vedvfile")"
   local -r from_cmd="1 FROM my_image"
-  local -r image_id="image-id"
-  local -r cmds="1 FROM /tmp/alpine-x86_64.ova
-2 COPY homefs/* /home/vedv/
-3 COPY home.config /home/vedv/
-4 RUN ls -la /home/vedv/"
   # Stub
-
   petname() {
     assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::builder_vedvfile_service::get_commands() {
+    assert_equal "$*" "$vedvfile"
+    echo "$from_cmd"
   }
   utils::str_encode_vars() {
     assert_equal "$*" "$from_cmd"
     echo "$from_cmd"
   }
-  vedv::builder_vedvfile_service::get_commands() {
-    assert_equal "$*" "$vedvfile"
-    echo "$cmds"
-  }
   vedv::image_entity::get_id_by_image_name() {
     assert_equal "$*" "$image_name"
+    echo "1234567890"
   }
-  vedv::builder_service::__validate_layer_from() {
+  vedv::builder_service::__create_image_by_from_cmd() {
     assert_equal "$*" "INVALID_CALL"
-  }
-  vedv::image_service::remove() {
-    assert_equal "$*" "INVALID_CALL"
-  }
-  vedv::builder_vedvfile_service::get_cmd_body() {
-    assert_equal "$*" "$from_cmd"
-    echo "$vedvfile"
-  }
-  vedv::builder_service::__layer_from() {
-    assert_equal "$*" "${from_body} ${image_name}"
-    echo "image-id"
-  }
-  vedv::image_entity::get_layers_ids() {
-    assert_equal "$*" "$image_id"
-    echo "12345 123456"
   }
   vedv::image_entity::get_layer_count() {
-    assert_equal "$*" "$image_id"
-    echo 1
-  }
-  vedv::image_service::restore_last_layer() {
-    assert_equal "$*" "$image_id"
+    assert_equal "$*" "1234567890"
+    echo 0
   }
   vedv::builder_service::__delete_invalid_layers() {
-    assert_equal "$*" "${image_id} ${cmds}"
+    assert_equal "$*" "1234567890 ${commands_encvars}"
     echo 0
+  }
+  vedv::image_service::remove() {
+    assert_equal "$*" "1234567890 true"
+    return 1
   }
   # Act
   run vedv::builder_service::__build "$vedvfile" "$image_name"
   # Assert
   assert_failure
-  assert_output --partial "The first command must be valid because it's the command 'FROM'"
+  assert_output "Failed to remove image 'image1'"
 }
 
-@test "vedv::builder_service::__build() Should fail If cache_data fails" {
+@test "vedv::builder_service::__build() Should call __build first_invalid_cmd_pos equal 0" {
   # Arrange
-  local -r vedvfile="dist/test/lib/vedv/components/image/fixtures/Vedvfile"
-  local -r image_name="my-image-name"
+  local -r vedvfile="dist/test/lib/vedv/components/builder/fixtures/Vedvfile"
+  local -r image_name="image1"
 
+  local commands_encvars="$(<"$vedvfile")"
   local -r from_cmd="1 FROM my_image"
-  local -r image_id="image-id"
-  local -r cmds="1 FROM /tmp/alpine-x86_64.ova
-2 COPY homefs/* /home/vedv/
-3 COPY home.config /home/vedv/
-4 RUN ls -la /home/vedv/"
   # Stub
-
   petname() {
     assert_equal "$*" "INVALID_CALL"
   }
-  utils::str_encode_vars() {
-    assert_equal "$*" "$from_cmd"
-    echo "$cmds"
-  }
+  local -r get_commands_calls_file="$(mktemp)"
+  echo 0 >"$get_commands_calls_file"
+
   vedv::builder_vedvfile_service::get_commands() {
     assert_equal "$*" "$vedvfile"
-    echo "$cmds"
+
+    local -i get_commands_calls="$(<"$get_commands_calls_file")"
+    echo "$((++get_commands_calls))" >"$get_commands_calls_file"
+
+    if [[ "$get_commands_calls" == 2 ]]; then
+      return 1
+    fi
+    echo "$from_cmd"
+  }
+  utils::str_encode_vars() {
+    assert_equal "$*" "$from_cmd"
+    echo "$from_cmd"
   }
   vedv::image_entity::get_id_by_image_name() {
     assert_equal "$*" "$image_name"
+    echo "1234567890"
   }
-  vedv::builder_service::__validate_layer_from() {
+  vedv::builder_service::__create_image_by_from_cmd() {
     assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::image_entity::get_layer_count() {
+    assert_equal "$*" "1234567890"
+    echo 0
+  }
+  vedv::builder_service::__delete_invalid_layers() {
+    assert_equal "$*" "1234567890 ${commands_encvars}"
+    echo 0
   }
   vedv::image_service::remove() {
+    assert_equal "$*" "1234567890 true"
+  }
+  # Act
+  run vedv::builder_service::__build "$vedvfile" "$image_name"
+  # Assert
+  assert_failure
+  assert_output "Failed to get commands from Vedvfile 'dist/test/lib/vedv/components/builder/fixtures/Vedvfile'"
+}
+
+@test "vedv::builder_service::__build() Should fail If get_layer_count 2nd call fails" {
+  # Arrange
+  local -r vedvfile="dist/test/lib/vedv/components/builder/fixtures/Vedvfile"
+  local -r image_name="image1"
+
+  local -r vedvfile_content="1 FROM /tmp/vedv/test/files/alpine-x86_64.ova
+2 COPY homefs/ .
+3 COPY home.config /home/vedv/
+4 RUN ls -l"
+
+  # Stub
+  petname() {
     assert_equal "$*" "INVALID_CALL"
   }
-  vedv::builder_vedvfile_service::get_cmd_body() {
-    assert_equal "$*" "$from_cmd"
-    echo "$vedvfile"
+  vedv::builder_vedvfile_service::get_commands() {
+    assert_equal "$*" "$vedvfile"
+    echo "$vedvfile_content"
   }
-  vedv::builder_service::__layer_from() {
-    assert_equal "$*" "${from_body} ${image_name}"
-    echo "image-id"
+  utils::str_encode_vars() {
+    assert_equal "$*" "$vedvfile_content"
+    echo "$vedvfile_content"
   }
-  vedv::image_entity::get_layers_ids() {
-    assert_equal "$*" "$image_id"
-    echo "12345 123456"
+  vedv::image_entity::get_id_by_image_name() {
+    assert_equal "$*" "$image_name"
+    echo "1234567890"
+  }
+  vedv::builder_service::__create_image_by_from_cmd() {
+    assert_equal "$*" "INVALID_CALL"
   }
 
   local -r get_layer_count_calls_file="$(mktemp)"
@@ -1955,451 +1431,514 @@ The image 'my-image-name' was removed."
     local -i get_layer_count_calls="$(<"$get_layer_count_calls_file")"
     echo "$((++get_layer_count_calls))" >"$get_layer_count_calls_file"
 
-    if [[ "$get_layer_count_calls" == 1 ]]; then
+    if [[ "$get_layer_count_calls" == 2 ]]; then
+      return 1
+    fi
+    echo 2
+  }
+  vedv::builder_service::__delete_invalid_layers() {
+    assert_equal "$*" "1234567890 ${commands_encvars}"
+    echo 1
+  }
+  vedv::image_service::remove() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+
+  # Act
+  run vedv::builder_service::__build "$vedvfile" "$image_name"
+  # Assert
+  assert_failure
+  assert_output "Failed to get layer count for image 'image1'"
+}
+
+@test "vedv::builder_service::__build() Should fail If cache_data" {
+  # Arrange
+  local -r vedvfile="dist/test/lib/vedv/components/builder/fixtures/Vedvfile"
+  local -r image_name="image1"
+
+  local -r vedvfile_content="1 FROM /tmp/vedv/test/files/alpine-x86_64.ova
+2 COPY homefs/ .
+3 COPY home.config /home/vedv/
+4 RUN ls -l"
+
+  # Stub
+  petname() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::builder_vedvfile_service::get_commands() {
+    assert_equal "$*" "$vedvfile"
+    echo "$vedvfile_content"
+  }
+  utils::str_encode_vars() {
+    assert_equal "$*" "$vedvfile_content"
+    echo "$vedvfile_content"
+  }
+  vedv::image_entity::get_id_by_image_name() {
+    assert_equal "$*" "$image_name"
+    echo "1234567890"
+  }
+  vedv::builder_service::__create_image_by_from_cmd() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+
+  local -r get_layer_count_calls_file="$(mktemp)"
+  echo 0 >"$get_layer_count_calls_file"
+
+  vedv::image_entity::get_layer_count() {
+    assert_equal "$*" "$image_id"
+
+    local -i get_layer_count_calls="$(<"$get_layer_count_calls_file")"
+    echo "$((++get_layer_count_calls))" >"$get_layer_count_calls_file"
+
+    if [[ "$get_layer_count_calls" == 2 ]]; then
+      echo 4
+      return 0
+    fi
+    echo 2
+  }
+  vedv::builder_service::__delete_invalid_layers() {
+    assert_equal "$*" "1234567890 ${commands_encvars}"
+    echo 1
+  }
+  vedv::image_service::remove() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::image_service::cache_data() {
+    assert_equal "$*" "1234567890"
+    return 1
+  }
+
+  # Act
+  run vedv::builder_service::__build "$vedvfile" "$image_name"
+  # Assert
+  assert_failure
+  assert_output "Failed to cache data for image 'image1'"
+}
+
+@test "vedv::builder_service::__build() Should exit If first_invalid_cmd_pos is -1" {
+  # Arrange
+  local -r vedvfile="dist/test/lib/vedv/components/builder/fixtures/Vedvfile"
+  local -r image_name="image1"
+
+  local -r vedvfile_content="1 FROM /tmp/vedv/test/files/alpine-x86_64.ova
+2 COPY homefs/ .
+3 COPY home.config /home/vedv/
+4 RUN ls -l"
+
+  # Stub
+  petname() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::builder_vedvfile_service::get_commands() {
+    assert_equal "$*" "$vedvfile"
+    echo "$vedvfile_content"
+  }
+  utils::str_encode_vars() {
+    assert_equal "$*" "$vedvfile_content"
+    echo "$vedvfile_content"
+  }
+  vedv::image_entity::get_id_by_image_name() {
+    assert_equal "$*" "$image_name"
+    echo "1234567890"
+  }
+  vedv::builder_service::__create_image_by_from_cmd() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+
+  local -r get_layer_count_calls_file="$(mktemp)"
+  echo 0 >"$get_layer_count_calls_file"
+
+  vedv::image_entity::get_layer_count() {
+    assert_equal "$*" "$image_id"
+
+    local -i get_layer_count_calls="$(<"$get_layer_count_calls_file")"
+    echo "$((++get_layer_count_calls))" >"$get_layer_count_calls_file"
+
+    if [[ "$get_layer_count_calls" == 2 ]]; then
       echo 2
       return 0
     fi
-    echo 1
-  }
-  vedv::image_service::restore_last_layer() {
-    assert_equal "$*" "$image_id"
+    echo 2
   }
   vedv::builder_service::__delete_invalid_layers() {
-    assert_equal "$*" "${image_id} ${cmds}"
-    echo 2
+    assert_equal "$*" "1234567890 ${commands_encvars}"
+    echo '-1'
+  }
+  vedv::image_service::remove() {
+    assert_equal "$*" "INVALID_CALL"
   }
   vedv::image_service::cache_data() {
-    assert_equal "$*" "$image_id"
-    return 1
-  }
-  # Act
-  run vedv::builder_service::__build "$vedvfile" "$image_name"
-  # Assert
-  assert_failure
-  assert_output --partial "Failed to cache data for image 'my-image-name'"
-}
-
-@test "vedv::builder_service::__build() Should fails if There is no command to run" {
-  skip
-  # Arrange
-  local -r vedvfile="dist/test/lib/vedv/components/image/fixtures/Vedvfile"
-  local -r image_name="my-image-name"
-
-  local -r from_cmd="1 FROM my_image"
-  local -r image_id="image-id"
-  local -r cmds="1 FROM /tmp/alpine-x86_64.ova
-2 COPY homefs/* /home/vedv/
-3 COPY home.config /home/vedv/
-4 RUN ls -la /home/vedv/"
-  # Stub
-
-  petname() {
     assert_equal "$*" "INVALID_CALL"
   }
-  vedv::builder_vedvfile_service::get_commands() {
-    assert_equal "$*" "$vedvfile"
-    echo "$cmds"
-  }
-  vedv::image_entity::get_id_by_image_name() {
-    assert_equal "$*" "$image_name"
-  }
-  vedv::builder_service::__validate_layer_from() {
-    assert_equal "$*" "INVALID_CALL"
-  }
-  vedv::image_service::child_containers_remove_all() {
-    assert_equal "$*" "INVALID_CALL"
-  }
-  vedv::image_service::remove() {
-    assert_equal "$*" "INVALID_CALL"
-  }
-  vedv::builder_vedvfile_service::get_cmd_body() {
-    assert_equal "$*" "$from_cmd"
-    echo "$vedvfile"
-  }
-  vedv::builder_service::__layer_from() {
-    assert_equal "$*" "${from_body} ${image_name}"
-    echo "image-id"
-  }
-  vedv::image_service::restore_last_layer() {
-    assert_equal "$*" "$image_id"
-  }
-  vedv::image_entity::get_layer_count() {
-    assert_equal "$*" "$image_id"
-    echo 1
-  }
-  vedv::builder_service::__delete_invalid_layers() {
-    assert_equal "$*" "${image_id} ${cmds}"
-    echo 4
-  }
-  # Act
-  run vedv::builder_service::__build "$vedvfile" "$image_name"
-  # Assert
-  assert_failure
-  assert_output ""
-}
 
-@test "vedv::builder_service::__build() Should fail starting image" {
-  # Arrange
-  local -r vedvfile="dist/test/lib/vedv/components/image/fixtures/Vedvfile"
-  local -r image_name="my-image-name"
-  # commands without 'FROM' command
-  local -r from_cmd="1 FROM my_image"
-  local -r cmds="1 FROM my_image
-2 COPY homefs/* /home/vedv/
-3 COPY home.config /home/vedv/
-4 RUN ls -la /home/vedv/"
-
-  local -r image_id="image-id"
-  # Stub
-
-  petname() {
-    assert_equal "$*" "INVALID_CALL"
-  }
-  utils::str_encode_vars() {
-    assert_equal "$*" "$cmds"
-    echo "$cmds"
-  }
-  vedv::builder_vedvfile_service::get_commands() {
-    assert_equal "$*" "$vedvfile"
-    echo "$cmds"
-  }
-  vedv::image_entity::get_id_by_image_name() {
-    assert_equal "$*" "$image_name"
-    echo 'image-id'
-  }
-  vedv::builder_service::__validate_layer_from() {
-    assert_equal "$*" "${image_id} ${from_cmd}"
-    echo 'valid'
-  }
-  vedv::image_service::remove() {
-    assert_equal "$*" "INVALID_CALL"
-  }
-  vedv::builder_service::__layer_from() {
-    assert_equal "$*" "INVALID_CALL"
-  }
-  vedv::image_service::restore_last_layer() {
-    assert_equal "$*" "$image_id"
-  }
-  vedv::image_entity::get_layer_count() {
-    assert_equal "$*" "$image_id"
-    echo 1
-  }
-  vedv::builder_service::__delete_invalid_layers() {
-    assert_equal "$*" "${image_id} ${cmds}"
-    echo 2
-  }
-  vedv::image_service::start() {
-    assert_equal "$*" "$image_id"
-    false
-  }
-  # Act
-  run vedv::builder_service::__build "$vedvfile" "$image_name"
-
-  assert_failure "$ERR_BUILDER_SERVICE_OPERATION"
-  assert_output "Failed to start image '${image_name}'"
-}
-
-@test "vedv::builder_service::__build() Should fail __save_environment_vars_to_local_file" {
-  # Arrange
-  local -r vedvfile="dist/test/lib/vedv/components/image/fixtures/Vedvfile"
-  local -r image_name="my-image-name"
-  # commands without 'FROM' command
-  local -r from_cmd="1 FROM my_image"
-  local -r cmds="1 FROM my_image
-2 COPY homefs/* /home/vedv/
-3 COPY home.config /home/vedv/
-4 RUN ls -la /home/vedv/"
-
-  local -r image_id="image-id"
-  # Stub
-
-  petname() {
-    assert_equal "$*" "INVALID_CALL"
-  }
-  utils::str_encode_vars() {
-    assert_equal "$*" "$cmds"
-    echo "$cmds"
-  }
-  vedv::builder_vedvfile_service::get_commands() {
-    assert_equal "$*" "$vedvfile"
-    echo "$cmds"
-  }
-  vedv::image_entity::get_id_by_image_name() {
-    assert_equal "$*" "$image_name"
-    echo 'image-id'
-  }
-  vedv::builder_service::__validate_layer_from() {
-    assert_equal "$*" "${image_id} ${from_cmd}"
-    echo 'valid'
-  }
-  vedv::image_service::remove() {
-    assert_equal "$*" "INVALID_CALL"
-  }
-  vedv::builder_service::__layer_from() {
-    assert_equal "$*" "INVALID_CALL"
-  }
-  vedv::image_service::restore_last_layer() {
-    assert_equal "$*" "$image_id"
-  }
-  vedv::image_entity::get_layer_count() {
-    assert_equal "$*" "$image_id"
-    echo 1
-  }
-  vedv::builder_service::__delete_invalid_layers() {
-    assert_equal "$*" "${image_id} ${cmds}"
-    echo 2
-  }
-  vedv::image_service::start() {
-    assert_equal "$*" "$image_id"
-  }
-  vedv::builder_service::__load_env_vars() {
-    assert_equal "$*" "$image_id"
-    false
-  }
-  # Act
-  run vedv::builder_service::__build "$vedvfile" "$image_name"
-
-  assert_failure "$ERR_BUILDER_SERVICE_OPERATION"
-  assert_output "Failed to save environment variables for image '${image_id}'"
-}
-
-@test "vedv::builder_service::__build() Should fail to create layer for a command" {
-  # Arrange
-  local -r vedvfile="dist/test/lib/vedv/components/image/fixtures/Vedvfile"
-  local -r image_name="my-image-name"
-  # commands without 'FROM' command
-  local -r from_cmd="1 FROM my_image"
-  local -r cmds="1 FROM /tmp/alpine-x86_64.ova
-2 COPY homefs/* /home/vedv/
-3 COPY home.config /home/vedv/
-4 RUN ls -la /home/vedv/"
-
-  local -r image_id="image-id"
-  # Stub
-
-  petname() {
-    assert_equal "$*" "INVALID_CALL"
-  }
-  utils::str_encode_vars() {
-    assert_equal "$*" "$cmds"
-    echo "$cmds"
-  }
-  vedv::builder_vedvfile_service::get_commands() {
-    assert_equal "$*" "$vedvfile"
-    echo "$cmds"
-  }
-  vedv::image_entity::get_id_by_image_name() {
-    assert_equal "$*" "$image_name"
-    echo 'image-id'
-  }
-  vedv::builder_service::__validate_layer_from() {
-    assert_equal "$*" "${image_id} ${from_cmd}"
-    echo 'valid'
-  }
-  vedv::image_service::remove() {
-    assert_equal "$*" "INVALID_CALL"
-  }
-  vedv::builder_service::__layer_from() {
-    assert_equal "$*" "INVALID_CALL"
-  }
-  vedv::image_service::restore_last_layer() {
-    assert_equal "$*" "$image_id"
-  }
-  vedv::image_entity::get_layer_count() {
-    assert_equal "$*" "$image_id"
-    echo 1
-  }
-  vedv::builder_service::__delete_invalid_layers() {
-    assert_equal "$*" "${image_id} ${cmds}"
-    echo 3
-  }
-  vedv::image_service::start() {
-    assert_equal "$*" "$image_id"
-  }
-  vedv::builder_service::__load_env_vars() {
-    assert_equal "$*" "$image_id"
-  }
-  vedv::image_service::stop() {
-    assert_equal "$*" "$image_id"
-  }
-  vedv::builder_service::__layer_run() {
-    assert_equal "$*" "${image_id} 4 RUN ls -la /home/vedv/"
-    false
-  }
-  vedv::builder_service::__layer_copy() {
-    assert_equal "$*" "INVALID_CALL"
-  }
-  # Act
-  run vedv::builder_service::__build "$vedvfile" "$image_name"
-
-  assert_failure "$ERR_BUILDER_SERVICE_OPERATION"
-  assert_output "Failed to create layer for command '4 RUN ls -la /home/vedv/'"
-}
-
-@test "vedv::builder_service::__build() Should create layers 4 and 5 for a command" {
-  # Arrange
-  local -r vedvfile="dist/test/lib/vedv/components/image/fixtures/Vedvfile"
-  local -r image_name="my-image-name"
-  # commands without 'FROM' command
-  local -r from_cmd="1 FROM my_image"
-  local -r cmds="1 FROM /tmp/alpine-x86_64.ova
-2 COPY homefs/* /home/vedv/
-3 COPY home.config /home/vedv/
-4 RUN ls -la /home/vedv/"
-
-  local -r image_id="image-id"
-  # Stub
-
-  petname() {
-    assert_equal "$*" "INVALID_CALL"
-  }
-  utils::str_encode_vars() {
-    assert_equal "$*" "$cmds"
-    echo "$cmds"
-  }
-  vedv::builder_vedvfile_service::get_commands() {
-    assert_equal "$*" "$vedvfile"
-    echo "$cmds"
-  }
-  vedv::image_entity::get_id_by_image_name() {
-    assert_equal "$*" "$image_name"
-    echo 'image-id'
-  }
-  vedv::builder_service::__validate_layer_from() {
-    assert_equal "$*" "${image_id} ${from_cmd}"
-    echo 'valid'
-  }
-  vedv::image_service::remove() {
-    assert_equal "$*" "INVALID_CALL"
-  }
-  vedv::builder_service::__layer_from() {
-    assert_equal "$*" "INVALID_CALL"
-  }
-  vedv::image_service::restore_last_layer() {
-    assert_equal "$*" "$image_id"
-  }
-  vedv::image_entity::get_layer_count() {
-    assert_equal "$*" "$image_id"
-    echo 1
-  }
-  vedv::builder_service::__delete_invalid_layers() {
-    assert_equal "$*" "${image_id} ${cmds}"
-    echo 2
-  }
-  vedv::image_service::start() {
-    assert_equal "$*" "$image_id"
-  }
-  vedv::builder_service::__load_env_vars() {
-    assert_equal "$*" "$image_id"
-  }
-  vedv::image_service::stop() {
-    assert_equal "$*" "$image_id"
-  }
-  vedv::builder_service::__layer_run() {
-    assert_equal "$*" "${image_id} 4 RUN ls -la /home/vedv/"
-    echo 'layer_id_4'
-  }
-  vedv::builder_service::__layer_copy() {
-    assert_equal "$*" "${image_id} 3 COPY home.config /home/vedv/"
-    echo 'layer_id_5'
-  }
-  vedv::image_entity::get_vm_name() {
-    assert_equal "$*" "$image_id"
-    echo 'my-vm-name'
-  }
-  vedv::hypervisor::snapshot_restore_current() {
-    assert_equal "$*" "my-vm-name"
-  }
   # Act
   run vedv::builder_service::__build "$vedvfile" "$image_name"
   # Assert
   assert_success
-  assert_output "created layer 'layer_id_5' for command 'COPY'
-created layer 'layer_id_4' for command 'RUN'
-
+  assert_output "
 Build finished
-image-id my-image-name"
+1234567890 image1"
 }
 
-# @test "vedv::builder_service::__build() Should fail stopping image" {
-#   # Arrange
-#   local -r vedvfile="dist/test/lib/vedv/components/image/fixtures/Vedvfile"
-#   local -r image_name="my-image-name"
-#   # commands without 'FROM' command
-#   local -r from_cmd="1 FROM my_image"
-#   local -r cmds="1 FROM /tmp/alpine-x86_64.ova
-# 2 COPY homefs/* /home/vedv/
-# 3 COPY home.config /home/vedv/
-# 4 RUN ls -la /home/vedv/"
+@test "vedv::builder_service::__build() Should exit If __load_env_vars fails" {
+  # Arrange
+  local -r vedvfile="dist/test/lib/vedv/components/builder/fixtures/Vedvfile"
+  local -r image_name="image1"
 
-#   local -r image_id="image-id"
-#   # Stub
+  local -r vedvfile_content="1 FROM /tmp/vedv/test/files/alpine-x86_64.ova
+2 COPY homefs/ .
+3 COPY home.config /home/vedv/
+4 RUN ls -l"
 
-#   petname() {
-#     assert_equal "$*" "INVALID_CALL"
-#   }
-#   utils::str_encode_vars() {
-#     assert_equal "$*" "$cmds"
-#     echo "$cmds"
-#   }
-#   vedv::builder_vedvfile_service::get_commands() {
-#     assert_equal "$*" "$vedvfile"
-#     echo "$cmds"
-#   }
-#   vedv::image_entity::get_id_by_image_name() {
-#     assert_equal "$*" "$image_name"
-#     echo 'image-id'
-#   }
-#   vedv::builder_service::__validate_layer_from() {
-#     assert_equal "$*" "${image_id} ${from_cmd}"
-#     echo 'valid'
-#   }
-#   vedv::image_service::remove() {
-#     assert_equal "$*" "INVALID_CALL"
-#   }
-#   vedv::builder_service::__layer_from() {
-#     assert_equal "$*" "INVALID_CALL"
-#   }
-#   vedv::image_service::restore_last_layer() {
-#     assert_equal "$*" "$image_id"
-#   }
-#   vedv::builder_service::__delete_invalid_layers() {
-#     assert_equal "$*" "${image_id} ${cmds}"
-#     echo 2
-#   }
-#   vedv::image_service::start() {
-#     assert_equal "$*" "$image_id"
-#   }
-#   vedv::builder_service::__load_env_vars() {
-#     assert_equal "$*" "$image_id"
-#   }
-#   vedv::builder_service::__layer_run() {
-#     assert_equal "$*" "${image_id} 4 RUN ls -la /home/vedv/"
-#     echo 'layer_id_4'
-#   }
-#   vedv::builder_service::__layer_copy() {
-#     assert_equal "$*" "${image_id} 3 COPY home.config /home/vedv/"
-#     echo 'layer_id_5'
-#   }
-#   vedv::image_service::stop() {
-#     assert_equal "$*" "$image_id"
-#     return 1
-#   }
-#   # Act
-#   run vedv::builder_service::__build "$vedvfile" "$image_name"
-#   # Assert
-#   assert_failure
-#   assert_output "created layer 'layer_id_5' for command 'COPY'
-# created layer 'layer_id_4' for command 'RUN'
-# Failed to stop the image 'my-image-name'.You must stop it."
-# }
+  # Stub
+  petname() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::builder_vedvfile_service::get_commands() {
+    assert_equal "$*" "$vedvfile"
+    echo "$vedvfile_content"
+  }
+  utils::str_encode_vars() {
+    assert_equal "$*" "$vedvfile_content"
+    echo "$vedvfile_content"
+  }
+  vedv::image_entity::get_id_by_image_name() {
+    assert_equal "$*" "$image_name"
+    echo "1234567890"
+  }
+  vedv::builder_service::__create_image_by_from_cmd() {
+    assert_equal "$*" "INVALID_CALL"
+  }
 
-@test '__restore_last_layer()' { :; }
-@test '__calc_item_id_from_arr_cmds()' { :; }
-@test '__calc_item_id_from_arr_layer_ids()' { :; }
-@test '__call__layer_from()' { :; }
-@test '__print_build_success_msg()' { :; }
-@test '__stop_vm()' { :; }
+  local -r get_layer_count_calls_file="$(mktemp)"
+  echo 0 >"$get_layer_count_calls_file"
+
+  vedv::image_entity::get_layer_count() {
+    assert_equal "$*" "$image_id"
+
+    local -i get_layer_count_calls="$(<"$get_layer_count_calls_file")"
+    echo "$((++get_layer_count_calls))" >"$get_layer_count_calls_file"
+
+    if [[ "$get_layer_count_calls" == 2 ]]; then
+      echo 2
+      return 0
+    fi
+    echo 2
+  }
+  vedv::builder_service::__delete_invalid_layers() {
+    assert_equal "$*" "1234567890 ${commands_encvars}"
+    echo '1'
+  }
+  vedv::image_service::remove() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::image_service::cache_data() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::builder_service::__load_env_vars() {
+    assert_equal "$*" "$image_id"
+    return 1
+  }
+
+  # Act
+  run vedv::builder_service::__build "$vedvfile" "$image_name"
+  # Assert
+  assert_failure
+  assert_output "Failed to save environment variables for image '1234567890'"
+}
+
+@test "vedv::builder_service::__build() Should exit If get_cmd_name fails" {
+  # Arrange
+  local -r vedvfile="dist/test/lib/vedv/components/builder/fixtures/Vedvfile"
+  local -r image_name="image1"
+
+  local -r vedvfile_content="1 FROM /tmp/vedv/test/files/alpine-x86_64.ova
+2 COPY homefs/ .
+3 COPY home.config /home/vedv/
+4 RUN ls -l"
+
+  # Stub
+  petname() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::builder_vedvfile_service::get_commands() {
+    assert_equal "$*" "$vedvfile"
+    echo "$vedvfile_content"
+  }
+  utils::str_encode_vars() {
+    assert_equal "$*" "$vedvfile_content"
+    echo "$vedvfile_content"
+  }
+  vedv::image_entity::get_id_by_image_name() {
+    assert_equal "$*" "$image_name"
+    echo "1234567890"
+  }
+  vedv::builder_service::__create_image_by_from_cmd() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+
+  local -r get_layer_count_calls_file="$(mktemp)"
+  echo 0 >"$get_layer_count_calls_file"
+
+  vedv::image_entity::get_layer_count() {
+    assert_equal "$*" "$image_id"
+
+    local -i get_layer_count_calls="$(<"$get_layer_count_calls_file")"
+    echo "$((++get_layer_count_calls))" >"$get_layer_count_calls_file"
+
+    if [[ "$get_layer_count_calls" == 2 ]]; then
+      echo 2
+      return 0
+    fi
+    echo 2
+  }
+  vedv::builder_service::__delete_invalid_layers() {
+    assert_equal "$*" "1234567890 ${commands_encvars}"
+    echo '1'
+  }
+  vedv::image_service::remove() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::image_service::cache_data() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::builder_service::__load_env_vars() {
+    assert_equal "$*" "$image_id"
+  }
+  vedv::builder_vedvfile_service::get_cmd_name() {
+    assert_equal "$*" "2 COPY homefs/ ."
+    return 1
+  }
+
+  # Act
+  run vedv::builder_service::__build "$vedvfile" "$image_name"
+  # Assert
+  assert_failure
+  assert_output "Failed to get command name from command '2 COPY homefs/ .'"
+}
+
+@test "vedv::builder_service::__build() Should exit If __expand_cmd_parameters fails" {
+  # Arrange
+  local -r vedvfile="dist/test/lib/vedv/components/builder/fixtures/Vedvfile"
+  local -r image_name="image1"
+
+  local -r vedvfile_content="1 FROM /tmp/vedv/test/files/alpine-x86_64.ova
+2 COPY homefs/ .
+3 COPY home.config /home/vedv/
+4 RUN ls -l"
+
+  # Stub
+  petname() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::builder_vedvfile_service::get_commands() {
+    assert_equal "$*" "$vedvfile"
+    echo "$vedvfile_content"
+  }
+  utils::str_encode_vars() {
+    assert_equal "$*" "$vedvfile_content"
+    echo "$vedvfile_content"
+  }
+  vedv::image_entity::get_id_by_image_name() {
+    assert_equal "$*" "$image_name"
+    echo "1234567890"
+  }
+  vedv::builder_service::__create_image_by_from_cmd() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+
+  local -r get_layer_count_calls_file="$(mktemp)"
+  echo 0 >"$get_layer_count_calls_file"
+
+  vedv::image_entity::get_layer_count() {
+    assert_equal "$*" "$image_id"
+
+    local -i get_layer_count_calls="$(<"$get_layer_count_calls_file")"
+    echo "$((++get_layer_count_calls))" >"$get_layer_count_calls_file"
+
+    if [[ "$get_layer_count_calls" == 2 ]]; then
+      echo 2
+      return 0
+    fi
+    echo 2
+  }
+  vedv::builder_service::__delete_invalid_layers() {
+    assert_equal "$*" "1234567890 ${commands_encvars}"
+    echo '1'
+  }
+  vedv::image_service::remove() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::image_service::cache_data() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::builder_service::__load_env_vars() {
+    assert_equal "$*" "$image_id"
+  }
+  vedv::builder_service::__expand_cmd_parameters() {
+    assert_equal "$*" "2 COPY homefs/ ."
+    return 1
+  }
+
+  # Act
+  run vedv::builder_service::__build "$vedvfile" "$image_name"
+  # Assert
+  assert_failure
+  assert_output "Failed to evaluate command '2 COPY homefs/ .'"
+}
+
+@test "vedv::builder_service::__build() Should fail to create layer for RUN command" {
+  # Arrange
+  local -r vedvfile="dist/test/lib/vedv/components/builder/fixtures/Vedvfile"
+  local -r image_name="image1"
+
+  local -r vedvfile_content="1 FROM /tmp/vedv/test/files/alpine-x86_64.ova
+2 COPY homefs/ .
+3 COPY home.config /home/vedv/
+4 RUN ls -l"
+
+  # Stub
+  petname() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::builder_vedvfile_service::get_commands() {
+    assert_equal "$*" "$vedvfile"
+    echo "$vedvfile_content"
+  }
+  utils::str_encode_vars() {
+    assert_equal "$*" "$vedvfile_content"
+    echo "$vedvfile_content"
+  }
+  vedv::image_entity::get_id_by_image_name() {
+    assert_equal "$*" "$image_name"
+    echo "1234567890"
+  }
+  vedv::builder_service::__create_image_by_from_cmd() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+
+  local -r get_layer_count_calls_file="$(mktemp)"
+  echo 0 >"$get_layer_count_calls_file"
+
+  vedv::image_entity::get_layer_count() {
+    assert_equal "$*" "$image_id"
+
+    local -i get_layer_count_calls="$(<"$get_layer_count_calls_file")"
+    echo "$((++get_layer_count_calls))" >"$get_layer_count_calls_file"
+
+    if [[ "$get_layer_count_calls" == 2 ]]; then
+      echo 2
+      return 0
+    fi
+    echo 2
+  }
+  vedv::builder_service::__delete_invalid_layers() {
+    assert_equal "$*" "1234567890 ${commands_encvars}"
+    echo 3
+  }
+  vedv::image_service::remove() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::image_service::cache_data() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::builder_service::__load_env_vars() {
+    assert_equal "$*" "$image_id"
+  }
+  vedv::builder_service::__layer_run() {
+    assert_equal "$*" "${image_id} 4 RUN ls -l"
+    return 1
+  }
+  vedv::builder_service::__layer_copy() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::builder_service::__expand_cmd_parameters() {
+    echo "$*"
+  }
+
+  # Act
+  run vedv::builder_service::__build "$vedvfile" "$image_name"
+
+  assert_failure
+  assert_output "Failed to create layer for command '4 RUN ls -l'"
+}
+
+@test "vedv::builder_service::__build() Should fail to restore layer on RUN failure" {
+  # Arrange
+  local -r vedvfile="dist/test/lib/vedv/components/builder/fixtures/Vedvfile"
+  local -r image_name="image1"
+
+  local -r vedvfile_content="1 FROM /tmp/vedv/test/files/alpine-x86_64.ova
+2 COPY homefs/ .
+3 COPY home.config /home/vedv/
+4 RUN ls -l"
+
+  # Stub
+  petname() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::builder_vedvfile_service::get_commands() {
+    assert_equal "$*" "$vedvfile"
+    echo "$vedvfile_content"
+  }
+  utils::str_encode_vars() {
+    assert_equal "$*" "$vedvfile_content"
+    echo "$vedvfile_content"
+  }
+  vedv::image_entity::get_id_by_image_name() {
+    assert_equal "$*" "$image_name"
+    echo "1234567890"
+  }
+  vedv::builder_service::__create_image_by_from_cmd() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+
+  local -r get_layer_count_calls_file="$(mktemp)"
+  echo 0 >"$get_layer_count_calls_file"
+
+  vedv::image_entity::get_layer_count() {
+    assert_equal "$*" "$image_id"
+
+    local -i get_layer_count_calls="$(<"$get_layer_count_calls_file")"
+    echo "$((++get_layer_count_calls))" >"$get_layer_count_calls_file"
+
+    if [[ "$get_layer_count_calls" == 2 ]]; then
+      echo 2
+      return 0
+    fi
+    echo 2
+  }
+  vedv::builder_service::__delete_invalid_layers() {
+    assert_equal "$*" "1234567890 ${commands_encvars}"
+    echo 3
+  }
+  vedv::image_service::remove() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::image_service::cache_data() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::builder_service::__load_env_vars() {
+    assert_equal "$*" "$image_id"
+  }
+  vedv::builder_service::__layer_run() {
+    assert_equal "$*" "${image_id} 4 RUN ls -l"
+    return "$ERR_BUILDER_SERVICE_LAYER_CREATION_FAILURE_PREV_RESTORATION_FAIL"
+  }
+  vedv::builder_service::__layer_copy() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::builder_service::__expand_cmd_parameters() {
+    echo "$*"
+  }
+
+  # Act
+  run vedv::builder_service::__build "$vedvfile" "$image_name"
+
+  assert_failure
+  assert_output "Failed to create layer for command '4 RUN ls -l'
+The previous layer to the failure could not be restored. Try build the image again with --no-cache."
+}
 
 # Tests for vedv::builder_service::build()
 
@@ -3217,4 +2756,136 @@ local -r var_9f57a558b3_VAR23=\"var3 var3\""
 
   assert_success
   assert_output ""
+}
+
+# Tests for vedv::builder_service::__create_image_by_from_cmd()
+
+@test "vedv::builder_service::__create_image_by_from_cmd() Should fail With empty from_cmd" {
+  local from_cmd=""
+  local image_name=""
+
+  run vedv::builder_service::__create_image_by_from_cmd "$from_cmd" "$image_name"
+
+  assert_failure
+  assert_output "Argument 'from_cmd' is required"
+}
+
+@test "vedv::builder_service::__create_image_by_from_cmd() Should fail With empty image_name" {
+  local from_cmd="FROM admin@alpine/alpine-13"
+  local image_name=""
+
+  run vedv::builder_service::__create_image_by_from_cmd "$from_cmd" "$image_name"
+
+  assert_failure
+  assert_output "Argument 'image_name' is required"
+}
+
+@test "vedv::builder_service::__create_image_by_from_cmd() Should fail If get_cmd_body fails" {
+  local from_cmd="FROM admin@alpine/alpine-13"
+  local image_name="image1"
+
+  vedv::builder_vedvfile_service::get_cmd_body() {
+    assert_equal "$*" "FROM admin@alpine/alpine-13"
+    return 1
+  }
+
+  run vedv::builder_service::__create_image_by_from_cmd "$from_cmd" "$image_name"
+
+  assert_failure
+  assert_output "Failed to get cmd body from Vedvfile 'FROM admin@alpine/alpine-13'"
+}
+
+@test "vedv::builder_service::__create_image_by_from_cmd() Should fail If import_from_any fails" {
+  local from_cmd="FROM admin@alpine/alpine-13"
+  local image_name="image1"
+
+  vedv::builder_vedvfile_service::get_cmd_body() {
+    assert_equal "$*" "FROM admin@alpine/alpine-13"
+    echo "admin@alpine/alpine-13"
+  }
+  vedv::image_service::import_from_any() {
+    assert_equal "$*" "admin@alpine/alpine-13 image1"
+    return 1
+  }
+
+  run vedv::builder_service::__create_image_by_from_cmd "$from_cmd" "$image_name"
+
+  assert_failure
+  assert_output "Failed to pull image 'admin@alpine/alpine-13'"
+}
+
+@test "vedv::builder_service::__create_image_by_from_cmd() Should fail If get_layer_at fails" {
+  local from_cmd="FROM admin@alpine/alpine-13"
+  local image_name="image1"
+
+  vedv::builder_vedvfile_service::get_cmd_body() {
+    assert_equal "$*" "FROM admin@alpine/alpine-13"
+    echo "admin@alpine/alpine-13"
+  }
+  vedv::image_service::import_from_any() {
+    assert_equal "$*" "admin@alpine/alpine-13 image1"
+    echo "1234567890 image1"
+  }
+  vedv::image_entity::get_layer_at() {
+    assert_equal "$*" "1234567890 0"
+    return 1
+  }
+
+  run vedv::builder_service::__create_image_by_from_cmd "$from_cmd" "$image_name"
+
+  assert_failure
+  assert_output "Failed to get layer '0' for image '1234567890 image1'"
+}
+
+@test "vedv::builder_service::__create_image_by_from_cmd() Should fail If delete_layer fails" {
+  local from_cmd="FROM admin@alpine/alpine-13"
+  local image_name="image1"
+
+  vedv::builder_vedvfile_service::get_cmd_body() {
+    assert_equal "$*" "FROM admin@alpine/alpine-13"
+    echo "admin@alpine/alpine-13"
+  }
+  vedv::image_service::import_from_any() {
+    assert_equal "$*" "admin@alpine/alpine-13 image1"
+    echo "1234567890 image1"
+  }
+  vedv::image_entity::get_layer_at() {
+    assert_equal "$*" "1234567890 0"
+    echo "2234567890"
+  }
+  vedv::image_service::delete_layer() {
+    assert_equal "$*" "1234567890 2234567890"
+    return 1
+  }
+
+  run vedv::builder_service::__create_image_by_from_cmd "$from_cmd" "$image_name"
+
+  assert_failure
+  assert_output "Failed to delete layer '1' for image '1234567890 image1'"
+}
+
+@test "vedv::builder_service::__create_image_by_from_cmd() Should succeed" {
+  local from_cmd="FROM admin@alpine/alpine-13"
+  local image_name="image1"
+
+  vedv::builder_vedvfile_service::get_cmd_body() {
+    assert_equal "$*" "FROM admin@alpine/alpine-13"
+    echo "admin@alpine/alpine-13"
+  }
+  vedv::image_service::import_from_any() {
+    assert_equal "$*" "admin@alpine/alpine-13 image1"
+    echo "1234567890 image1"
+  }
+  vedv::image_entity::get_layer_at() {
+    assert_equal "$*" "1234567890 0"
+    echo "2234567890"
+  }
+  vedv::image_service::delete_layer() {
+    assert_equal "$*" "1234567890 2234567890"
+  }
+
+  run vedv::builder_service::__create_image_by_from_cmd "$from_cmd" "$image_name"
+
+  assert_success
+  assert_output "1234567890"
 }

@@ -920,6 +920,7 @@ vedv::image_service::create_layer_from() {
 
   vedv::image_service::create_layer "$image_id" "$layer_name" "$layer_id"
 }
+
 #
 # Remove layer
 #

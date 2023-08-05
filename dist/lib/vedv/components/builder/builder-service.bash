@@ -9,8 +9,8 @@ if false; then
   . './../../utils.bash'
   . './../../ssh-client.bash'
   . './../../hypervisors/virtualbox.bash'
-  . './image-service.bash'
-  . './image-entity.bash'
+  . '../image/image-service.bash'
+  . '../image/image-entity.bash'
   . './builder-vedvfile-service.bash'
 fi
 
@@ -114,18 +114,6 @@ vedv::builder_service::__create_layer() {
   }
   readonly cmd_name
 
-  local image_vm_name
-  image_vm_name="$(vedv::image_entity::get_vm_name "$image_id")" || {
-    err "Failed to get vm name for image with id '${image_id}'"
-    return "$ERR_BUILDER_SERVICE_OPERATION"
-  }
-  readonly image_vm_name
-
-  if [[ -z "$image_vm_name" ]]; then
-    err "There is not vm for image with id '${image_id}'"
-    return "$ERR_INVAL_VALUE"
-  fi
-
   local layer_id
   layer_id="$(vedv::builder_service::__layer_"${cmd_name,,}"_calc_id "$cmd")" || {
     err "Failed to calculate layer id for cmd: '$cmd'"
@@ -138,13 +126,11 @@ vedv::builder_service::__create_layer() {
     return "$ERR_INVAL_VALUE"
   fi
 
-  local -r full_layer_name="layer:${cmd_name}|id:${layer_id}|"
-
-  vedv::hypervisor::take_snapshot "$image_vm_name" "$full_layer_name" &>/dev/null || {
-    err "Failed to create layer '${full_layer_name}' for image '${image_id}', code: $?"
+  vedv::image_service::create_layer "$image_id" "$cmd_name" "$layer_id" || {
+    err "Failed to create layer '${cmd_name}' for image '${image_id}'"
     return "$ERR_BUILDER_SERVICE_OPERATION"
   }
-  echo "$layer_id"
+
   return 0
 }
 
@@ -291,65 +277,40 @@ vedv::builder_service::__layer_execute_cmd() {
 }
 
 #
-# Create an image
+# Create the layer from
+#
+# Preconditions:
+#  The image must be started and running
 #
 # Arguments:
-#   image string          image name or an OVF file that will be pulled
-#   image_name  string    image name (default: OVF file name)
-#
-# Output:
-#  Writes image_id (string) to the stdout
+#   image_id  string       image where the files will be copy
+#   cmd       string       FROM command (e.g. "1 FROM admin@alpine/alpine-13")
 #
 # Returns:
 #   0 on success, non-zero on error.
 #
 vedv::builder_service::__layer_from() {
-  local -r image="$1"
-  local -r image_name="$2"
+  local -r image_id="$1"
+  local -r cmd="$2"
   # validate arguments
-  if [[ -z "$image" ]]; then
-    err "Argument 'image' is required"
+  if [[ -z "$image_id" ]]; then
+    err "Argument 'image_id' is required"
     return "$ERR_INVAL_ARG"
   fi
-  if [[ -z "$image_name" ]]; then
-    err "Argument 'image_name' is required"
+  if [[ -z "$cmd" ]]; then
+    err "Argument 'cmd' is required"
     return "$ERR_INVAL_ARG"
   fi
   # do not allow escaped $ or $ in the command
-  if [[ "$image" == *"$UTILS_ENCODED_ESCVAR_PREFIX"* || "$image" == *"$UTILS_ENCODED_VAR_PREFIX"* ]]; then
+  if [[ "$cmd" == *"$UTILS_ENCODED_ESCVAR_PREFIX"* || "$cmd" == *"$UTILS_ENCODED_VAR_PREFIX"* ]]; then
     err 'Invalid command, it must not contain: \$ or $'
     return "$ERR_INVAL_ARG"
   fi
 
-  local image_id_name
-  image_id_name="$(vedv::image_service::import_from_any "$image" "$image_name")" || {
-    err "Failed to pull image '${image}'"
+  vedv::builder_service::__create_layer "$image_id" "$cmd" || {
+    err "Failed to create layer for image '${image_id}'"
     return "$ERR_BUILDER_SERVICE_OPERATION"
   }
-  readonly image_id_name
-
-  local -r image_id="${image_id_name%%' '*}"
-
-  # local -r cmd="1 FROM ${image}"
-  # create layer
-  local layer_id
-  # image creates the first layer (FROM) when it is imported
-  # layer_id="$(vedv::builder_service::__create_layer "$image_id" "$cmd")" || {
-  #   err "Failed to create layer for image '${image_id}'"
-  #   return "$ERR_BUILDER_SERVICE_OPERATION"
-  # }
-  layer_id="$(vedv::image_entity::get_first_layer_id "$image_id")" || {
-    err "Failed to get first layer id for image '${image_id}'"
-    return "$ERR_BUILDER_SERVICE_OPERATION"
-  }
-  readonly layer_id
-
-  if [[ -z "$layer_id" ]]; then
-    err "'layer_id' must not be empty"
-    return "$ERR_INVAL_VALUE"
-  fi
-
-  echo "$image_id"
 }
 
 #
@@ -367,104 +328,7 @@ vedv::builder_service::__layer_from() {
 #
 vedv::builder_service::__layer_from_calc_id() {
   local -r cmd="$1"
-  # validate arguments
-  if [[ -z "$cmd" ]]; then
-    err "Argument 'cmd' is required"
-    return "$ERR_INVAL_ARG"
-  fi
-  # do not allow escaped $ or $ in the command
-  if [[ "$cmd" == *"$UTILS_ENCODED_ESCVAR_PREFIX"* || "$cmd" == *"$UTILS_ENCODED_VAR_PREFIX"* ]]; then
-    err 'Invalid command, it must not contain: \$ or $'
-    return "$ERR_INVAL_ARG"
-  fi
-
-  local cmd_name
-  cmd_name="$(vedv::builder_vedvfile_service::get_cmd_name "$cmd")" || {
-    err "Failed to get cmd name from cmd: '$cmd'"
-    return "$ERR_BUILDER_SERVICE_OPERATION"
-  }
-  readonly cmd_name
-
-  if [[ "$cmd_name" != "FROM" ]]; then
-    err "Invalid command name '${cmd_name}', it must be 'FROM'"
-    return "$ERR_INVAL_ARG"
-  fi
-
-  local cmd_body
-  cmd_body="$(vedv::builder_vedvfile_service::get_cmd_body "$cmd")" || {
-    err "Failed to get cmd body from cmd: '$cmd'"
-    return "$ERR_BUILDER_SERVICE_OPERATION"
-  }
-  readonly cmd_body
-
-  if [[ -z "$cmd_body" ]]; then
-    err "Argument 'cmd_body' must not be empty"
-    return "$ERR_INVAL_ARG"
-  fi
-
-  if [[ -f "$cmd_body" ]]; then
-    utils::crc_sum "$cmd_body"
-  else
-    err "Not implemented yet"
-    return "$ERR_NOT_IMPLEMENTED"
-  fi
-  return 0
-}
-
-#
-# Validate layer from
-#
-# Arguments:
-#   image_id string      image id
-#   from_cmd string      from cmd
-#
-# Returns:
-#   0 if valid, 1 otherwise
-#
-vedv::builder_service::__validate_layer_from() {
-  local -r image_id="$1"
-  local -r from_cmd="$2"
-  # validate arguments
-  if [[ -z "$image_id" ]]; then
-    err "Argument 'image_id' is required"
-    return "$ERR_INVAL_ARG"
-  fi
-  if [[ -z "$from_cmd" ]]; then
-    err "Argument 'from_cmd' is required"
-    return "$ERR_INVAL_ARG"
-  fi
-
-  local from_file_sum
-  from_file_sum="$(vedv::builder_service::__layer_from_calc_id "$from_cmd")" || {
-    err "Failed to cal id for: '${from_cmd}'"
-    return "$ERR_BUILDER_SERVICE_OPERATION"
-  }
-  readonly from_file_sum
-
-  if [[ -z "$from_file_sum" ]]; then
-    err "from_file_sum' must not be empty"
-    return "$ERR_INVAL_VALUE"
-  fi
-
-  local image_file_sum
-  image_file_sum="$(vedv::image_entity::get_ova_file_sum "$image_id")" || {
-    err "Failed to get ova file sum for image with id '${image_id}'"
-    return "$ERR_BUILDER_SERVICE_OPERATION"
-  }
-  readonly image_file_sum
-
-  if [[ -z "$image_file_sum" ]]; then
-    err "image_file_sum' must not be empty"
-    return "$ERR_INVAL_VALUE"
-  fi
-
-  if [[ "$from_file_sum" != "$image_file_sum" ]]; then
-    echo 'invalid'
-  else
-    echo 'valid'
-  fi
-
-  return 0
+  vedv::builder_service::__simple_layer_command_calc_id "$cmd" 'FROM'
 }
 
 #
@@ -756,23 +620,6 @@ vedv::builder_service::__simple_layer_command_calc_id() {
 }
 
 #
-# Calculates the layer id for the run command
-#
-# Arguments:
-#   cmd string       run command (e.g. "1 COPY source/ dest/")
-#
-# Output:
-#  Writes layer_id (string) to the stdout
-#
-# Returns:
-#  0 on success, non-zero on error.
-#
-vedv::builder_service::__layer_run_calc_id() {
-  local -r cmd="$1"
-  vedv::builder_service::__simple_layer_command_calc_id "$cmd" "RUN"
-}
-
-#
 # Expand command parameters
 #
 # Arguments:
@@ -808,6 +655,23 @@ vedv::builder_service::__expand_cmd_parameters() {
   }
 
   echo "$evaluated_cmd"
+}
+
+#
+# Calculates the layer id for the run command
+#
+# Arguments:
+#   cmd string       run command (e.g. "1 COPY source/ dest/")
+#
+# Output:
+#  Writes layer_id (string) to the stdout
+#
+# Returns:
+#  0 on success, non-zero on error.
+#
+vedv::builder_service::__layer_run_calc_id() {
+  local -r cmd="$1"
+  vedv::builder_service::__simple_layer_command_calc_id "$cmd" "RUN"
 }
 
 #
@@ -1442,8 +1306,8 @@ vedv::builder_service::__delete_invalid_layers() {
   readonly first_invalid_cmd_pos first_invalid_layer_pos
 
   if [[ "$first_invalid_cmd_pos" -eq 0 ]]; then
-    err "The first command must be valid because it's the command 'FROM'"
-    return "$ERR_BUILDER_SERVICE_OPERATION"
+    echo 0
+    return 0
   fi
 
   local last_valid_layer_id=''
@@ -1493,22 +1357,75 @@ vedv::builder_service::__load_env_vars() {
 }
 
 #
-# Build image from Vedvfile
-#
-# On build failure the image is corrupted and must be deleted if:
-# 1 - The first layer creation fails. The FROM command
-# 2 - A layer deletion fails
-# 3 - A layer creation fails and the previous layer restoration fails too.
-#
-# An image is valid and it will not be deleted if:
-# 1 - Every data is writed without errors and there is a layer for that data.
+# Create an image from the FROM command
 #
 # Arguments:
-#   vedvfile  string       path to Vedvfile
+#   from_cmd    string     FROM command (e.g. "1 FROM hello-world")
 #   image_name  string     name of the image
 #
 # Output:
-#  Writes image_id (string) image_name (string) and build proccess #  output to the stdout
+#   Writes image_id (string) to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::builder_service::__create_image_by_from_cmd() {
+  local from_cmd="$1"
+  local image_name="$2"
+  # validate arguments
+  if [[ -z "$from_cmd" ]]; then
+    err "Argument 'from_cmd' is required"
+    return "$ERR_INVAL_ARG"
+  fi
+  if [[ -z "$image_name" ]]; then
+    err "Argument 'image_name' is required"
+    return "$ERR_INVAL_ARG"
+  fi
+
+  local image
+  image="$(vedv::builder_vedvfile_service::get_cmd_body "$from_cmd")" || {
+    err "Failed to get cmd body from Vedvfile '${from_cmd}'"
+    return "$ERR_VEDV_FILE"
+  }
+  readonly image
+
+  # create the image
+  local image_id_name
+  image_id_name="$(vedv::image_service::import_from_any "$image" "$image_name")" || {
+    err "Failed to pull image '${image}'"
+    return "$ERR_BUILDER_SERVICE_OPERATION"
+  }
+  readonly image_id_name
+
+  image_id="${image_id_name%%' '*}"
+  readonly image_id
+
+  local layer_from_id
+  layer_from_id="$(vedv::image_entity::get_layer_at "$image_id" 0)" || {
+    err "Failed to get layer '0' for image '${image_id_name}'"
+    return "$ERR_BUILDER_SERVICE_OPERATION"
+  }
+  readonly layer_from_id
+
+  # delete default FROM layer which id is based on image file hash and not
+  # on the FROM command
+  vedv::image_service::delete_layer "$image_id" "$layer_from_id" 2>/dev/null || {
+    err "Failed to delete layer '1' for image '${image_id_name}'"
+    return "$ERR_BUILDER_SERVICE_OPERATION"
+  }
+
+  echo "$image_id"
+}
+
+#
+# Build image from Vedvfile
+#
+# Arguments:
+#   vedvfile    string     path to Vedvfile
+#   image_name  string     name of the image
+#
+# Output:
+#   Writes image_id (string) image_name (string) and build proccess #  output to the stdout
 #
 # Returns:
 #   0 on success, non-zero on error.
@@ -1535,23 +1452,23 @@ vedv::builder_service::__build() {
     err "Failed to get commands from Vedvfile '${vedvfile}'"
     return "$ERR_VEDV_FILE"
   }
+  readonly commands
   # prepare commands for env and arg variable substitution. e.g.
   # VAR_PREFIX_ can be any random string characters like '01b9622e23'
   # VAR_ENCODED_ can be any random string characters like '8027d5b963'
   #
   # 2 RUN echo $NAME -> 1 RUN echo $VAR_PREFIX_NAME
   # 3 COPY . \$HOME -> 1 COPY . VAR_ENCODED_HOME
-  commands="$(utils::str_encode_vars "$commands")" || {
+  local commands_encvars
+  commands_encvars="$(utils::str_encode_vars "$commands")" || {
     err "Failed to prepare commands from Vedvfile '${vedvfile}'"
     return "$ERR_VEDV_FILE"
   }
-  readonly commands
+  readonly commands_encvars
 
   local -a commands_arr
-  readarray -t commands_arr <<<"$commands"
+  readarray -t commands_arr <<<"$commands_encvars"
   readonly commands_arr
-
-  local -r from_cmd="${commands_arr[0]}"
 
   local image_id
   image_id="$(vedv::image_entity::get_id_by_image_name "$image_name" 2>/dev/null)" || {
@@ -1561,150 +1478,109 @@ vedv::builder_service::__build() {
     fi
   }
 
-  __delete_corrupted_image() {
-
-    err "The image '${image_name}' is corrupted and its going to be deleted."
-
-    vedv::image_service::remove "$image_name" 'true' >/dev/null || {
-      err "Failed to remove the image '${image_name}'.\nIt must be deleted manually."
-      return "$ERR_BUILDER_SERVICE_OPERATION"
-    }
-    err "The image '${image_name}' was removed."
-  }
-
-  # `image_id` should be empty when there is no image with that name
-  #  in that case it's no necessary to validate the from layer
-
-  # otherwise, if there is an image with that name, it's necessary to validate
-  __call__layer_from() {
-    local from_body
-    from_body="$(vedv::builder_vedvfile_service::get_cmd_body "$from_cmd")" || {
-      err "Failed to get cmd body from Vedvfile '${vedvfile}'"
-      return "$ERR_VEDV_FILE"
-    }
-    image_id="$(vedv::builder_service::__layer_from "$from_body" "$image_name")" || {
-      err "Failed to create the layer for command '${from_cmd}'"
-      # 1 - The first layer creation fails. The FROM command
-      __delete_corrupted_image
-      return "$ERR_BUILDER_SERVICE_OPERATION"
-    }
-
-    local -a arr_layer_ids
-    # shellcheck disable=SC2207
-    arr_layer_ids=($(vedv::image_entity::get_layers_ids "$image_id")) || {
-      err "Failed to get layers ids for image '${image_name}'. Try build the image again with --no-cache."
-      return "$ERR_BUILDER_SERVICE_OPERATION"
-    }
-    echo "created layer '${arr_layer_ids[0]}' for command 'FROM'"
-  }
-
-  if [[ -n "$image_id" ]]; then
-
-    local is_valid_layer_from
-    is_valid_layer_from="$(vedv::builder_service::__validate_layer_from "$image_id" "$from_cmd")" || {
-      err "Failed to validate layer from for image '${image_name}'"
-      return "$ERR_BUILDER_SERVICE_OPERATION"
-    }
-    readonly is_valid_layer_from
-
-    if [[ "$is_valid_layer_from" == 'invalid' ]]; then
-      vedv::image_service::remove "$image_id" 'true' >/dev/null || {
-        err "Failed to remove image '${image_name}'"
-        return "$ERR_BUILDER_SERVICE_OPERATION"
-      }
-      __call__layer_from || return
-    else
-      # if there is an image with valid layer FROM, restoring the
-      # last layer will get rid of any data created on an erroneous previous build
-      vedv::image_service::restore_last_layer "$image_id" || {
-        err "Failed to restore layer last layer for image '${image_id}'. Try build the image again with --no-cache."
-        return "$ERR_BUILDER_SERVICE_OPERATION"
-      }
-    fi
-  else
-    __call__layer_from || return
-  fi
-
-  readonly image_id
-
   __print_build_success_msg() {
     echo
     echo 'Build finished'
     echo "${image_id} ${image_name}"
   }
 
-  local -i initial_layer_count
-  initial_layer_count="$(vedv::image_entity::get_layer_count "$image_id")" || {
-    err "Failed to get layer count for image '${image_name}'"
-    return "$ERR_BUILDER_SERVICE_OPERATION"
-  }
-  readonly initial_layer_count
+  local -i first_cmd_to_exec_pos=0
 
-  # first_invalid_layer_pos` is the command position where the build start,
-  # all previous commands of this position are ignored because their layers are valid
-  local -i first_invalid_cmd_pos
-  first_invalid_cmd_pos="$(vedv::builder_service::__delete_invalid_layers "$image_id" "$commands")" || {
-    err "Failed deleting invalid layers for image '${image_name}'. Try build the image again with --no-cache."
-    # 2 - A layer deletion fails
-    return "$ERR_BUILDER_SERVICE_OPERATION"
-  }
-  readonly first_invalid_cmd_pos
+  if [[ -z "$image_id" ]]; then
+    # there is no image and must be created
+    local -r from_cmd="${commands_arr[0]}"
 
-  local -ri commands_length="${#commands_arr[@]}"
-
-  if [[ $first_invalid_cmd_pos -lt -1 || $first_invalid_cmd_pos -ge $commands_length ]]; then
-    err "Invalid first invalid layer position '${first_invalid_cmd_pos}'"
-    return "$ERR_INVAL_VALUE"
-  fi
-  if [[ "$first_invalid_cmd_pos" -eq 0 ]]; then
-    err "The first command must be valid because it's the command 'FROM'"
-    return "$ERR_BUILDER_SERVICE_OPERATION"
-  fi
-
-  local -i current_layer_count
-  current_layer_count="$(vedv::image_entity::get_layer_count "$image_id")" || {
-    err "Failed to get layer count for image '${image_name}'"
-    return "$ERR_BUILDER_SERVICE_OPERATION"
-  }
-  readonly current_layer_count
-  # If any layer was deleted, the cached data is obsolete and must be updated
-  if [[ "$initial_layer_count" != "$current_layer_count" ]]; then
-    # start=$(date +%s%N)
-    vedv::image_service::cache_data "$image_id" || {
-      err "Failed to cache data for image '${image_name}'"
+    image_id="$(vedv::builder_service::__create_image_by_from_cmd "$from_cmd" "$image_name")" || {
+      err "Failed to create image '${image_name}'"
       return "$ERR_BUILDER_SERVICE_OPERATION"
     }
-    # end=$(date +%s%N)
-    # echo "time vedv::image_service::cache_data: $(((end - start) / 1000000)) ms."
+  else
+    # there is an image, so layers must be validated and the cached data
+    # must be updated if any layer is deleted
+    local -i initial_layer_count
+    initial_layer_count="$(vedv::image_entity::get_layer_count "$image_id")" || {
+      err "Failed to get layer count for image '${image_name}'"
+      return "$ERR_BUILDER_SERVICE_OPERATION"
+    }
+    readonly initial_layer_count
+
+    # first_invalid_layer_pos` is the command position where the build start,
+    # all previous commands of this position are ignored because their layers are valid
+    local -i first_invalid_cmd_pos
+    first_invalid_cmd_pos="$(vedv::builder_service::__delete_invalid_layers "$image_id" "$commands_encvars")" || {
+      err "Failed deleting invalid layers for image '${image_name}'. Try build the image again with --no-cache."
+      # 2 - A layer deletion fails
+      return "$ERR_BUILDER_SERVICE_OPERATION"
+    }
+    readonly first_invalid_cmd_pos
+
+    local -ri commands_length="${#commands_arr[@]}"
+
+    if [[ $first_invalid_cmd_pos -lt -1 || $first_invalid_cmd_pos -ge $commands_length ]]; then
+      err "Invalid first invalid layer position '${first_invalid_cmd_pos}'"
+      return "$ERR_INVAL_VALUE"
+    fi
+
+    if [[ "$first_invalid_cmd_pos" -eq 0 ]]; then
+      # the layer FROM is invalid, so the image needs to be recreated
+      vedv::image_service::remove "$image_id" 'true' >/dev/null || {
+        err "Failed to remove image '${image_name}'"
+        return "$ERR_BUILDER_SERVICE_OPERATION"
+      }
+
+      vedv::builder_service::__build "$vedvfile" "$image_name"
+      return $?
+    fi
+
+    local -i current_layer_count
+    current_layer_count="$(vedv::image_entity::get_layer_count "$image_id")" || {
+      err "Failed to get layer count for image '${image_name}'"
+      return "$ERR_BUILDER_SERVICE_OPERATION"
+    }
+    readonly current_layer_count
+
+    # If any layer was deleted the cached data is obsolete and must be updated
+    if [[ "$initial_layer_count" != "$current_layer_count" ]]; then
+      # start=$(date +%s%N)
+      vedv::image_service::cache_data "$image_id" || {
+        err "Failed to cache data for image '${image_name}'"
+        return "$ERR_BUILDER_SERVICE_OPERATION"
+      }
+      # end=$(date +%s%N)
+      # echo "time vedv::image_service::cache_data: $(((end - start) / 1000000)) ms."
+    fi
+
+    # If no command need to be executed, the build is finished
+    if [[ $first_invalid_cmd_pos -eq -1 ]]; then
+      __print_build_success_msg
+      return 0
+    fi
+
+    first_cmd_to_exec_pos=$first_invalid_cmd_pos
   fi
 
-  if [[ $first_invalid_cmd_pos -eq -1 ]]; then
-    __print_build_success_msg
-    return 0
-  fi
+  readonly image_id
+  readonly first_cmd_to_exec_pos
 
-  if [[ -z "${commands_arr[*]:$first_invalid_cmd_pos}" ]]; then
+  if [[ -z "${commands_arr[*]:$first_cmd_to_exec_pos}" ]]; then
     err "There is no command to run"
     return "$ERR_BUILDER_SERVICE_OPERATION"
   fi
 
-  vedv::image_service::start "$image_id" >/dev/null || {
-    err "Failed to start image '${image_name}'"
-    return "$ERR_BUILDER_SERVICE_OPERATION"
-  }
+  # Load environment variables from the image
+  #
   # The function ...::__expand_cmd_parameters() needs
   # the environment variables to be in the file
   # __VEDV_BUILDER_SERVICE_ENV_VARS_FILE to work properly.
-
-  # if any layer was deleted, we need to load only the
-  # environment variables for the current layers.
+  #
   vedv::builder_service::__load_env_vars "$image_id" || {
     err "Failed to save environment variables for image '${image_id}'"
     return "$ERR_BUILDER_SERVICE_OPERATION"
   }
 
-  for cmd in "${commands_arr[@]:$first_invalid_cmd_pos}"; do
+  for cmd in "${commands_arr[@]:$first_cmd_to_exec_pos}"; do
     local layer_id cmd_name evaluated_cmd
+
     cmd_name="$(vedv::builder_vedvfile_service::get_cmd_name "$cmd")" || {
       err "Failed to get command name from command '${cmd}'"
       return "$ERR_VEDV_FILE"
@@ -1729,10 +1605,7 @@ vedv::builder_service::__build() {
 
     echo "created layer '${layer_id}' for command '${cmd_name}'"
   done
-  # vedv::image_service::stop "$image_id" >/dev/null || {
-  #   err "Failed to stop the image '${image_name}'.You must stop it."
-  #   return "$ERR_BUILDER_SERVICE_OPERATION"
-  # }
+
   __print_build_success_msg
 }
 

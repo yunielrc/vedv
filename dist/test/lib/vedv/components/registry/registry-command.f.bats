@@ -121,8 +121,7 @@ For security reasons, the image can not be downloaded"
   run vedv registry pull --name 'my-alpine-14' 'http://nextcloud.loc/admin@alpine/alpine-13'
 
   assert_success
-  assert_output "Image 'http://nextcloud.loc/admin@alpine/alpine-13' already exists in the cache, skipping download
-3927895028 my-alpine-14"
+  assert_output "3927895028 my-alpine-14"
 
   run vedv registry pull --no-cache --name 'my-alpine-15' 'http://nextcloud.loc/admin@alpine/alpine-13'
 

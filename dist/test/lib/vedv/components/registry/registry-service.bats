@@ -307,7 +307,7 @@ For security reasons, the image can not be downloaded"
     "$image_fqn" "$image_name" "$no_cache"
 
   assert_success
-  assert_output "Image 'nextcloud2.loc/jane@macos/macos-monterey' already exists in the cache, skipping download"
+  assert_output ""
 }
 
 @test "vedv::registry_service::pull() Should fail if download_file fails downloading checksum file" {
