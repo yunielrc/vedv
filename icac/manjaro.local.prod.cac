@@ -11,5 +11,5 @@ yay -Syu --noconfirm --needed \
   python-pip \
   libxml2 # /usr/bin/xmllint is owned by libxml2
 
-pip install dockerfile-parse
-pip install petname
+sudo -H pip install --break-system-packages dockerfile-parse
+sudo -H pip install --break-system-packages petname

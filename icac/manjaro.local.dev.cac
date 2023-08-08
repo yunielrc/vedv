@@ -19,7 +19,7 @@ yay -Syu --noconfirm --needed \
   npm \
   vultr-cli
 
-sudo npm install -g \
+sudo -H npm install -g \
   @commitlint/cli \
   @commitlint/config-conventional \
   commitizen \
