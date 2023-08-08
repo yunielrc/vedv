@@ -50,7 +50,7 @@ if [[ -f .vedv.env ]]; then source .vedv.env; fi
 # ENVIRONMENT
 # scheme:        VAR="${ENVIRONMENT_VAR:-"${CONFIG_VAR:-default}"}"
 # e.g.: readonly VEDV_VAR="${VEDV_VAR:-"${VAR:-default}"}"
-readonly VEDV_HADOLINT_ENABLED="${VEDV_HADOLINT_ENABLED:-"${HADOLINT_ENABLED:-true}"}"
+readonly VEDV_HADOLINT_ENABLED="${VEDV_HADOLINT_ENABLED:-"${HADOLINT_ENABLED:-false}"}"
 readonly VEDV_HADOLINT_CONFIG="${VEDV_HADOLINT_CONFIG:-"${HADOLINT_CONFIG:-"${__VEDV_CONFIG_DIR}/hadolint.yaml"}"}"
 readonly VEDV_SSH_USER="${VEDV_SSH_USER:-"${SSH_USER:-vedv}"}"
 readonly VEDV_SSH_PASSWORD="${VEDV_SSH_PASSWORD:-"${SSH_PASSWORD:-"$VEDV_SSH_USER"}"}"
