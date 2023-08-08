@@ -90,7 +90,7 @@ vm_copy() {
 }
 
 vm_copy ../../.env '~'
-vm_copy ./nextcloud.ct.dev.cac '~'
+vm_copy ./nextcloud.cac '~'
 vm_copy ./nextcloud.vm.dev.cac '~'
 
 vm_copy ./root-vm/tmp/* /tmp

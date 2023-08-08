@@ -79,7 +79,7 @@ setup_nextcloud() {
   # configure nextcloud
   local -r nc_container_id="$(docker container ls -qf "name=.*nextcloud.*")"
 
-  docker cp ./nextcloud.ct.dev.cac "${nc_container_id}:/tmp"
+  docker cp ./nextcloud.cac "${nc_container_id}:/tmp"
 
   local -ri wait_time=60
 
@@ -87,7 +87,7 @@ setup_nextcloud() {
   sleep $wait_time
 
   # configure nextcloud container
-  docker exec "$nc_container_id" /tmp/nextcloud.ct.dev.cac
+  docker exec "$nc_container_id" /tmp/nextcloud.cac
 }
 
 load_fixtures() {

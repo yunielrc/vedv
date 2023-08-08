@@ -36,3 +36,9 @@ nextcloud-dev-start:
 
 nextcloud-dev-status:
 	sudo -u root VBoxManage showvminfo nextcloud-dev | grep State
+
+nextcloud-dev-ssh:
+	ssh -p 40022 user@127.0.0.1
+
+nextcloud-prod-setup:
+	./icac/nextcloud/nextcloud.vultr.prod.iac

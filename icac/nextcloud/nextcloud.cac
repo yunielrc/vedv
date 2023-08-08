@@ -14,7 +14,7 @@ readonly NC_PUBLIC_IMAGES_REL_DIR='01-public-images'
 
 # FUNCTIONS
 occ() {
-  sudo -u www-data php occ --no-interaction "$@"
+  sudo -E -u www-data php occ --no-interaction "$@"
 }
 
 # Configure skeleton directory

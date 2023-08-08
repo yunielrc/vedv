@@ -29,7 +29,7 @@ readonly VM_IP="$(multipass info "$VM_NAME" | grep -oP 'IPv4:\s+\K\S+')"
 sudo tee -a /etc/hosts <<<"${VM_IP} nextcloud.loc"
 
 # Configure
-multipass transfer ../../.env ./nextcloud.ct.dev.cac ./nextcloud.vm.dev.cac "${VM_NAME}:"
+multipass transfer ../../.env ./nextcloud.cac ./nextcloud.vm.dev.cac "${VM_NAME}:"
 multipass transfer -r ./root-vm/tmp/* "${VM_NAME}:/tmp"
 
 multipass exec "$VM_NAME" bash <<'EOF'
