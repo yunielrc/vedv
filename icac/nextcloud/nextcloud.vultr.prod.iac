@@ -22,4 +22,4 @@ vultr-cli instance create \
   --auto-backup=false \
   --ssh-keys 8e7a6da6-315e-4ce0-8a76-0a60cbb0ca9d \
   --reserved-ipv4 95ca44d1-867b-47e8-8e84-2a39795c25fa \
-  --userdata "$(cat nextcloud.cac <(envsubst <nextcloud.cac.vultr.snippet))"
+  --userdata "$(cat nextcloud.cac <(envsubst <nextcloud.cac.vultr.prod.snippet))"
