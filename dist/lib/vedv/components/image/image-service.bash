@@ -118,6 +118,10 @@ vedv::image_service::import() {
     return "$ERR_NOFILE"
   fi
   if [[ -n "$image_name" ]]; then
+
+    vedv::image_entity::validate_name "$image_name" ||
+      return "$?"
+
     local exists_image
     exists_image="$(vedv::image_service::exists_with_name "$image_name")" || {
       err "Failed to check if image with name: '${image_name}' already exist"

@@ -38,6 +38,9 @@ setup_file() {
   local -r image='image1'
   local -r container_name='container1'
 
+  vedv::container_entity::validate_name() {
+    assert_equal "$*" "container1"
+  }
   vedv::container_service::exists_with_name() {
     assert_equal "$*" "container1"
     return 1
@@ -53,6 +56,9 @@ setup_file() {
   local -r image='image1'
   local -r container_name='container1'
 
+  vedv::container_entity::validate_name() {
+    assert_equal "$*" "container1"
+  }
   vedv::container_service::exists_with_name() {
     assert_equal "$*" "container1"
     echo true
@@ -68,6 +74,9 @@ setup_file() {
   local -r image="$TEST_OVA_FILE"
   local -r container_name='container1'
 
+  vedv::container_entity::validate_name() {
+    assert_equal "$*" "container1"
+  }
   vedv::container_service::exists_with_name() {
     assert_equal "$*" "container1"
     echo false
@@ -105,6 +114,9 @@ setup_file() {
   local -r image="image1"
   local -r container_name='container1'
 
+  vedv::container_entity::validate_name() {
+    assert_equal "$*" "container1"
+  }
   vedv::container_service::exists_with_name() {
     assert_equal "$*" "container1"
     echo false
@@ -131,6 +143,9 @@ setup_file() {
   local -r image="image1"
   local -r container_name='container1'
 
+  vedv::container_entity::validate_name() {
+    assert_equal "$*" "container1"
+  }
   vedv::container_service::exists_with_name() {
     assert_equal "$*" "container1"
     echo false
@@ -155,6 +170,9 @@ setup_file() {
   local -r image="image1"
   local -r container_name='container1'
 
+  vedv::container_entity::validate_name() {
+    assert_equal "$*" "container1"
+  }
   vedv::container_service::exists_with_name() {
     assert_equal "$*" "container1"
     echo false
@@ -184,6 +202,9 @@ setup_file() {
   local -r image="image1"
   local -r container_name='container1'
 
+  vedv::container_entity::validate_name() {
+    assert_equal "$*" "container1"
+  }
   vedv::container_service::exists_with_name() {
     assert_equal "$*" "container1"
     echo false
@@ -217,6 +238,9 @@ setup_file() {
   local -r image="image1"
   local -r container_name='container1'
 
+  vedv::container_entity::validate_name() {
+    assert_equal "$*" "container1"
+  }
   vedv::container_service::exists_with_name() {
     assert_equal "$*" "container1"
     echo false
@@ -254,6 +278,9 @@ setup_file() {
   local -r image="image1"
   local -r container_name='container1'
 
+  vedv::container_entity::validate_name() {
+    assert_equal "$*" "container1"
+  }
   vedv::container_service::exists_with_name() {
     assert_equal "$*" "container1"
     echo false
@@ -348,6 +375,9 @@ setup_file() {
   local -r image="image1"
   local -r container_name=''
 
+  vedv::container_entity::validate_name() {
+    assert_equal "$*" "container1"
+  }
   vedv::container_service::exists_with_name() {
     assert_equal "$*" "container1"
     echo false
@@ -400,6 +430,9 @@ setup_file() {
   local -r image="image1"
   local -r container_name=''
 
+  vedv::container_entity::validate_name() {
+    assert_equal "$*" "container1"
+  }
   vedv::container_service::exists_with_name() {
     assert_equal "$*" "container1"
     echo false
@@ -456,6 +489,9 @@ setup_file() {
   local -r image="image1"
   local -r container_name=''
 
+  vedv::container_entity::validate_name() {
+    assert_equal "$*" "container1"
+  }
   vedv::container_service::exists_with_name() {
     assert_equal "$*" "container1"
     echo false
@@ -516,6 +552,9 @@ setup_file() {
   local -r image="image1"
   local -r container_name=''
 
+  vedv::container_entity::validate_name() {
+    assert_equal "$*" "container1"
+  }
   vedv::container_service::exists_with_name() {
     assert_equal "$*" "container1"
     echo false
@@ -579,6 +618,9 @@ setup_file() {
   local -r image="image1"
   local -r container_name=''
 
+  vedv::container_entity::validate_name() {
+    assert_equal "$*" "container1"
+  }
   vedv::container_service::exists_with_name() {
     assert_equal "$*" "container1"
     echo false
@@ -645,6 +687,9 @@ setup_file() {
   local -r image="image1"
   local -r container_name=''
 
+  vedv::container_entity::validate_name() {
+    assert_equal "$*" "container1"
+  }
   vedv::container_service::exists_with_name() {
     assert_equal "$*" "container1"
     echo false
@@ -714,6 +759,9 @@ setup_file() {
   local -r image="image1"
   local -r container_name=''
 
+  vedv::container_entity::validate_name() {
+    assert_equal "$*" "container1"
+  }
   vedv::container_service::exists_with_name() {
     assert_equal "$*" "container1"
     echo false
@@ -791,6 +839,9 @@ setup_file() {
   local -r publish_ports='-p 8080:80/tcp -p 8082:82 -p 8081 -p 81/udp'
   local -r publish_all=false
 
+  vedv::container_entity::validate_name() {
+    assert_equal "$*" "container1"
+  }
   vedv::container_service::exists_with_name() {
     assert_equal "$*" "container1"
     echo false
@@ -872,6 +923,9 @@ setup_file() {
   local -r publish_ports='-p 8080:80/tcp -p 8082:82 -p 8081 -p 81/udp'
   local -r publish_all=true
 
+  vedv::container_entity::validate_name() {
+    assert_equal "$*" "container1"
+  }
   vedv::container_service::exists_with_name() {
     assert_equal "$*" "container1"
     echo false
@@ -958,6 +1012,9 @@ setup_file() {
   local -ri cpus=2
   local -ri memory=1024
 
+  vedv::container_entity::validate_name() {
+    assert_equal "$*" "container1"
+  }
   vedv::container_service::exists_with_name() {
     assert_equal "$*" "container1"
     echo false
@@ -1049,6 +1106,9 @@ setup_file() {
   local -ri cpus=2
   local -ri memory=1024
 
+  vedv::container_entity::validate_name() {
+    assert_equal "$*" "container1"
+  }
   vedv::container_service::exists_with_name() {
     assert_equal "$*" "container1"
     echo false

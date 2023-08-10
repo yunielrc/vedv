@@ -341,10 +341,9 @@
       "args": [
         "registry",
         "pull",
-        "--no-cache",
         "--name",
-        "my-alpine-15",
-        "admin@alpine/alpine-15"
+        "alpine-3.17",
+        "admin@alpine/alpine-13"
       ]
     },
   ]

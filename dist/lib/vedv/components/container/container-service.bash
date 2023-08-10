@@ -93,6 +93,10 @@ vedv::container_service::create() {
   fi
 
   if [[ -n "$container_name" ]]; then
+
+    vedv::container_entity::validate_name "$container_name" ||
+      return "$?"
+
     local exists_container
     exists_container="$(vedv::container_service::exists_with_name "$container_name")" || {
       err "Failed to check if container with name: '${container_name}' already exist"

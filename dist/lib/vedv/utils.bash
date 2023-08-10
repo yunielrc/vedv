@@ -814,3 +814,21 @@ utils::random_number() {
 utils::random_numberx3() {
   echo "$(utils::random_number "$@")$(utils::random_number "$@")$(utils::random_number "$@")"
 }
+
+#
+# Escape a string for use in a posix basic regular expression
+# (IT ONLY ESCAPES THE CHARACTERS: .)
+#
+# Arguments:
+#   str   string    string to scape
+#
+# Output:
+#   writes the escaped string to stdout
+#
+utils::escape_for_bregex() {
+  local -r str="$1"
+
+  local esc_str="${str//./\\.}"
+
+  echo "$esc_str"
+}

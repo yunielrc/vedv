@@ -13,9 +13,13 @@ fi
 # CONSTANTS
 readonly VEDV_VMOBJ_ENTITY_VALID_ATTRIBUTES='vm_name|ssh_port|user_name|workdir|environment|exposed_ports|shell|cpus|memory|password'
 
-readonly VEDV_VMOBJ_ENTITY_EREGEX_NAME='[[:lower:]](-|_|[[:lower:]]|[[:digit:]]){1,28}([[:lower:]]|[[:digit:]])'
+# when changing bregex, any special character must be escaped on the functions below:
+# vedv::vmobj_entity::vm_name_bregex_by_name
+# vedv::vmobj_entity::vm_name_bregex_by_id
+
+readonly VEDV_VMOBJ_ENTITY_EREGEX_NAME='[[:lower:]](\.|-|_|[[:lower:]]|[[:digit:]]){1,28}([[:lower:]]|[[:digit:]])'
 readonly VEDV_VMOBJ_ENTITY_EREGEX_ID='[[:digit:]]{6,11}'
-readonly VEDV_VMOBJ_ENTITY_BREGEX_NAME='[[:lower:]]\(-\|_\|[[:lower:]]\|[[:digit:]]\)\{1,28\}\([[:lower:]]\|[[:digit:]]\)'
+readonly VEDV_VMOBJ_ENTITY_BREGEX_NAME='[[:lower:]]\(\.\|-\|_\|[[:lower:]]\|[[:digit:]]\)\{1,28\}\([[:lower:]]\|[[:digit:]]\)'
 readonly VEDV_VMOBJ_ENTITY_BREGEX_ID='[[:digit:]]\{6,11\}'
 # VARIABLES
 
@@ -201,7 +205,9 @@ vedv::vmobj_entity::vm_name_bregex_by_name() {
   vedv::vmobj_entity::validate_name "$name" ||
     return "$?"
 
-  echo "${type}:${name}|crc:${VEDV_VMOBJ_ENTITY_BREGEX_ID}|"
+  local -r escaped_name="$(utils::escape_for_bregex "$name")"
+
+  echo "${type}:${escaped_name}|crc:${VEDV_VMOBJ_ENTITY_BREGEX_ID}|"
 }
 vname_bregex_by_name() { vedv::vmobj_entity::vm_name_bregex_by_name "$@"; }
 
@@ -386,6 +392,9 @@ vedv::vmobj_entity::gen_vm_name() {
       err "Failed to generate a random name"
       return "$ERR_VMOBJ_ENTITY"
     }
+  else
+    vedv::vmobj_entity::validate_name "$vmobj_name" ||
+      return "$?"
   fi
 
   local -r crc_sum="$(utils::crc_sum <<<"$vmobj_name")"

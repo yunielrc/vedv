@@ -170,6 +170,9 @@ setup() {
 
   petname() { echo "$container_name"; }
   utils::crc_sum() { echo "12345678"; }
+  vedv::vmobj_entity::validate_name() {
+    assert_equal "$*" "$container_name"
+  }
 
   run vedv::vmobj_entity::gen_vm_name 'container' "$container_name"
 
@@ -219,7 +222,7 @@ setup() {
     assert_equal "$*" 'container 1234567890 vm_name'
   }
   vedv::hypervisor::list_vms_by_partial_name() {
-    assert_equal "$*" 'container:[[:lower:]]\(-\|_\|[[:lower:]]\|[[:digit:]]\)\{1,28\}\([[:lower:]]\|[[:digit:]]\)|crc:1234567890|'
+    assert_equal "$*" 'container:[[:lower:]]\(\.\|-\|_\|[[:lower:]]\|[[:digit:]]\)\{1,28\}\([[:lower:]]\|[[:digit:]]\)|crc:1234567890|'
     return 1
   }
 
@@ -237,7 +240,7 @@ setup() {
     assert_equal "$*" 'container 1234567890 vm_name'
   }
   vedv::hypervisor::list_vms_by_partial_name() {
-    assert_equal "$*" 'container:[[:lower:]]\(-\|_\|[[:lower:]]\|[[:digit:]]\)\{1,28\}\([[:lower:]]\|[[:digit:]]\)|crc:1234567890|'
+    assert_equal "$*" 'container:[[:lower:]]\(\.\|-\|_\|[[:lower:]]\|[[:digit:]]\)\{1,28\}\([[:lower:]]\|[[:digit:]]\)|crc:1234567890|'
   }
 
   run vedv::vmobj_entity::get_vm_name "$type" "$vmobj_id"
@@ -254,7 +257,7 @@ setup() {
     assert_equal "$*" 'container 1234567890 vm_name'
   }
   vedv::hypervisor::list_vms_by_partial_name() {
-    assert_equal "$*" 'container:[[:lower:]]\(-\|_\|[[:lower:]]\|[[:digit:]]\)\{1,28\}\([[:lower:]]\|[[:digit:]]\)|crc:1234567890|'
+    assert_equal "$*" 'container:[[:lower:]]\(\.\|-\|_\|[[:lower:]]\|[[:digit:]]\)\{1,28\}\([[:lower:]]\|[[:digit:]]\)|crc:1234567890|'
     echo 'container:container1|crc:1234567890|'
   }
   vedv::vmobj_entity::__set_attribute() {
@@ -554,7 +557,7 @@ setup() {
     assert_equal "$*" "container 1234567890"
   }
   vedv::hypervisor::list_vms_by_partial_name() {
-    assert_equal "$*" 'container:[[:lower:]]\(-\|_\|[[:lower:]]\|[[:digit:]]\)\{1,28\}\([[:lower:]]\|[[:digit:]]\)|crc:1234567890|'
+    assert_equal "$*" 'container:[[:lower:]]\(\.\|-\|_\|[[:lower:]]\|[[:digit:]]\)\{1,28\}\([[:lower:]]\|[[:digit:]]\)|crc:1234567890|'
     return 1
   }
   # Execute
@@ -573,7 +576,7 @@ setup() {
     assert_equal "$*" "container 1234567890"
   }
   vedv::hypervisor::list_vms_by_partial_name() {
-    assert_equal "$*" 'container:[[:lower:]]\(-\|_\|[[:lower:]]\|[[:digit:]]\)\{1,28\}\([[:lower:]]\|[[:digit:]]\)|crc:1234567890|'
+    assert_equal "$*" 'container:[[:lower:]]\(\.\|-\|_\|[[:lower:]]\|[[:digit:]]\)\{1,28\}\([[:lower:]]\|[[:digit:]]\)|crc:1234567890|'
   }
   # Execute
   run vedv::vmobj_entity::get_dictionary "$type" "$vmobj_id"
@@ -591,7 +594,7 @@ setup() {
     assert_equal "$*" "container 1234567890"
   }
   vedv::hypervisor::list_vms_by_partial_name() {
-    assert_equal "$*" 'container:[[:lower:]]\(-\|_\|[[:lower:]]\|[[:digit:]]\)\{1,28\}\([[:lower:]]\|[[:digit:]]\)|crc:1234567890|'
+    assert_equal "$*" 'container:[[:lower:]]\(\.\|-\|_\|[[:lower:]]\|[[:digit:]]\)\{1,28\}\([[:lower:]]\|[[:digit:]]\)|crc:1234567890|'
     echo "container:foo-bar|crc:1234567890|"
   }
   vedv::hypervisor::get_description() {
@@ -614,7 +617,7 @@ setup() {
     assert_equal "$*" "container 1234567890"
   }
   vedv::hypervisor::list_vms_by_partial_name() {
-    assert_equal "$*" 'container:[[:lower:]]\(-\|_\|[[:lower:]]\|[[:digit:]]\)\{1,28\}\([[:lower:]]\|[[:digit:]]\)|crc:1234567890|'
+    assert_equal "$*" 'container:[[:lower:]]\(\.\|-\|_\|[[:lower:]]\|[[:digit:]]\)\{1,28\}\([[:lower:]]\|[[:digit:]]\)|crc:1234567890|'
     echo "container:foo-bar|crc:1234567890|"
   }
   vedv::hypervisor::get_description() {
@@ -641,7 +644,7 @@ setup() {
     assert_equal "$*" "container 1234567890"
   }
   vedv::hypervisor::list_vms_by_partial_name() {
-    assert_equal "$*" 'container:[[:lower:]]\(-\|_\|[[:lower:]]\|[[:digit:]]\)\{1,28\}\([[:lower:]]\|[[:digit:]]\)|crc:1234567890|'
+    assert_equal "$*" 'container:[[:lower:]]\(\.\|-\|_\|[[:lower:]]\|[[:digit:]]\)\{1,28\}\([[:lower:]]\|[[:digit:]]\)|crc:1234567890|'
     echo "container:foo-bar|crc:1234567890|"
   }
   vedv::hypervisor::get_description() {
@@ -667,7 +670,7 @@ setup() {
     assert_equal "$*" "container 1234567890"
   }
   vedv::hypervisor::list_vms_by_partial_name() {
-    assert_equal "$*" 'container:[[:lower:]]\(-\|_\|[[:lower:]]\|[[:digit:]]\)\{1,28\}\([[:lower:]]\|[[:digit:]]\)|crc:1234567890|'
+    assert_equal "$*" 'container:[[:lower:]]\(\.\|-\|_\|[[:lower:]]\|[[:digit:]]\)\{1,28\}\([[:lower:]]\|[[:digit:]]\)|crc:1234567890|'
     echo "container:foo-bar|crc:1234567890|"
   }
   vedv::hypervisor::get_description() {
@@ -690,7 +693,7 @@ setup() {
     assert_equal "$*" "container 1234567890"
   }
   vedv::hypervisor::list_vms_by_partial_name() {
-    assert_equal "$*" 'container:[[:lower:]]\(-\|_\|[[:lower:]]\|[[:digit:]]\)\{1,28\}\([[:lower:]]\|[[:digit:]]\)|crc:1234567890|'
+    assert_equal "$*" 'container:[[:lower:]]\(\.\|-\|_\|[[:lower:]]\|[[:digit:]]\)\{1,28\}\([[:lower:]]\|[[:digit:]]\)|crc:1234567890|'
     echo "container:foo-bar|crc:1234567890|"
   }
   vedv::hypervisor::get_description() {
@@ -1662,7 +1665,7 @@ setup() {
   run vedv::vmobj_entity::vm_name_bregex_by_id "$type" "$vmobj_id"
 
   assert_success
-  assert_output 'container:[[:lower:]]\(-\|_\|[[:lower:]]\|[[:digit:]]\)\{1,28\}\([[:lower:]]\|[[:digit:]]\)|crc:1234567890|'
+  assert_output 'container:[[:lower:]]\(\.\|-\|_\|[[:lower:]]\|[[:digit:]]\)\{1,28\}\([[:lower:]]\|[[:digit:]]\)|crc:1234567890|'
 }
 
 # Tests for vedv::vmobj_entity::vm_name_bregex_by_name()
@@ -1690,6 +1693,11 @@ setup() {
 @test "vedv::vmobj_entity::vm_name_bregex_by_name() Should succeed with a valid name" {
   local -r type='container'
   local -r vmobj_name='name1-last_name1-age6'
+
+  utils::escape_for_bregex() {
+    assert_equal "$*" 'name1-last_name1-age6'
+    echo 'name1-last_name1-age6'
+  }
 
   run vedv::vmobj_entity::vm_name_bregex_by_name "$type" "$vmobj_name"
 
@@ -1759,7 +1767,7 @@ setup() {
   local -r dictionary_str='([parent_image_id]="2234567890" [ssh_port]=22)'
 
   vedv::hypervisor::list_vms_by_partial_name() {
-    assert_equal "$*" 'container:[[:lower:]]\(-\|_\|[[:lower:]]\|[[:digit:]]\)\{1,28\}\([[:lower:]]\|[[:digit:]]\)|crc:1234567890|'
+    assert_equal "$*" 'container:[[:lower:]]\(\.\|-\|_\|[[:lower:]]\|[[:digit:]]\)\{1,28\}\([[:lower:]]\|[[:digit:]]\)|crc:1234567890|'
     return 1
   }
 
@@ -1775,7 +1783,7 @@ setup() {
   local -r dictionary_str='([parent_image_id]="2234567890" [ssh_port]=22)'
 
   vedv::hypervisor::list_vms_by_partial_name() {
-    assert_equal "$*" 'container:[[:lower:]]\(-\|_\|[[:lower:]]\|[[:digit:]]\)\{1,28\}\([[:lower:]]\|[[:digit:]]\)|crc:1234567890|'
+    assert_equal "$*" 'container:[[:lower:]]\(\.\|-\|_\|[[:lower:]]\|[[:digit:]]\)\{1,28\}\([[:lower:]]\|[[:digit:]]\)|crc:1234567890|'
   }
 
   run vedv::vmobj_entity::set_dictionary "$type" "$vmobj_id" "$dictionary_str"
@@ -1790,7 +1798,7 @@ setup() {
   local -r dictionary_str='([parent_image_id]="2234567890" [ssh_port]=22)'
 
   vedv::hypervisor::list_vms_by_partial_name() {
-    assert_equal "$*" 'container:[[:lower:]]\(-\|_\|[[:lower:]]\|[[:digit:]]\)\{1,28\}\([[:lower:]]\|[[:digit:]]\)|crc:1234567890|'
+    assert_equal "$*" 'container:[[:lower:]]\(\.\|-\|_\|[[:lower:]]\|[[:digit:]]\)\{1,28\}\([[:lower:]]\|[[:digit:]]\)|crc:1234567890|'
     echo 'container:ct1|crc:1234567890|'
   }
   vedv::hypervisor::get_description() {
@@ -1810,7 +1818,7 @@ setup() {
   local -r dictionary_str='([parent_image_id]="2234567890" [ssh_port]=22 [invalid_prop]="invalid_prop_val")'
 
   vedv::hypervisor::list_vms_by_partial_name() {
-    assert_equal "$*" 'container:[[:lower:]]\(-\|_\|[[:lower:]]\|[[:digit:]]\)\{1,28\}\([[:lower:]]\|[[:digit:]]\)|crc:1234567890|'
+    assert_equal "$*" 'container:[[:lower:]]\(\.\|-\|_\|[[:lower:]]\|[[:digit:]]\)\{1,28\}\([[:lower:]]\|[[:digit:]]\)|crc:1234567890|'
     echo 'container:ct1|crc:1234567890|'
   }
   vedv::hypervisor::get_description() {
@@ -1834,7 +1842,7 @@ setup() {
   local -r dictionary_str='([parent_image_id]="2234567890" [ssh_port]=22 [invalid_prop]="invalid_prop_val" [shell]="bash")'
 
   vedv::hypervisor::list_vms_by_partial_name() {
-    assert_equal "$*" 'container:[[:lower:]]\(-\|_\|[[:lower:]]\|[[:digit:]]\)\{1,28\}\([[:lower:]]\|[[:digit:]]\)|crc:1234567890|'
+    assert_equal "$*" 'container:[[:lower:]]\(\.\|-\|_\|[[:lower:]]\|[[:digit:]]\)\{1,28\}\([[:lower:]]\|[[:digit:]]\)|crc:1234567890|'
     echo 'container:ct1|crc:1234567890|'
   }
   vedv::hypervisor::get_description() {
@@ -1862,7 +1870,7 @@ setup() {
   local -r dictionary_str='([parent_image_id]="2234567890" [ssh_port]=22 [invalid_prop]="invalid_prop_val" [shell]="bash")'
 
   vedv::hypervisor::list_vms_by_partial_name() {
-    assert_equal "$*" 'container:[[:lower:]]\(-\|_\|[[:lower:]]\|[[:digit:]]\)\{1,28\}\([[:lower:]]\|[[:digit:]]\)|crc:1234567890|'
+    assert_equal "$*" 'container:[[:lower:]]\(\.\|-\|_\|[[:lower:]]\|[[:digit:]]\)\{1,28\}\([[:lower:]]\|[[:digit:]]\)|crc:1234567890|'
     echo 'container:ct1|crc:1234567890|'
   }
   vedv::hypervisor::get_description() {
@@ -1892,7 +1900,7 @@ setup() {
   local -r dictionary_str='([parent_image_id]="2234567890" [ssh_port]=22 [invalid_prop]="invalid_prop_val" [shell]="bash")'
 
   vedv::hypervisor::list_vms_by_partial_name() {
-    assert_equal "$*" 'container:[[:lower:]]\(-\|_\|[[:lower:]]\|[[:digit:]]\)\{1,28\}\([[:lower:]]\|[[:digit:]]\)|crc:1234567890|'
+    assert_equal "$*" 'container:[[:lower:]]\(\.\|-\|_\|[[:lower:]]\|[[:digit:]]\)\{1,28\}\([[:lower:]]\|[[:digit:]]\)|crc:1234567890|'
     echo 'container:ct1|crc:1234567890|'
   }
   vedv::hypervisor::get_description() {
@@ -1921,7 +1929,7 @@ setup() {
   local -r dictionary_str='([parent_image_id]="2234567890" [ssh_port]=22 [invalid_prop]="invalid_prop_val" [shell]="bash")'
 
   vedv::hypervisor::list_vms_by_partial_name() {
-    assert_equal "$*" 'container:[[:lower:]]\(-\|_\|[[:lower:]]\|[[:digit:]]\)\{1,28\}\([[:lower:]]\|[[:digit:]]\)|crc:1234567890|'
+    assert_equal "$*" 'container:[[:lower:]]\(\.\|-\|_\|[[:lower:]]\|[[:digit:]]\)\{1,28\}\([[:lower:]]\|[[:digit:]]\)|crc:1234567890|'
     echo 'container:ct1|crc:1234567890|'
   }
   vedv::hypervisor::get_description() {

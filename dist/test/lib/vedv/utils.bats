@@ -834,3 +834,13 @@ calc_item_id_from_array_b() { echo "$1"; }
 
   assert [ "$number" -gt 0 ]
 }
+
+# Tests for utils::escape_for_bregex()
+@test "utils::escape_for_bregex() Should succeed" {
+  local -r str=".foo."
+
+  run utils::escape_for_bregex "$str"
+
+  assert_success
+  assert_output "\.foo\."
+}

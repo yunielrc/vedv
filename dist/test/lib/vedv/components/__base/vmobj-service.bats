@@ -1008,7 +1008,7 @@ Failed to poweroff container: 12345"
   local -r vmobj_id="123456"
 
   vedv::hypervisor::exists_vm_with_partial_name() {
-    assert_equal "$*" 'container:[[:lower:]]\(-\|_\|[[:lower:]]\|[[:digit:]]\)\{1,28\}\([[:lower:]]\|[[:digit:]]\)|crc:123456|'
+    assert_equal "$*" 'container:[[:lower:]]\(\.\|-\|_\|[[:lower:]]\|[[:digit:]]\)\{1,28\}\([[:lower:]]\|[[:digit:]]\)|crc:123456|'
     return 1
   }
 
@@ -1023,7 +1023,7 @@ Failed to poweroff container: 12345"
   local -r vmobj_id="123456"
 
   vedv::hypervisor::exists_vm_with_partial_name() {
-    assert_equal "$*" 'container:[[:lower:]]\(-\|_\|[[:lower:]]\|[[:digit:]]\)\{1,28\}\([[:lower:]]\|[[:digit:]]\)|crc:123456|'
+    assert_equal "$*" 'container:[[:lower:]]\(\.\|-\|_\|[[:lower:]]\|[[:digit:]]\)\{1,28\}\([[:lower:]]\|[[:digit:]]\)|crc:123456|'
     echo true
   }
 
