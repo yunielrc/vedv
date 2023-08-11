@@ -1,17 +1,17 @@
 #!/usr/bin/env sh
 
-# Configure the alpine linux image vm for vedv
+# Configure the manjaro linux image vm for vedv
 
 set -eu
 
 # INSTALL PACKAGES
 
 # INSTALL OPENSSH
-pacman -Sy --noconfirm --needed openssh
+pacman -Sy --noconfirm --needed openssl openssh
 # configure sshd
-systemctl enable --now sshd.service
+systemctl enable --now sshd.service || :
 
 # INSTALL RSYNC
 pacman -Sy --noconfirm --needed rsync
 # configure rsyncd
-systemctl enable --now rsyncd.service
+systemctl enable --now rsyncd.service || :

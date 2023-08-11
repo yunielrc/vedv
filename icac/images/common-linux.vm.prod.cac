@@ -41,7 +41,10 @@ echo "$VEDV_USER" >"${__VEDV_CONFIG_DIR}/layer/user"
 chmod 0644 "${__VEDV_CONFIG_DIR}/layer/user"
 
 # ADD USER
-useradd -m "$VEDV_USER"
+if ! id "$VEDV_USER" >/dev/null 2>&1; then
+  useradd -m "$VEDV_USER"
+fi
+
 echo "${VEDV_USER}:${VEDV_PASS}" | chpasswd
 # add user to wheel group
 usermod -aG wheel "$VEDV_USER"
