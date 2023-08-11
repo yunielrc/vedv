@@ -37,7 +37,7 @@ vedv::image_command::constructor() {
 vedv::image_command::__import_help() {
   cat <<-HELPMSG
 Usage:
-${__VED_IMAGE_COMMAND_SCRIPT_NAME} image import IMAGE_FILE
+${__VED_IMAGE_COMMAND_SCRIPT_NAME} image import IMAGE_FILE.ova
 
 Import an image from a file
 
@@ -148,7 +148,7 @@ vedv::image_command::__import() {
 vedv::image_command::__export_help() {
   cat <<-HELPMSG
 Usage:
-${__VED_IMAGE_COMMAND_SCRIPT_NAME} image export IMAGE FILE
+${__VED_IMAGE_COMMAND_SCRIPT_NAME} image export IMAGE FILE.ova
 
 Export an image to a file
 
