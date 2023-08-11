@@ -9,7 +9,7 @@ cat <<'EOF' | patch -u /etc/nginx/sites-available/nextcloud_https.conf -
 -	client_max_body_size 512M;
 +	fastcgi_request_buffering off;
 +	client_max_body_size 16G;
-+	fastcgi_read_timeout 3600;
++	fastcgi_read_timeout 7200;
  	fastcgi_buffers 64 4K;
 
  	# Enable gzip but do not remove ETag headers
@@ -24,7 +24,7 @@ cat <<'EOF' | patch -u /etc/php/8.*/fpm/pool.d/www.conf -
  ; Available units: s(econds)(default), m(inutes), h(ours), or d(ays)
  ; Default Value: 0
 -request_terminate_timeout = 600s
-+request_terminate_timeout = 3600s
++request_terminate_timeout = 7200s
 
 -request_terminate_timeout = 600s
 +; request_terminate_timeout = 600s
@@ -53,8 +53,8 @@ cat <<'EOF' | patch -u /etc/php/8.*/fpm/pool.d/www.conf -
 
 -php_admin_value[max_execution_time] = 600
 -php_admin_value[max_input_time] = 600
-+php_admin_value[max_execution_time] = 3600
-+php_admin_value[max_input_time] = 3600
++php_admin_value[max_execution_time] = 7200
++php_admin_value[max_input_time] = 7200
  php_admin_value[output_buffering] = 0
  php_admin_value[memory_limit] = 512M
 EOF
