@@ -1,3 +1,5 @@
+timedatectl set-timezone America/New_York
+
 # Apply nginx.conf patch to allow large uploads
 cat <<'EOF' | patch -u /etc/nginx/sites-available/nextcloud_https.conf -
 --- nextcloud_https.conf.original	2023-08-10 01:55:54.262362453 -0400
