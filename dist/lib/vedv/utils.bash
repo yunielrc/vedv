@@ -801,18 +801,14 @@ utils::random_number() {
 }
 
 #
-# Generate 3 random number between min and max
-# and concatenate them
+# Generate a random number string
 #
-# Arguments:
-#   [min] int   minimum value (default: 100)
-#   [max] int   maximum value (default: 200)
 #
 # Output:
-#   Writes the random number (int) to stdout
+#   Writes the random string to stdout
 #
-utils::random_numberx3() {
-  echo "$(utils::random_number "$@")$(utils::random_number "$@")$(utils::random_number "$@")"
+utils::random_string() {
+  openssl rand -hex 15
 }
 
 #
