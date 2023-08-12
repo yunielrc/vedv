@@ -50,7 +50,7 @@ vedv::builder_service::constructor() {
   fi
   # a file is used because the variable is modified in a subshell
   # shellcheck disable=SC2119
-  readonly __VEDV_BUILDER_SERVICE_ENV_VARS_FILE="${__VEDV_BUILDER_SERVICE_MEMORY_CACHE_DIR}/env_vars_$(utils::random_numberx3)"
+  readonly __VEDV_BUILDER_SERVICE_ENV_VARS_FILE="${__VEDV_BUILDER_SERVICE_MEMORY_CACHE_DIR}/env_vars_$(utils::random_string)"
   : >"$__VEDV_BUILDER_SERVICE_ENV_VARS_FILE"
 }
 
@@ -1423,6 +1423,7 @@ vedv::builder_service::__create_image_by_from_cmd() {
 # Arguments:
 #   vedvfile    string     path to Vedvfile
 #   image_name  string     name of the image
+#   no_cache    bool       delete all layers except the FROM layer
 #
 # Output:
 #   Writes image_id (string) image_name (string) and build proccess #  output to the stdout
@@ -1433,6 +1434,7 @@ vedv::builder_service::__create_image_by_from_cmd() {
 vedv::builder_service::__build() {
   local -r vedvfile="$1"
   local image_name="${2:-}"
+  local -r no_cache="${3:-false}"
   # validate arguments
   if [[ -z "$vedvfile" ]]; then
     err "Argument 'vedvfile' is required"
@@ -1503,6 +1505,13 @@ vedv::builder_service::__build() {
       return "$ERR_BUILDER_SERVICE_OPERATION"
     }
     readonly initial_layer_count
+
+    if [[ "$no_cache" == true ]]; then
+      vedv::image_service::delete_layer_cache "$image_id" >/dev/null || {
+        err "Failed to delete layer cache for image: '${image_name}'"
+        return "$ERR_BUILDER_SERVICE_OPERATION"
+      }
+    fi
 
     # first_invalid_layer_pos` is the command position where the build start,
     # all previous commands of this position are ignored because their layers are valid
@@ -1674,27 +1683,13 @@ vedv::builder_service::build() {
     fi
   fi
 
-  if [[ "$no_cache" == true && -n "$image_id" ]]; then
-    vedv::image_service::delete_layer_cache "$image_id" >/dev/null || {
-      err "Failed to remove image '${image_name}'"
-      return "$ERR_BUILDER_SERVICE_OPERATION"
-    }
-    image_id=''
-  fi
-
   if [[ -z "$image_name" ]]; then
     image_name="$(petname)"
   fi
 
-  # During image build the image data cache can not be used because on layer
-  # deletion the data cache will be outdated.
-  # Moreover, the data cache only is updated when the image build is finished.
-  # So, the image data cache, included in the created containers, will be used
-  # on any other context except this.
-
   vedv::image_service::set_use_cache 'true'
 
-  vedv::builder_service::__build "$vedvfile" "$image_name" || {
+  vedv::builder_service::__build "$vedvfile" "$image_name" "$no_cache" || {
     err "The build proccess has failed."
   }
 

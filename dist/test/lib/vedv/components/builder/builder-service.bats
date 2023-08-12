@@ -1200,6 +1200,47 @@ Previous layer restored"
   assert_output "Failed to get layer count for image 'my-image-name'"
 }
 
+@test "vedv::builder_service::__build() Should fail If delete_layer_cache fails" {
+  # Arrange
+  local -r vedvfile="dist/test/lib/vedv/components/image/fixtures/Vedvfile"
+  local -r image_name="my-image-name"
+  local -r no_cache='true'
+
+  local -r from_cmd="1 FROM my_image"
+  # Stub
+  petname() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::builder_vedvfile_service::get_commands() {
+    assert_equal "$*" "$vedvfile"
+    echo "$from_cmd"
+  }
+  utils::str_encode_vars() {
+    assert_equal "$*" "$from_cmd"
+    echo "$from_cmd"
+  }
+  vedv::image_entity::get_id_by_image_name() {
+    assert_equal "$*" "$image_name"
+    echo "1234567890"
+  }
+  vedv::builder_service::__create_image_by_from_cmd() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::image_entity::get_layer_count() {
+    assert_equal "$*" "1234567890"
+    echo 0
+  }
+  vedv::image_service::delete_layer_cache() {
+    assert_equal "$*" "1234567890"
+    return 1
+  }
+  # Act
+  run vedv::builder_service::__build "$vedvfile" "$image_name" "$no_cache"
+  # Assert
+  assert_failure
+  assert_output "Failed to delete layer cache for image: 'my-image-name'"
+}
+
 @test "vedv::builder_service::__build() Should fail If __delete_invalid_layers fails" {
   # Arrange
   local -r vedvfile="dist/test/lib/vedv/components/builder/fixtures/Vedvfile"
@@ -2021,30 +2062,6 @@ The previous layer to the failure could not be restored. Try build the image aga
   assert_output "The image '${image_name}' has containers, you need to force the build, the containers will be removed."
 }
 
-@test 'vedv::builder_service::build() Should fail If delete_layer_cache fails' {
-  local -r vedvfile='dist/test/lib/vedv/components/image/fixtures/Vedvfile'
-  local -r image_name="image1"
-  local -r force=true
-  local -r no_cache=true
-
-  vedv::image_entity::get_id_by_image_name() {
-    assert_equal "$*" "image1"
-    echo "22345"
-  }
-  vedv::image_entity::has_containers() {
-    assert_equal "$*" "INVALID_CALL"
-  }
-  vedv::image_service::delete_layer_cache() {
-    assert_equal "$*" "22345"
-    return 1
-  }
-
-  run vedv::builder_service::build "$vedvfile" "$image_name" "$force" "$no_cache"
-
-  assert_failure
-  assert_output "Failed to remove image '${image_name}'"
-}
-
 @test 'vedv::builder_service::build() Should fail If stop fails' {
   local -r vedvfile='dist/test/lib/vedv/components/image/fixtures/Vedvfile'
   local -r image_name="image1"
@@ -2059,11 +2076,8 @@ The previous layer to the failure could not be restored. Try build the image aga
     assert_equal "$*" "22345"
     echo false
   }
-  vedv::image_service::delete_layer_cache() {
-    assert_equal "$*" "INVALID_CALL"
-  }
   vedv::builder_service::__build() {
-    assert_equal "$*" "${vedvfile} ${image_name}"
+    assert_equal "$*" "${vedvfile} ${image_name} false"
     return 1
   }
   vedv::image_service::set_use_cache() {
@@ -2098,11 +2112,8 @@ Failed to stop the image 'image1'.You must stop it."
     assert_equal "$*" "22345"
     echo false
   }
-  vedv::image_service::delete_layer_cache() {
-    assert_equal "$*" "INVALID_CALL"
-  }
   vedv::builder_service::__build() {
-    assert_equal "$*" "${vedvfile} ${image_name}"
+    assert_equal "$*" "${vedvfile} ${image_name} false"
   }
   vedv::image_service::set_use_cache() {
     assert_equal "$*" "true"
