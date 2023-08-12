@@ -242,6 +242,7 @@ vedv::ssh_client::wait_for_ssh_service() {
   local -i max="$timeout"
 
   while ! ssh -T -o 'ConnectTimeout=2' \
+    -o 'BatchMode=yes' \
     -o 'UserKnownHostsFile=/dev/null' \
     -o 'PubkeyAuthentication=no' \
     -o 'StrictHostKeyChecking=no' \
