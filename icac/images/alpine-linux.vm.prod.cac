@@ -31,3 +31,5 @@ service rsyncd start
 
 # INSTALL BASH
 apk add bash
+
+echo '>> DONE!'

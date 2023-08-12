@@ -1,22 +1,26 @@
 FROM /tmp/vedv/test/files/alpine-x86_64.ova
 
-SHELL sh
+
+SHELL /bin/sh
 EXPOSE 8081
 ENV NAME1='nalyd "1'
 USER nalyd
 WORKDIR nalydworkdir
 RUN touch file1
+COPY homefs .
 
-SHELL bash
+SHELL /bin/bash
 EXPOSE 8082
 ENV NAME2="vedv '2"
 USER vedv
 WORKDIR vedvworkdir
 RUN touch file3
+COPY home.config .
 
-SHELL sh
+SHELL /bin/sh
 EXPOSE 8083
 ENV NAME3='root 3'
 USER root
-WORKDIR rootworkdir1
+WORKDIR rootworkdir
 RUN touch file2
+COPY rootfs .

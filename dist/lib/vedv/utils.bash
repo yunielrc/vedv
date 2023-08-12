@@ -148,7 +148,7 @@ utils::get_a_dynamic_port() {
   read -r min max </proc/sys/net/ipv4/ip_local_port_range
   readonly min max
 
-  local -i port="$(utils::random_number $min "$max")"
+  local -i port="$(utils::random_number $min $max)"
 
   while nc -z localhost $port &>/dev/null; do
     port="$(utils::random_number $min "$max")"

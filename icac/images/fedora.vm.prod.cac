@@ -1,18 +1,18 @@
 #!/usr/bin/env sh
 
-# Configure the manjaro linux image vm for vedv
+# Configure the fedora image vm for vedv
 
 set -eu
 
 # INSTALL PACKAGES
 
 # INSTALL OPENSSH
-pacman -Sy --noconfirm --needed openssl openssh
+dnf -y install openssh
 # configure sshd
 systemctl enable --now sshd.service || :
 
 # INSTALL RSYNC
-pacman -Sy --noconfirm --needed rsync
+dnf -y install rsync-daemon
 # configure rsyncd
 systemctl enable --now rsyncd.service || :
 

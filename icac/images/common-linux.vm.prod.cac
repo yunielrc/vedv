@@ -57,10 +57,38 @@ echo "%wheel ALL=(ALL) NOPASSWD: ALL" >/etc/sudoers.d/wheel-nopasswd
 chmod 0440 /etc/sudoers.d/wheel-nopasswd
 
 # CONFIGURE SSHD
+
+sshd_config_file='/etc/ssh/sshd_config'
+
+if [ ! -f "$sshd_config_file" ]; then
+
+  sshd_config_file='/usr/etc/ssh/sshd_config'
+
+  if [ ! -f "$sshd_config_file" ]; then
+    echo 'sshd_config file not found' >&2
+    exit 1
+  fi
+fi
+
 sed -i \
   -e 's/^#\?\s*PermitRootLogin .*/PermitRootLogin yes/' \
   -e 's/^#\?\s*PasswordAuthentication .*/PasswordAuthentication yes/' \
-  /etc/ssh/sshd_config
+  "$sshd_config_file"
+
+# DISABLE LOGIN WELCOME MESSAGE
+# when ssh_client::run_cm is executed on distros like debian, ubuntu, fedora, opensuse
+# shows the welcome message before the command output, this is not desirable and it causes
+# the command output to be parsed incorrectly.
+if [ ! -d /etc/skel ]; then
+  mkdir /etc/skel
+fi
+
+touch /etc/skel/.hushlogin
+touch /root/.hushlogin
+
+for user in $(getent passwd | grep ':/home' | cut -f1 -d:); do
+  sudo -u "$user" touch "/home/${user}/.hushlogin" || :
+done
 
 # ADD VEDV STANDARD SCRIPTS
 

@@ -39,3 +39,5 @@ systemctl enable --now rsync.service || :
 if ! getent group wheel >/dev/null; then
   groupadd wheel
 fi
+
+echo '>> DONE!'

@@ -1,5 +1,5 @@
 #
-# Registry api client
+# Registry api client Interface
 #
 
 if false; then
