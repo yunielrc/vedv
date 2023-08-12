@@ -167,6 +167,7 @@ wait_for_ssh_service() {
   local -i max="$TEST_SSH_WAIT_TIMEOUT"
 
   while ! ssh -T -o 'ConnectTimeout=1' \
+    -o 'BatchMode=yes' \
     -o 'UserKnownHostsFile=/dev/null' \
     -o 'PubkeyAuthentication=no' \
     -o 'StrictHostKeyChecking=no' \
