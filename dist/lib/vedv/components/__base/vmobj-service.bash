@@ -1497,7 +1497,7 @@ vedv::vmobj_service::fs::add_environment_var() {
   local -r cmd="vedv-addenv_var $'${env_var}'"
 
   local _env
-  _env="$(vedv::vmobj_service::execute_cmd_by_id "$type" "$vmobj_id" "$cmd" 'root' '<none>')" || {
+  _env="$(vedv::vmobj_service::execute_cmd_by_id "$type" "$vmobj_id" "$cmd" 'root' '<none>' '' 'bash')" || {
     err "Failed to add environment variable '${env_var}' to ${type}: ${vmobj_id}"
     return "$ERR_VMOBJ_OPERATION"
   }
@@ -1586,7 +1586,7 @@ vedv::vmobj_service::fs::add_exposed_ports() {
   local -r cmd="vedv-addexpose_ports $'${eports}'"
 
   local eports_list
-  eports_list="$(vedv::vmobj_service::execute_cmd_by_id "$type" "$vmobj_id" "$cmd" 'root' '<none>')" || {
+  eports_list="$(vedv::vmobj_service::execute_cmd_by_id "$type" "$vmobj_id" "$cmd" 'root' '<none>' '' 'bash')" || {
     err "Failed to add expose ports '${eports}' to ${type}: ${vmobj_id}"
     return "$ERR_VMOBJ_OPERATION"
   }

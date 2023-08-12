@@ -249,8 +249,9 @@
         "image",
         "build",
         "-n",
-        "image1",
-        "./Vedvfile5"
+        "ubuntug",
+        "--no-cache",
+        "./allcmds.Vedvfile"
       ]
     },
     {

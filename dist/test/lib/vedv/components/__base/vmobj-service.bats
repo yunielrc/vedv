@@ -2268,7 +2268,7 @@ EOF
   local -r env_var="env_var1"
 
   vedv::vmobj_service::execute_cmd_by_id() {
-    assert_equal "$*" "container 22345 vedv-addenv_var $'env_var1' root <none>"
+    assert_equal "$*" "container 22345 vedv-addenv_var $'env_var1' root <none>  bash"
     return 1
   }
 
@@ -2284,7 +2284,7 @@ EOF
   local -r env_var='EVAR3="VALUE 3"'
 
   vedv::vmobj_service::execute_cmd_by_id() {
-    assert_equal "$*" "container 22345 vedv-addenv_var $'EVAR3=\"VALUE 3\"' root <none>"
+    assert_equal "$*" "container 22345 vedv-addenv_var $'EVAR3=\"VALUE 3\"' root <none>  bash"
     cat <<EOF
 EVAR1='VALUE1'
 EVAR2='VALUE2'
@@ -2310,7 +2310,7 @@ EVAR3=\"VALUE 3\""
   local -r env_var='EVAR3="VALUE 3"'
 
   vedv::vmobj_service::execute_cmd_by_id() {
-    assert_equal "$*" "container 22345 vedv-addenv_var $'EVAR3=\"VALUE 3\"' root <none>"
+    assert_equal "$*" "container 22345 vedv-addenv_var $'EVAR3=\"VALUE 3\"' root <none>  bash"
     cat <<EOF
 EVAR1='VALUE1'
 EVAR2='VALUE2'
@@ -2688,7 +2688,7 @@ EVAR3=\"VALUE 3\""
   local -r ports="8081/udp"
 
   vedv::vmobj_service::execute_cmd_by_id() {
-    assert_equal "$*" "container 22345 vedv-addexpose_ports $'8081/udp' root <none>"
+    assert_equal "$*" "container 22345 vedv-addexpose_ports $'8081/udp' root <none>  bash"
     return 1
   }
 
@@ -2704,7 +2704,7 @@ EVAR3=\"VALUE 3\""
   local -r ports="8083/tcp"
 
   vedv::vmobj_service::execute_cmd_by_id() {
-    assert_equal "$*" "container 22345 vedv-addexpose_ports $'8083/tcp' root <none>"
+    assert_equal "$*" "container 22345 vedv-addexpose_ports $'8083/tcp' root <none>  bash"
     cat <<EOF
 8080/tcp
 8081/tcp
@@ -2732,7 +2732,7 @@ EOF
   local -r ports="8083/tcp"
 
   vedv::vmobj_service::execute_cmd_by_id() {
-    assert_equal "$*" "container 22345 vedv-addexpose_ports $'8083/tcp' root <none>"
+    assert_equal "$*" "container 22345 vedv-addexpose_ports $'8083/tcp' root <none>  bash"
     cat <<EOF
 8080/tcp
 8081/tcp
