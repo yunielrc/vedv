@@ -87,3 +87,10 @@ occ user:add \
 # restart services
 systemctl restart nginx
 systemctl restart php8.1-fpm
+
+# Configure google social login
+occ app:install sociallogin
+occ config:app:set sociallogin oauth_providers --value="{\"google\":{\"appid\":\"${VULTR_NC_GOOGLE_OAUTH2_CLIENT_ID}\",\"secret\":\"${VULTR_NC_GOOGLE_OAUTH2_CLIENT_SECRET}\",\"defaultGroup\":\"\",\"auth_params\":{\"hd\":\"\"}},\"amazon\":{\"appid\":\"\",\"secret\":\"\"},\"facebook\":{\"appid\":\"\",\"secret\":\"\"},\"twitter\":{\"appid\":\"\",\"secret\":\"\"},\"GitHub\":{\"appid\":\"\",\"secret\":\"\",\"orgs\":\"\"},\"discord\":{\"appid\":\"\",\"secret\":\"\",\"guilds\":\"\"},\"QQ\":{\"appid\":\"\",\"secret\":\"\"},\"slack\":{\"appid\":\"\",\"secret\":\"\"},\"telegram\":{\"appid\":\"\",\"secret\":\"\"},\"mailru\":{\"appid\":\"\",\"secret\":\"\",\"auth_params\":{\"hd\":\"\"}},\"yandex\":{\"appid\":\"\",\"secret\":\"\",\"auth_params\":{\"hd\":\"\"}},\"BitBucket\":{\"appid\":\"\",\"secret\":\"\",\"workspace\":\"\"},\"PlexTv\":{\"appid\":\"\"}}"
+occ config:app:set sociallogin prevent_create_email_exists --value='1'
+
+echo '>> DONE'
