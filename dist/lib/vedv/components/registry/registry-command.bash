@@ -127,16 +127,26 @@ ${__VED_REGISTRY_COMMAND_SCRIPT_NAME} registry push-link [FLAGS] [OPTIONS] [DOMA
 
 Upload an image link to a registry
 
+Address format:
+  http download:
+    e.g.: http=http://example.com/alpine.ova | http=https://example.com/alpine.ova
+  gdrive download >100mb:
+    e.g.: gdrive-big=https://drive.google.com/file/d/1iya7JW_-anYYYzfQqitb_RDHJVAngzBQ/view?usp=drive_link
+  gdrive download <=100mb:
+    e.g.: gdrive-small=https://drive.google.com/file/d/11-Ss7b-M3ieg9x42TQoJvTv_NlzU90I2/view?usp=drive_link
+  onedrive download:
+    e.g.: onedrive=https://onedrive.live.com/embed?resid=DBC0B75F07574EAA%21272&authkey=!AP8U5cI4V7DusSg
+
 Aliases:
   ${__VED_REGISTRY_COMMAND_SCRIPT_NAME} image push-link
 
 Flags:
-  -h, --help                    show help
+Flags:
+  -h, --help                          show help
 
 Mandatory Options:
-  --image-url <url>             image url that will be used as a link
-  --checksum-url  <file|url>    checksum url of the image
-
+  --image-address <address>           image address that will be used as a link
+  --checksum-address  <file|address>  checksum address of the image
 
 HELPMSG
 }
@@ -145,11 +155,11 @@ HELPMSG
 # Upload an image link to a registry
 #
 # Flags:
-#   -h, --help                    show help
+#   -h, --help                            show help
 #
 # Mandatory Options:
-#   --image-url <url>             image url that will be used as a link
-#   --checksum-url  <file|url>    checksum url of the image
+#   --image-address <address>             image address that will be used as a link
+#   --checksum-address  <file|address>    checksum address of the image
 #
 # Arguments:
 #   IMAGE_FQN                     string  scheme: [domain/]user@collection/name
@@ -161,8 +171,8 @@ HELPMSG
 #   0 on success, non-zero on error.
 #
 vedv::registry_command::__push_link() {
-  local image_url=''
-  local checksum_url=''
+  local image_address=''
+  local checksum_address=''
   local image_fqn=''
 
   if [[ $# == 0 ]]; then set -- '-h'; fi
@@ -175,21 +185,21 @@ vedv::registry_command::__push_link() {
       return 0
       ;;
     # mandatory options
-    --image-url)
-      readonly image_url="${2:-}"
+    --image-address)
+      readonly image_address="${2:-}"
       # validate argument
-      if [[ -z "$image_url" ]]; then
-        err "No image_url argument\n"
+      if [[ -z "$image_address" ]]; then
+        err "No image_address argument\n"
         vedv::registry_command::__push_link_help
         return "$ERR_INVAL_ARG"
       fi
       shift 2
       ;;
-    --checksum-url)
-      readonly checksum_url="${2:-}"
+    --checksum-address)
+      readonly checksum_address="${2:-}"
       # validate argument
-      if [[ -z "$checksum_url" ]]; then
-        err "No checksum_url argument\n"
+      if [[ -z "$checksum_address" ]]; then
+        err "No checksum_address argument\n"
         vedv::registry_command::__push_link_help
         return "$ERR_INVAL_ARG"
       fi
@@ -204,13 +214,13 @@ vedv::registry_command::__push_link() {
   done
 
   # validate parameters
-  if [[ -z "$image_url" ]]; then
-    err "No image_url specified\n"
+  if [[ -z "$image_address" ]]; then
+    err "No image_address specified\n"
     vedv::registry_command::__push_link_help
     return "$ERR_INVAL_ARG"
   fi
-  if [[ -z "$checksum_url" ]]; then
-    err "No checksum_url specified\n"
+  if [[ -z "$checksum_address" ]]; then
+    err "No checksum_address specified\n"
     vedv::registry_command::__push_link_help
     return "$ERR_INVAL_ARG"
   fi
@@ -221,8 +231,8 @@ vedv::registry_command::__push_link() {
   fi
 
   vedv::registry_service::push_link \
-    "$image_url" \
-    "$checksum_url" \
+    "$image_address" \
+    "$checksum_address" \
     "$image_fqn"
 }
 

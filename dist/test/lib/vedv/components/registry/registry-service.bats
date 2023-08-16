@@ -5,6 +5,9 @@ setup() {
   # vedv::registry_service::constructor "$(mktemp -d)"
   export __VEDV_REGISTRY_SERVICE_CACHE_DIR="$(mktemp -d)"
   export __VEDV_REGISTRY_SERVICE_IMAGE_EXPORTED_DIR="$(mktemp -d)"
+
+  file_downloader::constructor ''
+  export __VEDV_FILE_DOWNLOADER_USER_AGENT
 }
 # teardown() {
 #   rm -rf "${__VEDV_REGISTRY_SERVICE_CACHE_DIR}"
@@ -1004,11 +1007,11 @@ For security reasons, the image can not be downloaded"
 @test "vedv::registry_service::__push_link_image_exporter() Should fail With empty image_file" {
   local -r image_file=""
   local -r checksum_file=""
-  local -r image_url=""
-  local -r checksum_url=""
+  local -r image_address=""
+  local -r checksum_address=""
 
   run vedv::registry_service::__push_link_image_exporter \
-    "$image_file" "$checksum_file" "$image_url" "$checksum_url"
+    "$image_file" "$checksum_file" "$image_address" "$checksum_address"
 
   assert_failure
   assert_output "image_file can not be empty"
@@ -1017,52 +1020,52 @@ For security reasons, the image can not be downloaded"
 @test "vedv::registry_service::__push_link_image_exporter() Should fail With empty checksum_file" {
   local -r image_file="file"
   local -r checksum_file=""
-  local -r image_url=""
-  local -r checksum_url=""
+  local -r image_address=""
+  local -r checksum_address=""
 
   run vedv::registry_service::__push_link_image_exporter \
-    "$image_file" "$checksum_file" "$image_url" "$checksum_url"
+    "$image_file" "$checksum_file" "$image_address" "$checksum_address"
 
   assert_failure
   assert_output "checksum_file can not be empty"
 }
 
-@test "vedv::registry_service::__push_link_image_exporter() Should fail With invalid image_url" {
+@test "vedv::registry_service::__push_link_image_exporter() Should fail With invalid image_address" {
   local -r image_file="file"
   local -r checksum_file="file.sha256sum"
-  local -r image_url="invalid"
-  local -r checksum_url=""
+  local -r image_address="invalid"
+  local -r checksum_address=""
 
   run vedv::registry_service::__push_link_image_exporter \
-    "$image_file" "$checksum_file" "$image_url" "$checksum_url"
+    "$image_file" "$checksum_file" "$image_address" "$checksum_address"
 
   assert_failure
-  assert_output "image_url is not valid"
+  assert_output "image_address is not valid"
 }
 
-@test "vedv::registry_service::__push_link_image_exporter() Should fail With invalid checksum_url" {
+@test "vedv::registry_service::__push_link_image_exporter() Should fail With invalid checksum_address" {
   local -r image_file="file"
   local -r checksum_file="file.sha256sum"
-  local -r image_url="http://registry.get/image1"
-  local -r checksum_url="invalid"
+  local -r image_address="http://registry.get/image1"
+  local -r checksum_address="invalid"
 
   run vedv::registry_service::__push_link_image_exporter \
-    "$image_file" "$checksum_file" "$image_url" "$checksum_url"
+    "$image_file" "$checksum_file" "$image_address" "$checksum_address"
 
   assert_failure
-  assert_output "checksum_url is not valid"
+  assert_output "checksum_address is not valid"
 }
 
 @test "vedv::registry_service::__push_link_image_exporter() Should fail If creating image link fails" {
   local -r image_file="$(mktemp)"
   local -r checksum_file="file.sha256sum"
-  local -r image_url="http://registry.get/image1"
-  local -r checksum_url="http://registry.get/image1.sha256sum"
+  local -r image_address="http://registry.get/image1"
+  local -r checksum_address="http://registry.get/image1.sha256sum"
 
   chmod -w "$image_file"
 
   run vedv::registry_service::__push_link_image_exporter \
-    "$image_file" "$checksum_file" "$image_url" "$checksum_url"
+    "$image_file" "$checksum_file" "$image_address" "$checksum_address"
 
   assert_failure
   assert_output --partial "Error creating image link:"
@@ -1071,91 +1074,91 @@ For security reasons, the image can not be downloaded"
 @test "vedv::registry_service::__push_link_image_exporter() Should fail If download_file fails" {
   local -r image_file="$(mktemp)"
   local -r checksum_file="file.sha256sum"
-  local -r image_url="http://registry.get/image1"
-  local -r checksum_url="http://registry.get/image1.sha256sum"
+  local -r image_address="http://registry.get/image1"
+  local -r checksum_address="http://registry.get/image1.sha256sum"
 
-  utils::download_file() {
-    assert_equal "$*" "${checksum_url} ${checksum_file}"
+  file_downloader::any_download() {
+    assert_equal "$*" "${checksum_address} ${checksum_file}"
     return 1
   }
 
   run vedv::registry_service::__push_link_image_exporter \
-    "$image_file" "$checksum_file" "$image_url" "$checksum_url"
+    "$image_file" "$checksum_file" "$image_address" "$checksum_address"
 
   assert_failure
-  assert_output --partial "Error downloading checksum from url: "
+  assert_output --partial "Error downloading checksum from address: "
 }
 
 @test "vedv::registry_service::__push_link_image_exporter() Should fail If sed fails" {
   local -r image_file="$(mktemp)"
   local -r checksum_file="/tmp/vedv/fileabc123456.sha256sum"
-  local -r image_url="http://registry.get/image1"
-  local -r checksum_url="http://registry.get/image1.sha256sum"
+  local -r image_address="http://registry.get/image1"
+  local -r checksum_address="http://registry.get/image1.sha256sum"
 
-  utils::download_file() {
-    assert_equal "$*" "${checksum_url} ${checksum_file}"
+  file_downloader::any_download() {
+    assert_equal "$*" "${checksum_address} ${checksum_file}"
   }
 
   run vedv::registry_service::__push_link_image_exporter \
-    "$image_file" "$checksum_file" "$image_url" "$checksum_url"
+    "$image_file" "$checksum_file" "$image_address" "$checksum_address"
 
   assert_failure
   assert_output --partial "Error updating checksum file: "
 }
 
 # Tests for vedv::registry_service::push_link()
-@test "vedv::registry_service::push_link() Should fail With invalid image_url" {
-  local -r image_url='invalid'
-  local -r checksum_url=''
+@test "vedv::registry_service::push_link() Should fail With invalid image_address" {
+  local -r image_address='invalid'
+  local -r checksum_address=''
   local -r image_fqn=''
 
   run vedv::registry_service::push_link \
-    "$image_url" "$checksum_url" "$image_fqn"
+    "$image_address" "$checksum_address" "$image_fqn"
 
   assert_failure
-  assert_output "image_url is not valid"
+  assert_output "image_address is not valid"
 }
 
-@test "vedv::registry_service::push_link() Should fail With invalid checksum_url" {
-  local -r image_url='http://registry.get/image1'
-  local -r checksum_url='invalid'
+@test "vedv::registry_service::push_link() Should fail With invalid checksum_address" {
+  local -r image_address='http://registry.get/image1'
+  local -r checksum_address='invalid'
   local -r image_fqn=''
 
   run vedv::registry_service::push_link \
-    "$image_url" "$checksum_url" "$image_fqn"
+    "$image_address" "$checksum_address" "$image_fqn"
 
   assert_failure
-  assert_output "checksum_url is not valid"
+  assert_output "checksum_address is not valid"
 }
 
 @test "vedv::registry_service::push_link() Should fail If push fails" {
-  local -r image_url='http://registry.get/image1'
-  local -r checksum_url='http://registry.get/image1.sha256sum'
+  local -r image_address='http://registry.get/image1'
+  local -r checksum_address='http://registry.get/image1.sha256sum'
   local -r image_fqn='nextcloud.loc/admin@alpine/alpine-14'
 
   vedv::registry_service::__push() {
-    assert_equal "$*" "${image_fqn} vedv::registry_service::__push_link_image_exporter \"\$image_file\" \"\$checksum_file\" '${image_url}' '${checksum_url}'"
+    assert_equal "$*" "${image_fqn} vedv::registry_service::__push_link_image_exporter \"\$image_file\" \"\$checksum_file\" '${image_address}' '${checksum_address}'"
     return 1
   }
 
   run vedv::registry_service::push_link \
-    "$image_url" "$checksum_url" "$image_fqn"
+    "$image_address" "$checksum_address" "$image_fqn"
 
   assert_failure
   assert_output "Error pushing image link to registry"
 }
 
 @test "vedv::registry_service::push_link() Should succeed" {
-  local -r image_url='http://registry.get/image1'
-  local -r checksum_url='http://registry.get/image1.sha256sum'
+  local -r image_address='http://registry.get/image1'
+  local -r checksum_address='http://registry.get/image1.sha256sum'
   local -r image_fqn='nextcloud.loc/admin@alpine/alpine-14'
 
   vedv::registry_service::__push() {
-    assert_equal "$*" "${image_fqn} vedv::registry_service::__push_link_image_exporter \"\$image_file\" \"\$checksum_file\" '${image_url}' '${checksum_url}'"
+    assert_equal "$*" "${image_fqn} vedv::registry_service::__push_link_image_exporter \"\$image_file\" \"\$checksum_file\" '${image_address}' '${checksum_address}'"
   }
 
   run vedv::registry_service::push_link \
-    "$image_url" "$checksum_url" "$image_fqn"
+    "$image_address" "$checksum_address" "$image_fqn"
 
   assert_success
   assert_output ""
@@ -1265,38 +1268,6 @@ For security reasons, the image can not be downloaded"
   assert_output ''
 }
 
-@test "vedv::registry_service::__download_image_from_link() Should fail With empty image_file" {
-  local -r image_file="$(mktemp)"
-  local -r downloaded_image_file="$(mktemp)"
-
-  mv() {
-    assert_equal "$*" "INVALID_CALL"
-  }
-
-  run vedv::registry_service::__download_image_from_link \
-    "$image_file" "$downloaded_image_file"
-
-  assert_failure
-  assert_output 'image_url is not valid'
-}
-
-@test "vedv::registry_service::__download_image_from_link() Should fail With invalid url in image_file" {
-  local -r image_file="$(mktemp)"
-  local -r downloaded_image_file="$(mktemp)"
-
-  echo 'invalid_url' >"$image_file"
-
-  mv() {
-    assert_equal "$*" "INVALID_CALL"
-  }
-
-  run vedv::registry_service::__download_image_from_link \
-    "$image_file" "$downloaded_image_file"
-
-  assert_failure
-  assert_output 'image_url is not valid'
-}
-
 @test "vedv::registry_service::__download_image_from_link() Should fail If download_file fails" {
   local -r image_file="$(mktemp)"
   local -r downloaded_image_file="$(mktemp)"
@@ -1306,7 +1277,7 @@ For security reasons, the image can not be downloaded"
   mv() {
     assert_equal "$*" "INVALID_CALL"
   }
-  utils::download_file() {
+  file_downloader::any_download() {
     assert_equal "$*" "http://get.file/image.ova ${downloaded_image_file}"
     return 1
   }
@@ -1315,7 +1286,7 @@ For security reasons, the image can not be downloaded"
     "$image_file" "$downloaded_image_file"
 
   assert_failure
-  assert_output "Error downloading image from url: 'http://get.file/image.ova'"
+  assert_output "Error downloading image from address: 'http://get.file/image.ova'"
 }
 
 @test "vedv::registry_service::__download_image_from_link() Should succeed" {
@@ -1327,7 +1298,7 @@ For security reasons, the image can not be downloaded"
   mv() {
     assert_equal "$*" "INVALID_CALL"
   }
-  utils::download_file() {
+  file_downloader::any_download() {
     assert_equal "$*" "http://get.file/image.ova ${downloaded_image_file}"
   }
 

@@ -101,6 +101,7 @@ vedv::__create_dirs() {
 vedv::__include_files() {
   . "${__VEDV_LIB_PATH}/utils.bash"
   . "${__VEDV_LIB_PATH}/ssh-client.bash"
+  . "${__VEDV_LIB_PATH}/file-downloader.bash"
 
   for f in "${__VEDV_COMPONENTS_PATH}/"*/*.bash; do . "$f"; done
   # the specific api client must be included after the generic registry-api-client
@@ -113,6 +114,8 @@ registry-${VEDV_REGISTRY_API_CLIENT}-api-client.bash"
 vedv::__initialize_components() {
   # lib
   utils::constructor "$VEDV_TMP_DIR" "$VEDV_USER_AGENT"
+
+  file_downloader::constructor "$VEDV_USER_AGENT"
 
   # __base
   local -r vmobj_types='container|image'

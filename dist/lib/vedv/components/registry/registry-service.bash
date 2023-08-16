@@ -6,6 +6,7 @@
 # for code completion
 if false; then
   . './../../utils.bash'
+  . './../../file-downloader.bash'
   . './registry-api-client.bash'
   . './../image/image-service.bash'
 fi
@@ -118,20 +119,15 @@ vedv::registry_service::__download_image_from_link() {
     return 0
   fi
 
-  local image_url
-  image_url="$(<"$image_file")" || {
-    err "Failed to get image url from file: '${image_file}'"
+  local image_address
+  image_address="$(<"$image_file")" || {
+    err "Failed to get image address from file: '${image_file}'"
     return "$ERR_REGISTRY_OPERATION"
   }
-  readonly image_url
+  readonly image_address
 
-  if ! utils::is_url "$image_url"; then
-    err "image_url is not valid"
-    return "$ERR_INVAL_ARG"
-  fi
-
-  utils::download_file "$image_url" "$downloaded_image_file" || {
-    err "Error downloading image from url: '${image_url}'"
+  file_downloader::any_download "$image_address" "$downloaded_image_file" || {
+    err "Error downloading image from address: '${image_address}'"
     return "$ERR_REGISTRY_OPERATION"
   }
 }
@@ -453,10 +449,10 @@ vedv::registry_service::push() {
 # Export image link file and checksum file to a directory
 #
 # Arguments:
-#   image_file    string  path to the image file
-#   checksum_file string  path to the checksum file
-#   image_url     string  image url that will be used as a link
-#   checksum_url  string  checksum url of the image
+#   image_file        string  path to the image file
+#   checksum_file     string  path to the checksum file
+#   image_address     string  image address that will be used as a link
+#   checksum_address  string  checksum address of the image
 #
 # Output:
 #  Writes errors to sdterr
@@ -467,8 +463,8 @@ vedv::registry_service::push() {
 vedv::registry_service::__push_link_image_exporter() {
   local -r image_file="$1"
   local -r checksum_file="$2"
-  local -r image_url="$3"
-  local -r checksum_url="$4"
+  local -r image_address="$3"
+  local -r checksum_address="$4"
   # validate arguments
   if [[ -z "$image_file" ]]; then
     err "image_file can not be empty"
@@ -478,22 +474,22 @@ vedv::registry_service::__push_link_image_exporter() {
     err "checksum_file can not be empty"
     return "$ERR_INVAL_ARG"
   fi
-  if ! utils::is_url "$image_url"; then
-    err "image_url is not valid"
+  if [[ "$(file_downloader::is_address "$image_address")" == false ]]; then
+    err "image_address is not valid"
     return "$ERR_INVAL_ARG"
   fi
-  if ! utils::is_url "$checksum_url"; then
-    err "checksum_url is not valid"
+  if [[ "$(file_downloader::is_address "$checksum_address")" == false ]]; then
+    err "checksum_address is not valid"
     return "$ERR_INVAL_ARG"
   fi
 
-  echo "$image_url" >"$image_file" || {
+  echo "$image_address" >"$image_file" || {
     err "Error creating image link: '${image_file}'"
     return "$ERR_REGISTRY_OPERATION"
   }
-  utils::download_file "$checksum_url" "$checksum_file" || {
-    err "Error downloading checksum from url: '${checksum_url}'"
-    return "$ERR_IMAGE_OPERATION"
+  file_downloader::any_download "$checksum_address" "$checksum_file" || {
+    err "Error downloading checksum from address: '${checksum_address}'"
+    return "$ERR_DOWNLOAD"
   }
 
   sed -i "s/\s\S\+\.ova\s*$/ ${image_file##*/}/" "$checksum_file" || {
@@ -506,9 +502,9 @@ vedv::registry_service::__push_link_image_exporter() {
 # Upload an image link to a registry
 #
 # Arguments:
-#   image_url     string    image url that will be used as a link
-#   checksum_url  string    checksum url of the image
-#   image_fqn     string    e.g.: nextcloud.loc/admin@alpine/alpine-13
+#   image_address     string    image address that will be used as a link
+#   checksum_address  string    checksum address of the image
+#   image_fqn         string    e.g.: nextcloud.loc/admin@alpine/alpine-13
 #
 # Output:
 #   Writes image name or image id to the stdout
@@ -517,20 +513,20 @@ vedv::registry_service::__push_link_image_exporter() {
 #   0 on success, non-zero on error.
 #
 vedv::registry_service::push_link() {
-  local -r image_url="$1"
-  local -r checksum_url="$2"
+  local -r image_address="$1"
+  local -r checksum_address="$2"
   local -r image_fqn="$3"
   # validate arguments
-  if ! utils::is_url "$image_url"; then
-    err "image_url is not valid"
+  if [[ "$(file_downloader::is_address "$image_address")" == false ]]; then
+    err "image_address is not valid"
     return "$ERR_INVAL_ARG"
   fi
-  if ! utils::is_url "$checksum_url"; then
-    err "checksum_url is not valid"
+  if [[ "$(file_downloader::is_address "$checksum_address")" == false ]]; then
+    err "checksum_address is not valid"
     return "$ERR_INVAL_ARG"
   fi
 
-  local -r image_export_func="vedv::registry_service::__push_link_image_exporter \"\$image_file\" \"\$checksum_file\" '${image_url}' '${checksum_url}'"
+  local -r image_export_func="vedv::registry_service::__push_link_image_exporter \"\$image_file\" \"\$checksum_file\" '${image_address}' '${checksum_address}'"
 
   vedv::registry_service::__push "$image_fqn" "$image_export_func" || {
     err "Error pushing image link to registry"

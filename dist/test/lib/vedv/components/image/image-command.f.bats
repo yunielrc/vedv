@@ -511,42 +511,42 @@ vedv image push-link [FLAGS] [OPTIONS] [DOMAIN/]USER@COLLECTION/NAME"
   done
 }
 
-@test "vedv image push-link,  Should fail With missing image_url arg" {
-  run vedv image push-link --image-url
+@test "vedv image push-link,  Should fail With missing image_address arg" {
+  run vedv image push-link --image-address
 
   assert_failure
-  assert_output --partial "No image_url argument"
+  assert_output --partial "No image_address argument"
 }
 
-@test "vedv image push-link,  Should fail Without checksum_url" {
-  run vedv image push-link --image-url "$TEST_OVA_URL"
+@test "vedv image push-link,  Should fail Without checksum_address" {
+  run vedv image push-link --image-address "$TEST_OVA_URL"
 
   assert_failure
-  assert_output --partial "No checksum_url specified"
+  assert_output --partial "No checksum_address specified"
 }
 
-@test "vedv image push-link,  Should fail With missing checksum_url arg" {
+@test "vedv image push-link,  Should fail With missing checksum_address arg" {
   run vedv image push-link \
-    --image-url "$TEST_OVA_URL" --checksum-url
+    --image-address "$TEST_OVA_URL" --checksum-address
 
   assert_failure
-  assert_output --partial "No checksum_url argument"
+  assert_output --partial "No checksum_address argument"
 }
 
 @test "vedv image push-link,  Should fail With missing image_fqn" {
 
   run vedv image push-link \
-    --image-url "$TEST_OVA_URL" --checksum-url "$TEST_OVA_CHECKSUM_URL"
+    --image-address "$TEST_OVA_URL" --checksum-address "$TEST_OVA_CHECKSUM_URL"
 
   assert_failure
   assert_output --partial "Missing argument 'IMAGE_FQN'"
 }
 
-@test "vedv image push-link --image-url, Should push an image link" {
+@test "vedv image push-link --image-address, Should push an image link" {
 
   run vedv image push-link \
-    --image-url "$TEST_OVA_URL" \
-    --checksum-url "$TEST_OVA_CHECKSUM_URL" \
+    --image-address "$TEST_OVA_URL" \
+    --checksum-address "$TEST_OVA_CHECKSUM_URL" \
     'admin@alpine-test/alpine-14-link'
 
   assert_success

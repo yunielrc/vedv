@@ -4,6 +4,7 @@ load test_helper
 teardown() {
   delete_vms_by_partial_vm_name 'alpine-14'
   delete_vms_by_partial_vm_name 'alp-14-1'
+  delete_vms_by_partial_vm_name 'container:'
   delete_vms_by_partial_vm_name 'image:'
   delete_vms_by_partial_vm_name 'image-cache|'
   # it doesn't use $REGISTRY_CACHE_DIR for avoiding
@@ -129,11 +130,32 @@ For security reasons, the image can not be downloaded"
   assert_output "3955640179 my-alpine-15"
 }
 
-@test "vedv registry pull ,Should succeed from link" {
+@test "vedv registry pull ,Should succeed with http link" {
   run vedv registry pull --name 'my-alpine-15' 'admin@alpine/alpine-15'
 
   assert_success
   assert_output '3955640179 my-alpine-15'
+}
+
+@test "vedv registry pull ,Should succeed with onecloud link" {
+  run vedv registry pull --name 'alpine-onecloud' 'admin@alpine/alpine-linux-invariable'
+
+  assert_success
+  assert_output --partial 'alpine-onecloud'
+}
+
+@test "vedv registry pull ,Should succeed with gdrive-small link" {
+  run vedv registry pull --name 'alpine-gdrive-small' 'admin@alpine/alpine-3.18.3-x86_64-inv'
+
+  assert_success
+  assert_output --partial 'alpine-gdrive-small'
+}
+
+@test "vedv registry pull ,Should succeed with gdrive-big link" {
+  run vedv registry pull --name 'alpine-gdrive-big' 'admin@alpine/alpine-3.18.3-x86_64-fat-inv'
+
+  assert_success
+  assert_output --partial 'alpine-gdrive-big'
 }
 
 # Tests for vedv registry push
@@ -238,42 +260,42 @@ vedv registry push-link [FLAGS] [OPTIONS] [DOMAIN/]USER@COLLECTION/NAME"
   done
 }
 
-@test "vedv registry push-link,  Should fail With missing image_url arg" {
-  run vedv registry push-link --image-url
+@test "vedv registry push-link,  Should fail With missing image_address arg" {
+  run vedv registry push-link --image-address
 
   assert_failure
-  assert_output --partial "No image_url argument"
+  assert_output --partial "No image_address argument"
 }
 
-@test "vedv registry push-link,  Should fail Without checksum_url" {
-  run vedv registry push-link --image-url "$TEST_OVA_URL"
+@test "vedv registry push-link,  Should fail Without checksum_address" {
+  run vedv registry push-link --image-address "$TEST_OVA_URL"
 
   assert_failure
-  assert_output --partial "No checksum_url specified"
+  assert_output --partial "No checksum_address specified"
 }
 
-@test "vedv registry push-link,  Should fail With missing checksum_url arg" {
+@test "vedv registry push-link,  Should fail With missing checksum_address arg" {
   run vedv registry push-link \
-    --image-url "$TEST_OVA_URL" --checksum-url
+    --image-address "$TEST_OVA_URL" --checksum-address
 
   assert_failure
-  assert_output --partial "No checksum_url argument"
+  assert_output --partial "No checksum_address argument"
 }
 
 @test "vedv registry push-link,  Should fail With missing image_fqn" {
 
   run vedv registry push-link \
-    --image-url "$TEST_OVA_URL" --checksum-url "$TEST_OVA_CHECKSUM_URL"
+    --image-address "$TEST_OVA_URL" --checksum-address "$TEST_OVA_CHECKSUM_URL"
 
   assert_failure
   assert_output --partial "Missing argument 'IMAGE_FQN'"
 }
 
-@test "vedv registry push-link --image-url, Should push an image link" {
+@test "vedv registry push-link --image-address, Should push an image link" {
 
   run vedv registry push-link \
-    --image-url "$TEST_OVA_URL" \
-    --checksum-url "$TEST_OVA_CHECKSUM_URL" \
+    --image-address "$TEST_OVA_URL" \
+    --checksum-address "$TEST_OVA_CHECKSUM_URL" \
     'admin@alpine-test/alpine-14-link'
 
   assert_success
@@ -283,6 +305,54 @@ vedv registry push-link [FLAGS] [OPTIONS] [DOMAIN/]USER@COLLECTION/NAME"
 
   assert_success
   assert_output "4289064363 alp-14-1"
+}
+
+@test "vedv registry push-link --image-address, Should push an image onedrive link" {
+
+  run vedv registry push-link \
+    --image-address "onedrive=https://onedrive.live.com/embed?resid=DBA0B75F07574EAA%21272&authkey=!AP8U5cI4V7DusSg" \
+    --checksum-address "onedrive=https://onedrive.live.com/embed?resid=DBA0B75F07574EAA%21274&authkey=!AH7DMJWc2r5Y2IY" \
+    'admin@alpine-test/alpine-linux-invariable'
+
+  assert_success
+  assert_output ""
+
+  run vedv registry pull --name 'alpine-linux-invariable' 'admin@alpine-test/alpine-linux-invariable'
+
+  assert_success
+  assert_output --partial "alpine-linux-invariable"
+}
+
+@test "vedv registry push-link --image-address, Should push an image gdrive-small link" {
+
+  run vedv registry push-link \
+    --image-address "gdrive-small=https://drive.google.com/file/d/1x0QiTDTsVaD4LABHRYFSJ5yv7xfwxVPk/view?usp=drive_link" \
+    --checksum-address "gdrive-small=https://drive.google.com/file/d/1pjPbEyGJc38rswokL7Wzj3hU_RQTv3tG/view?usp=drive_link" \
+    'admin@alpine-test/alpine-3.18.3-x86_64-inv'
+
+  assert_success
+  assert_output ""
+
+  run vedv registry pull --name 'alpine-3.18.3-x86_64-inv' 'admin@alpine-test/alpine-3.18.3-x86_64-inv'
+
+  assert_success
+  assert_output --partial "alpine-3.18.3-x86_64-inv"
+}
+
+@test "vedv registry push-link --image-address, Should push an image gdrive-big link" {
+
+  run vedv registry push-link \
+    --image-address "gdrive-big=https://drive.google.com/file/d/1b192CBeY2x8WrXMYRvNsPZVJPIg01Dye/view?usp=drive_link" \
+    --checksum-address "gdrive-small=https://drive.google.com/file/d/1X5v6DYZeEo3zLLd2ZYIEbRO4hI1IQ9gY/view?usp=sharing" \
+    'admin@alpine-test/alpine-3.18.3-x86_64-fat-inv'
+
+  assert_success
+  assert_output ""
+
+  run vedv registry pull --name 'alpine-3.18.3-x86_64-fat-inv' 'admin@alpine-test/alpine-3.18.3-x86_64-fat-inv'
+
+  assert_success
+  assert_output --partial "alpine-3.18.3-x86_64-fat-inv"
 }
 
 # Tests for vedv registry cache-clean

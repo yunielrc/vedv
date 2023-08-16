@@ -2,8 +2,7 @@
 load test_helper
 
 setup() {
-  utils::constructor "$TEST_TMP_DIR" \
-    'User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36'
+  utils::constructor "$TEST_TMP_DIR"
   export __VEDV_UTILS_TMP_DIR
 }
 
@@ -730,55 +729,6 @@ calc_item_id_from_array_b() { echo "$1"; }
   local dir="$(utils::mktmp_dir)"
 
   assert [ -d "$dir" ]
-}
-
-# Tests for utils::download_file()
-
-@test "utils::download_file() Should fail With empty url" {
-  local -r url=""
-
-  run utils::download_file "$url" "$TEST_OVA_FILE"
-
-  assert_failure
-  assert_output "url is required"
-}
-
-@test "utils::download_file() Should fail With invalid url" {
-  local -r url="https:www.google.com"
-
-  run utils::download_file "$url" ""
-
-  assert_failure
-  assert_output "url is not valid"
-}
-
-@test "utils::download_file() Should fail With empty destination" {
-  local -r url="https://www.google.com"
-
-  run utils::download_file "$url" ""
-
-  assert_failure
-  assert_output "file is required"
-}
-
-@test "utils::download_file() Should fail If download fails" {
-  local -r url="http://f2c2b9201b6edf4d7e5ef219c540a744.get"
-  local -r file="$(mktemp)"
-
-  run utils::download_file "$url" "$file"
-
-  assert_failure
-  assert_output "error downloading file"
-}
-
-@test "utils::download_file() Should succeed" {
-  local -r url="$TEST_OVA_CHECKSUM"
-  local -r file="$(mktemp)"
-
-  run utils::download_file "$url" "$file"
-
-  assert_success
-  assert_output ""
 }
 
 # Tests for utils::validate_sha256sum_format()

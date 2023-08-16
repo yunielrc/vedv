@@ -297,7 +297,7 @@ vedv::image_service::import_from_url() {
   if [[ -n "$checksum_url" ]]; then
     checksum_file="${image_file}.sha256sum"
 
-    utils::download_file "$checksum_url" "$checksum_file" || {
+    file_downloader::http_download "$checksum_url" "$checksum_file" || {
       err "Error downloading checksum from url: '${checksum_url}'"
       return "$ERR_IMAGE_OPERATION"
     }
@@ -317,7 +317,7 @@ vedv::image_service::import_from_url() {
   fi
   readonly checksum_file
 
-  utils::download_file "$image_url" "$image_file" || {
+  file_downloader::http_download "$image_url" "$image_file" || {
     err "Error downloading image from url: '${image_url}'"
     return "$ERR_IMAGE_OPERATION"
   }

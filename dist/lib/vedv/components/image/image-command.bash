@@ -460,15 +460,25 @@ ${__VED_IMAGE_COMMAND_SCRIPT_NAME} image push-link [FLAGS] [OPTIONS] [DOMAIN/]US
 
 Upload an image link to a registry
 
+Address format:
+  http download:
+    e.g.: http=http://example.com/alpine.ova | http=https://example.com/alpine.ova
+  gdrive download >100mb:
+    e.g.: gdrive-big=https://drive.google.com/file/d/1iya7JW_-anYYYzfQqitb_RDHJVAngzBQ/view?usp=drive_link
+  gdrive download <=100mb:
+    e.g.: gdrive-small=https://drive.google.com/file/d/11-Ss7b-M3ieg9x42TQoJvTv_NlzU90I2/view?usp=drive_link
+  onedrive download:
+    e.g.: onedrive=https://onedrive.live.com/embed?resid=DBC0B75F07574EAA%21272&authkey=!AP8U5cI4V7DusSg
+
 Aliases:
   ${__VED_IMAGE_COMMAND_SCRIPT_NAME} registry push-link
 
 Flags:
-  -h, --help                    show help
+  -h, --help                            show help
 
 Mandatory Options:
-  --image-url <url>             image url that will be used as a link
-  --checksum-url  <file|url>    checksum url of the image
+  --image-address <address>             image address that will be used as a link
+  --checksum-address  <file|address>    checksum address of the image
 
 
 HELPMSG
@@ -478,14 +488,14 @@ HELPMSG
 # Upload an image link to a registry
 #
 # Flags:
-#   -h, --help                    show help
+#   -h, --help                           show help
 #
 # Mandatory Options:
-#   --image-url <url>             image url that will be used as a link
-#   --checksum-url  <file|url>    checksum url of the image
+# --image-address <address>             image address that will be used as a link
+# --checksum-address  <file|address>    checksum address of the image
 #
 # Arguments:
-#   IMAGE_FQN                     string  scheme: [domain/]user@collection/name
+#   IMAGE_FQN                           scheme: [domain/]user@collection/name
 #
 # Output:
 #   Writes image name to the stdout

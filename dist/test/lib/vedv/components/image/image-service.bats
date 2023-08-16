@@ -2493,7 +2493,7 @@ EOF
   mkdir() {
     assert_regex "$*" "-p ${TEST_IMAGE_TMP_DIR}.*"
   }
-  utils::download_file() {
+  file_downloader::http_download() {
     case "$*" in
     "$image_url"*) return 0 ;;
     "$checksum_url"*) return 1 ;;
@@ -2528,7 +2528,7 @@ EOF
   mkdir() {
     assert_regex "$*" "-p ${TEST_IMAGE_TMP_DIR}.*"
   }
-  utils::download_file() {
+  file_downloader::http_download() {
     case "$*" in
     "$image_url"*) return 1 ;;
     "$checksum_url"*) return 0 ;;
@@ -2564,7 +2564,7 @@ EOF
     *) return 2 ;;
     esac
   }
-  utils::download_file() {
+  file_downloader::http_download() {
     case "$*" in
     "$image_url"*)
       echo 'image.ova content' >"$image_file"
@@ -2609,7 +2609,7 @@ EOF
 
   echo 'image.ova content' >"$image_file"
 
-  utils::download_file() {
+  file_downloader::http_download() {
     case "$*" in
     "$image_url"*)
       return 0
@@ -2655,7 +2655,7 @@ EOF
 
   echo 'image.ova content' >"$image_file"
 
-  utils::download_file() {
+  file_downloader::http_download() {
     case "$*" in
     "$image_url"*)
       return 0
@@ -2706,7 +2706,7 @@ EOF
 
   echo 'image.ova content' >"$image_file"
 
-  utils::download_file() {
+  file_downloader::http_download() {
     case "$*" in
     "$image_url"*)
       return 0

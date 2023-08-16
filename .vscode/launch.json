@@ -23,7 +23,7 @@
     {
       "type": "bashdb",
       "request": "launch",
-      "name": "Bash-Debug (vedv image pull)",
+      "name": "Bash-Debug (vedv image import)",
       "cwd": "${workspaceFolder}",
       "program": "${workspaceFolder}/dist/usr/bin/vedv",
       "args": [
@@ -36,13 +36,19 @@
     {
       "type": "bashdb",
       "request": "launch",
-      "name": "Bash-Debug (vedv image import)",
+      "name": "Bash-Debug (vedv image pull admin@alpine/alpine-3.18.3-x86_64)",
       "cwd": "${workspaceFolder}",
       "program": "${workspaceFolder}/dist/usr/bin/vedv",
+      "env": {
+        "VEDV_REGISTRY_API_CLIENT_MAIN_URL": "https://nextcloud.vedv.dev"
+      },
       "args": [
         "image",
         "pull",
-        "/tmp/vedv/test/files/alpine-x86_64.ova"
+        "--no-cache",
+        "--name",
+        "alpine",
+        "admin@alpine/alpine-3.18.3-x86_64"
       ]
     },
     {

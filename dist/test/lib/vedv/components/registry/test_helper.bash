@@ -5,3 +5,4 @@
 . "${DIST_PATH}/lib/vedv/components/registry/nextcloud/registry-nextcloud-api-client.bash"
 . "${DIST_PATH}/lib/vedv/components/registry/registry-service.bash"
 . "${DIST_PATH}/lib/vedv/components/registry/registry-command.bash"
+. "${DIST_PATH}/lib/vedv/file-downloader.bash"

@@ -29,11 +29,13 @@ readonly ERR_REGISTRY_OPERATION=98
 readonly ERR_COPY_FILE=99
 # This error code can only be throwed by vedv::builder_service::__layer_execute_cmd()
 readonly ERR_BUILDER_SERVICE_LAYER_CREATION_FAILURE_PREV_RESTORATION_FAIL=100
+readonly ERR_FILE_DOWNLOADER=101
 #
 readonly UTILS_ENCODED_VAR_PREFIX='var_9f57a558b3_'
 readonly UTILS_ENCODED_ESCVAR_PREFIX='escvar_fc064fcc7e_'
 
 readonly UTILS_DOMAIN_NAME_EREGEX='[A-Za-z0-9-]+([\-\.]{1}[a-z0-9]+)*\.[A-Za-z]{2,6}'
+readonly UTILS_URL_EREGEX='https?://[-a-zA-Z0-9+\&@\#/%?=~_|!:,.\;]*'
 readonly UTILS_HTTP_URL_EREGEX="(https?://)?${UTILS_DOMAIN_NAME_EREGEX}"
 
 #
@@ -44,7 +46,6 @@ readonly UTILS_HTTP_URL_EREGEX="(https?://)?${UTILS_DOMAIN_NAME_EREGEX}"
 #
 utils::constructor() {
   readonly __VEDV_UTILS_TMP_DIR="$1"
-  readonly __VEDV_UTILS_USER_AGENT="${2:-}"
 }
 
 err() {
@@ -685,7 +686,7 @@ utils::sha256sum_check() {
 #
 utils::is_url() {
   local -r url="$1"
-  [[ $url =~ ^https?://[-a-zA-Z0-9+\&@\#/%?=~_|!:,.\;]*$ ]]
+  [[ $url =~ ^${UTILS_URL_EREGEX}$ ]]
 }
 
 #
@@ -703,39 +704,6 @@ utils::is_url() {
 utils::mktmp_dir() {
   local -r tmp_dir="${1:-"$__VEDV_UTILS_TMP_DIR"}"
   mktemp -p "$tmp_dir" -d
-}
-
-#
-# Download a file
-#
-# Arguments:
-#   url   string    url to download
-#   file  string    file to save the download
-#
-# Returns:
-#   0 on success, non-zero on error.
-#
-utils::download_file() {
-  local -r url="$1"
-  local -r file="$2"
-
-  if [[ -z "$url" ]]; then
-    err "url is required"
-    return "$ERR_INVAL_ARG"
-  fi
-  if ! utils::is_url "$url"; then
-    err "url is not valid"
-    return "$ERR_INVAL_ARG"
-  fi
-  if [[ -z "$file" ]]; then
-    err "file is required"
-    return "$ERR_INVAL_ARG"
-  fi
-
-  wget --header "${__VEDV_UTILS_USER_AGENT:-}" -qO "$file" "$url" || {
-    err "error downloading file"
-    return "$ERR_DOWNLOAD"
-  }
 }
 
 #
