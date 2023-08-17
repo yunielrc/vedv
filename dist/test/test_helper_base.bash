@@ -23,7 +23,6 @@ export -f vedv
 if [[ ! -f "$TEST_OVA_FILE" ]]; then
   (
     readonly user_agent='User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36'
-    # TODO: change if [[ $# == 0 ]]; then; set -- '-h'; fi
     [[ ! -d "${TEST_OVA_FILE%/*}" ]] &&
       mkdir -p "${TEST_OVA_FILE%/*}"
 
@@ -174,7 +173,6 @@ wait_for_ssh_service() {
     -o 'PasswordAuthentication=no' \
     -p "$TEST_SSH_PORT" \
     "${TEST_SSH_USER}@${TEST_SSH_IP}" 2>&1 | grep -q 'Permission denied'; do
-    # TODO: change if [[ $# == 0 ]]; then; set -- '-h'; fi
     [[ $i -ge $max ]] && return 1
     sleep 1
     ((i += 1))
