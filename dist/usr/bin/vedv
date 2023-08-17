@@ -9,36 +9,36 @@ set -eu
 # FOR CODE COMPLETION
 if false; then
   # lib
-  . './../../lib/vedv/utils.bash'
-  . './../../lib/vedv/ssh-client.bash'
+  . './../lib/vedv/utils.bash'
+  . './../lib/vedv/ssh-client.bash'
   # __base
-  . './../../lib/vedv/components/__base/vmobj-service.bash'
-  . './../../lib/vedv/components/__base/vmobj-entity.bash'
+  . './../lib/vedv/components/__base/vmobj-service.bash'
+  . './../lib/vedv/components/__base/vmobj-entity.bash'
   # builder
-  . './../../lib/vedv/components/builder/builder-service.bash'
-  . './../../lib/vedv/components/builder/builder-vedvfile-service.bash'
+  . './../lib/vedv/components/builder/builder-service.bash'
+  . './../lib/vedv/components/builder/builder-vedvfile-service.bash'
   # image
-  . './../../lib/vedv/components/image/image-service.bash'
-  . './../../lib/vedv/components/image/image-entity.bash'
-  . './../../lib/vedv/components/image/image-command.bash'
+  . './../lib/vedv/components/image/image-service.bash'
+  . './../lib/vedv/components/image/image-entity.bash'
+  . './../lib/vedv/components/image/image-command.bash'
   # container
-  . './../../lib/vedv/components/container/container-service.bash'
-  . './../../lib/vedv/components/container/container-entity.bash'
-  . './../../lib/vedv/components/container/container-command.bash'
+  . './../lib/vedv/components/container/container-service.bash'
+  . './../lib/vedv/components/container/container-entity.bash'
+  . './../lib/vedv/components/container/container-command.bash'
   # registry
-  . './../../lib/vedv/components/registry/registry-api-client.bash'
-  . './../../lib/vedv/components/registry/registry-service.bash'
-  . './../../lib/vedv/components/registry/registry-command.bash'
+  . './../lib/vedv/components/registry/registry-api-client.bash'
+  . './../lib/vedv/components/registry/registry-service.bash'
+  . './../lib/vedv/components/registry/registry-command.bash'
   ## nextcloud
-  . './../../lib/vedv/components/registry/nextcloud/registry-nextcloud-api-client.bash'
+  . './../lib/vedv/components/registry/nextcloud/registry-nextcloud-api-client.bash'
 fi
 
 # CONSTANTS
 readonly __VEDV_SCRIPT_NAME="${BASH_SOURCE[0]##*/}"
 readonly __VEDV_DIST_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-readonly __VEDV_LIB_PATH="${__VEDV_DIST_PATH}/lib/vedv"
-readonly __VEDV_COMPONENTS_PATH="${__VEDV_DIST_PATH}/lib/vedv/components"
-readonly __VEDV_HYPERVISORS_PATH="${__VEDV_DIST_PATH}/lib/vedv/hypervisors"
+readonly __VEDV_LIB_PATH="${__VEDV_DIST_PATH}/usr/lib/vedv"
+readonly __VEDV_COMPONENTS_PATH="${__VEDV_LIB_PATH}/components"
+readonly __VEDV_HYPERVISORS_PATH="${__VEDV_LIB_PATH}/hypervisors"
 readonly __VEDV_CONFIG_DIR="${__VEDV_DIST_PATH}/etc/vedv"
 readonly __VEDV_CONFIG="${__VEDV_CONFIG_DIR}/vedv.env"
 

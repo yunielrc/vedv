@@ -29,11 +29,12 @@ Flags:
   -h, --help    show this help
 
 Options:
-  --os          operating system where vedv will be installed
-  --destdir     the directory where vedv files will be installed
-                (default: /)
-  --nodepends   if true, the dependencies will not be installed
-                (default: false)
+  --os <os>         operating system where vedv will be installed
+  --destdir <dir>   the directory where vedv files will be installed
+                    (default: /)
+  --depends         if set, the dependencies will be installed,
+                    the --os option must be specified.
+                    (default: false)
 
 HELPMSG
 }
@@ -56,10 +57,10 @@ HELPMSG
 install__install() {
   readonly __os="${1:-}"
   readonly __dest_dir="${2:-}"
-  readonly __no_depends="${3:-false}"
+  readonly __depends="${3:-false}"
 
   # install dependencies
-  if [ "$__no_depends" = false ]; then
+  if [ "$__depends" = true ]; then
     if [ -z "$__os" ]; then
       echo "No os argument" >&2
       return "$ERR_INVAL_ARG"
@@ -81,20 +82,20 @@ install__install() {
   install -m644 dist/etc/skel/.vedv.env \
     "${__dest_dir}/etc/skel/.vedv.env"
 
-  cp -vr dist/lib/vedv "${__dest_dir}/lib"
+  cp -vr dist/usr/lib/vedv "${__dest_dir}/usr/lib"
 
-  install -Dm755 dist/usr/bin/vedv \
+  install -v -Dm755 dist/usr/bin/vedv \
     "${__dest_dir}/usr/bin/vedv"
 
-  install -Dm644 dist/usr/share/licenses/vedv/LICENSE \
+  install -v -Dm644 dist/usr/share/licenses/vedv/LICENSE \
     "${__dest_dir}/usr/share/licenses/vedv/LICENSE"
 
-  chmod 755 "${__dest_dir}/lib/vedv/components/builder/__bin/vedvfile-parser"
+  chmod -v 755 "${__dest_dir}/usr/lib/vedv/components/builder/__bin/vedvfile-parser"
 
   echo ''
   echo '>> INSTALLED SUCCESSFULLY'
 
-  cat <<-MSG
+  cat <<'MSG'
 
 >> CONFIGURE VEDV:
 
@@ -109,9 +110,7 @@ MSG
 install__run_cmd() {
   _os=''
   _dest_dir=''
-  _no_depends=false
-
-  if [ $# = 0 ]; then set -- '-h'; fi
+  _depends=false
 
   while [ $# -gt 0 ]; do
     case "$1" in
@@ -141,9 +140,9 @@ install__run_cmd() {
       fi
       shift 2
       ;;
-    --nodepends)
+    --depends)
       shift
-      readonly _no_depends=true
+      readonly _depends=true
       ;;
     *)
       echo "Invalid input: ${1}" >&2
@@ -153,7 +152,7 @@ install__run_cmd() {
     esac
   done
 
-  install__install "$_os" "$_dest_dir" "$_no_depends"
+  install__install "$_os" "$_dest_dir" "$_depends"
 }
 
 install__run_cmd "$@"

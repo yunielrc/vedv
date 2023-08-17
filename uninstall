@@ -52,7 +52,7 @@ uninstall__uninstall() {
 
   rm -vrf "${__from_dir}/etc/vedv"
   rm -vrf "${__from_dir}/etc/skel/.vedv.env"
-  rm -vrf "${__from_dir}/lib/vedv"
+  rm -vrf "${__from_dir}/usr/lib/vedv"
   rm -vrf "${__from_dir}/usr/bin/vedv"
   rm -vrf "${__from_dir}/usr/share/licenses/vedv"
 
