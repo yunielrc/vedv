@@ -34,7 +34,7 @@ if false; then
 fi
 
 # CONSTANTS
-readonly __VEDV_SCRIPT_NAME="${0##*/}"
+readonly __VEDV_SCRIPT_NAME="${BASH_SOURCE[0]##*/}"
 readonly __VEDV_DIST_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 readonly __VEDV_LIB_PATH="${__VEDV_DIST_PATH}/lib/vedv"
 readonly __VEDV_COMPONENTS_PATH="${__VEDV_DIST_PATH}/lib/vedv/components"

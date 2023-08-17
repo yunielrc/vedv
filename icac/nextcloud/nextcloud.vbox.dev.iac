@@ -11,7 +11,7 @@ cd "$(dirname "${BASH_SOURCE[0]}")"
 . ../../.env
 
 # CONSTANTS
-readonly SCRIPT_NAME="${0##*/}"
+readonly SCRIPT_NAME="${BASH_SOURCE[0]##*/}"
 
 readonly VM_NAME="nextcloud-dev"
 # root user is required for using port 80, 443 on virtualbox
