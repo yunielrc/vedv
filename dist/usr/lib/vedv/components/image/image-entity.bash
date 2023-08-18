@@ -17,7 +17,8 @@ readonly VEDV_IMAGE_ENTITY_VALID_ATTRIBUTES='image_cache|ova_file_sum|child_cont
 readonly VEDV_IMAGE_ENTITY_REGEX_LAYER_NAME='[A-Z]{2,10}'
 readonly VEDV_IMAGE_ENTITY_SNAPSHOT_TYPES='layer'
 # scheme: USER@REPO/NAME
-readonly VEDV_IMAGE_ENTITY_EREGEX_IMAGE_FQN="(${UTILS_HTTP_URL_EREGEX}/)?[a-zA-Z0-9_]+@${VEDV_VMOBJ_ENTITY_EREGEX_NAME}/${VEDV_VMOBJ_ENTITY_EREGEX_NAME}"
+readonly VEDV_IMAGE_ENTITY_EREGEX_USER='[a-zA-Z0-9_-]+'
+readonly VEDV_IMAGE_ENTITY_EREGEX_IMAGE_FQN="(${UTILS_HTTP_URL_EREGEX}/)?${VEDV_IMAGE_ENTITY_EREGEX_USER}@${VEDV_VMOBJ_ENTITY_EREGEX_NAME}/${VEDV_VMOBJ_ENTITY_EREGEX_NAME}"
 
 # VARIABLES
 
@@ -176,7 +177,7 @@ vedv::image_entity::get_user_from_fqn() {
   vedv::image_entity::validate_image_fqn "$image_fqn" ||
     return "$?"
 
-  grep -Pom1 "[^/][a-zA-Z0-9_]+(?=@)" <<<"$image_fqn"
+  grep -Pom1 "[^/]${VEDV_IMAGE_ENTITY_EREGEX_USER}(?=@)" <<<"$image_fqn"
 }
 
 #
@@ -245,7 +246,7 @@ vedv::image_entity::get_rel_file_path_from_fqn() {
   vedv::image_entity::validate_image_fqn "$image_fqn" ||
     return "$?"
 
-  echo "$(grep -Pom1 "[^/][a-zA-Z0-9_]+@\S+" <<<"$image_fqn").ova"
+  echo "$(grep -Pom1 "[^/]${VEDV_IMAGE_ENTITY_EREGEX_USER}@\S+" <<<"$image_fqn").ova"
 }
 
 #

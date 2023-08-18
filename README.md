@@ -12,7 +12,7 @@
 A tool for developing applications in a secure and reproducible environment using virtual machines with a Docker-like flavor.
 
 **THIS IS A WORK IN PROGRESS**
-
+<!--
 ## Dependencies
 
 ### Runtime Dependencies
@@ -83,8 +83,6 @@ vedv image pull -n alpine admin@alpine/alpine-3.18.3-x86_64-fat-inv
 vedv container create -n alpine alpine
 vedv container start alpine
 ```
-
-<!--
 
 ### Development dependencies
 - make
