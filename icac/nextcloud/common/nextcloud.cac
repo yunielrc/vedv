@@ -11,7 +11,7 @@ cd /var/www/html
 # ENVIRONMENT VARIABLES
 # scheme:        VAR="${ENVIRONMENT_VAR:-"${CONFIG_VAR:-default}"}"
 # e.g.: readonly VEDV_VAR="${VEDV_VAR:-"${VAR:-default}"}"
-readonly NC_FILES_DEFAULT_QUOTA="${NC_FILES_DEFAULT_QUOTA:-none}"
+readonly NC_FILES_DEFAULT_QUOTA="${VULTR_NC_FILES_DEFAULT_QUOTA:-none}"
 
 # CONSTANTS
 readonly NC_USER_IMAGES_REL_DIR='00-user-images'
@@ -52,7 +52,7 @@ This directory contains images that are shared by other users
 EOF
   )
 
-  chown -R 1000:1000 "$custom_full_dir"
+  chown -R www-data:www-data "$custom_full_dir"
 
   occ config:system:set skeletondirectory --value="$skeleton_full_dir"
   occ config:app:set core skeletondirectory --value="$skeleton_full_dir"
@@ -92,12 +92,17 @@ configure_files_quota() {
   occ config:app:set files default_quota --value="$NC_FILES_DEFAULT_QUOTA"
 }
 
+disable_apps() {
+  occ app:disable files_versions
+}
+
 main() {
   configure_skeleton_directory
   configure_public_group
   configure_sharing
   configure_image_tags
   configure_files_quota
+  disable_apps
 }
 
 # call main function if script is executed

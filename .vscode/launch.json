@@ -347,10 +347,8 @@
       "program": "${workspaceFolder}/dist/usr/bin/vedv",
       "args": [
         "registry",
-        "pull",
-        "--name",
-        "alpine-3.17",
-        "admin@alpine/alpine-13"
+        "push",
+        "google-100585862120740564579@alpine/alpine-3.18.3-x86_64"
       ]
     },
   ]

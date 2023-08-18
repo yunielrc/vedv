@@ -8,7 +8,7 @@ set -eu
 
 cd "$(dirname "${BASH_SOURCE[0]}")"
 
-. ../../.env
+. ../../../.env
 
 # CONSTANTS
 readonly SCRIPT_NAME="${BASH_SOURCE[0]##*/}"
@@ -89,11 +89,11 @@ vm_copy() {
     $source "${VM_USER}@${VM_IP}:${destination}" 2>/dev/null
 }
 
-vm_copy ../../.env '~'
-vm_copy ./nextcloud.cac '~'
+vm_copy ../../../.env '~'
+vm_copy ../common/nextcloud.cac '~'
 vm_copy ./nextcloud.vm.dev.cac '~'
 
-vm_copy ./root-vm/tmp/* /tmp
+vm_copy ./root/tmp/* /tmp
 
 vm_exec() {
   sshpass -p "$VM_PASSWORD" \

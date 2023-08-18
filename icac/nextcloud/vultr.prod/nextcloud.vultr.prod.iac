@@ -1,0 +1,95 @@
+#!/usr/bin/env bash
+#
+# Intall & Configure Nextcloud
+#
+
+set -eu
+
+set -o allexport
+. .env
+set +o allexport
+
+cd "$(dirname "${BASH_SOURCE[0]}")"
+
+# ENV VARS from .env
+# VULTR_NC_DOMAIN1
+# VULTR_NC_ADMIN_NAME
+
+# Create and configure Nextcloud instance
+
+create_nextcloud_server() {
+  echo '>>> Creating Nextcloud server...'
+  # shellcheck disable=SC2002
+
+  local -r script="#!/usr/bin/env bash
+set -eu
+
+$(<../../../.env)
+
+$(tail -n +5 ../common/nextcloud.cac)
+
+$(<nextcloud.cac.vultr.prod.snippet)"
+
+  vultr-cli instance create \
+    --notify=true \
+    --region mia \
+    --plan vc2-2c-2gb \
+    --image nextcloud \
+    --host nextcloud \
+    --auto-backup=false \
+    --ssh-keys 8e7a6da6-315e-4ce0-8a76-0a60cbb0ca9d \
+    --reserved-ipv4 95ca44d1-867b-47e8-8e84-2a39795c25fa \
+    --userdata "$script"
+
+  echo -e '>>> Creating Nextcloud server. DONE\n'
+}
+
+# Wait for http service to be ready
+wait_for_http_service() {
+  echo '>>> Waiting for http service to be ready...'
+  local -i i=0
+  local -i max="$((4 * 60))"
+
+  while ! curl --connect-timeout 2 --location --fail \
+    --silent --head "$VULTR_NC_DOMAIN1" |
+    grep --quiet 'HTTP/1.1 200 OK'; do
+
+    if [[ $i -ge $max ]]; then
+      echo "Timeout waiting for http service on '${VULTR_NC_DOMAIN1}'"
+      return 1
+    fi
+
+    sleep 1
+    ((i += 1))
+  done
+  echo -e '>>> Waiting for http service to be ready. DONE\n'
+
+}
+
+load_admin_data() {
+  echo '>>> Loading admin data...'
+  local -r mount_dir="$(mktemp -d)"
+  local -r data_dir='./data/admin/00-user-images'
+
+  local -ri _uid="$(id -u)"
+  local -ri _gid="$(id -g)"
+
+  echo -e "${VULTR_NC_ADMIN_NAME}\n${VULTR_NC_ADMIN_PASS}\n" |
+    sudo mount -t davfs -o uid=$_uid,gid=$_gid \
+      "https://${VULTR_NC_DOMAIN1}/remote.php/dav/files/${VULTR_NC_ADMIN_NAME}" "$mount_dir"
+
+  cp -r "$data_dir" "$mount_dir"
+
+  sudo umount "$mount_dir" || :
+  echo -e '>>> Loading admin data. DONE\n'
+}
+
+main() {
+  create_nextcloud_server
+  wait_for_http_service
+  load_admin_data
+}
+
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+  main "$@"
+fi

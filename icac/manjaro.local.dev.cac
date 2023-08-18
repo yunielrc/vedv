@@ -17,7 +17,8 @@ yay -Syu --noconfirm --needed \
   bash-bats-support-git \
   nodejs \
   npm \
-  vultr-cli
+  vultr-cli \
+  davfs2
 
 sudo -H npm install -g \
   @commitlint/cli \

@@ -1,4 +1,4 @@
-.PHONY: commit test-all test-unit test-tag test-name untested configure-dev-manjaro
+.PHONY: commit test-all test-unit test-tag test-name untested manjaro-dev-configure nextcloud-dev-setup nextcloud-dev-stop nextcloud-dev-destroy nextcloud-dev-start nextcloud-dev-status nextcloud-dev-ssh nextcloud-prod-setup install uninstall
 
 commit:
 	git cz
@@ -22,7 +22,7 @@ manjaro-dev-configure:
 	./icac/manjaro.local.dev.cac
 
 nextcloud-dev-setup:
-	./icac/nextcloud/nextcloud.vbox.dev.iac
+	./icac/nextcloud/vm.dev/nextcloud.vbox.dev.iac
 
 nextcloud-dev-stop:
 	sudo -u root VBoxManage controlvm nextcloud-dev acpipowerbutton
@@ -41,4 +41,13 @@ nextcloud-dev-ssh:
 	ssh -p 40022 user@127.0.0.1
 
 nextcloud-prod-setup:
-	./icac/nextcloud/nextcloud.vultr.prod.iac
+	./icac/nextcloud/vultr.prod/nextcloud.vultr.prod.iac
+
+install-m:
+	sudo ./install --os manjaro --depends
+
+install:
+	sudo ./install
+
+uninstall:
+	sudo ./uninstall
