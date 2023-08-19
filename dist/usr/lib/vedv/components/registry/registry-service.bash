@@ -74,6 +74,28 @@ vedv::registry_service::__get_public_image_real_owner() {
 }
 
 #
+# Create registry directory structure
+#
+# Arguments:
+#   [registry_url]  string  registry server url
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::registry_service::__create_registry_dir_structure() {
+  local -r registry_url="$1"
+
+  vedv::registry_api_client::create_directory '/00-user-images' "$registry_url" || {
+    err "Error creating directory '/00-user-images'"
+    return "$ERR_REGISTRY_OPERATION"
+  }
+  vedv::registry_api_client::create_directory '/01-public-images' "$registry_url" || {
+    err "Error creating directory '/01-public-images'"
+    return "$ERR_REGISTRY_OPERATION"
+  }
+}
+
+#
 # Download an image if it is a link.
 # A link is a text file that only contains the url to the image.
 #
@@ -159,6 +181,9 @@ vedv::registry_service::pull() {
       return "$?"
   fi
   readonly image_name
+
+  #
+
   #
   # refactor to use vedv::image_entity::get_url_from_fqn
   local image_registry_domain
@@ -176,6 +201,11 @@ vedv::registry_service::pull() {
     fi
   fi
   readonly registry_url
+
+  vedv::registry_service::__create_registry_dir_structure "$registry_url" || {
+    err "Failed to create registry directory structure"
+    return "$ERR_REGISTRY_OPERATION"
+  }
 
   local registry_user
   registry_user="$(vedv::registry_api_client::get_user "$registry_url")" || {
@@ -307,6 +337,8 @@ vedv::registry_service::__push() {
     return "$ERR_INVAL_ARG"
   fi
 
+  #
+
   local fqn_image_name=''
   fqn_image_name="$(vedv::image_entity::get_name_from_fqn "$image_fqn")" ||
     return $?
@@ -316,6 +348,11 @@ vedv::registry_service::__push() {
   registry_url="$(vedv::image_entity::get_url_from_fqn "$image_fqn")" ||
     return $?
   readonly registry_url
+
+  vedv::registry_service::__create_registry_dir_structure "$registry_url" || {
+    err "Failed to create registry directory structure"
+    return "$ERR_REGISTRY_OPERATION"
+  }
 
   local registry_user
   registry_user="$(vedv::registry_api_client::get_user "$registry_url")" || {

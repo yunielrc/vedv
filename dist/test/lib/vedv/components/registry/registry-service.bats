@@ -1308,3 +1308,72 @@ For security reasons, the image can not be downloaded"
   assert_success
   assert_output ""
 }
+
+# Tests for vedv::registry_service::__create_registry_dir_structure()
+@test "vedv::registry_service::__create_registry_dir_structure() Should fail If create_directory 00-user-images fails" {
+  local -r registry_url='http://nextcloud.loc'
+
+  vedv::registry_api_client::create_directory() {
+    assert_equal "$*" "/00-user-images ${registry_url}"
+    return 1
+  }
+
+  run vedv::registry_service::__create_registry_dir_structure \
+    "$registry_url"
+
+  assert_failure
+  assert_output "Error creating directory '/00-user-images'"
+}
+
+@test "vedv::registry_service::__create_registry_dir_structure() Should fail If create_directory 01-public-images fails" {
+  local -r registry_url='http://nextcloud.loc'
+
+  local -r creadir_calls_file="$(mktemp)"
+  echo 0 >"$creadir_calls_file"
+
+  vedv::registry_api_client::create_directory() {
+    local -i creadir_calls="$(<"$creadir_calls_file")"
+    echo "$((++creadir_calls))" >"$creadir_calls_file"
+
+    if [[ "$creadir_calls" == 2 ]]; then
+      assert_equal "$*" "/01-public-images ${registry_url}"
+      return 1
+    fi
+  }
+
+  run vedv::registry_service::__create_registry_dir_structure \
+    "$registry_url"
+
+  assert_failure
+  assert_output "Error creating directory '/01-public-images'"
+}
+
+@test "vedv::registry_service::__create_registry_dir_structure() Should succeed" {
+  local -r registry_url='http://nextcloud.loc'
+
+  local -r creadir_calls_file="$(mktemp)"
+  echo 0 >"$creadir_calls_file"
+
+  vedv::registry_api_client::create_directory() {
+    local -i creadir_calls="$(<"$creadir_calls_file")"
+    echo "$((++creadir_calls))" >"$creadir_calls_file"
+
+    case "$creadir_calls" in
+    1)
+      assert_equal "$*" "/00-user-images ${registry_url}"
+      ;;
+    2)
+      assert_equal "$*" "/01-public-images ${registry_url}"
+      ;;
+    *)
+      assert_equal "$*" "INVALID_CALL"
+      ;;
+    esac
+  }
+
+  run vedv::registry_service::__create_registry_dir_structure \
+    "$registry_url"
+
+  assert_success
+  assert_output ""
+}

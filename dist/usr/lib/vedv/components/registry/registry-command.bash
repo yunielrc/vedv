@@ -141,7 +141,6 @@ Aliases:
   ${__VED_REGISTRY_COMMAND_SCRIPT_NAME} image push-link
 
 Flags:
-Flags:
   -h, --help                          show help
 
 Mandatory Options:
