@@ -22,13 +22,13 @@ manjaro-dev-configure:
 	./icac/manjaro.local.dev.cac
 
 nextcloud-dev-setup:
-	./icac/nextcloud/vm.dev/nextcloud.vbox.dev.iac
+	./icac/nextcloud/vm.dev/nextcloud.vbox.iac
 
 nextcloud-dev-stop:
 	sudo -u root VBoxManage controlvm nextcloud-dev acpipowerbutton
 
 nextcloud-dev-destroy:
-	sudo -u root VBoxManage controlvm nextcloud-dev poweroff && \
+	sudo -u root VBoxManage controlvm nextcloud-dev poweroff; \
 		sudo -u root VBoxManage unregistervm nextcloud-dev --delete
 
 nextcloud-dev-start:
@@ -41,7 +41,7 @@ nextcloud-dev-ssh:
 	ssh -p 40022 user@127.0.0.1
 
 nextcloud-prod-setup:
-	./icac/nextcloud/vultr.prod/nextcloud.vultr.prod.iac
+	./icac/nextcloud/vultr.prod/nextcloud-aio/nextcloud-aio.vultr.iac
 
 install-m:
 	sudo ./install --os manjaro --depends

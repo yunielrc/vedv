@@ -6,9 +6,9 @@
 
 set -eu
 
-cd "$(dirname "${BASH_SOURCE[0]}")"
+. .env
 
-. ../../../.env
+cd "$(dirname "${BASH_SOURCE[0]}")"
 
 # CONSTANTS
 readonly SCRIPT_NAME="${BASH_SOURCE[0]##*/}"
@@ -90,8 +90,8 @@ vm_copy() {
 }
 
 vm_copy ../../../.env '~'
-vm_copy ../common/nextcloud.cac '~'
-vm_copy ./nextcloud.vm.dev.cac '~'
+vm_copy ../common/cac/nextcloud-vedv-registry.cac '~'
+vm_copy ./nextcloud.vm.cac '~'
 
 vm_copy ./root/tmp/* /tmp
 
@@ -107,4 +107,4 @@ vm_exec() {
 }
 # shellcheck disable=SC2016
 vm_exec 'sudo groupadd docker; sudo usermod -aG docker "$USER"'
-vm_exec bash ./nextcloud.vm.dev.cac
+vm_exec bash ./nextcloud.vm.cac

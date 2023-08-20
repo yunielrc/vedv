@@ -1,0 +1,129 @@
+#!/usr/bin/env bash
+#
+# Intall & Configure Nextcloud
+#
+
+set -eu
+
+. .env
+
+cd "$(dirname "${BASH_SOURCE[0]}")"
+
+# INCLUDE
+. '../../common/utils.bash'
+
+#
+# Create and configure Nextcloud AIO instance
+#
+# Arguments:
+#   default_quota               string  the default quota for new users
+#   domain                      string  the domain name of the server
+#   admin_pass                  string  the password for the admin user
+#   google_oauth2_client_id     string  the Google OAuth2 client ID
+#   google_oauth2_client_secret string  the Google OAuth2 client secret
+#   admin_quota                 string  the quota for the admin user
+#
+# Returns:
+#   0 on success, 1 on failure
+#
+create_nextcloud_aio_prod_server() {
+  local -r default_quota="$1"
+  local -r domain="$2"
+  local -r admin_pass="$3"
+  local -r google_oauth2_client_id="$4"
+  local -r google_oauth2_client_secret="$5"
+  local -r admin_quota="${6:-none}"
+  local -r mail_from_address="$7"
+  local -r mail_domain="$8"
+  local -r mail_smtphost="$9"
+  local -r mail_smtpport="${10}"
+  local -r mail_smtpname="${11}"
+  local -r mail_smtppassword="${12}"
+
+  echo '>>> Creating Nextcloud server...'
+
+  local -r cac_script="#!/usr/bin/env bash
+
+set -eu
+
+### nextcloud-aio.vm.cac
+
+AIO_NC_DOMAIN='${domain}'
+AIO_NEXTCLOUD_PASSWORD='${admin_pass}'
+$(tail -n +2 nextcloud-aio.vm.cac)
+
+### :nextcloud-aio.vm.cac
+
+### nextcloud-vedv-registry.cac
+$(<../../common/utils.bash)
+
+
+utils::wait_for_http_service 'https://${domain}' 240
+
+readonly nc_container_id=\"\$(docker container ls -qaf 'name=-nextcloud-aio-nextcloud-')\"
+
+sudo docker exec -i \"\$nc_container_id\" bash <<'DOCKER_EOF_EID6FEISHO'
+
+NC_FILES_DEFAULT_QUOTA='${default_quota}'
+NC_SKELETON_DIR='/mnt/ncdata/skeleton'
+NC_GOOGLE_OAUTH2_CLIENT_ID='${google_oauth2_client_id}'
+NC_GOOGLE_OAUTH2_CLIENT_SECRET='${google_oauth2_client_secret}'
+NC_ADMIN_QUOTA='${admin_quota}'
+
+# EMAIL SERVER CONFIGURATION
+NC_MAIL_FROM_ADDRESS='${mail_from_address}'
+NC_MAIL_DOMAIN='${mail_domain}'
+NC_MAIL_SMTPHOST='${mail_smtphost}'
+NC_MAIL_SMTPPORT='${mail_smtpport}'
+NC_MAIL_SMTPNAME='${mail_smtpname}'
+NC_MAIL_SMTPPASSWORD='${mail_smtppassword}'
+
+$(tail -n +2 ../../common/cac/nextcloud-vedv-registry.cac)
+DOCKER_EOF_EID6FEISHO
+
+### :nextcloud-vedv-registry.cac
+
+echo '>>> ALL DONE'
+"
+
+  vultr-cli instance create \
+    --region mia \
+    --plan vc2-2c-2gb \
+    --os 1743 \
+    --host nextcloud-aio \
+    --auto-backup=false \
+    --ssh-keys 8e7a6da6-315e-4ce0-8a76-0a60cbb0ca9d \
+    --reserved-ipv4 57a737b7-01db-435c-b64c-5ad6560bfe10 \
+    --userdata "$cac_script"
+
+  echo -e '>>> Creating Nextcloud server. DONE\n'
+}
+
+main() {
+  create_nextcloud_aio_prod_server \
+    "$VULTR_NC_FILES_DEFAULT_QUOTA" \
+    "$VULTR_NC_DOMAIN1" \
+    "$VULTR_NC_ADMIN_PASS" \
+    "$VULTR_NC_GOOGLE_OAUTH2_CLIENT_ID" \
+    "$VULTR_NC_GOOGLE_OAUTH2_CLIENT_SECRET" \
+    "$VULTR_NC_ADMIN_QUOTA" \
+    "$VULTR_NC_MAIL_FROM_ADDRESS" \
+    "$VULTR_NC_MAIL_DOMAIN" \
+    "$VULTR_NC_MAIL_SMTPHOST" \
+    "$VULTR_NC_MAIL_SMTPPORT" \
+    "$VULTR_NC_MAIL_SMTPNAME" \
+    "$VULTR_NC_MAIL_SMTPPASSWORD"
+
+  utils::wait_for_http_service \
+    "https://${VULTR_NC_DOMAIN1}" 240
+
+  utils::upload_user_data \
+    "$VULTR_NC_ADMIN_NAME" \
+    "$VULTR_NC_ADMIN_PASS" \
+    "$VULTR_NC_DOMAIN1" \
+    '../../common/data/admin'
+}
+
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+  main "$@"
+fi

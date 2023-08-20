@@ -1,0 +1,155 @@
+#!/usr/bin/env bash
+
+set -eu
+
+#
+# Configure Nextcloud as a vedv registry server
+#
+
+cd /var/www/html
+
+# ENVIRONMENT VARIABLES
+# scheme:        VAR="${ENVIRONMENT_VAR:-"${CONFIG_VAR:-default}"}"
+# e.g.: readonly VEDV_VAR="${VEDV_VAR:-"${VAR:-default}"}"
+readonly NC_FILES_DEFAULT_QUOTA="${NC_FILES_DEFAULT_QUOTA:-none}"
+readonly NC_SKELETON_DIR="${NC_SKELETON_DIR:-'/var/www/html/config/00-custom'}"
+readonly NC_GOOGLE_OAUTH2_CLIENT_ID="${NC_GOOGLE_OAUTH2_CLIENT_ID:-}"
+readonly NC_GOOGLE_OAUTH2_CLIENT_SECRET="${NC_GOOGLE_OAUTH2_CLIENT_SECRET:-}"
+readonly NC_ADMIN_QUOTA="${NC_ADMIN_QUOTA:-none}"
+# mail server
+readonly NC_MAIL_FROM_ADDRESS="${NC_MAIL_FROM_ADDRESS:-}"
+readonly NC_MAIL_DOMAIN="${NC_MAIL_DOMAIN:-}"
+readonly NC_MAIL_SMTPHOST="${NC_MAIL_SMTPHOST:-}"
+readonly NC_MAIL_SMTPPORT="${NC_MAIL_SMTPPORT:-}"
+readonly NC_MAIL_SMTPNAME="${NC_MAIL_SMTPNAME:-}"
+readonly NC_MAIL_SMTPPASSWORD="${NC_MAIL_SMTPPASSWORD:-}"
+
+# CONSTANTS
+readonly NC_USER_IMAGES_REL_DIR='00-user-images'
+readonly NC_PUBLIC_IMAGES_REL_DIR='01-public-images'
+
+# FUNCTIONS
+occ() {
+  sudo -E -u www-data php occ --no-interaction "$@"
+}
+
+# Configure skeleton directory
+
+configure_skeleton_directory() {
+  local -r skeleton_full_dir="$NC_SKELETON_DIR"
+
+  local -r user_images_rel_dir="$NC_USER_IMAGES_REL_DIR"
+  local -r public_images_rel_dir="$NC_PUBLIC_IMAGES_REL_DIR"
+
+  if [[ ! -f "$skeleton_full_dir" ]]; then
+    mkdir -p "$skeleton_full_dir"
+  fi
+
+  (
+    cd "$skeleton_full_dir"
+
+    mkdir "$user_images_rel_dir"
+
+    cat >"${user_images_rel_dir}/README.md" <<EOF
+# User images
+
+This directory contains user images
+EOF
+
+    mkdir "$public_images_rel_dir"
+
+    cat >"${public_images_rel_dir}/README.md" <<EOF
+# Public images
+
+This directory contains images that are shared by other users
+EOF
+  )
+
+  chown -R www-data:www-data "$skeleton_full_dir"
+  chmod -R 0750 "$skeleton_full_dir"
+
+  occ config:system:set skeletondirectory --value="$skeleton_full_dir"
+  occ config:app:set core skeletondirectory --value="$skeleton_full_dir"
+}
+
+configure_public_group() {
+  occ group:add public
+  # occ group:adduser public admin
+  # install Auto Groups app
+  occ app:install auto_groups
+  occ config:app:set AutoGroups auto_groups --value='["public"]'
+  occ config:app:set AutoGroups login_hook --value='true'
+}
+
+configure_sharing() {
+  local -r public_images_rel_dir="$NC_PUBLIC_IMAGES_REL_DIR"
+
+  occ config:app:set core shareapi_default_permission_cancreate --value='no'
+  occ config:app:set core shareapi_default_permission_candelete --value='no'
+  occ config:app:set core shareapi_default_permission_canshare --value='no'
+  occ config:app:set core shareapi_default_permission_canupdate --value='no'
+  occ config:app:set core shareapi_default_permissions --value='1'
+
+  occ config:system:set share_folder --value="/${public_images_rel_dir}"
+
+  # TODO: auto share all folders created inside NC_USER_IMAGES_REL_DIR
+}
+
+configure_image_tags() {
+  occ tag:add 'official' 'restricted'
+  occ tag:add 'publisher' 'restricted'
+  occ tag:add 'sponsored' 'restricted'
+}
+
+configure_files_quota() {
+  # Set default users quota
+  occ config:app:set files default_quota --value="$NC_FILES_DEFAULT_QUOTA"
+  occ user:setting admin files quota "$NC_ADMIN_QUOTA"
+}
+
+disable_apps() {
+  occ app:disable files_versions
+}
+
+configure_social_login() {
+  occ app:install sociallogin
+  occ config:app:set sociallogin oauth_providers --value="{\"google\":{\"appid\":\"${NC_GOOGLE_OAUTH2_CLIENT_ID}\",\"secret\":\"${NC_GOOGLE_OAUTH2_CLIENT_SECRET}\",\"defaultGroup\":\"\",\"auth_params\":{\"hd\":\"\"}},\"amazon\":{\"appid\":\"\",\"secret\":\"\"},\"facebook\":{\"appid\":\"\",\"secret\":\"\"},\"twitter\":{\"appid\":\"\",\"secret\":\"\"},\"GitHub\":{\"appid\":\"\",\"secret\":\"\",\"orgs\":\"\"},\"discord\":{\"appid\":\"\",\"secret\":\"\",\"guilds\":\"\"},\"QQ\":{\"appid\":\"\",\"secret\":\"\"},\"slack\":{\"appid\":\"\",\"secret\":\"\"},\"telegram\":{\"appid\":\"\",\"secret\":\"\"},\"mailru\":{\"appid\":\"\",\"secret\":\"\",\"auth_params\":{\"hd\":\"\"}},\"yandex\":{\"appid\":\"\",\"secret\":\"\",\"auth_params\":{\"hd\":\"\"}},\"BitBucket\":{\"appid\":\"\",\"secret\":\"\",\"workspace\":\"\"},\"PlexTv\":{\"appid\":\"\"}}"
+  occ config:app:set sociallogin prevent_create_email_exists --value='1'
+}
+
+configure_email_server() {
+  occ config:system:set mail_smtpmode --value='smtp'
+  occ config:system:set mail_smtpsecure --value='ssl'
+  occ config:system:set mail_sendmailmode --value='smtp'
+  occ config:system:set mail_from_address --value="$NC_MAIL_FROM_ADDRESS"
+  occ config:system:set mail_domain --value="$NC_MAIL_DOMAIN"
+  occ config:system:set mail_smtphost --value="$NC_MAIL_SMTPHOST"
+  occ config:system:set mail_smtpport --value="$NC_MAIL_SMTPPORT"
+  occ config:system:set mail_smtpauth --value='1'
+  occ config:system:set mail_smtpname --value="$NC_MAIL_SMTPNAME"
+  occ config:system:set mail_smtppassword --value="$NC_MAIL_SMTPPASSWORD"
+}
+
+configure_user_registration() {
+  occ app:install registration
+  occ config:app:set registration username_policy_regex --value='/^[\.a-zA-Z0-9-]+$/'
+}
+
+main() {
+  configure_skeleton_directory
+  configure_public_group
+  configure_sharing
+  configure_image_tags
+  configure_files_quota
+  disable_apps
+  configure_email_server
+  configure_user_registration
+
+  if [[ -n "$NC_GOOGLE_OAUTH2_CLIENT_ID" &&
+    -n "$NC_GOOGLE_OAUTH2_CLIENT_SECRET" ]]; then
+    configure_social_login
+  fi
+}
+
+# call main function
+main "$@"
