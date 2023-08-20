@@ -1175,7 +1175,7 @@ vedv::vmobj_entity::cache::set_user_name() {
   local -r type="$1"
   local -r vmobj_id="$2"
   local -r value="$3"
-
+  # TODO: validate user name
   vedv::vmobj_entity::__set_attribute \
     "$type" \
     "$vmobj_id" \
