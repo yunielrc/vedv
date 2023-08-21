@@ -41,6 +41,7 @@ readonly __VEDV_COMPONENTS_PATH="${__VEDV_LIB_PATH}/components"
 readonly __VEDV_HYPERVISORS_PATH="${__VEDV_LIB_PATH}/hypervisors"
 readonly __VEDV_CONFIG_DIR="${__VEDV_DIST_PATH}/etc/vedv"
 readonly __VEDV_CONFIG="${__VEDV_CONFIG_DIR}/vedv.env"
+readonly __UA='User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36'
 
 # LOAD CONFIG
 if [[ -f "$__VEDV_CONFIG" ]]; then source "$__VEDV_CONFIG"; fi
@@ -64,7 +65,7 @@ readonly VEDV_CACHE_DIR="${VEDV_CACHE_DIR:-"${CACHE_DIR:-"/home/${USER}/.var/cac
 readonly VEDV_IMAGE_IMPORTED_DIR="${VEDV_IMAGE_IMPORTED_DIR:-"${IMAGE_IMPORTED_DIR:-"${VEDV_TMP_DIR}/images/imported"}"}"
 readonly VEDV_IMAGE_EXPORTED_DIR="${VEDV_IMAGE_EXPORTED_DIR:-"${IMAGE_EXPORTED_DIR:-"${VEDV_TMP_DIR}/images/exported"}"}"
 readonly VEDV_MEMORY_CACHE_DIR="${VEDV_MEMORY_CACHE_DIR:-"${MEMORY_CACHE_DIR:-"/dev/shm/vedv-6d2566c564-${USER}"}"}"
-readonly VEDV_USER_AGENT="${VEDV_USER_AGENT:-"${USER_AGENT:-""}"}"
+readonly VEDV_USER_AGENT="${VEDV_USER_AGENT:-"${USER_AGENT:-"$__UA"}"}"
 
 # REGISTRY
 readonly VEDV_REGISTRY_CACHE_DIR="${VEDV_REGISTRY_CACHE_DIR:-"${REGISTRY_CACHE_DIR:-"${VEDV_CACHE_DIR}/registry"}"}"
@@ -185,7 +186,7 @@ vedv::__initialize_components() {
 vedv::__help() {
   cat <<-HELPMSG
 Usage:
-${__VEDV_SCRIPT_NAME} [HYPERVISOR] COMMAND
+${__VEDV_SCRIPT_NAME} COMMAND
 
 A tool for developing in a secure and reproducible environment
 
@@ -218,13 +219,16 @@ vedv::__run_cmd() {
   local hypervisor=''
 
   case "${1:-}" in
-  vbox)
+  vbox | virtualbox)
     shift
     readonly hypervisor='virtualbox'
     ;;
   qemu)
     shift
     readonly hypervisor='qemu'
+
+    err "QEMU is not supported yet\n"
+    return "$ERR_NOTIMPL"
     ;;
   *)
     readonly hypervisor="$VEDV_DEFAULT_HYPERVISOR"
