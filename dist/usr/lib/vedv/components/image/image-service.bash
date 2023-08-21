@@ -351,7 +351,14 @@ vedv::image_service::import_from_any() {
   local -r image_name="${2:-}"
 
   if [[ "$(vedv::vmobj_entity::is_name "$image")" == true ]]; then
-    echo "0000000000 ${image}"
+
+    local image_id
+    image_id="$(vedv::vmobj_entity::get_id "$image")" || {
+      err "Failed to get id by name: ${image}"
+      return "$ERR_VMOBJ_OPERATION"
+    }
+
+    echo "${image_id} ${image}"
     return 0
   fi
 

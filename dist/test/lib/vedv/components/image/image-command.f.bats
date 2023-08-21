@@ -495,8 +495,9 @@ Failed to get image name from fqn: 'admin/alpine-test/alpine-14'"
   run vedv image push 'nextcloud123.loc/admin@alpine-test/alpine-14'
 
   assert_failure
-  assert_output "Registry 'https://nextcloud123.loc' not found in credentials dict
-Failed to get registry user
+  assert_output "Failed to get user for registry 'https://nextcloud123.loc', on base url
+Error creating directory '/00-user-images'
+Failed to create registry directory structure
 Error pushing image to registry"
 }
 

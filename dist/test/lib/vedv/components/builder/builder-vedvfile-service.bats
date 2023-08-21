@@ -157,6 +157,7 @@ EOF
   run cat "$vevfileignore"
 
   assert_success
-  assert_output ".git/
+  assert_output "# see rsync option --exclude-from=FILE
+.git/
 .vscode/"
 }

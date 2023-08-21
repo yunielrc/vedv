@@ -123,6 +123,9 @@ setup() {
     assert_equal "$*" "$image_fqn"
     echo 'nextcloud2.loc'
   }
+  vedv::registry_service::__create_registry_dir_structure() {
+    assert_equal "$*" "https://nextcloud2.loc"
+  }
   vedv::registry_api_client::get_user() {
     assert_equal "$*" "https://nextcloud2.loc"
     return 1
@@ -149,6 +152,9 @@ setup() {
   vedv::image_entity::get_domain_from_fqn() {
     assert_equal "$*" "$image_fqn"
     echo 'nextcloud2.loc'
+  }
+  vedv::registry_service::__create_registry_dir_structure() {
+    assert_equal "$*" "https://nextcloud2.loc"
   }
   vedv::registry_api_client::get_user() {
     assert_equal "$*" "https://nextcloud2.loc"
@@ -189,6 +195,9 @@ setup() {
     assert_equal "$*" "$image_fqn"
     echo 'nextcloud2.loc'
   }
+  vedv::registry_service::__create_registry_dir_structure() {
+    assert_equal "$*" "https://nextcloud2.loc"
+  }
   vedv::registry_api_client::get_user() {
     assert_equal "$*" "https://nextcloud2.loc"
     echo 'admin'
@@ -228,6 +237,9 @@ For security reasons, the image can not be downloaded"
   vedv::image_entity::get_domain_from_fqn() {
     assert_equal "$*" "$image_fqn"
     echo 'nextcloud2.loc'
+  }
+  vedv::registry_service::__create_registry_dir_structure() {
+    assert_equal "$*" "https://nextcloud2.loc"
   }
   vedv::registry_api_client::get_user() {
     assert_equal "$*" "https://nextcloud2.loc"
@@ -276,6 +288,9 @@ For security reasons, the image can not be downloaded"
   vedv::image_entity::validate_name() {
     assert_equal "$*" "INVALID_CALL"
   }
+  vedv::registry_service::__create_registry_dir_structure() {
+    assert_equal "$*" "https://nextcloud2.loc"
+  }
   vedv::registry_api_client::get_user() {
     assert_equal "$*" "https://nextcloud2.loc"
     echo 'admin'
@@ -321,6 +336,9 @@ For security reasons, the image can not be downloaded"
   vedv::image_entity::validate_name() {
     assert_equal "$*" "INVALID_CALL"
   }
+  vedv::registry_service::__create_registry_dir_structure() {
+    assert_equal "$*" "https://nextcloud2.loc"
+  }
   vedv::registry_api_client::get_user() {
     assert_equal "$*" "https://nextcloud2.loc"
     echo 'admin'
@@ -354,6 +372,9 @@ For security reasons, the image can not be downloaded"
 
   vedv::image_entity::validate_name() {
     assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::registry_service::__create_registry_dir_structure() {
+    assert_equal "$*" "https://nextcloud2.loc"
   }
   vedv::registry_api_client::get_user() {
     assert_equal "$*" "https://nextcloud2.loc"
@@ -393,6 +414,9 @@ For security reasons, the image can not be downloaded"
 
   vedv::image_entity::validate_name() {
     assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::registry_service::__create_registry_dir_structure() {
+    assert_equal "$*" "https://nextcloud2.loc"
   }
   vedv::registry_api_client::get_user() {
     assert_equal "$*" "https://nextcloud2.loc"
@@ -436,6 +460,9 @@ For security reasons, the image can not be downloaded"
 
   vedv::image_entity::validate_name() {
     assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::registry_service::__create_registry_dir_structure() {
+    assert_equal "$*" "https://nextcloud2.loc"
   }
   vedv::registry_api_client::get_user() {
     assert_equal "$*" "https://nextcloud2.loc"
@@ -539,6 +566,9 @@ For security reasons, the image can not be downloaded"
     assert_equal "$*" "$image_fqn"
     echo 'alpine-14'
   }
+  vedv::registry_service::__create_registry_dir_structure() {
+    assert_equal "$*" "https://nextcloud.loc"
+  }
   vedv::image_entity::get_url_from_fqn() {
     assert_equal "$*" "$image_fqn"
     return 1
@@ -561,6 +591,9 @@ For security reasons, the image can not be downloaded"
   vedv::image_entity::get_name_from_fqn() {
     assert_equal "$*" "$image_fqn"
     echo 'alpine-14'
+  }
+  vedv::registry_service::__create_registry_dir_structure() {
+    assert_equal "$*" "https://nextcloud.loc"
   }
   vedv::image_entity::get_url_from_fqn() {
     assert_equal "$*" "$image_fqn"
@@ -588,6 +621,9 @@ For security reasons, the image can not be downloaded"
   vedv::image_entity::get_name_from_fqn() {
     assert_equal "$*" "$image_fqn"
     echo 'alpine-14'
+  }
+  vedv::registry_service::__create_registry_dir_structure() {
+    assert_equal "$*" "https://nextcloud.loc"
   }
   vedv::image_entity::get_url_from_fqn() {
     assert_equal "$*" "$image_fqn"
@@ -619,6 +655,9 @@ For security reasons, the image can not be downloaded"
   vedv::image_entity::get_name_from_fqn() {
     assert_equal "$*" "$image_fqn"
     echo 'alpine-14'
+  }
+  vedv::registry_service::__create_registry_dir_structure() {
+    assert_equal "$*" "https://nextcloud.loc"
   }
   vedv::image_entity::get_url_from_fqn() {
     assert_equal "$*" "$image_fqn"
@@ -652,6 +691,9 @@ For security reasons, the image can not be downloaded"
     echo 'alpine-14'
   }
 
+  vedv::registry_service::__create_registry_dir_structure() {
+    assert_equal "$*" "https://nextcloud.loc"
+  }
   vedv::image_entity::get_url_from_fqn() {
     assert_equal "$*" "$image_fqn"
     echo 'https://nextcloud.loc'
@@ -687,6 +729,9 @@ For security reasons, the image can not be downloaded"
     echo 'alpine-14'
   }
 
+  vedv::registry_service::__create_registry_dir_structure() {
+    assert_equal "$*" "https://nextcloud.loc"
+  }
   vedv::image_entity::get_url_from_fqn() {
     assert_equal "$*" "$image_fqn"
     echo 'https://nextcloud.loc'
@@ -723,6 +768,9 @@ For security reasons, the image can not be downloaded"
     echo 'alpine-14'
   }
 
+  vedv::registry_service::__create_registry_dir_structure() {
+    assert_equal "$*" "https://nextcloud.loc"
+  }
   vedv::image_entity::get_url_from_fqn() {
     assert_equal "$*" "$image_fqn"
     echo 'https://nextcloud.loc'
@@ -763,6 +811,9 @@ For security reasons, the image can not be downloaded"
     echo 'alpine-14'
   }
 
+  vedv::registry_service::__create_registry_dir_structure() {
+    assert_equal "$*" "https://nextcloud.loc"
+  }
   vedv::image_entity::get_url_from_fqn() {
     assert_equal "$*" "$image_fqn"
     echo 'https://nextcloud.loc'
@@ -806,6 +857,9 @@ For security reasons, the image can not be downloaded"
     echo 'alpine-14'
   }
 
+  vedv::registry_service::__create_registry_dir_structure() {
+    assert_equal "$*" "https://nextcloud.loc"
+  }
   vedv::image_entity::get_url_from_fqn() {
     assert_equal "$*" "$image_fqn"
     echo 'https://nextcloud.loc'
@@ -850,6 +904,9 @@ For security reasons, the image can not be downloaded"
     echo 'alpine-14'
   }
 
+  vedv::registry_service::__create_registry_dir_structure() {
+    assert_equal "$*" "https://nextcloud.loc"
+  }
   vedv::image_entity::get_url_from_fqn() {
     assert_equal "$*" "$image_fqn"
     echo 'https://nextcloud.loc'

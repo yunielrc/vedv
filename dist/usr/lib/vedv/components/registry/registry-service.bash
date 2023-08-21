@@ -181,7 +181,6 @@ vedv::registry_service::pull() {
       return "$?"
   fi
   readonly image_name
-
   #
 
   #
@@ -336,7 +335,6 @@ vedv::registry_service::__push() {
     err "image_export_func can not be empty"
     return "$ERR_INVAL_ARG"
   fi
-
   #
 
   local fqn_image_name=''

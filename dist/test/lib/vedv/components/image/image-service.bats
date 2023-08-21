@@ -3309,7 +3309,7 @@ EOF
     "$image_name"
 
   assert_success
-  assert_output "0000000000 alpine-14"
+  assert_output "2498337635 alpine-14"
 }
 
 @test "vedv::image_service::import_from_any() Should fail If import fails" {

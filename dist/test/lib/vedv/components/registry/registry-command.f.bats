@@ -84,8 +84,9 @@ vedv registry pull [FLAGS] [OPTIONS] [DOMAIN/]USER@COLLECTION/NAME"
   run vedv registry pull --name 'my-alpine-14' 'nextcloud5.loc/admin@alpine/alpine-14'
 
   assert_failure
-  assert_output "Registry 'https://nextcloud5.loc' not found in credentials dict
-Failed to get registry user"
+  assert_output "Failed to get user for registry 'https://nextcloud5.loc', on base url
+Error creating directory '/00-user-images'
+Failed to create registry directory structure"
 }
 
 @test "vedv registry pull ,Should fail with down registry domain" {
@@ -93,7 +94,7 @@ Failed to get registry user"
   run vedv registry pull --name 'my-alpine-14' 'http://nextcloud2.loc/admin@alpine/alpine-14'
 
   assert_failure
-  assert_output --partial "Error downloading image checksum '/00-user-images/admin@alpine/alpine-14.ova.sha256sum'"
+  assert_output --partial "Failed to create directory '/00-user-images'"
 }
 
 @test "vedv registry pull ,Should fail with invalid image file" {
@@ -205,8 +206,9 @@ vedv registry push [FLAGS] [OPTIONS] [DOMAIN/]USER@COLLECTION/NAME"
   run vedv registry push 'nextcloud123.loc/admin@alpine-test/alpine-14'
 
   assert_failure
-  assert_output "Registry 'https://nextcloud123.loc' not found in credentials dict
-Failed to get registry user
+  assert_output "Failed to get user for registry 'https://nextcloud123.loc', on base url
+Error creating directory '/00-user-images'
+Failed to create registry directory structure
 Error pushing image to registry"
 }
 

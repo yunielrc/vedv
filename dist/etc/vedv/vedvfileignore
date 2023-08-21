@@ -1,1 +1,2 @@
+# see rsync option --exclude-from=FILE
 .git/
