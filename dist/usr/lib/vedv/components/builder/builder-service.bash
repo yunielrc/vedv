@@ -398,10 +398,10 @@ vedv::builder_service::__layer_copy_calc_id() {
       shift
       ;;
     # options
-    -u | --user)
+    -u | --user | --chown | --chmod)
       shift
       if [[ -n "${1:-}" ]]; then
-        shift # user name
+        shift # option argument
       fi
       ;;
     # arguments
@@ -414,20 +414,23 @@ vedv::builder_service::__layer_copy_calc_id() {
 
   local crc_sum_source=''
 
-  if [[ -e "$src" ]]; then
-
-    local vedvfileignore
-    vedvfileignore="$(vedv:builder_vedvfile_service::get_joined_vedvfileignore)" || {
-      err "Failed to get joined vedvfileignore"
-      return "$ERR_VMOBJ_OPERATION"
-    }
-    readonly vedvfileignore
-
-    crc_sum_source="$(utils::crc_file_sum "$src" "$vedvfileignore")" || {
-      err "Failed getting 'crc_sum_source' for src: '${src}'"
-      return "$ERR_BUILDER_SERVICE_OPERATION"
-    }
+  if [[ ! -e "$src" ]]; then
+    err "File '${src}': does not exist"
+    return "$ERR_INVAL_ARG"
   fi
+
+  local vedvfileignore
+  vedvfileignore="$(vedv:builder_vedvfile_service::get_joined_vedvfileignore)" || {
+    err "Failed to get joined vedvfileignore"
+    return "$ERR_VMOBJ_OPERATION"
+  }
+  readonly vedvfileignore
+
+  crc_sum_source="$(utils::crc_file_sum "$src" "$vedvfileignore")" || {
+    err "Failed getting 'crc_sum_source' for src: '${src}'"
+    return "$ERR_BUILDER_SERVICE_OPERATION"
+  }
+
   readonly crc_sum_source
 
   local -r base_vedvfileignore_path="$(vedv:builder_vedvfile_service::get_base_vedvfileignore_path)"
@@ -559,8 +562,8 @@ vedv::builder_service::__layer_copy() {
     esac
   done
   # validate command arguments
-  if [[ -z "$src" ]]; then
-    err "Argument 'src' must not be empty"
+  if [[ ! -e "$src" ]]; then
+    err "File '${src}': does not exist"
     return "$ERR_INVAL_ARG"
   fi
   if [[ -z "$dest" ]]; then
@@ -1497,6 +1500,7 @@ vedv::builder_service::__build() {
       return "$ERR_BUILDER_SERVICE_OPERATION"
     }
   else
+
     # there is an image, so layers must be validated and the cached data
     # must be updated if any layer is deleted
     local -i initial_layer_count

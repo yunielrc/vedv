@@ -523,7 +523,7 @@ Previous layer restored"
 @test "vedv::builder_service::__layer_copy_calc_id(), Should write copy layer id to stdout" {
   # Arrange
   local -r src="$(mktemp)"
-  local -r cmd="1 COPY ${src}/ dest/"
+  local -r cmd="1 COPY ${src} dest/"
   # Stub
   utils::crc_sum() {
     if [[ ! -t 0 ]]; then
@@ -538,7 +538,7 @@ Previous layer restored"
   run vedv::builder_service::__layer_copy_calc_id "$cmd"
   # Assert
   assert_success
-  assert_output --partial "1 COPY ${src}/ dest/"
+  assert_output --partial "1 COPY ${src} dest/"
 }
 
 # Test vedv::builder_service::__layer_copy() function
@@ -575,7 +575,7 @@ Previous layer restored"
 @test "vedv::builder_service::__layer_copy(), Should fail If _source is empty" {
   # Arrange
   local -r image_id="image_id"
-  local -r _source="source/"
+  local -r _source=""
   local -r dest="dest/"
   local -r cmd="1 COPY -u root"
 
@@ -583,13 +583,13 @@ Previous layer restored"
   run vedv::builder_service::__layer_copy "$image_id" "$cmd"
   # Assert
   assert_failure
-  assert_output "Argument 'src' must not be empty"
+  assert_output "File '': does not exist"
 }
 
 @test "vedv::builder_service::__layer_copy(), Should fail If getting dest fails" {
   # Arrange
   local -r image_id="image_id"
-  local -r _source="source/"
+  local -r _source="$(mktemp)"
   local -r dest="dest/"
   local -r cmd="1 COPY -u root ${_source}"
   # Act
@@ -624,12 +624,13 @@ Previous layer restored"
 }
 
 @test "vedv::builder_service::__layer_copy() Should succeed With all arguments" {
+  local -r src="$(mktemp)"
   # Arrange
   local -r image_id="image_id"
-  local -r cmd="1 COPY --chown nalyd --chmod 644 --user root src1 dest1"
+  local -r cmd="1 COPY --chown nalyd --chmod 644 --user root ${src} dest1"
   # Stub
   vedv::builder_service::__layer_execute_cmd() {
-    assert_equal "$*" "image_id 1 COPY --chown nalyd --chmod 644 --user root src1 dest1 COPY vedv::image_service::copy 'image_id' 'src1' 'dest1' 'root' 'nalyd' '644'"
+    assert_equal "$*" "image_id 1 COPY --chown nalyd --chmod 644 --user root ${src} dest1 COPY vedv::image_service::copy 'image_id' '${src}' 'dest1' 'root' 'nalyd' '644'"
   }
   # Act
   run vedv::builder_service::__layer_copy "$image_id" "$cmd"
@@ -641,7 +642,7 @@ Previous layer restored"
 @test "vedv::builder_service::__layer_copy() succeeds if all arguments are valid and __layer_exec_cmd succeeds" {
   # Arrange
   local -r image_id="image_id"
-  local -r _source="source/"
+  local -r _source="$(mktemp)"
   local -r dest="dest/"
   local -r cmd="1 COPY ${_source} ${dest}"
 
