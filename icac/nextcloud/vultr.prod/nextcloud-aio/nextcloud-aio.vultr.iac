@@ -22,6 +22,12 @@ cd "$(dirname "${BASH_SOURCE[0]}")"
 #   google_oauth2_client_id     string  the Google OAuth2 client ID
 #   google_oauth2_client_secret string  the Google OAuth2 client secret
 #   admin_quota                 string  the quota for the admin user
+#   mail_from_address           string  the email address to use for sending emails
+#   mail_domain                 string  the domain name of the email server
+#   mail_smtphost               string  the SMTP host of the email server
+#   mail_smtpport               string  the SMTP port of the email server
+#   mail_smtpname               string  the SMTP username of the email server
+#   mail_smtppassword           string  the SMTP password of the email server
 #
 # Returns:
 #   0 on success, 1 on failure
@@ -56,7 +62,6 @@ $(tail -n +2 nextcloud-aio.vm.cac)
 
 ### nextcloud-vedv-registry.cac
 $(<../../common/utils.bash)
-
 
 utils::wait_for_http_service 'https://${domain}' 240
 

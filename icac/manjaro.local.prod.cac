@@ -6,8 +6,8 @@ sudo pacman -Syu --noconfirm --needed yay
 
 yay -Syu --noconfirm --needed \
   virtualbox \
-  hadolint-bin \
   gnu-netcat \
+  sshpass \
   python-pip \
   libxml2 # /usr/bin/xmllint is owned by libxml2
 
