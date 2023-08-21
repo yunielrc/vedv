@@ -1190,6 +1190,9 @@ Previous layer restored"
   vedv::builder_service::__create_image_by_from_cmd() {
     assert_equal "$*" "INVALID_CALL"
   }
+  vedv::image_service::stop() {
+    assert_equal "$*" "1234567890"
+  }
   vedv::image_entity::get_layer_count() {
     assert_equal "$*" "1234567890"
     return 1
@@ -1226,6 +1229,9 @@ Previous layer restored"
   }
   vedv::builder_service::__create_image_by_from_cmd() {
     assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::image_service::stop() {
+    assert_equal "$*" "1234567890"
   }
   vedv::image_entity::get_layer_count() {
     assert_equal "$*" "1234567890"
@@ -1268,6 +1274,9 @@ Previous layer restored"
   vedv::builder_service::__create_image_by_from_cmd() {
     assert_equal "$*" "INVALID_CALL"
   }
+  vedv::image_service::stop() {
+    assert_equal "$*" "1234567890"
+  }
   vedv::image_entity::get_layer_count() {
     assert_equal "$*" "1234567890"
     echo 0
@@ -1308,6 +1317,9 @@ Previous layer restored"
   }
   vedv::builder_service::__create_image_by_from_cmd() {
     assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::image_service::stop() {
+    assert_equal "$*" "1234567890"
   }
   vedv::image_entity::get_layer_count() {
     assert_equal "$*" "1234567890"
@@ -1360,6 +1372,9 @@ Previous layer restored"
   }
   vedv::builder_service::__create_image_by_from_cmd() {
     assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::image_service::stop() {
+    assert_equal "$*" "1234567890"
   }
   vedv::image_entity::get_layer_count() {
     assert_equal "$*" "1234567890"
@@ -1416,6 +1431,9 @@ Previous layer restored"
   vedv::builder_service::__create_image_by_from_cmd() {
     assert_equal "$*" "INVALID_CALL"
   }
+  vedv::image_service::stop() {
+    assert_equal "$*" "1234567890"
+  }
   vedv::image_entity::get_layer_count() {
     assert_equal "$*" "1234567890"
     echo 0
@@ -1467,6 +1485,9 @@ Previous layer restored"
   local -r get_layer_count_calls_file="$(mktemp)"
   echo 0 >"$get_layer_count_calls_file"
 
+  vedv::image_service::stop() {
+    assert_equal "$*" "1234567890"
+  }
   vedv::image_entity::get_layer_count() {
     assert_equal "$*" "$image_id"
 
@@ -1525,7 +1546,9 @@ Previous layer restored"
 
   local -r get_layer_count_calls_file="$(mktemp)"
   echo 0 >"$get_layer_count_calls_file"
-
+  vedv::image_service::stop() {
+    assert_equal "$*" "1234567890"
+  }
   vedv::image_entity::get_layer_count() {
     assert_equal "$*" "$image_id"
 
@@ -1589,7 +1612,9 @@ Previous layer restored"
 
   local -r get_layer_count_calls_file="$(mktemp)"
   echo 0 >"$get_layer_count_calls_file"
-
+  vedv::image_service::stop() {
+    assert_equal "$*" "1234567890"
+  }
   vedv::image_entity::get_layer_count() {
     assert_equal "$*" "$image_id"
 
@@ -1654,7 +1679,9 @@ Build finished
 
   local -r get_layer_count_calls_file="$(mktemp)"
   echo 0 >"$get_layer_count_calls_file"
-
+  vedv::image_service::stop() {
+    assert_equal "$*" "1234567890"
+  }
   vedv::image_entity::get_layer_count() {
     assert_equal "$*" "$image_id"
 
@@ -1721,7 +1748,9 @@ Build finished
 
   local -r get_layer_count_calls_file="$(mktemp)"
   echo 0 >"$get_layer_count_calls_file"
-
+  vedv::image_service::stop() {
+    assert_equal "$*" "1234567890"
+  }
   vedv::image_entity::get_layer_count() {
     assert_equal "$*" "$image_id"
 
@@ -1791,7 +1820,9 @@ Build finished
 
   local -r get_layer_count_calls_file="$(mktemp)"
   echo 0 >"$get_layer_count_calls_file"
-
+  vedv::image_service::stop() {
+    assert_equal "$*" "1234567890"
+  }
   vedv::image_entity::get_layer_count() {
     assert_equal "$*" "$image_id"
 
@@ -1861,7 +1892,9 @@ Build finished
 
   local -r get_layer_count_calls_file="$(mktemp)"
   echo 0 >"$get_layer_count_calls_file"
-
+  vedv::image_service::stop() {
+    assert_equal "$*" "1234567890"
+  }
   vedv::image_entity::get_layer_count() {
     assert_equal "$*" "$image_id"
 
@@ -1937,7 +1970,9 @@ Build finished
 
   local -r get_layer_count_calls_file="$(mktemp)"
   echo 0 >"$get_layer_count_calls_file"
-
+  vedv::image_service::stop() {
+    assert_equal "$*" "1234567890"
+  }
   vedv::image_entity::get_layer_count() {
     assert_equal "$*" "$image_id"
 

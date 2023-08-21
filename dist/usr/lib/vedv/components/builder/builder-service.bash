@@ -1500,7 +1500,10 @@ vedv::builder_service::__build() {
       return "$ERR_BUILDER_SERVICE_OPERATION"
     }
   else
-
+    vedv::image_service::stop "$image_id" >/dev/null || {
+      err "Failed to stop image '${image_name}'"
+      return "$ERR_BUILDER_SERVICE_OPERATION"
+    }
     # there is an image, so layers must be validated and the cached data
     # must be updated if any layer is deleted
     local -i initial_layer_count
