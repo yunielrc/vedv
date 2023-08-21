@@ -1114,8 +1114,8 @@ vedv::vmobj_service::copy_by_id() {
     err "Invalid argument 'vmobj_id': it's empty"
     return "$ERR_INVAL_ARG"
   fi
-  if [[ -z "$src" ]]; then
-    err "Invalid argument 'src': it's empty"
+  if [[ ! -e "$src" ]]; then
+    err "File '${src}': does not exist"
     return "$ERR_INVAL_ARG"
   fi
   if [[ -z "$dest" ]]; then

@@ -1591,13 +1591,13 @@ EOF
   run vedv::vmobj_service::copy_by_id "$type" "$vmobj_id" "$src" "$dest"
 
   assert_failure
-  assert_output "Invalid argument 'src': it's empty"
+  assert_output "File '': does not exist"
 }
 
 @test "vedv::vmobj_service::copy_by_id(), Should fail With empty dest" {
   local -r type="container"
   local -r vmobj_id=12345
-  local -r src="src"
+  local -r src="$(mktemp)"
   local -r dest=""
 
   run vedv::vmobj_service::copy_by_id "$type" "$vmobj_id" "$src" "$dest"
@@ -1609,7 +1609,7 @@ EOF
 @test "vedv::vmobj_service::copy_by_id(), Should fail If get_workdir fails" {
   local -r type="container"
   local -r vmobj_id=12345
-  local -r src="src"
+  local -r src="$(mktemp)"
   local -r dest="dest"
 
   vedv::vmobj_service::fs::get_workdir() {
@@ -1626,7 +1626,7 @@ EOF
 @test "vedv::vmobj_service::copy_by_id(), Should fail If get_joined_vedvfileignore fails" {
   local -r type="container"
   local -r vmobj_id=12345
-  local -r src="src"
+  local -r src="$(mktemp)"
   local -r dest="dest"
   local -r user="user"
   local -r workdir="<none>"
@@ -1647,7 +1647,7 @@ EOF
 @test "vedv::vmobj_service::copy_by_id(), Should fail If __exec_ssh_func fails" {
   local -r type="container"
   local -r vmobj_id=12345
-  local -r src="src"
+  local -r src="$(mktemp)"
   local -r dest="dest"
   local -r user="user"
   local -r workdir="/home/vedv"
@@ -1659,7 +1659,7 @@ EOF
     echo "/tmp/vedvfileignore"
   }
   vedv::vmobj_service::__exec_ssh_func() {
-    assert_equal "$*" "container 12345 vedv::ssh_client::copy \"\$user\" \"\$ip\"  \"\$password\" \"\$port\" 'src' 'dest' '/tmp/vedvfileignore' '/home/vedv' '' '' user"
+    assert_equal "$*" "container 12345 vedv::ssh_client::copy \"\$user\" \"\$ip\"  \"\$password\" \"\$port\" '${src}' 'dest' '/tmp/vedvfileignore' '/home/vedv' '' '' user"
     return 1
   }
 
@@ -1672,7 +1672,7 @@ EOF
 @test "vedv::vmobj_service::copy_by_id(), Should Succeed" {
   local -r type="container"
   local -r vmobj_id=12345
-  local -r src="src"
+  local -r src="$(mktemp)"
   local -r dest="dest"
   local -r user="user"
   local -r workdir="/home/vedv"
@@ -1686,7 +1686,7 @@ EOF
     echo "/tmp/vedvfileignore"
   }
   vedv::vmobj_service::__exec_ssh_func() {
-    assert_equal "$*" "container 12345 vedv::ssh_client::copy \"\$user\" \"\$ip\"  \"\$password\" \"\$port\" 'src' 'dest' '/tmp/vedvfileignore' '/home/vedv' 'nalyd' '644' user"
+    assert_equal "$*" "container 12345 vedv::ssh_client::copy \"\$user\" \"\$ip\"  \"\$password\" \"\$port\" '${src}' 'dest' '/tmp/vedvfileignore' '/home/vedv' 'nalyd' '644' user"
     return 1
   }
 

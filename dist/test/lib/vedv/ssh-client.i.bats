@@ -204,18 +204,18 @@ teardown_file() {
   run vedv::ssh_client::copy "user" "192.168.0.1" "password" "22" "" "dest/file"
 
   assert_failure "$ERR_INVAL_ARG"
-  assert_output "Argument 'source' must not be empty"
+  assert_output "File '': does not exist"
 }
 
 @test "vedv::ssh_client::copy(), Should fail With invalid 'dest' argument" {
-  run vedv::ssh_client::copy "user" "192.168.0.1" "password" "22" "source/file" ""
+  run vedv::ssh_client::copy "user" "192.168.0.1" "password" "22" "$(mktemp)" ""
 
   assert_failure "$ERR_INVAL_ARG"
   assert_output "Argument 'dest' must not be empty"
 }
 
 @test "vedv::ssh_client::copy(), Should fail With failed 'scp' command" {
-  run vedv::ssh_client::copy "user" "192.168.0.1" "password" "22" "source/file" "dest/file"
+  run vedv::ssh_client::copy "user" "192.168.0.1" "password" "22" "$(mktemp)" "dest/file"
 
   assert_failure "$ERR_SSH_OPERATION"
   assert_output --partial "Error on 'user@192.168.0.1', rsync exit code:"

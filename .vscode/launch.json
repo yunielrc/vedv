@@ -245,7 +245,7 @@
       "type": "bashdb",
       "request": "launch",
       "name": "Bash-Debug (vedv image build -n image5  ./Vedvfile5)",
-      "cwd": "${workspaceFolder}/dist/test/lib/vedv/components/image/fixtures",
+      "cwd": "${workspaceFolder}/todo-101",
       "env": {
         "VEDV_HADOLINT_ENABLED": "false",
         "VEDV_CHANGE_PASSWORD_ON_IMPORT": "false"
@@ -255,9 +255,7 @@
         "image",
         "build",
         "-n",
-        "ubuntug",
-        "--no-cache",
-        "./allcmds.Vedvfile"
+        "todo-101-alpine-1.0.0-x86_64"
       ]
     },
     {

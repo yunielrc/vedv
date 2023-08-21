@@ -1,4 +1,4 @@
-.PHONY: commit test-all test-unit test-tag test-name untested manjaro-dev-configure nextcloud-dev-setup nextcloud-dev-stop nextcloud-dev-destroy nextcloud-dev-start nextcloud-dev-status nextcloud-dev-ssh nextcloud-prod-setup install uninstall
+.PHONY: commit test-all test-unit test-tag test-name untested manjaro-dev-configure nextcloud-dev-setup nextcloud-dev-stop nextcloud-dev-destroy nextcloud-dev-start nextcloud-dev-status nextcloud-dev-ssh nextcloud-prod-setup install install-m uninstall
 
 commit:
 	git cz

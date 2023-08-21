@@ -742,10 +742,10 @@ vedv::image_service::remove_unused_cache() {
 #   image_id string       image id
 #
 # Output:
-#  Writes errors to the stderr
+#  Writes true if started otherwise false to the stdout
 #
 # Returns:
-#   0 if running, 1 otherwise
+#   0 on success, non-zero on error.
 #
 vedv::image_service::is_started() {
   local -r image_id="$1"

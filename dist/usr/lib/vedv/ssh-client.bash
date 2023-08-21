@@ -168,8 +168,8 @@ vedv::ssh_client::copy() {
     err "Argument 'port' must be a value between 0-65535"
     return "$ERR_INVAL_ARG"
   fi
-  if [[ -z "$source" ]]; then
-    err "Argument 'source' must not be empty"
+  if [[ ! -e "$source" ]]; then
+    err "File '${source}': does not exist"
     return "$ERR_INVAL_ARG"
   fi
   if [[ -z "$dest" ]]; then
