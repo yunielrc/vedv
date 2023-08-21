@@ -302,8 +302,16 @@ utils::get_first_invalid_positions_between_two_arrays() {
     local item_a="${_arr_a[$i]}"
     local item_b="${_arr_b[$i]}"
 
-    local item_a_id="$("$calc_item_id_func_a" "$item_a")"
-    local item_b_id="$("$calc_item_id_func_b" "$item_b")"
+    local item_a_id
+    item_a_id="$("$calc_item_id_func_a" "$item_a")" || {
+      err "Error calculating item_a id"
+      return "$ERR_INVAL_ARG"
+    }
+    local item_b_id
+    item_b_id="$("$calc_item_id_func_b" "$item_b")" || {
+      err "Error calculating item_b id"
+      return "$ERR_INVAL_ARG"
+    }
 
     if [[ "$item_a_id" != "$item_b_id" ]]; then
       first_invalid_pos_a="$i"
