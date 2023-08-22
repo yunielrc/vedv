@@ -161,7 +161,7 @@ vedv registry cache-clean"
 
     assert_success
     assert_output --partial "Usage:
-vedv registry push-link [FLAGS] [OPTIONS] [DOMAIN/]USER@COLLECTION/NAME"
+vedv registry push-link [FLAGS] OPTIONS [DOMAIN/]USER@COLLECTION/NAME"
   done
 }
 

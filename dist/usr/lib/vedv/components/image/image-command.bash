@@ -456,29 +456,27 @@ vedv::image_command::__push() {
 vedv::image_command::__push_link_help() {
   cat <<-HELPMSG
 Usage:
-${__VED_IMAGE_COMMAND_SCRIPT_NAME} image push-link [FLAGS] [OPTIONS] [DOMAIN/]USER@COLLECTION/NAME
+${__VED_IMAGE_COMMAND_SCRIPT_NAME} image push-link [FLAGS] OPTIONS [DOMAIN/]USER@COLLECTION/NAME
 
 Upload an image link to a registry
 
 Address format:
-  http download:
-    e.g.: http=http://example.com/alpine.ova | http=https://example.com/alpine.ova
-  gdrive download >100mb:
-    e.g.: gdrive-big=https://drive.google.com/file/d/1iya7JW_-anYYYzfQqitb_RDHJVAngzBQ/view?usp=drive_link
-  gdrive download <=100mb:
-    e.g.: gdrive-small=https://drive.google.com/file/d/11-Ss7b-M3ieg9x42TQoJvTv_NlzU90I2/view?usp=drive_link
-  onedrive download:
-    e.g.: onedrive=https://onedrive.live.com/embed?resid=DBC0B75F07574EAA%21272&authkey=!AP8U5cI4V7DusSg
+  Replace '<image_url|sum_url>' with image or sha256sum url
+
+  gdrive (file >100mb): gdrive-big=<image_url|sum_url>
+  gdrive (file <=100mb): gdrive-small=<image_url|sum_url>
+  onedrive: onedrive=<image_url|sum_url>
+  http: http=<image_url|sum_url>
 
 Aliases:
   ${__VED_IMAGE_COMMAND_SCRIPT_NAME} registry push-link
 
 Flags:
-  -h, --help                            show help
+  -h, --help                      show help
 
 Mandatory Options:
-  --image-address <address>             image address that will be used as a link
-  --checksum-address  <file|address>    checksum address of the image
+  --image-address <address>       image address
+  --checksum-address  <address>   checksum address
 
 
 HELPMSG

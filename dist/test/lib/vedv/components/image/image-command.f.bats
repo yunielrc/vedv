@@ -502,13 +502,13 @@ Error pushing image to registry"
 }
 
 # Tests for vedv image push-link
-@test "vedv image push-link,  Should show help" {
+@test "vedv image push-link, Should show help" {
   for flag in '' '-h' '--help'; do
     run vedv image push-link $flag
 
     assert_success
     assert_output --partial "Usage:
-vedv image push-link [FLAGS] [OPTIONS] [DOMAIN/]USER@COLLECTION/NAME"
+vedv image push-link [FLAGS] OPTIONS [DOMAIN/]USER@COLLECTION/NAME"
   done
 }
 
