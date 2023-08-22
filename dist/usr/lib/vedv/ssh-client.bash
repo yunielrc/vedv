@@ -7,6 +7,21 @@ if false; then
   . './utils.bash'
 fi
 
+declare -i __VEDV_SSH_CLIENT_CONNECTION_TIMEOUT=5
+
+#
+# Constructor
+#
+# Arguments:
+#   [connection_timeout] int   connection timeout in seconds (default: 5)
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::ssh_client::constructor() {
+  readonly __VEDV_SSH_CLIENT_CONNECTION_TIMEOUT="$1"
+}
+
 #
 # Run commands inside vm
 #
@@ -95,7 +110,7 @@ vedv::ssh_client::run_cmd() {
 
   {
     sshpass -p "$password" \
-      ssh -T -o 'ConnectTimeout=2' \
+      ssh -T -o "ConnectTimeout=${__VEDV_SSH_CLIENT_CONNECTION_TIMEOUT}" \
       -o 'UserKnownHostsFile=/dev/null' \
       -o 'PubkeyAuthentication=no' \
       -o 'StrictHostKeyChecking=no' \
@@ -195,7 +210,7 @@ vedv::ssh_client::copy() {
     # shellcheck disable=SC2086
     eval IFS='' rsync -az --no-owner --no-group "$rsync_options" \
       --exclude-from="'${exclude_file_path}'" \
-      -e "'sshpass -p ${password} ssh -o ConnectTimeout=2 -o UserKnownHostsFile=/dev/null  -o PubkeyAuthentication=no -o StrictHostKeyChecking=no -o LogLevel=ERROR -p ${port}'" \
+      -e "'sshpass -p ${password} ssh -o ConnectTimeout=${__VEDV_SSH_CLIENT_CONNECTION_TIMEOUT} -o UserKnownHostsFile=/dev/null  -o PubkeyAuthentication=no -o StrictHostKeyChecking=no -o LogLevel=ERROR -p ${port}'" \
       "'${source}'" "'${user}@${ip}:${dest_wd}'"
   } || {
     err "Error on '${user}@${ip}', rsync exit code: $?"
@@ -241,7 +256,7 @@ vedv::ssh_client::wait_for_ssh_service() {
   local -i i=0
   local -i max="$timeout"
 
-  while ! ssh -T -o 'ConnectTimeout=2' \
+  while ! ssh -T -o "ConnectTimeout=${__VEDV_SSH_CLIENT_CONNECTION_TIMEOUT}" \
     -o 'BatchMode=yes' \
     -o 'UserKnownHostsFile=/dev/null' \
     -o 'PubkeyAuthentication=no' \
@@ -304,7 +319,7 @@ vedv::ssh_client::connect() {
 
   {
     sshpass -p "$password" \
-      ssh -o 'ConnectTimeout=2' \
+      ssh -o "ConnectTimeout=${__VEDV_SSH_CLIENT_CONNECTION_TIMEOUT}" \
       -o 'UserKnownHostsFile=/dev/null' \
       -o 'PubkeyAuthentication=no' \
       -o 'StrictHostKeyChecking=no' \

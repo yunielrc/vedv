@@ -9,6 +9,11 @@ setup_file() {
   start_vm_wait_ssh "$VM_NAME_SSH"
 }
 
+setup() {
+  __VEDV_SSH_CLIENT_CONNECTION_TIMEOUT=5
+  export __VEDV_SSH_CLIENT_CONNECTION_TIMEOUT
+}
+
 teardown_file() {
   delete_vms_by_partial_vm_name "$VM_NAME_SSH"
 }
