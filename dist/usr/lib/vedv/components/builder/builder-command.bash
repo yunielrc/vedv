@@ -46,8 +46,7 @@ Flags:
   -h, --help    show the help
   --force       force the build removing the image containers
   --no-cache    do not use cache when building the image
-  --no-wait     it will not wait for the image to save data cache
-                and stopping.
+  --no-wait     it will not wait for the image to stop after build
 
 Options:
   -n, --name <name>   image name
