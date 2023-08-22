@@ -669,7 +669,7 @@ utils::sha256sum_check() {
   fi
 
   (
-    local -r file_dir="${checksum_file%/*}"
+    local -r file_dir="$(dirname "$checksum_file")"
 
     cd "$file_dir" || {
       err "Error changing directory to '${file_dir}'"

@@ -448,7 +448,7 @@ vedv::image_service::export_by_id() {
     return 0
   fi
 
-  local -r image_file_dir="${image_file%/*}"
+  local -r image_file_dir="$(dirname "$image_file")"
   local -r image_file_basename="${image_file##*/}"
   local -r checksum_file_basename="${image_file_basename}.sha256sum"
 
