@@ -13,12 +13,11 @@ A tool for developing applications in a secure and reproducible environment usin
 
 ### 👉 THIS IS A WORK IN PROGRESS
 
-<!--
 ## Motivation
 
 The software we are developing needs to be tested on a system as closed as possible to the one where it is going to be executed. Sometimes it is very difficult to satisfy this requirement with docker and we have to use virtual machines missing the docker workflow. This is why I started the development of vedv. I hope you find it useful. Thank you.
 
-## This help has been tested on a clean installation of:
+## Tested OS
 
 - Linux manjaro-gnome 6.1.30-1-MANJARO #1 SMP PREEMPT_DYNAMIC Wed May 24 22:51:44 UTC 2023 x86_64 GNU/Linux (system updated by 2023-08-21)
 
@@ -42,7 +41,7 @@ uname -a
 
 ## Install
 
-For installation from source code is required to have installed git and make.
+For installation from source code is required to have installed `git` and `make`.
 
 Clone the repository and switch to vedv directory
 
@@ -62,12 +61,6 @@ For any other linux distribution install runtime dependencies first and execute 
 make install
 ```
 
-You can leave the repository directory after installation
-
-```sh
-cd
-```
-
 ## Configure
 
 Register at <https://registry.vedv.dev>
@@ -78,13 +71,11 @@ Register at <https://registry.vedv.dev>
 
 - Scroll to the end up to the section: **Devices & sessions**
 
-<h1>
  <img width=500px  src="media/registry-nextcloud-app-password.png" alt="registry nextcloud app password">
-</h1>
 
 - Write on **App Name**: *vedv*
 
-- Press **Create new app password**
+- Click on **Create new app password**
 
 - Copy the generated password
 
@@ -135,21 +126,22 @@ Download an image and create a container, then start it
 
 ```sh
 vedv container create -n alpine admin@alpine/alpine-3.18.3-x86_64
-vedv container start alpine    # starting a container can take around 10 to 30 seconds
+# starting a container can take up to 1 minute the first time or more
+# deppending on your hardware and the image os
+vedv container start alpine
 ```
 
 Or download an image with custom name, create a container and start it
 
 ```sh
-vedv image pull -n alpine admin@alpine/alpine-3.18.3-x86_64
-vedv container create -n alpine alpine
-vedv container start -w alpine     # starting a container can take around 10 to 30 seconds
-```
+vedv image pull -n alpine admin@alpine/alpine-3.18.3-x86_64 # 13.708s 90Mbps
+vedv container create -n alpine alpine #  1.566s
+# starting a container can take up to 1 minute the first time or more
+# deppending on your hardware and the image os
+vedv container start -w alpine # 30.215s
+vedv container stop alpine # 0.836s
+vedv container start -w alpine # 13.275s
 
-Show the image and copy its name to remove it later
-
-```sh
-vedv image ls
 ```
 
 Show running container
@@ -167,7 +159,9 @@ To avoid that you can starts the container with the `--wait` flag
 If you run the login command and the container is stopped, it is started automatically
 
 ```sh
-vedv container login alpine  #  It can take around 10 to 30 seconds if the container is stopped
+# login to a container can take up to 1 minute the first time or more
+# deppending on your hardware and the image os
+vedv container login alpine
 ```
 
 Play with it :)
@@ -177,6 +171,13 @@ Exit the container and remove it
 ```sh
 vedv container rm --force alpine
 ```
+
+Show the image and copy its name to remove
+
+```sh
+vedv image ls
+```
+
 Remove the image
 
 ```sh
@@ -185,7 +186,8 @@ vedv image rm <your-image-name>
 
 ### Our Application
 
-This a modified version of the sample app from <https://www.docker.com/101-tutorial/>. Thanks to Docker for the sample app.
+This is a modified version of the sample app from <https://www.docker.com/101-tutorial/>.
+Thanks to Docker.
 
 We will be working with a simple todo list manager that is running in Node.js.
 
@@ -232,36 +234,31 @@ EXPOSE 3000/tcp
 
 Vedvfile syntax is highly inspired by Dockerfile, but with some differences
 
-Save the file and exit
+- Save the file and exit
 
 - Build it
 
 ```sh
-vedv image build -n todo-101-alpine-1.0.0-x86_64
+vedv image build -n todo-101-alpine-1.0.0-x86_64 # 1m 10.58s
 ```
-
-It took me around 1m 24s to build the image
 
 - Create a container from the image
 
 ```sh
-vedv container create -p 3000:3000/tcp -n todo-101 todo-101-alpine-1.0.0-x86_64
+vedv container create -p 3000:3000/tcp -n todo-101 todo-101-alpine-1.0.0-x86_64 # 1.718s
 # When the ports are the same like `3000:3000`  the command below is equivalent
 # vedv container create -p 3000/tcp -n todo-101 todo-101-alpine-1.0.0-x86_64
-vedv container start -w todo-101
+vedv container start -w todo-101 # 13.646s
 ```
 
 - Open your browser and go to <http://localhost:3000>
 
   You should see the todo list manager app
 
-<h1>
  <img width=500px  src="media/todo-list-manager.png" alt="todo list manager">
-</h1>
-
 
 ```sh
-vedv container rm --force todo-101
+vedv container rm --force todo-101 # 2.816s
 ```
 
 #### Updating the Source Code
@@ -276,22 +273,19 @@ vedv container rm --force todo-101
 - Let's build our updated version of the image, using the same command we used before.
 
 ```sh
-vedv image build --force -n todo-101-alpine-1.0.0-x86_64
+vedv image build --force -n todo-101-alpine-1.0.0-x86_64 # 17.945s
 ```
-
 
 Each line like the one below is a deleted layer:
 `0%...10%...20%...30%...40%...50%...60%...70%...80%...90%...100%`
 
 In this case 3 layers were deleted, starting from `COPY . .` to the end of the file.
 
-It took me around 24s to rebuild the image
-
 - Let's start a new container using the updated code.
 
 ```sh
-vedv container create -p 3000/tcp -n todo-101 todo-101-alpine-1.0.0-x86_64
-vedv container start -w todo-101
+vedv container create -p 3000/tcp -n todo-101 todo-101-alpine-1.0.0-x86_64 # 1.654s
+vedv container start -w todo-101 # 13.698s
 ```
 
 - Refresh your browser on <http://localhost:3000> and you should see your updated help text!
@@ -299,7 +293,7 @@ vedv container start -w todo-101
 - Remove the container
 
 ```sh
-vedv container rm --force todo-101
+vedv container rm --force todo-101 # 3.285s
 ```
 
 #### Push the image to the registry
@@ -309,29 +303,186 @@ vedv container rm --force todo-101
 <!--
 💰  I am looking for funding to increase the storage space and provisioning
     a best server.
+-->
 
 ```sh
-vedv image push <your_user_id>@alpine/todo-101-alpine-1.0.0-x86_64
+vedv image push <your_user_id>@alpine/todo-101-alpine-1.0.0-x86_64 # 1m 37.62s 12Mbps
 # If you want to push the image with a different name run the command below:
 # vedv image push -n todo-101-alpine-1.0.0-x86_64 <your_user_id>@alpine/<your_image_name>-1.0.0-x86_64
 ```
 
-- You can use the command bmon to see the upload activity
-
-Install bmon if you don't have it, open it and select the network interface
-
-It took around 1m 30s to upload the image with an upload speed of 12Mbps
+- To see the upload activity, install `bmon`, open it and select the network interface
 
 ```sh
-bmon
+bmon -b
 ```
+
+- On finish open your browser and go to <https://registry.vedv.dev/apps/files/?dir=/00-user-images>
+
+You should see the collection:
+
+```
+<your_user_id>@alpine
+```
+
+- Click on the collection and you should see the image file an its .sha256sum file:
+
+```
+todo-101-alpine-1.0.0-x86_64.ova
+todo-101-alpine-1.0.0-x86_64.ova.sha256sum
+```
+
+**The uploaded image size is around 130MB, to give chance other users to test vedv,
+please delete the image from the registry and push an image link instead. Thanks.**
+
+👍 Congratulations, you have builded and uploaded your first image to the registry.
+
+### Push an image link to the registry
+
+**If your registry has images that weights MB, to give chance other users to test
+vedv, please delete that images and push image links instead. Thanks.**
+
+Due to the limited storage space at the moment, you should push image links to
+the registry.
+
+- Export the image to a file with the .ova extension
+
+```sh
+vedv image export todo-101-alpine-1.0.0-x86_64 todo-101-alpine-1.0.0-x86_64.ova # 6.317s
+```
+
+- Upload the image and the .sha256sum to OneDrive or Google Drive or any http server
+
+#### Share on OneDrive
+
+1. Go to <https://onedrive.live.com>
+
+2. Open the image file menu and Click on **Embed** as shown in the image below
+
+<img width=500px  src="media/onecloud-share-embed-menu.png" alt="onecloud share embed menu">
+
+3. Click on **Generate** button
+
+<img width=400px  src="media/onecloud-share-embed-button.png" alt="onecloud share embed button">
+
+4. Reaload onedrive page and Click on **Shared**
+
+<img width=720px  src="media/onecloud-shared.png" alt="onecloud shared">
+
+5. Click on **Links Tab** and Copy it
+
+<img width=500px  src="media/onecloud-share-embed-copy.png" alt="onecloud share embed copy">
+
+- Open your terminal and save the image link to a variable
+
+Replace `<image_link>` with the link you have copied
+
+```sh
+image='onedrive=<image_link>'
+```
+
+- Repeat the steps 1-5 for sharing the .sha256sum file
+
+- On the same terminal save the .sha256sum link to a variable
+
+Replace `<sum_link>` with the link you have copied
+
+```sh
+sum='onedrive=<sum_link>'
+```
+
+##### Push the image link to the registry
+
+- On the same terminal execute the command below
+
+```sh
+vedv image push-link --image-address "$image" --checksum-address "$sum" \
+ <your_user_id>@alpine/todo-101-alpine-1.0.0-x86_64 # 2.706s
+```
+
+- Remove the image to download it again to test the link
+
+```sh
+vedv image rm todo-101-alpine-1.0.0-x86_64 # 0.995s
+```
+
+- Pull the image from the link
+
+Use the flag `--no-cache` to download the image again
+
+```sh
+vedv image pull --no-cache -n todo-101-alpine-1.0.0-x86_64 \
+  <your_user_id>@alpine/todo-101-alpine-1.0.0-x86_64         # 18.487s 90Mbps
+```
+
+👍 Congratulations, you have uploaded your image link to the registry and saved space for other users.
+
+#### Share on Google Drive
+
+1. Go to <https://drive.google.com/>
+
+2. Open the image file menu and Click on **Share** as shown in the image below
+
+<img width=500px  src="media/gdrive-share-menu.png" alt="gdrive share menu">
+
+3. Click on **General access** and select **Anyone with the link**
+
+<img width=400px  src="media/gdrive-share-view.png" alt="gdrive share view">
+
+5. Copy the link and click on **Done**
+
+<img width=500px  src="media/gdrive-share-view-done.png" alt="gdrive share view done">
+
+- Open your terminal and save the image link to a variable
+
+Replace `<image_link>` with the link you have copied
+
+```sh
+image='gdrive-big=<image_link>'
+```
+
+- Repeat the steps 1-5 for sharing the .sha256sum file
+
+- On the same terminal save the .sha256sum link to a variable
+
+Replace `<sum_link>` with the link you have copied
+
+```sh
+sum='gdrive-small=<sum_link>'
+```
+
+##### Push the image link to the registry
+
+- On the same terminal execute the command below
+
+```sh
+vedv image push-link --image-address "$image" --checksum-address "$sum" \
+ <your_user_id>@alpine/todo-101-alpine-1.0.0-x86_64
+```
+
+- Remove the image to download it again to test the link
+
+```sh
+vedv image rm todo-101-alpine-1.0.0-x86_64
+```
+
+- Pull the image from the link
+
+Use the flag `--no-cache` to download the image again
+
+```sh
+vedv image pull --no-cache -n todo-101-alpine-1.0.0-x86_64 \
+  <your_user_id>@alpine/todo-101-alpine-1.0.0-x86_64
+```
+
+👍 Congratulations, you have uploaded your image link to the registry and saved space for other users.
 
 ### Vedvfile instructions
 
 ```dockerfile
 
 # --------------
-# Text surrounded by `` on the comments is for emphasize.
+# Text surrounded by `` on the comments here is for emphasize.
 
 # Environment variables are always expanded in the Vedvfile keeping its quotes,
 # even those surrounded by ''. To avoid a variable expansion on Vedvfile escape
@@ -347,7 +498,8 @@ bmon
 
 # Host os environment variables aren't available in the Vedvfile
 # -------------
-
+# Download the image from the registry and import it
+FROM admin@alpine/alpine-3.18.3-x86_64
 # Declare an environment variable
 # image os evals `DEST=dest`
 ENV DEST=dest
@@ -388,28 +540,11 @@ RUN echo '$GREETINGS'
 SYSTEM --cpus 2 --memory 512
 ```
 
-### Push image link to the registry
+## Contributing
 
-Due to the limited storage space at the moment, you can push image links to
-the registry, it only takes 1KB of space.
+Contributions, issues and feature requests are welcome!
 
-- Export the image to a file with the .ova extension
-
-```sh
-vedv image export todo-101-alpine-1.0.0-x86_64 todo-101-alpine-1.0.0-x86_64.ova
-```
-
-- Copy the image and the .sha256sum to OneDrive, Google Drive or any http server
-
-#### Share on OneDrive
-
-
-
-#### Share on Google Drive
-
-#### Share on http server
-
-## Development dependencies
+### Development dependencies
 
 - make
 - shfmt
@@ -427,6 +562,6 @@ vedv image export todo-101-alpine-1.0.0-x86_64 todo-101-alpine-1.0.0-x86_64.ova
   - commitizen
   - cz-conventional-changelog
 
-## Contributing
+## Show your support
 
-Contributions, issues and feature requests are welcome -->
+Give a ⭐️ if this project helped you!
