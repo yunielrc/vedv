@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+#
+# Install manjaro prod packages
+#
+
+set -eu
+
+. ./packages.env
+
+sudo pacman -Syu --noconfirm --needed yay
+
+yay -Sy --noconfirm --needed "${PACKAGES_PROD_MANJARO_YAY[@]}"
+
+sudo -H pip install --break-system-packages "${PACKAGES_PROD_ANY_PIP[@]}"

@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+#
+# List manjaro dev dependencies
+#
+
+set -eu
+
+. ./packages.env
+
+echo '# MANJARO - YAY'
+pacman --color never -Q "${PACKAGES_DEV_MANJARO_YAY[@]}"
+
+echo '# MANJARO - NPM'
+export npm_config_parseable=true
+npm list -g |
+  grep -Po 'node_modules/\K.*' |
+  grep -E "$(tr ' ' '|' <<<"${PACKAGES_DEV_ANY_NPM[*]}")" |
+  sed -E 's/(.)@/\1 /'

@@ -9,93 +9,43 @@ set -eu
 # ERRORS
 readonly ERR_INVAL_ARG=69
 
-# CONSTANTS
-readonly SCRIPT_NAME="${0##*/}"
+# ENV VARS
+readonly OS="${OS:-}"
+readonly DESTDIR="${DESTDIR:-}"
 
-#
-# Show help
-#
-# Output:
-#  Writes the help to the stdout
-#
-install__help() {
-  cat <<-HELPMSG
-Usage:
-${SCRIPT_NAME} [OPTIONS] [FLAGS]
+# INSTALLS VEDV
+if [ -n "$OS" ]; then
 
-Installs vedv on the system
+  readonly install_deps="tools/install-pkgs-prod-${OS}"
 
-Flags:
-  -h, --help    show this help
-
-Options:
-  --os <os>         operating system where vedv will be installed
-  --destdir <dir>   the directory where vedv files will be installed
-                    (default: /)
-  --depends         if set, the dependencies will be installed,
-                    the --os option must be specified.
-                    (default: false)
-
-HELPMSG
-}
-
-#
-# Installs vedv on the system
-#
-# Arguments:
-#   [os]          string    the operating system where the vedv will be installed
-#   [dest_dir]    string    the directory where the vedv files will be installed
-#   [no_depends]  bool      if true, the dependencies will not be installed
-#                           (default: false)
-#
-# Output:
-#  Writes the output to the stdout
-#
-# Returns:
-#  0 on success, non-zero on error.
-#
-install__install() {
-  readonly __os="${1:-}"
-  readonly __dest_dir="${2:-}"
-  readonly __depends="${3:-false}"
-
-  # install dependencies
-  if [ "$__depends" = true ]; then
-    if [ -z "$__os" ]; then
-      echo "No os argument" >&2
-      return "$ERR_INVAL_ARG"
-    fi
-
-    readonly __os_cac_file="icac/${__os}.local.prod.cac"
-
-    if [ ! -f "$__os_cac_file" ]; then
-      echo "invalid os: ${__os}" >&2
-      echo "file '${__os_cac_file}' not found" >&2
-      return "$ERR_INVAL_ARG"
-    fi
-
-    "icac/${__os}.local.prod.cac"
+  if [ ! -f "$install_deps" ]; then
+    echo "invalid os: ${OS}" >&2
+    echo "file '${install_deps}' not found" >&2
+    return "$ERR_INVAL_ARG"
   fi
 
-  cp -vr dist/etc/vedv "${__dest_dir}/etc"
+  "$install_deps"
+fi
 
-  install -m644 dist/etc/skel/.vedv.env \
-    "${__dest_dir}/etc/skel/.vedv.env"
+cp -vr dist/etc/vedv "${DESTDIR}/etc"
 
-  cp -vr dist/usr/lib/vedv "${__dest_dir}/usr/lib"
+install -m644 dist/etc/skel/.vedv.env \
+  "${DESTDIR}/etc/skel/.vedv.env"
 
-  install -v -Dm755 dist/usr/bin/vedv \
-    "${__dest_dir}/usr/bin/vedv"
+cp -vr dist/usr/lib/vedv "${DESTDIR}/usr/lib"
 
-  install -v -Dm644 dist/usr/share/licenses/vedv/LICENSE \
-    "${__dest_dir}/usr/share/licenses/vedv/LICENSE"
+install -v -Dm755 dist/usr/bin/vedv \
+  "${DESTDIR}/usr/bin/vedv"
 
-  chmod -v 755 "${__dest_dir}/usr/lib/vedv/components/builder/__bin/vedvfile-parser"
+install -v -Dm644 dist/usr/share/licenses/vedv/LICENSE \
+  "${DESTDIR}/usr/share/licenses/vedv/LICENSE"
 
-  echo ''
-  echo '>> INSTALLED SUCCESSFULLY'
+chmod -v 755 "${DESTDIR}/usr/lib/vedv/components/builder/__bin/vedvfile-parser"
 
-  cat <<'MSG'
+echo ''
+echo '>> INSTALLED SUCCESSFULLY'
+
+cat <<'MSG'
 
 >> CONFIGURE VEDV:
 
@@ -105,54 +55,3 @@ cp /etc/skel/.vedv.env ~/
 # edit the file and configure the registry
 vim ~/.vedv.env
 MSG
-}
-
-install__run_cmd() {
-  _os=''
-  _dest_dir=''
-  _depends=false
-
-  while [ $# -gt 0 ]; do
-    case "$1" in
-    # flags
-    -h | --help)
-      install__help
-      return 0
-      ;;
-    # options
-    --os)
-      readonly _os="${2:-}"
-      # validate argument
-      if [ -z "$_os" ]; then
-        echo "No os argument" >&2
-        install__help
-        return "$ERR_INVAL_ARG"
-      fi
-      shift 2
-      ;;
-    --destdir)
-      readonly _dest_dir="${2:-}"
-      # validate argument
-      if [ -z "$_dest_dir" ]; then
-        echo "No destdir argument" >&2
-        install__help
-        return "$ERR_INVAL_ARG"
-      fi
-      shift 2
-      ;;
-    --depends)
-      shift
-      readonly _depends=true
-      ;;
-    *)
-      echo "Invalid input: ${1}" >&2
-      install__help
-      return "$ERR_INVAL_INPUT"
-      ;;
-    esac
-  done
-
-  install__install "$_os" "$_dest_dir" "$_depends"
-}
-
-install__run_cmd "$@"

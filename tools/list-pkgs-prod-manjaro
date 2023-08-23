@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+#
+# List manjaro prod dependencies
+#
+
+set -eu
+
+. ./packages.env
+
+echo '# MANJARO - YAY'
+pacman --color never -Q bash python
+pacman --color never -Q "${PACKAGES_PROD_MANJARO_YAY[@]}"
+
+echo '# MANJARO - PIP'
+pip list |
+  grep -E "$(tr ' ' '|' <<<"${PACKAGES_PROD_ANY_PIP[*]}")" |
+  tr -s ' '

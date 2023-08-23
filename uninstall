@@ -6,90 +6,14 @@
 
 set -eu
 
-# ERRORS
-readonly ERR_INVAL_ARG=69
+# ENV VARS
+readonly FROMDIR="${FROMDIR:-}"
 
-# CONSTANTS
-readonly SCRIPT_NAME="${0##*/}"
+# UNINSTALLS VEDV
+rm -vrf "${FROMDIR}/etc/vedv"
+rm -vrf "${FROMDIR}/etc/skel/.vedv.env"
+rm -vrf "${FROMDIR}/usr/lib/vedv"
+rm -vrf "${FROMDIR}/usr/bin/vedv"
+rm -vrf "${FROMDIR}/usr/share/licenses/vedv"
 
-#
-# Show help
-#
-# Output:
-#  Writes the help to the stdout
-#
-uninstall__help() {
-  cat <<-HELPMSG
-Usage:
-${SCRIPT_NAME} [OPTIONS] [FLAGS]
-
-Uninstall vedv from the system
-
-Flags:
-  -h, --help    show this help
-
-Options:
-  --fromdir     the directory where vedv files will be removed
-                (default: /)
-
-HELPMSG
-}
-
-#
-# Installs vedv on the system
-#
-# Arguments:
-#   [from_dir]    string    the directory where the vedv files will be installed
-#
-# Output:
-#  Writes the output to the stdout
-#
-# Returns:
-#  0 on success, non-zero on error.
-#
-uninstall__uninstall() {
-  readonly __from_dir="${1:-}"
-
-  rm -vrf "${__from_dir}/etc/vedv"
-  rm -vrf "${__from_dir}/etc/skel/.vedv.env"
-  rm -vrf "${__from_dir}/usr/lib/vedv"
-  rm -vrf "${__from_dir}/usr/bin/vedv"
-  rm -vrf "${__from_dir}/usr/share/licenses/vedv"
-
-  echo ''
-  echo '>> UNINSTALLED SUCCESSFULLY'
-}
-
-uninstall__run_cmd() {
-  _from_dir=''
-
-  while [ $# -gt 0 ]; do
-    case "$1" in
-    # flags
-    -h | --help)
-      uninstall__help
-      return 0
-      ;;
-    # options
-    --fromdir)
-      readonly _from_dir="${2:-}"
-      # validate argument
-      if [ -z "$_from_dir" ]; then
-        echo "No fromdir argument" >&2
-        uninstall__help
-        return "$ERR_INVAL_ARG"
-      fi
-      shift 2
-      ;;
-    *)
-      echo "Invalid input: ${1}" >&2
-      uninstall__help
-      return "$ERR_INVAL_INPUT"
-      ;;
-    esac
-  done
-
-  uninstall__uninstall "$_from_dir"
-}
-
-uninstall__run_cmd "$@"
+echo '>> UNINSTALLED SUCCESSFULLY'

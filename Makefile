@@ -1,10 +1,26 @@
-.PHONY: commit test-all test-unit test-tag test-name untested manjaro-dev-configure nextcloud-dev-setup nextcloud-dev-stop nextcloud-dev-destroy nextcloud-dev-start nextcloud-dev-status nextcloud-dev-ssh nextcloud-prod-setup install install-m uninstall
+.PHONY: install uninstall configure-manjaro commit test-all test-unit test-tag test-name untested nextcloud-dev-setup nextcloud-dev-stop nextcloud-dev-destroy nextcloud-dev-start nextcloud-dev-status nextcloud-dev-ssh nextcloud-prod-setup
+# grep -Po '^\S+(?=:)' Makefile | tr '\n' ' '
+
+install:
+	# OPTIONAL ENV VARS: OS, DESTDIR
+	./install
+
+uninstall:
+	# OPTIONAL ENV VARS: FROMDIR
+	./uninstall
+
+configure-manjaro:
+	./tools/install-pkgs-prod-manjaro
+	./tools/install-pkgs-dev-manjaro
 
 commit:
 	git cz
 
 test-all:
-	./tools/bats --recursive dist/test
+	# MANDATORY ENV VARS: OS
+	./tools/bats --recursive dist/test && \
+	./tools/update-pkgs-versions && \
+	./tools/update-readme
 
 test-unit:
 	./tools/bats $(u)
@@ -17,9 +33,6 @@ test-name:
 
 untested:
 	./tools/untested $(f)
-
-manjaro-dev-configure:
-	./icac/manjaro.local.dev.cac
 
 nextcloud-dev-setup:
 	./icac/nextcloud/vm.dev/nextcloud.vbox.iac
@@ -43,11 +56,3 @@ nextcloud-dev-ssh:
 nextcloud-prod-setup:
 	./icac/nextcloud/vultr.prod/nextcloud-aio/nextcloud-aio.vultr.iac
 
-install-m:
-	sudo ./install --os manjaro --depends
-
-install:
-	sudo ./install
-
-uninstall:
-	sudo ./uninstall
