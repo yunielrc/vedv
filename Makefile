@@ -9,9 +9,10 @@ uninstall:
 	# OPTIONAL ENV VARS: FROMDIR
 	./uninstall
 
-configure-manjaro:
-	./tools/install-pkgs-prod-manjaro
-	./tools/install-pkgs-dev-manjaro
+configure:
+	# MANDATORY ENV VAR: OS
+	"./tools/install-pkgs-prod-${OS}" && \
+	"./tools/install-pkgs-dev-${OS}"
 
 commit:
 	git cz

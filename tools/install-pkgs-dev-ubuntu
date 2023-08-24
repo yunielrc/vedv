@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+#
+# Install manjaro dev packages
+#
+
+set -eu
+
+. ./packages.env
+
+sudo apt-get update -y
+sudo DEBIAN_FRONTEND=noninteractive apt-get install -y "${PKG_DEV_UBUNTU_APT[@]}"
+
+# shellcheck disable=SC2086
+for s in "${PKG_DEV_UBUNTU_SNAP[@]}"; do sudo snap install $s; done
+
+sudo -H npm install -g "${PKG_DEV_UBUNTU_NPM[@]}"
+
+# Configure
+git config core.hooksPath .githooks
+
+# Install bash bats libs
+for bats_lib in bats-support bats-assert bats-file; do
+  repo="https://github.com/bats-core/${bats_lib}.git"
+  tag="$(git ls-remote --tags --exit-code --sort='v:refname' --refs "$repo" | tail -n 1 | cut -d/ -f3)"
+
+  sudo -H git clone "$repo" --depth 1 --branch "$tag" "/usr/lib/bash-${bats_lib}-git" >/dev/null
+done
+
+# Install vultr-cli
+cd "$(mktemp -d)"
+wget -qO- 'https://api.github.com/repos/vultr/vultr-cli/releases/latest' |
+  grep -om1 'https://.*/vultr-cli_.*_linux_64-bit.tar.gz' |
+  wget -qi -
+tar xzf vultr-cli_*_linux_64-bit.tar.gz
+sudo install -m 755 vultr-cli /usr/local/bin/

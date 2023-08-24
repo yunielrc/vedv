@@ -5,22 +5,21 @@
 ## What are the packages with which the application worked well?
 ##
 
-# MANJARO - YAY
-git 2.41.0-2
+# YAY
 make 4.4.1-2
+davfs2 1.7.0-1
+python-pre-commit 2.20.0-3
 shfmt 3.7.0-1
 shellcheck 0.9.0-45
-python-pre-commit 2.20.0-3
+nodejs 20.5.0-1
+npm 9.8.1-1
 bash-bats 1.9.0-1
 bash-bats-assert-git 2.1.0-1
 bash-bats-file 0.3.0-2
 bash-bats-support-git 0.3.0-1
-nodejs 20.5.0-1
-npm 9.8.1-1
 vultr-cli 2.17.0-1
-davfs2 1.7.0-1
-# MANJARO - NPM
-@commitlint/cli
-@commitlint/config-conventional
-commitizen
-cz-conventional-changelog
+# NPM
+@commitlint/cli@17.7.1
+@commitlint/config-conventional@17.7.0
+commitizen@4.3.0
+cz-conventional-changelog@3.3.0

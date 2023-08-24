@@ -23,24 +23,23 @@ The software we are developing needs to be tested on a system as closed as possi
 
 ${MANJARO_UNAME_A}
 
-Packages:
+Runtime Dependencies:
 
 ```sh
 ${MANJARO_PACKAGES_PROD}
 
 ```
 
-## Dependencies
+### Ubuntu
 
-### Runtime Dependencies
+${UBUNTU_UNAME_A}
 
-- virtualbox
-- gnu-netcat
-- sshpass
-- libxml2
-- python-pip
-  - dockerfile-parse
-  - petname
+Runtime Dependencies:
+
+```sh
+${UBUNTU_PACKAGES_PROD}
+
+```
 
 ## Install
 
@@ -55,7 +54,7 @@ git clone https://github.com/yunielrc/vedv.git && cd vedv
 Install on Manjaro:
 
 ```sh
-make install-m
+sudo make OS=manjaro install
 ```
 
 For any other linux distribution install runtime dependencies first and execute the command below:
@@ -127,7 +126,7 @@ vedv image pull -n alpine admin@alpine/alpine-3.18.3-x86_64 # 13.708s 90Mbps
 vedv container create -n alpine alpine #  1.566s
 # starting a container can take up to 1 minute the first time or more
 # deppending on your hardware and the image os
-vedv container start -w alpine # 30.215s
+vedv container start -w alpine # 30.215s / ubuntu-server starts in around 13s
 vedv container stop alpine # 0.836s
 vedv container start -w alpine # 13.275s
 

@@ -9,6 +9,6 @@ set -eu
 
 sudo pacman -Syu --noconfirm --needed yay
 
-yay -Sy --noconfirm --needed "${PACKAGES_PROD_MANJARO_YAY[@]}"
+yay -Sy --noconfirm --needed "${PKG_PROD_MANJARO_YAY[@]}"
 
-sudo -H pip install --break-system-packages "${PACKAGES_PROD_ANY_PIP[@]}"
+sudo -H pip3 install --break-system-packages "${PKG_PROD_MANJARO_PIP[@]}"

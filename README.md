@@ -25,10 +25,10 @@ The software we are developing needs to be tested on a system as closed as possi
 
 Linux yuniel-pc 6.1.44-1-MANJARO #1 SMP PREEMPT_DYNAMIC Wed Aug  9 09:02:26 UTC 2023 x86_64 GNU/Linux
 
-Packages:
+Runtime Dependencies:
 
 ```sh
-# MANJARO - YAY
+# YAY
 bash 5.1.016-2
 python 3.11.3-2
 virtualbox 7.0.10-1
@@ -36,23 +36,22 @@ gnu-netcat 0.7.1-9
 sshpass 1.10-1
 python-pip 23.2.1-1
 libxml2 2.11.4-1
-# MANJARO - PIP
+# PIP
 dockerfile-parse 2.0.0
 petname 2.6
 
 ```
 
-## Dependencies
+### Ubuntu
 
-### Runtime Dependencies
+${UBUNTU_UNAME_A}
 
-- virtualbox
-- gnu-netcat
-- sshpass
-- libxml2
-- python-pip
-  - dockerfile-parse
-  - petname
+Runtime Dependencies:
+
+```sh
+${UBUNTU_PACKAGES_PROD}
+
+```
 
 ## Install
 
@@ -67,7 +66,7 @@ git clone https://github.com/yunielrc/vedv.git && cd vedv
 Install on Manjaro:
 
 ```sh
-make install-m
+sudo make OS=manjaro install
 ```
 
 For any other linux distribution install runtime dependencies first and execute the command below:
@@ -149,13 +148,18 @@ vedv container start alpine
 Or download an image with custom name, create a container and start it
 
 ```sh
-vedv image pull -n alpine admin@alpine/alpine-3.18.3-x86_64 # 13.708s 90Mbps
-vedv container create -n alpine alpine #  1.566s
+vedv image pull -n alpine admin@alpine/alpine-3.18.3-x86_64
+# 13.708s 90Mbps
+vedv container create -n alpine alpine
+#  1.566s
 # starting a container can take up to 1 minute the first time or more
 # deppending on your hardware and the image os
-vedv container start -w alpine # 30.215s
-vedv container stop alpine # 0.836s
-vedv container start -w alpine # 13.275s
+vedv container start -w alpine
+# 30.215s / ubuntu-server starts in around 13s
+vedv container stop alpine
+# 0.836s
+vedv container start -w alpine
+# 13.275s
 
 ```
 

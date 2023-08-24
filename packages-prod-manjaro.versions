@@ -5,7 +5,7 @@
 ## What are the packages with which the application worked well?
 ##
 
-# MANJARO - YAY
+# YAY
 bash 5.1.016-2
 python 3.11.3-2
 virtualbox 7.0.10-1
@@ -13,6 +13,6 @@ gnu-netcat 0.7.1-9
 sshpass 1.10-1
 python-pip 23.2.1-1
 libxml2 2.11.4-1
-# MANJARO - PIP
+# PIP
 dockerfile-parse 2.0.0
 petname 2.6

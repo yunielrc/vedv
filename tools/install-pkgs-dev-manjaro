@@ -9,9 +9,9 @@ set -eu
 
 sudo pacman -Syu --noconfirm --needed yay
 
-yay -Sy --noconfirm --needed "${PACKAGES_DEV_MANJARO_YAY[@]}"
+yay -Sy --noconfirm --needed "${PKG_DEV_MANJARO_YAY[@]}"
 
-sudo -H npm install -g "${PACKAGES_DEV_ANY_NPM[@]}"
+sudo -H npm install -g "${PKG_DEV_MANJARO_NPM[@]}"
 
 # Configure
 git config core.hooksPath .githooks

@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+#
+# Install manjaro prod packages
+#
+
+set -eu
+
+. ./packages.env
+
+sudo apt-get update -y
+sudo DEBIAN_FRONTEND=noninteractive apt-get install -y "${PKG_PROD_UBUNTU_APT[@]}"
+
+sudo -H pip3 install "${PKG_PROD_UBUNTU_PIP[@]}"
