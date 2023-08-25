@@ -316,13 +316,34 @@ HELPMSG
 }
 
 #
+# Show help for __stop command
+#
+# Output:
+#  Writes the help to the stdout
+#
+vedv::container_command::__stop_help() {
+  cat <<-HELPMSG
+Usage:
+${__VED_CONTAINER_COMMAND_SCRIPT_NAME} container stop [FLAGS] CONTAINER [CONTAINER...]
+
+Stop one or more running containers
+
+Flags:
+  -h, --help    show help
+  --no-save     do not save state
+HELPMSG
+}
+
+#
 # Stop one or more running containers
 #
 # Flags:
-#   [-h | --help]          show help
+#   -h, --help    show help
+#   --no-save     do not save state
 #
 # Arguments:
 #   CONTAINER  [CONTAINER...]     one or more container name or id
+#
 #
 # Output:
 #   writes container name or id to stdout
@@ -332,15 +353,22 @@ HELPMSG
 #
 vedv::container_command::__stop() {
   local container_names_or_ids=''
+  local save_state=true
 
   if [[ $# == 0 ]]; then set -- '-h'; fi
 
   while [[ $# -gt 0 ]]; do
     case "$1" in
+    # flags
     -h | --help)
       vedv::container_command::__stop_help
       return 0
       ;;
+    --no-save)
+      readonly save_state=false
+      shift
+      ;;
+    # arguments
     *)
       readonly container_names_or_ids="$*"
       break
@@ -354,25 +382,11 @@ vedv::container_command::__stop() {
     return "$ERR_INVAL_ARG"
   fi
 
-  vedv::container_service::stop "$container_names_or_ids"
-}
-
-#
-# Show help for __stop command
-#
-# Output:
-#  Writes the help to the stdout
-#
-vedv::container_command::__stop_help() {
-  cat <<-HELPMSG
-Usage:
-${__VED_CONTAINER_COMMAND_SCRIPT_NAME} container stop CONTAINER [CONTAINER...]
-
-Stop one or more running containers
-
-Flags:
-  -h, --help    show help
-HELPMSG
+  if [[ "$save_state" == true ]]; then
+    vedv::container_service::save_state "$container_names_or_ids"
+  else
+    vedv::container_service::stop "$container_names_or_ids"
+  fi
 }
 
 #

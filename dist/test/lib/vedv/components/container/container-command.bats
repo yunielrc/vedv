@@ -145,7 +145,7 @@ Flags:
 
 # Tests for vedv::container_command::__stop()
 @test "vedv::container_command::__stop(), with arg '-h|--help|help' should show help" {
-  local -r help_output='vedv container stop CONTAINER [CONTAINER...]'
+  local -r help_output='vedv container stop [FLAGS] CONTAINER [CONTAINER...]'
 
   run vedv::container_command::__stop -h
 
@@ -161,10 +161,34 @@ Flags:
 @test 'vedv::container_command::__stop(), should stop a container' {
   local -r container_name_or_id='container_name1 container_name2'
 
+  vedv::container_service::save_state() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+
+  vedv::container_service::stop() {
+    assert_equal "$*" "${container_name_or_id}"
+  }
+
+  run vedv::container_command::__stop --no-save "$container_name_or_id"
+
+  assert_success
+  assert_output ''
+}
+
+@test 'vedv::container_command::__stop(), should save state container' {
+  local -r container_name_or_id='container_name1 container_name2'
+
+  vedv::container_service::save_state() {
+    assert_equal "$*" "${container_name_or_id}"
+  }
+  vedv::container_service::stop() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+
   run vedv::container_command::__stop "$container_name_or_id"
 
   assert_success
-  assert_output "${container_name_or_id}"
+  assert_output ''
 }
 
 # Tests for vedv::container_command::__rm()

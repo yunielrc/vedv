@@ -300,6 +300,210 @@ Error getting vmobj id for containers: 'name1' 'id1' 'name2' 'id2' "
   assert_output ""
 }
 
+# Tests for vedv::vmobj_service::__stop_base()
+
+@test "vedv::vmobj_service::__stop_base() should return error when type is empty" {
+  local -r type=""
+  local -r vmobj_id=""
+  local -r hypervisor_stop_func_wo_args=""
+  local -r stop_type=""
+
+  run vedv::vmobj_service::__stop_base \
+    "$type" "$vmobj_id" \
+    "$hypervisor_stop_func_wo_args" \
+    "$stop_type"
+
+  assert_failure
+  assert_output "Argument 'type' must not be empty"
+}
+
+@test "vedv::vmobj_service::__stop_base() should return error when vmobj_id is empty" {
+  local -r type="container"
+  local -r vmobj_id=""
+  local -r hypervisor_stop_func_wo_args=""
+  local -r stop_type=""
+
+  run vedv::vmobj_service::__stop_base \
+    "$type" "$vmobj_id" \
+    "$hypervisor_stop_func_wo_args" \
+    "$stop_type"
+
+  assert_failure
+  assert_output "Invalid argument 'vmobj_id': it's empty"
+}
+
+@test "vedv::vmobj_service::__stop_base() should return error when hypervisor_stop_func_wo_args is empty" {
+  local -r type="container"
+  local -r vmobj_id="12345"
+  local -r hypervisor_stop_func_wo_args=""
+  local -r stop_type=""
+
+  run vedv::vmobj_service::__stop_base \
+    "$type" "$vmobj_id" \
+    "$hypervisor_stop_func_wo_args" \
+    "$stop_type"
+
+  assert_failure
+  assert_output "Invalid argument 'hypervisor_stop_func_wo_args': it's empty"
+}
+
+@test "vedv::vmobj_service::__stop_base() should return error when stop_type is empty" {
+  local -r type="container"
+  local -r vmobj_id="12345"
+  local -r hypervisor_stop_func_wo_args="stop_func"
+  local -r stop_type=""
+
+  run vedv::vmobj_service::__stop_base \
+    "$type" "$vmobj_id" \
+    "$hypervisor_stop_func_wo_args" \
+    "$stop_type"
+
+  assert_failure
+  assert_output "Invalid argument 'stop_type': it's empty"
+}
+
+@test "vedv::vmobj_service::__stop_base() Should fail if is_started fails" {
+  local -r type="container"
+  local -r vmobj_id="12345"
+  local -r hypervisor_stop_func_wo_args="stop_func"
+  local -r stop_type="stop"
+
+  vedv::vmobj_service::is_started() {
+    assert_equal "$*" "container 12345"
+    return 1
+  }
+
+  run vedv::vmobj_service::__stop_base \
+    "$type" "$vmobj_id" \
+    "$hypervisor_stop_func_wo_args" \
+    "$stop_type"
+
+  assert_failure
+  assert_output "Failed to get start status for container: '12345'"
+}
+
+@test "vedv::vmobj_service::__stop_base() Should succeed If vm is already stopped" {
+  local -r type="container"
+  local -r vmobj_id="12345"
+  local -r hypervisor_stop_func_wo_args="stop_func"
+  local -r stop_type="stop"
+
+  vedv::vmobj_service::is_started() {
+    assert_equal "$*" "container 12345"
+    echo false
+  }
+
+  run vedv::vmobj_service::__stop_base \
+    "$type" "$vmobj_id" \
+    "$hypervisor_stop_func_wo_args" \
+    "$stop_type"
+
+  assert_success
+  assert_output "12345"
+}
+
+@test "vedv::vmobj_service::__stop_base() should fail If get_vm_name fails" {
+  local -r type="container"
+  local -r vmobj_id="12345"
+  local -r hypervisor_stop_func_wo_args="stop_func"
+  local -r stop_type="stop"
+
+  vedv::vmobj_service::is_started() {
+    assert_equal "$*" "container 12345"
+    echo true
+  }
+  vedv::vmobj_entity::get_vm_name() {
+    assert_equal "$*" "container 12345"
+    return 1
+  }
+
+  run vedv::vmobj_service::__stop_base \
+    "$type" "$vmobj_id" \
+    "$hypervisor_stop_func_wo_args" \
+    "$stop_type"
+
+  assert_failure
+  assert_output "Failed to get vm name for container: '12345'"
+}
+
+@test "vedv::vmobj_service::__stop_base() should fail If vm_name is empty" {
+  local -r type="container"
+  local -r vmobj_id="12345"
+  local -r hypervisor_stop_func_wo_args="stop_func"
+  local -r stop_type="stop"
+
+  vedv::vmobj_service::is_started() {
+    assert_equal "$*" "container 12345"
+    echo true
+  }
+  vedv::vmobj_entity::get_vm_name() {
+    assert_equal "$*" "container 12345"
+  }
+
+  run vedv::vmobj_service::__stop_base \
+    "$type" "$vmobj_id" \
+    "$hypervisor_stop_func_wo_args" \
+    "$stop_type"
+
+  assert_failure
+  assert_output "There is no vm name for container: '12345'"
+}
+
+@test "vedv::vmobj_service::__stop_base() should fail If stop fails" {
+  local -r type="container"
+  local -r vmobj_id="12345"
+  local -r hypervisor_stop_func_wo_args="stop_func"
+  local -r stop_type="stop"
+
+  vedv::vmobj_service::is_started() {
+    assert_equal "$*" "container 12345"
+    echo true
+  }
+  vedv::vmobj_entity::get_vm_name() {
+    assert_equal "$*" "container 12345"
+    echo "container:foo-bar|crc:12345|"
+  }
+  stop_func() {
+    assert_equal "$*" "container:foo-bar|crc:12345|"
+    return 1
+  }
+
+  run vedv::vmobj_service::__stop_base \
+    "$type" "$vmobj_id" \
+    "$hypervisor_stop_func_wo_args" \
+    "$stop_type"
+
+  assert_failure
+  assert_output "Failed to stop container: '12345'"
+}
+
+@test "vedv::vmobj_service::__stop_base() Should succeed" {
+  local -r type="container"
+  local -r vmobj_id="12345"
+  local -r hypervisor_stop_func_wo_args="stop_func"
+  local -r stop_type="stop"
+
+  vedv::vmobj_service::is_started() {
+    assert_equal "$*" "container 12345"
+    echo true
+  }
+  vedv::vmobj_entity::get_vm_name() {
+    assert_equal "$*" "container 12345"
+    echo "container:foo-bar|crc:12345|"
+  }
+  stop_func() {
+    assert_equal "$*" "container:foo-bar|crc:12345|"
+  }
+
+  run vedv::vmobj_service::__stop_base \
+    "$type" "$vmobj_id" \
+    "$hypervisor_stop_func_wo_args" \
+    "$stop_type"
+
+  assert_success
+  assert_output "12345"
+}
+
 # Tests for vedv::vmobj_service::start_one()
 
 @test "vedv::vmobj_service::start_one() should return error when type is empty" {
@@ -574,303 +778,107 @@ Error getting vmobj id for containers: 'name1' 'id1' 'name2' 'id2' "
 Failed to wait for ssh service on port 2022"
 }
 
-# Tests for vedv::vmobj_service::stop_one()
-
-@test "vedv::vmobj_service::stop_one() should return error when type is empty" {
-  local -r type=""
-  local -r vmobj_id="12345"
-  local -r save_state=false
-
-  run vedv::vmobj_service::stop_one "$type" "$vmobj_id" "$save_state"
-
-  assert_failure
-  assert_output "Argument 'type' must not be empty"
-}
-
-@test "vedv::vmobj_service::stop_one() should return error when vmobj_id is empty" {
-  local -r type="container"
-  local -r save_state=false
-  local -r vmobj_id=""
-
-  run vedv::vmobj_service::stop_one "$type" "$vmobj_id" "$save_state"
-
-  assert_failure
-  assert_output "Invalid argument 'vmobj_id': it's empty"
-}
-
-@test "vedv::vmobj_service::stop_one() Should fail if is_started fails" {
+# Tests for vedv::vmobj_service::kill_one()
+@test "vedv::vmobj_service::kill_one() should succeed" {
   local -r type="container"
   local -r vmobj_id="12345"
-  local -r save_state=false
 
-  vedv::vmobj_service::exists_with_id() {
-    echo true
+  vedv::vmobj_service::__stop_base() {
+    assert_equal "$*" "container 12345 vedv::hypervisor::poweroff kill"
   }
-  vedv::vmobj_service::is_started() {
-    assert_equal "$*" "container 12345"
+
+  run vedv::vmobj_service::kill_one "$type" "$vmobj_id"
+
+  assert_success
+  assert_output ""
+}
+
+# Tests for vedv::vmobj_service::kill()
+@test "vedv::vmobj_service::kill() should succeed" {
+  local -r type="container"
+  local -r vmobj_names_or_ids="123 name1"
+
+  vedv::vmobj_service::exec_func_on_many_vmobj() {
+    assert_equal "$*" "container vedv::vmobj_service::kill_one 'container' 123 name1"
+  }
+
+  run vedv::vmobj_service::kill "$type" "$vmobj_names_or_ids"
+
+  assert_success
+  assert_output ""
+}
+
+# Tests for vedv::vmobj_service::save_state_one()
+@test "vedv::vmobj_service::save_state_one() should succeed" {
+  local -r type="container"
+  local -r vmobj_id="12345"
+
+  vedv::vmobj_service::__stop_base() {
+    assert_equal "$*" "container 12345 vedv::hypervisor::save_state_stop save_state"
+  }
+
+  run vedv::vmobj_service::save_state_one "$type" "$vmobj_id"
+
+  assert_success
+  assert_output ""
+}
+
+# Tests for vedv::vmobj_service::save_state()
+@test "vedv::vmobj_service::save_state() should succeed" {
+  local -r type="container"
+  local -r vmobj_names_or_ids="123 name1"
+
+  vedv::vmobj_service::exec_func_on_many_vmobj() {
+    assert_equal "$*" "container vedv::vmobj_service::save_state_one 'container' 123 name1"
+  }
+
+  run vedv::vmobj_service::save_state "$type" "$vmobj_names_or_ids"
+
+  assert_success
+  assert_output ""
+}
+
+# Tests for vedv::vmobj_service::stop_one()
+@test "vedv::vmobj_service::stop_one() fail i f __stop_base fails" {
+  local -r type="container"
+  local -r vmobj_id="12345"
+
+  vedv::vmobj_service::__stop_base() {
+    assert_equal "$*" "container 12345 vedv::hypervisor::shutdown stop"
     return 1
   }
 
-  run vedv::vmobj_service::stop_one "$type" "$vmobj_id" "$save_state"
+  run vedv::vmobj_service::stop_one "$type" "$vmobj_id"
 
   assert_failure
-  assert_output "Failed to get start status for container: '12345'"
-}
-
-@test "vedv::vmobj_service::stop_one() Should succeed If vm is already stopped" {
-  local -r type="container"
-  local -r vmobj_id="12345"
-  local -r save_state=false
-
-  vedv::vmobj_service::exists_with_id() {
-    echo true
-  }
-  vedv::vmobj_service::is_started() {
-    assert_equal "$*" "container 12345"
-    echo false
-  }
-
-  run vedv::vmobj_service::stop_one "$type" "$vmobj_id" "$save_state"
-
-  assert_success
-  assert_output "12345"
+  assert_output "Failed to shutdown container: 12345"
 }
 
 @test "vedv::vmobj_service::stop_one() should fail If get_vm_name fails" {
   local -r type="container"
   local -r vmobj_id="12345"
-  local -r save_state=false
 
-  vedv::vmobj_service::exists_with_id() {
-    echo true
+  vedv::vmobj_service::__stop_base() {
+    assert_equal "$*" "container 12345 vedv::hypervisor::shutdown stop"
   }
-  vedv::vmobj_service::is_started() {
-    assert_equal "$*" "container 12345"
-    echo true
-  }
+
   vedv::vmobj_entity::get_vm_name() {
     assert_equal "$*" "container 12345"
     return 1
   }
 
-  run vedv::vmobj_service::stop_one "$type" "$vmobj_id" "$save_state"
+  run vedv::vmobj_service::stop_one "$type" "$vmobj_id"
 
   assert_failure
   assert_output "Failed to get vm name for container: '12345'"
-}
-
-@test "vedv::vmobj_service::stop_one() should fail If vm_name is empty" {
-  local -r type="container"
-  local -r vmobj_id="12345"
-  local -r save_state=false
-
-  vedv::vmobj_service::exists_with_id() {
-    echo true
-  }
-  vedv::vmobj_service::is_started() {
-    assert_equal "$*" "container 12345"
-    echo true
-  }
-  vedv::vmobj_entity::get_vm_name() {
-    assert_equal "$*" "container 12345"
-  }
-
-  run vedv::vmobj_service::stop_one "$type" "$vmobj_id" "$save_state"
-
-  assert_failure
-  assert_output "There is no vm name for container: '12345'"
-}
-
-@test "vedv::vmobj_service::stop_one() should fail If hypervisor::stop fails" {
-  local -r type="container"
-  local -r vmobj_id="12345"
-  local -r save_state=false
-
-  vedv::vmobj_service::exists_with_id() {
-    echo true
-  }
-  vedv::vmobj_service::is_started() {
-    assert_equal "$*" "container 12345"
-    echo true
-  }
-  vedv::vmobj_entity::get_vm_name() {
-    assert_equal "$*" "container 12345"
-    echo "container:foo-bar|crc:12345|"
-  }
-  vedv::hypervisor::stop() {
-    assert_equal "$*" "container:foo-bar|crc:12345|"
-    return 1
-  }
-
-  run vedv::vmobj_service::stop_one "$type" "$vmobj_id" "$save_state"
-
-  assert_failure
-  assert_output "Failed to stop container: '12345'"
 }
 
 @test "vedv::vmobj_service::stop_one() Should succeed" {
   local -r type="container"
   local -r vmobj_id="12345"
-  local -r save_state=false
 
-  vedv::vmobj_service::exists_with_id() {
-    echo true
-  }
-  vedv::vmobj_service::is_started() {
-    assert_equal "$*" "container 12345"
-    echo true
-  }
-  vedv::vmobj_entity::get_vm_name() {
-    assert_equal "$*" "container 12345"
-    echo "container:foo-bar|crc:12345|"
-  }
-  vedv::hypervisor::stop() {
-    assert_equal "$*" "container:foo-bar|crc:12345|"
-  }
-
-  run vedv::vmobj_service::stop_one "$type" "$vmobj_id" "$save_state"
-
-  assert_success
-  assert_output "12345"
-}
-
-# Tests for vedv::vmobj_service::secure_stop_one()
-
-@test "vedv::vmobj_service::secure_stop_one() should return error when type is empty" {
-  local -r type=""
-  local -r vmobj_id="12345"
-
-  run vedv::vmobj_service::secure_stop_one "$type" "$vmobj_id"
-
-  assert_failure
-  assert_output "Argument 'type' must not be empty"
-}
-
-@test "vedv::vmobj_service::secure_stop_one() should return error when vmobj_id is empty" {
-  local -r type="container"
-  local -r vmobj_id=""
-
-  run vedv::vmobj_service::secure_stop_one "$type" "$vmobj_id"
-
-  assert_failure
-  assert_output "Invalid argument 'vmobj_id': it's empty"
-}
-
-@test "vedv::vmobj_service::secure_stop_one() Should fail if is_started fails" {
-  local -r type="container"
-  local -r vmobj_id="12345"
-
-  vedv::vmobj_service::exists_with_id() {
-    echo true
-  }
-  vedv::vmobj_service::is_started() {
-    assert_equal "$*" "container 12345"
-    return 1
-  }
-
-  run vedv::vmobj_service::secure_stop_one "$type" "$vmobj_id"
-
-  assert_failure
-  assert_output "Failed to get start status for container: '12345'"
-}
-
-@test "vedv::vmobj_service::secure_stop_one() Should succeed If vm is already stopped" {
-  local -r type="container"
-  local -r vmobj_id="12345"
-
-  vedv::vmobj_service::exists_with_id() {
-    echo true
-  }
-  vedv::vmobj_service::is_started() {
-    assert_equal "$*" "container 12345"
-    echo false
-  }
-
-  run vedv::vmobj_service::secure_stop_one "$type" "$vmobj_id"
-
-  assert_success
-  assert_output "12345"
-}
-
-@test "vedv::vmobj_service::secure_stop_one() should fail If get_vm_name fails" {
-  local -r type="container"
-  local -r vmobj_id="12345"
-
-  vedv::vmobj_service::exists_with_id() {
-    echo true
-  }
-  vedv::vmobj_service::is_started() {
-    assert_equal "$*" "container 12345"
-    echo true
-  }
-  vedv::vmobj_entity::get_vm_name() {
-    assert_equal "$*" "container 12345"
-    return 1
-  }
-
-  run vedv::vmobj_service::secure_stop_one "$type" "$vmobj_id"
-
-  assert_failure
-  assert_output "Failed to get vm name for container: '12345'"
-}
-
-@test "vedv::vmobj_service::secure_stop_one() should fail If vm_name is empty" {
-  local -r type="container"
-  local -r vmobj_id="12345"
-
-  vedv::vmobj_service::exists_with_id() {
-    echo true
-  }
-  vedv::vmobj_service::is_started() {
-    assert_equal "$*" "container 12345"
-    echo true
-  }
-  vedv::vmobj_entity::get_vm_name() {
-    assert_equal "$*" "container 12345"
-  }
-
-  run vedv::vmobj_service::secure_stop_one "$type" "$vmobj_id"
-
-  assert_failure
-  assert_output "There is no vm name for container: '12345'"
-}
-
-@test "vedv::vmobj_service::secure_stop_one() should fail If hypervisor::shutdown fails" {
-  local -r type="container"
-  local -r vmobj_id="12345"
-
-  vedv::vmobj_service::exists_with_id() {
-    echo true
-  }
-  vedv::vmobj_service::is_started() {
-    assert_equal "$*" "container 12345"
-    echo true
-  }
-  vedv::vmobj_entity::get_vm_name() {
-    assert_equal "$*" "container 12345"
-    echo "container:foo-bar|crc:12345|"
-  }
-  vedv::hypervisor::shutdown() {
-    assert_equal "$*" "container:foo-bar|crc:12345|"
-    return 1
-  }
-
-  run vedv::vmobj_service::secure_stop_one "$type" "$vmobj_id"
-
-  assert_failure
-  assert_output "Failed to stop container: '12345'"
-}
-
-@test "vedv::vmobj_service::secure_stop_one() Should succeed" {
-  local -r type="container"
-  local -r vmobj_id="12345"
-
-  vedv::vmobj_service::exists_with_id() {
-    echo true
-  }
-  vedv::vmobj_service::is_started() {
-    assert_equal "$*" "container 12345"
-    echo true
+  vedv::vmobj_service::__stop_base() {
+    assert_equal "$*" "container 12345 vedv::hypervisor::shutdown stop"
   }
   vedv::vmobj_entity::get_vm_name() {
     assert_equal "$*" "container 12345"
@@ -886,22 +894,18 @@ Failed to wait for ssh service on port 2022"
   utils::sleep() {
     assert_equal "$*" 1
   }
-  run vedv::vmobj_service::secure_stop_one "$type" "$vmobj_id"
+  run vedv::vmobj_service::stop_one "$type" "$vmobj_id"
 
   assert_success
   assert_output "12345"
 }
 
-@test "vedv::vmobj_service::secure_stop_one() Should fail If poweroff fails" {
+@test "vedv::vmobj_service::stop_one() Should fail If poweroff fails" {
   local -r type="container"
   local -r vmobj_id="12345"
 
-  vedv::vmobj_service::exists_with_id() {
-    echo true
-  }
-  vedv::vmobj_service::is_started() {
-    assert_equal "$*" "container 12345"
-    echo true
+  vedv::vmobj_service::__stop_base() {
+    assert_equal "$*" "container 12345 vedv::hypervisor::shutdown stop"
   }
   vedv::vmobj_entity::get_vm_name() {
     assert_equal "$*" "container 12345"
@@ -922,11 +926,28 @@ Failed to wait for ssh service on port 2022"
     return 1
   }
 
-  run vedv::vmobj_service::secure_stop_one "$type" "$vmobj_id"
+  run vedv::vmobj_service::stop_one "$type" "$vmobj_id"
 
   assert_failure
   assert_output "Failed to stop container: 12345, trying to poweroff it...
 Failed to poweroff container: 12345"
+}
+
+# Tests for vedv::vmobj_service::stop() {
+
+@test "vedv::vmobj_service::stop() Should succeed" {
+  local -r type="container"
+  local -r vmobj_names_or_ids="container1 container2"
+
+  vedv::vmobj_service::exec_func_on_many_vmobj() {
+    assert_equal "$*" "container vedv::vmobj_service::stop_one 'container' container1 container2"
+    echo "12345 123456"
+  }
+
+  run vedv::vmobj_service::stop "$type" "$vmobj_names_or_ids"
+
+  assert_success
+  assert_output "12345 123456"
 }
 
 # Tests for vedv::vmobj_service::exists_with_name()
@@ -2995,56 +3016,6 @@ EOF
   assert_success
   assert_output "12345 123456"
 }
-# Tests for vedv::vmobj_service::stop() {
-
-@test "vedv::vmobj_service::stop() Should succeed" {
-  local -r type="container"
-  local -r save_state="false"
-  local -r vmobj_names_or_ids="container1 container2"
-
-  vedv::vmobj_service::exec_func_on_many_vmobj() {
-    assert_equal "$*" "container vedv::vmobj_service::stop_one_batch 'container' 'false' container1 container2"
-    echo "12345 123456"
-  }
-
-  run vedv::vmobj_service::stop "$type" "$vmobj_names_or_ids" "$save_state"
-
-  assert_success
-  assert_output "12345 123456"
-}
-# Tests for vedv::vmobj_service::secure_stop() {
-
-@test "vedv::vmobj_service::secure_stop() Should succeed" {
-  local -r type="container"
-  local -r vmobj_names_or_ids="container1 container2"
-
-  vedv::vmobj_service::exec_func_on_many_vmobj() {
-    assert_equal "$*" "container vedv::vmobj_service::secure_stop_one 'container' container1 container2"
-    echo "12345 123456"
-  }
-
-  run vedv::vmobj_service::secure_stop "$type" "$vmobj_names_or_ids"
-
-  assert_success
-  assert_output "12345 123456"
-}
-
-# Tests for vedv::vmobj_service::stop_one_batch()
-@test "vedv::vmobj_service::stop_one_batch() Should succeed" {
-  local -r type="container"
-  local -r save_state="false"
-  local -r vmobj_id="12345"
-
-  vedv::vmobj_service::stop_one() {
-    assert_equal "$*" "container 12345 false"
-    echo "12345"
-  }
-
-  run vedv::vmobj_service::stop_one_batch "$type" "$save_state" "$vmobj_id"
-
-  assert_success
-  assert_output "12345"
-}
 
 # Tests for vedv::vmobj_service::after_create()
 
@@ -3244,7 +3215,7 @@ EOF
   vedv::vmobj_service::start_one() {
     assert_equal "$*" "image 1234567890 false"
   }
-  vedv::vmobj_service::secure_stop_one() {
+  vedv::vmobj_service::stop_one() {
     assert_equal "$*" "image 1234567890"
     return 1
   }
@@ -3273,7 +3244,7 @@ EOF
   vedv::vmobj_service::start_one() {
     assert_equal "$*" "image 1234567890 false"
   }
-  vedv::vmobj_service::secure_stop_one() {
+  vedv::vmobj_service::stop_one() {
     assert_equal "$*" "image 1234567890"
   }
   vedv::hypervisor::modifyvm() {
@@ -3305,7 +3276,7 @@ EOF
   vedv::vmobj_service::start_one() {
     assert_equal "$*" "image 1234567890 false"
   }
-  vedv::vmobj_service::secure_stop_one() {
+  vedv::vmobj_service::stop_one() {
     assert_equal "$*" "image 1234567890"
   }
   vedv::hypervisor::modifyvm() {

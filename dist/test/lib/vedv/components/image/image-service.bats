@@ -1618,7 +1618,7 @@ EOF
   local -r image_id='1234567890'
 
   vedv::vmobj_service::stop() {
-    assert_equal "$*" "image 1234567890 true"
+    assert_equal "$*" "image 1234567890"
   }
 
   run vedv::image_service::stop "$image_id"

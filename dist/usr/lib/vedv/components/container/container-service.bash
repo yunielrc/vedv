@@ -474,7 +474,25 @@ vedv::container_service::start() {
 vedv::container_service::stop() {
   local -r container_names_or_ids="$1"
 
-  vedv::vmobj_service::stop 'container' "$container_names_or_ids" 'true'
+  vedv::vmobj_service::stop 'container' "$container_names_or_ids"
+}
+
+#
+#  Save the state of one or more running containers by name or id
+#
+# Arguments:
+#   containers_name_or_ids  string[]     containers name or id
+#
+# Output:
+#  writes stopped containers name or id to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::container_service::save_state() {
+  local -r container_names_or_ids="$1"
+
+  vedv::vmobj_service::save_state 'container' "$container_names_or_ids"
 }
 
 #

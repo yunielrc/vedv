@@ -229,13 +229,8 @@ Flags:
   run vedv container stop
 
   assert_success
-  assert_output "Usage:
-vedv container stop CONTAINER [CONTAINER...]
-
-Stop one or more running containers
-
-Flags:
-  -h, --help    show help"
+  assert_output --partial "Usage:
+vedv container stop [FLAGS] CONTAINER [CONTAINER...]"
 }
 
 @test "vedv container stop -h , Should show help" {
@@ -244,13 +239,8 @@ Flags:
     run vedv container stop "$arg"
 
     assert_success
-    assert_output "Usage:
-vedv container stop CONTAINER [CONTAINER...]
-
-Stop one or more running containers
-
-Flags:
-  -h, --help    show help"
+    assert_output --partial "Usage:
+vedv container stop [FLAGS] CONTAINER [CONTAINER...]"
   done
 }
 

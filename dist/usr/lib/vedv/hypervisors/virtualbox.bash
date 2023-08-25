@@ -498,7 +498,7 @@ vedv::hypervisor::shutdown() {
 vedv::virtualbox::shutdown() { vedv::hypervisor::shutdown "$@"; }
 
 #
-# Stop a virtual machine
+# Power off a virtual machine
 #
 # Arguments:
 #   vm_name        virtual machine name
@@ -523,10 +523,8 @@ vedv::hypervisor::poweroff() {
     VBoxManage controlvm "$vm_name" poweroff
   fi
 }
-vedv::hypervisor::stop() { vedv::hypervisor::poweroff "$@"; }
 
 vedv::virtualbox::poweroff() { vedv::hypervisor::poweroff "$@"; }
-vedv::virtualbox::stop() { vedv::hypervisor::poweroff "$@"; }
 
 #
 # Check if a virtual machine is running

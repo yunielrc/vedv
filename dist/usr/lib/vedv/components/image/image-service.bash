@@ -793,7 +793,7 @@ vedv::image_service::start() {
 vedv::image_service::stop() {
   local -r image_id="$1"
 
-  vedv::vmobj_service::stop 'image' "$image_id" 'true'
+  vedv::vmobj_service::stop 'image' "$image_id"
 }
 
 #

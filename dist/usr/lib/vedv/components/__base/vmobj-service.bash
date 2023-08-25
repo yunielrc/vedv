@@ -454,13 +454,13 @@ vedv::vmobj_service::start() {
 }
 
 #
-#  Stop a running vmobj
-#  Warning: stopping vmobj without saving the state may lead to data loss
+#  Generic stop function
 #
 # Arguments:
-#   type        string    type (e.g. 'container|image')
-#   save_state  bool      save state before stopping (true|false)
-#   vmobj_id    string    vmobj id
+#   type                           string    type (e.g. 'container|image')
+#   vmobj_id                       string    vmobj id
+#   hypervisor_stop_func_wo_args   string    stop function
+#   stop_type                      string    stop type (e.g. 'stop|kill|save_state')
 #
 # Output:
 #  writes stopped vmobj id to the stdout
@@ -468,33 +468,11 @@ vedv::vmobj_service::start() {
 # Returns:
 #   0 on success, non-zero on error.
 #
-vedv::vmobj_service::stop_one_batch() {
-  local -r type="$1"
-  local -r save_state="$2"
-  local -r vmobj_id="$3"
-
-  vedv::vmobj_service::stop_one "$type" "$vmobj_id" "$save_state"
-}
-
-#
-#  Stop a running vmobj
-#  Warning: stopping vmobj without saving the state may lead to data loss
-#
-# Arguments:
-#   type        string    type (e.g. 'container|image')
-#   vmobj_id    string    vmobj id
-#   save_state  bool      save state before stopping (default: true)
-#
-# Output:
-#  writes stopped vmobj id to the stdout
-#
-# Returns:
-#   0 on success, non-zero on error.
-#
-vedv::vmobj_service::stop_one() {
+vedv::vmobj_service::__stop_base() {
   local -r type="$1"
   local -r vmobj_id="$2"
-  local -r save_state="${3:-true}"
+  local -r hypervisor_stop_func_wo_args="$3"
+  local -r stop_type="$4"
   # validate arguments
   vedv::vmobj_entity::validate_type "$type" ||
     return "$?"
@@ -503,23 +481,12 @@ vedv::vmobj_service::stop_one() {
     err "Invalid argument 'vmobj_id': it's empty"
     return "$ERR_INVAL_ARG"
   fi
-
-  local hypervisor_cmd='stop'
-
-  if [[ "$save_state" == true ]]; then
-    hypervisor_cmd='save_state_stop'
+  if [[ -z "$hypervisor_stop_func_wo_args" ]]; then
+    err "Invalid argument 'hypervisor_stop_func_wo_args': it's empty"
+    return "$ERR_INVAL_ARG"
   fi
-  readonly hypervisor_cmd
-
-  local exists
-  exists="$(vedv::vmobj_service::exists_with_id "$type" "$vmobj_id")" || {
-    err "Failed to check if exists ${type}: '${vmobj_id}'"
-    return "$ERR_VMOBJ_OPERATION"
-  }
-  readonly exists
-
-  if [[ "$exists" == false ]]; then
-    err "There is no ${type} with id '${vmobj_id}'"
+  if [[ -z "$stop_type" ]]; then
+    err "Invalid argument 'stop_type': it's empty"
     return "$ERR_INVAL_ARG"
   fi
 
@@ -547,8 +514,8 @@ vedv::vmobj_service::stop_one() {
     return "$ERR_VMOBJ_OPERATION"
   fi
 
-  vedv::hypervisor::"$hypervisor_cmd" "$vmobj_vm_name" &>/dev/null || {
-    err "Failed to stop ${type}: '${vmobj_id}'"
+  "$hypervisor_stop_func_wo_args" "$vmobj_vm_name" &>/dev/null || {
+    err "Failed to ${stop_type} ${type}: '${vmobj_id}'"
     return "$ERR_VMOBJ_OPERATION"
   }
 
@@ -556,28 +523,90 @@ vedv::vmobj_service::stop_one() {
 }
 
 #
-#  Stop one or more running vmobj by name or id
-#  Warning: stopping vmobj without saving state may lead to data loss
+#  kill a running vmobj
 #
 # Arguments:
-#   type                string     type (e.g. 'container|image')
-#   vmobj_names_or_ids  string[]   vmobj name or id
-#   save_state          bool       save state before stop (default: true)
+#   type        string    type (e.g. 'container|image')
+#   vmobj_id    string    vmobj id
 #
 # Output:
-#  writes stopped vmobj ids to the stdout
+#  writes stopped vmobj id to the stdout
 #
 # Returns:
 #   0 on success, non-zero on error.
 #
-vedv::vmobj_service::stop() {
+vedv::vmobj_service::kill_one() {
+  local -r type="$1"
+  local -r vmobj_id="$2"
+
+  vedv::vmobj_service::__stop_base \
+    "$type" "$vmobj_id" 'vedv::hypervisor::poweroff' 'kill'
+}
+
+#
+#  Kill one or more running vmobj by name or id
+#
+# Arguments:
+#   type                string     type (e.g. 'container|image')
+#   vmobj_names_or_ids  string[]   vmobj name or id
+#
+# Output:
+#  writes killed vmobj ids to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::vmobj_service::kill() {
   local -r type="$1"
   local -r vmobj_names_or_ids="$2"
-  local -r save_state="${3:-true}"
 
   vedv::vmobj_service::exec_func_on_many_vmobj \
     "$type" \
-    "vedv::vmobj_service::stop_one_batch '${type}' '${save_state}'" \
+    "vedv::vmobj_service::kill_one '${type}'" \
+    "$vmobj_names_or_ids"
+}
+
+#
+#  Save state of running vmobj
+#
+# Arguments:
+#   type        string    type (e.g. 'container|image')
+#   vmobj_id    string    vmobj id
+#
+# Output:
+#  writes stopped vmobj id to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::vmobj_service::save_state_one() {
+  local -r type="$1"
+  local -r vmobj_id="$2"
+
+  vedv::vmobj_service::__stop_base \
+    "$type" "$vmobj_id" 'vedv::hypervisor::save_state_stop' 'save_state'
+}
+
+#
+#  Save the state of one or more running vmobj by name or id
+#
+# Arguments:
+#   type                string     type (e.g. 'container|image')
+#   vmobj_names_or_ids  string[]   vmobj name or id
+#
+# Output:
+#  writes save_stateed vmobj ids to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::vmobj_service::save_state() {
+  local -r type="$1"
+  local -r vmobj_names_or_ids="$2"
+
+  vedv::vmobj_service::exec_func_on_many_vmobj \
+    "$type" \
+    "vedv::vmobj_service::save_state_one '${type}'" \
     "$vmobj_names_or_ids"
 }
 
@@ -594,41 +623,16 @@ vedv::vmobj_service::stop() {
 # Returns:
 #   0 on success, non-zero on error.
 #
-vedv::vmobj_service::secure_stop_one() {
+vedv::vmobj_service::stop_one() {
   local -r type="$1"
   local -r vmobj_id="$2"
-  # validate arguments
-  vedv::vmobj_entity::validate_type "$type" ||
-    return "$?"
 
-  if [[ -z "$vmobj_id" ]]; then
-    err "Invalid argument 'vmobj_id': it's empty"
-    return "$ERR_INVAL_ARG"
-  fi
-
-  local exists
-  exists="$(vedv::vmobj_service::exists_with_id "$type" "$vmobj_id")" || {
-    err "Failed to check if exists ${type}: '${vmobj_id}'"
+  vedv::vmobj_service::__stop_base \
+    "$type" "$vmobj_id" \
+    'vedv::hypervisor::shutdown' 'stop' || {
+    err "Failed to shutdown ${type}: ${vmobj_id}"
     return "$ERR_VMOBJ_OPERATION"
   }
-  readonly exists
-
-  if [[ "$exists" == false ]]; then
-    err "There is no ${type} with id '${vmobj_id}'"
-    return "$ERR_INVAL_ARG"
-  fi
-
-  local is_started
-  is_started="$(vedv::vmobj_service::is_started "$type" "$vmobj_id")" || {
-    err "Failed to get start status for ${type}: '${vmobj_id}'"
-    return "$ERR_VMOBJ_OPERATION"
-  }
-  readonly is_started
-
-  if [[ "$is_started" == false ]]; then
-    echo "$vmobj_id"
-    return 0
-  fi
 
   local vmobj_vm_name
   vmobj_vm_name="$(vedv::vmobj_entity::get_vm_name "$type" "$vmobj_id")" || {
@@ -636,16 +640,6 @@ vedv::vmobj_service::secure_stop_one() {
     return "$ERR_VMOBJ_OPERATION"
   }
   readonly vmobj_vm_name
-
-  if [[ -z "$vmobj_vm_name" ]]; then
-    err "There is no vm name for ${type}: '${vmobj_id}'"
-    return "$ERR_VMOBJ_OPERATION"
-  fi
-
-  vedv::hypervisor::shutdown "$vmobj_vm_name" &>/dev/null || {
-    err "Failed to stop ${type}: '${vmobj_id}'"
-    return "$ERR_VMOBJ_OPERATION"
-  }
 
   local is_running=true
   local -i attemps=10
@@ -685,13 +679,13 @@ vedv::vmobj_service::secure_stop_one() {
 # Returns:
 #   0 on success, non-zero on error.
 #
-vedv::vmobj_service::secure_stop() {
+vedv::vmobj_service::stop() {
   local -r type="$1"
   local -r vmobj_names_or_ids="$2"
 
   vedv::vmobj_service::exec_func_on_many_vmobj \
     "$type" \
-    "vedv::vmobj_service::secure_stop_one '${type}'" \
+    "vedv::vmobj_service::stop_one '${type}'" \
     "$vmobj_names_or_ids"
 }
 
@@ -1721,7 +1715,7 @@ vedv::vmobj_service::modify_system() {
     }
   fi
 
-  vedv::vmobj_service::secure_stop_one "$type" "$vmobj_id" || {
+  vedv::vmobj_service::stop_one "$type" "$vmobj_id" || {
     err "Failed to secure stop ${type}: ${vmobj_id}"
     return "$ERR_VMOBJ_OPERATION"
   }

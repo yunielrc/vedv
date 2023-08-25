@@ -1500,6 +1500,7 @@ vedv::builder_service::__build() {
       return "$ERR_BUILDER_SERVICE_OPERATION"
     }
   else
+    # the image must be stopped before deleting layers
     vedv::image_service::stop "$image_id" >/dev/null || {
       err "Failed to stop image '${image_name}'"
       return "$ERR_BUILDER_SERVICE_OPERATION"
@@ -1706,6 +1707,11 @@ vedv::builder_service::build() {
 
   if [[ -n "$image_id" ]]; then
     ___on_build_ends_64695() {
+      # the image must be completely stopped after the build, save_state
+      # is more fast than stop, but frequently the image get changes on
+      # the os and it must be restarted, so for example: if some services
+      # require restart and image is saved, the containers of the image
+      # will not work properly
       vedv::image_service::stop "$image_id" >/dev/null || {
         err "Failed to stop the image '${image_name}'.You must stop it."
         return "$ERR_BUILDER_SERVICE_OPERATION"
