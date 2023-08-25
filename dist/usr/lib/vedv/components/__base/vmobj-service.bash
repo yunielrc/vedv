@@ -629,7 +629,7 @@ vedv::vmobj_service::stop_one() {
 
   vedv::vmobj_service::__stop_base \
     "$type" "$vmobj_id" \
-    'vedv::hypervisor::shutdown' 'stop' || {
+    'vedv::hypervisor::shutdown' 'stop' >/dev/null || {
     err "Failed to shutdown ${type}: ${vmobj_id}"
     return "$ERR_VMOBJ_OPERATION"
   }
