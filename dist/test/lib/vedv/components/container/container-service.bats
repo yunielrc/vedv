@@ -1237,6 +1237,20 @@ setup_file() {
   assert_output ''
 }
 
+# Tests for vedv::container_service::kill()
+@test "vedv::container_service::kill() Should succeed" {
+  local -r container_id=123456
+
+  vedv::vmobj_service::kill() {
+    assert_equal "$*" 'container 123456'
+  }
+
+  run vedv::container_service::kill "$container_id"
+
+  assert_success
+  assert_output ''
+}
+
 # Tests for vedv::container_service::save_state()
 @test "vedv::container_service::save_state() Should succeed" {
   local -r container_id=123456

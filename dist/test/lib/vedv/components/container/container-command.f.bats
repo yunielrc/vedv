@@ -13,6 +13,7 @@ setup_file() {
 
 teardown() {
   delete_vms_by_partial_vm_name 'container123'
+  delete_vms_by_partial_vm_name 'container:'
   delete_vms_by_partial_vm_name 'image:'
   delete_vms_by_partial_vm_name 'image-cache|'
 }
@@ -563,4 +564,29 @@ Build finished
 5000/tcp
 8080/tcp
 8081/udp'
+}
+
+# Tests for 'vedv container kill'
+@test "vedv container kill, Should show help" {
+
+  for flag in '' '-h' '--help'; do
+    run vedv container kill $flag
+
+    assert_success
+    assert_output --partial 'vedv container kill [FLAGS] CONTAINER [CONTAINER...]'
+  done
+}
+
+@test "vedv container kill container123a container123b, Should kill containers" {
+
+  vedv container create --name 'container123a' "$TEST_OVA_FILE"
+  vedv container create --name 'container123b' "$TEST_OVA_FILE"
+
+  vedv container start --wait 'container123a' 'container123b'
+
+  run vedv container kill 'container123a' 'container123b'
+
+  assert_success
+  assert_output "375138354
+339074491"
 }

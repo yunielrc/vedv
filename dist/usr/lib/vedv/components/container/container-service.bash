@@ -478,6 +478,24 @@ vedv::container_service::stop() {
 }
 
 #
+# Kill one or more running containers by name or id
+#
+# Arguments:
+#   containers_name_or_ids  string[]     containers name or id
+#
+# Output:
+#  writes killed containers name or id to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::container_service::kill() {
+  local -r container_names_or_ids="$1"
+
+  vedv::vmobj_service::kill 'container' "$container_names_or_ids"
+}
+
+#
 #  Save the state of one or more running containers by name or id
 #
 # Arguments:

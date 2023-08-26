@@ -726,3 +726,36 @@ vedv container list-exposed-ports CONTAINER"
   assert_success
   assert_output ""
 }
+
+# Tests for vedv::container_command::__kill()
+@test "vedv::container_command::__kill(), Should show hellp With flags '-h|--help'" {
+
+  for flag in '' '-h' '--help'; do
+    run vedv::container_command::__kill $flag
+
+    assert_success
+    assert_output --partial 'vedv container kill [FLAGS] CONTAINER [CONTAINER...]'
+  done
+}
+
+@test "vedv::container_command::__kill(), Should fail With missing container arg" {
+  local -r container_names_or_ids=''
+
+  run vedv::container_command::__kill "$container_names_or_ids"
+
+  assert_failure
+  assert_output --partial "Missing argument 'CONTAINER'"
+}
+
+@test "vedv::container_command::__kill(), Should succeed" {
+  local -r container_names_or_ids='1234567890 2234567890'
+
+  vedv::container_service::kill() {
+    assert_equal "$*" "$container_names_or_ids"
+  }
+
+  run vedv::container_command::__kill "$container_names_or_ids"
+
+  assert_success
+  assert_output ''
+}

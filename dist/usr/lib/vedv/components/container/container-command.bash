@@ -346,7 +346,7 @@ HELPMSG
 #
 #
 # Output:
-#   writes container name or id to stdout
+#   writes stopped container name or id to stdout
 #
 # Returns:
 #   0 on success, non-zero on error.
@@ -387,6 +387,69 @@ vedv::container_command::__stop() {
   else
     vedv::container_service::stop "$container_names_or_ids"
   fi
+}
+
+#
+# Show help for __kill command
+#
+# Output:
+#  Writes the help to the stdout
+#
+vedv::container_command::__kill_help() {
+  cat <<-HELPMSG
+Usage:
+${__VED_CONTAINER_COMMAND_SCRIPT_NAME} container kill [FLAGS] CONTAINER [CONTAINER...]
+
+Kill one or more running containers
+
+Flags:
+  -h, --help    show help
+HELPMSG
+}
+
+#
+# Kill one or more running containers
+#
+# Flags:
+#   -h, --help    show help
+#
+# Arguments:
+#   CONTAINER  [CONTAINER...]     one or more container name or id
+#
+#
+# Output:
+#   writes killed container name or id to stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::container_command::__kill() {
+  local container_names_or_ids=''
+
+  if [[ $# == 0 ]]; then set -- '-h'; fi
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+    # flags
+    -h | --help)
+      vedv::container_command::__kill_help
+      return 0
+      ;;
+    # arguments
+    *)
+      readonly container_names_or_ids="$*"
+      break
+      ;;
+    esac
+  done
+
+  if [[ -z "$container_names_or_ids" ]]; then
+    err "Missing argument 'CONTAINER'\n"
+    vedv::container_command::__kill_help
+    return "$ERR_INVAL_ARG"
+  fi
+
+  vedv::container_service::kill "$container_names_or_ids"
 }
 
 #
@@ -972,6 +1035,7 @@ Commands:
   start         start one or more containers
   remove        remove one or more containers
   stop          stop one or more containers
+  kill          kill one or more running containers
   list          list containers
   login         login to a container
   exec          execute a command in a container
@@ -1005,6 +1069,11 @@ vedv::container_command::run_cmd() {
     stop)
       shift
       vedv::container_command::__stop "$@"
+      return $?
+      ;;
+    kill)
+      shift
+      vedv::container_command::__kill "$@"
       return $?
       ;;
     rm | remove)
