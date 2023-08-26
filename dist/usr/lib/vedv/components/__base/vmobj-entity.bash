@@ -1124,6 +1124,20 @@ vedv::vmobj_entity::set_password() {
 }
 
 #
+# Get default password
+#
+#
+# Output:
+#   Writes default password (string) to the stdout.
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::vmobj_entity::get_default_password() {
+  echo "$__VEDV_DEFAULT_PASSWORD"
+}
+
+#
 # Get password
 #
 # Arguments:
@@ -1131,7 +1145,7 @@ vedv::vmobj_entity::set_password() {
 #   vmobj_id  string  vmobj id
 #
 # Output:
-#   Writes password (int) to the stdout.
+#   Writes password (string) to the stdout.
 #
 # Returns:
 #   0 on success, non-zero on error.
@@ -1150,7 +1164,7 @@ vedv::vmobj_entity::get_password() {
     return 0
   fi
 
-  echo "$__VEDV_DEFAULT_PASSWORD"
+  vedv::vmobj_entity::get_default_password
 }
 
 #

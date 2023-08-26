@@ -109,10 +109,10 @@ vedv::hypervisor::clonevm() {
 # Create a linked clone of an existing virtual machine
 #
 # Arguments:
-#   vm_name             name of the VM
-#   vm_clone_name       name of the cloned VM
-#   vm_snapshot         name of the snapshot that will be used to clone
-#   [create_snapshot]   create a snapshot before cloning (default: true)
+#   vm_name             string    name of the VM
+#   vm_clone_name       string    name of the cloned VM
+#   vm_snapshot         string    name of the snapshot that will be used to clone
+#   [create_snapshot]   bool      create a snapshot before cloning (default: true)
 #
 # Returns:
 #   0 on success, non-zero on error.

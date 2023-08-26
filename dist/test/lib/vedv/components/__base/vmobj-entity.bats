@@ -2142,3 +2142,12 @@ setup() {
   assert_success
   assert_output 'vedv'
 }
+
+# Test vedv::vmobj_entity::get_default_password()
+
+@test 'vedv::vmobj_entity::get_default_password() Should Succeed' {
+  run vedv::vmobj_entity::get_default_password
+
+  assert_success
+  assert_output "$__VEDV_DEFAULT_PASSWORD"
+}

@@ -337,7 +337,7 @@ vedv image from-url URL"
 
     assert_success
     assert_output --partial "Usage:
-vedv image export IMAGE FILE"
+vedv image export IMAGE FILE.ova"
   done
 }
 
@@ -360,7 +360,7 @@ vedv image export IMAGE FILE"
 @test "vedv::image_command::__export() Should succeed With no-checksum" {
 
   vedv::image_service::export() {
-    assert_equal "$*" "image123 ${TEST_IMAGE_TMP_DIR}/image123.ova true"
+    assert_equal "$*" "image123 ${TEST_IMAGE_TMP_DIR}/image123.ova true "
   }
 
   run vedv::image_command::__export --no-checksum image123 "${TEST_IMAGE_TMP_DIR}/image123.ova"
@@ -369,13 +369,27 @@ vedv image export IMAGE FILE"
   assert_output ""
 }
 
-@test "vedv::image_command::__export() Should succeed" {
+@test "vedv::image_command::__export() Should succeed With checksum" {
 
   vedv::image_service::export() {
-    assert_equal "$*" "image123 ${TEST_IMAGE_TMP_DIR}/image123.ova false"
+    assert_equal "$*" "image123 ${TEST_IMAGE_TMP_DIR}/image123.ova false "
   }
 
-  run vedv::image_command::__export image123 "${TEST_IMAGE_TMP_DIR}/image123.ova"
+  run vedv::image_command::__export image123 \
+    "${TEST_IMAGE_TMP_DIR}/image123.ova"
+
+  assert_success
+  assert_output ""
+}
+
+@test "vedv::image_command::__export() Should succeed With no_change_password" {
+
+  vedv::image_service::export() {
+    assert_equal "$*" "image123 ${TEST_IMAGE_TMP_DIR}/image123.ova false true"
+  }
+
+  run vedv::image_command::__export --no-change-password image123 \
+    "${TEST_IMAGE_TMP_DIR}/image123.ova"
 
   assert_success
   assert_output ""

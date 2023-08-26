@@ -22,9 +22,11 @@ fi
 # Constructor
 #
 # Arguments:
-#   image_imported_dir          string    path to the image tmp directory
-#   change_password_on_import   bool      change all users password to a generated
+#   image_imported_dir            string  path to the image tmp directory
+#   change_password_on_import     bool    change all users password to a generated
 #                                         one for security reasons
+#   no_change_password_on_export  bool    do not change password on export (default: false)
+#
 #
 # Returns:
 #   0 on success, non-zero on error.
@@ -32,6 +34,7 @@ fi
 vedv::image_service::constructor() {
   readonly __VEDV_IMAGE_SERVICE_IMPORTED_DIR="$1"
   readonly __VEDV_IMAGE_SERVICE_CHANGE_PASSWORD_ON_IMPORT="$2"
+  readonly __VEDV_IMAGE_SERVICE_NO_CHANGE_PASSWORD_ON_EXPORT="$3"
 }
 
 #
@@ -222,6 +225,10 @@ vedv::image_service::import() {
   local -r change_password="$(vedv::image_service::get_change_password_on_import)"
 
   if [[ "$change_password" == true ]]; then
+    # warn "Changing password for image '${image_name}'"
+    # warn 'This adds around 15 to 35 seconds to the process'
+    # warn 'To avoid this set VEDV_CHANGE_PASSWORD_ON_IMPORT=false'
+    # warn 'in the config file'
 
     vedv::image_service::__gen_change_password "$image_id" >/dev/null || {
       err "Error changing password for image '${image_id}'"
@@ -391,12 +398,93 @@ vedv::image_service::import_from_any() {
 }
 
 #
+# Remove innecessary and any sensible data from the image
+#
+# Arguments:
+#   image_id            string  image id
+#   no_change_password  bool    do not change password (default: see config).
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::image_service::__prepare_image_for_export() {
+  local -r image_id="$1"
+  local -r no_change_password="$2"
+  # validate arguments
+  if [[ -z "$image_id" ]]; then
+    err "Argument 'image_id' is required"
+    return "$ERR_INVAL_ARG"
+  fi
+  if [[ -z "$no_change_password" ]]; then
+    err "Argument 'no_change_password' is required"
+    return "$ERR_INVAL_ARG"
+  fi
+  #
+
+  local image_passwd
+  image_passwd="$(vedv::vmobj_entity::get_password 'image' "$image_id")" || {
+    err "Failed to get password for image: '${image_id}'"
+    return "$ERR_IMAGE_OPERATION"
+  }
+  readonly image_passwd
+
+  local -r default_passwd="$(vedv::vmobj_entity::get_default_password)"
+
+  if [[ "$image_passwd" != "$default_passwd" ]]; then
+    if [[ "$no_change_password" == true ]]; then
+      warn "Image has a password different from the default one, it's recommended"
+      warn "to change it to avoid a password leak."
+      warn "Set VEDV_CHANGE_PASSWORD_ON_IMPORT=false to mitigate this risk"
+    else
+      warn "Image has a password different from the default one,"
+      warn "changing it to avoid a password leak."
+      warn "This adds around 15 to 35 seconds to the process"
+      # this command starts the image and change the password for all users to
+      # the default one
+      vedv::vmobj_service::change_users_password 'image' "$image_id" "$default_passwd" || {
+        err "Error setting password for image: '${image_id}'"
+        return "$ERR_IMAGE_OPERATION"
+      }
+      vedv::image_service::stop "$image_id" || {
+        err "Failed to stop image: '${image_id}'"
+        return "$ERR_IMAGE_OPERATION"
+      }
+    fi
+  fi
+
+  vedv::image_entity::____clear_child_container_ids "$image_id" || {
+    err "Failed to clear child container ids for image: '${image_id}'"
+    return "$ERR_IMAGE_OPERATION"
+  }
+  vedv::image_entity::set_image_cache "$image_id" '' || {
+    err "Error setting image_cache to the image '${image_id}'"
+    return "$ERR_IMAGE_OPERATION"
+  }
+  vedv::image_entity::set_ova_file_sum "$image_id" '' || {
+    err "Error setting ova_file_sum to the image '${image_id}'"
+    return "$ERR_IMAGE_OPERATION"
+  }
+  vedv::image_entity::set_ssh_port "$image_id" '' || {
+    err "Error setting ssh_port to the image '${image_id}'"
+    return "$ERR_IMAGE_OPERATION"
+  }
+
+  vedv::image_entity::set_vm_name "$image_id" '' || {
+    err "Error setting vm_name to the image '${image_id}'"
+    return "$ERR_IMAGE_OPERATION"
+  }
+}
+
+#
 # Export an image to a file, by default create a checksum file
 #
 # Arguments:
-#   image_name_id   string  image id
-#   image_file      string  image file
-#   [no_checksum]   bool    do not create a checksum file (default: false)
+#   image_name_id        string  image id
+#   image_file           string  image file
+#   [no_checksum]        bool    do not create a checksum file (default: false)
+#   [no_change_password] bool    do not change password (default: see config).
+#                                for security reasons it's recommended to change
+#                                any generated password to the default one.
 #
 # Output:
 #  Writes image id and name (string) to the stdout
@@ -408,9 +496,11 @@ vedv::image_service::export_by_id() {
   local -r image_id="$1"
   local -r image_file="$2"
   local -r no_checksum="${3:-false}"
+  local -r no_change_password="${4:-"$__VEDV_IMAGE_SERVICE_NO_CHANGE_PASSWORD_ON_EXPORT"}"
+
   # validate arguments
   if [[ -z "$image_id" ]]; then
-    err "Argument 'image_name_or_id' is required"
+    err "Argument 'image_id' is required"
     return "$ERR_INVAL_ARG"
   fi
   if [[ -z "$image_file" ]]; then
@@ -418,6 +508,15 @@ vedv::image_service::export_by_id() {
     return "$ERR_INVAL_ARG"
   fi
 
+  if [[ -f "$image_file" ]]; then
+    rm -f "$image_file" || {
+      err "Failed to remove existing image file: '${image_file}'"
+      return "$ERR_IMAGE_OPERATION"
+    }
+  fi
+  #
+
+  # DATA GATHERING
   local vm_name=''
   vm_name="$(vedv::image_entity::get_vm_name "$image_id")" || {
     err "Failed to get image name by id '${image_id}'"
@@ -425,6 +524,7 @@ vedv::image_service::export_by_id() {
   }
   readonly vm_name
 
+  # DATA GATHERING
   local image_name=''
   image_name="$(vedv::image_entity::get_image_name_by_vm_name "$vm_name")" || {
     err "Failed to get image name for vm '${vm_name}'"
@@ -432,15 +532,66 @@ vedv::image_service::export_by_id() {
   }
   readonly image_name
 
-  if [[ -f "$image_file" ]]; then
-    rm -f "$image_file" || {
-      err "Failed to remove existing image file: '${image_file}'"
-      return "$ERR_IMAGE_OPERATION"
+  # DATA GATHERING
+  local last_layer_id
+  last_layer_id="$(vedv::image_entity::get_last_layer_id "$image_id")" || {
+    err "Failed to get last image layer id for image: '${image_name}'"
+    return "$ERR_CONTAINER_OPERATION"
+  }
+  readonly last_layer_id
+
+  local layer_vm_snapshot_name=''
+
+  if [[ -n "$last_layer_id" ]]; then
+    # DATA GATHERING
+    layer_vm_snapshot_name="$(vedv::image_entity::get_snapshot_name_by_layer_id "$image_id" "$last_layer_id")" || {
+      err "Failed to get image layer snapshot name for image: '${image_name}'"
+      return "$ERR_CONTAINER_OPERATION"
     }
   fi
+  readonly layer_vm_snapshot_name
 
-  vedv::hypervisor::export "$vm_name" "$image_file" "$image_name" &>/dev/null || {
-    err "Failed to export image '${image_name}' to '${image_file}'"
+  local clone_image_name="${image_name}-clone-export"
+
+  # DATA GATHERING
+  local clone_vm_name=''
+  clone_vm_name="$(vedv::image_entity::gen_vm_name "$clone_image_name")" || {
+    err "Failed to generate image vm name for image: '${clone_image_name}'"
+    return "$ERR_IMAGE_OPERATION"
+  }
+  readonly clone_vm_name
+  # DATA GATHERING
+  # Create an image from this one
+  local clone_image_id=''
+  clone_image_id="$(vedv::image_entity::get_id_by_vm_name "$clone_vm_name")" || {
+    err "Failed to get image id for image: '${clone_image_name}'"
+    return "$ERR_IMAGE_OPERATION"
+  }
+  readonly clone_image_id
+
+  # ACTION L3
+  # clone image
+  vedv::hypervisor::clonevm_link "$vm_name" "$clone_vm_name" "$layer_vm_snapshot_name" 'false' &>/dev/null || {
+    err "Failed to clone vm: '${vm_name}' to: '${clone_vm_name}'"
+    return "$ERR_IMAGE_OPERATION"
+  }
+  # shellcheck disable=SC2064
+  trap "vedv::hypervisor::rm '${clone_vm_name}' &>/dev/null" INT TERM EXIT
+
+  # update clone vm name
+  vedv::image_entity::set_vm_name "$clone_image_id" "$clone_vm_name" || {
+    err "Failed to set vm name for image: '${clone_image_name}'"
+    return "$ERR_IMAGE_OPERATION"
+  }
+
+  # ACTION L2
+  vedv::image_service::__prepare_image_for_export "$clone_image_id" "$no_change_password" || {
+    err "Failed to prepare image for export: '${clone_image_name}'"
+    return "$ERR_IMAGE_OPERATION"
+  }
+  # ACTION L1
+  vedv::hypervisor::export "$clone_vm_name" "$image_file" "$image_name" &>/dev/null || {
+    err "Failed to export image '${clone_image_name}' to '${image_file}'"
     return "$ERR_IMAGE_OPERATION"
   }
 
@@ -457,21 +608,24 @@ vedv::image_service::export_by_id() {
       err "Failed to change directory to '${image_file_dir}'"
       return "$ERR_IMAGE_OPERATION"
     }
+    # ACTION L1
     sha256sum "$image_file_basename" >"$checksum_file_basename" || {
       err "Failed to create checksum file '${checksum_file_basename}'"
       return "$ERR_IMAGE_OPERATION"
     }
   )
-
 }
 
 #
 # Export an image to a file, by default create a checksum file
 #
 # Arguments:
-#   image_name_or_id  string  image to export
-#   image_file        string  image file
-#   [no_checksum]     bool    do not create a checksum file (default: false)
+#   image_name_or_id     string  image to export
+#   image_file           string  image file
+#   [no_checksum]        bool    do not create a checksum file (default: false)
+#   [no_change_password] bool    do not change password (default: see config).
+#                                for security reasons it's recommended to change
+#                                any generated password to the default one.
 #
 # Output:
 #  Writes image id and name (string) to the stdout
@@ -483,6 +637,7 @@ vedv::image_service::export() {
   local -r image_name_or_id="$1"
   local -r image_file="$2"
   local -r no_checksum="${3:-false}"
+  local -r no_change_password="${4:-}"
 
   local image_id
   image_id="$(vedv::vmobj_entity::get_id "$image_name_or_id")" || {
@@ -491,7 +646,8 @@ vedv::image_service::export() {
   }
   readonly image_id
 
-  vedv::image_service::export_by_id "$image_id" "$image_file" "$no_checksum"
+  vedv::image_service::export_by_id \
+    "$image_id" "$image_file" "$no_checksum" "$no_change_password"
 }
 
 #

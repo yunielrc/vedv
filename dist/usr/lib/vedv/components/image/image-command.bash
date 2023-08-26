@@ -156,10 +156,12 @@ Aliases:
   export, to-file
 
 Flags:
-  -h, --help      show help
+  -h, --help            show help
 
 Options:
-  --no-checksum   do not create a checksum file
+  --no-checksum         do not create a checksum file
+  --no-change-password  do not change password on image export to the
+                        default one
 HELPMSG
 }
 
@@ -167,14 +169,15 @@ HELPMSG
 # Export an image to a file
 #
 # Flags:
-#   -h, --help        show help
+#   -h, --help            show help
 #
 # Options:
-#   --no-checksum     do not create a checksum file
-#
+#   --no-checksum         do not create a checksum file
+#   --no-change-password  do not change password on image export to the
+#                         default one
 # Arguments:
-#   IMAGE             name or id of the image that will be exported
-#   FILE              file to export the image
+#   IMAGE                 name or id of the image that will be exported
+#   FILE                  file to export the image
 #
 # Output:
 #  Writes image name to the stdout
@@ -185,7 +188,8 @@ HELPMSG
 vedv::image_command::__export() {
   local image_name_or_id=''
   local image_file=''
-  local no_checksum='false'
+  local no_checksum=false
+  local no_change_password=''
 
   if [[ $# == 0 ]]; then set -- '-h'; fi
 
@@ -198,6 +202,10 @@ vedv::image_command::__export() {
       ;;
     --no-checksum)
       readonly no_checksum=true
+      shift
+      ;;
+    --no-change-password)
+      readonly no_change_password=true
       shift
       ;;
     # arguments
@@ -224,7 +232,8 @@ vedv::image_command::__export() {
   vedv::image_service::export \
     "$image_name_or_id" \
     "$image_file" \
-    "$no_checksum"
+    "$no_checksum" \
+    "$no_change_password"
 }
 
 #

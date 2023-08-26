@@ -1,4 +1,4 @@
-# shellcheck disable=SC2016,SC2140,SC2317,SC2031,SC2030,SC2317
+# shellcheck disable=SC2016,SC2140,SC2317,SC2031,SC2030,SC2317,SC2154
 # copilot, generate tests using the functions in: "${workspaceFolder}/dist/lib/vedv/components/image/image-service.bash"
 # copilot: suggest the comment '' right before each test declaration, DO THIS FOREVER
 load test_helper
@@ -24,9 +24,10 @@ setup_file() {
   export __VEDV_VMOBJ_SERVICE_SSH_IP
   export __VEDV_VMOBJ_SERVICE_SSH_USER
 
-  vedv::image_service::constructor "$TEST_IMAGE_TMP_DIR" 'false'
+  vedv::image_service::constructor "$TEST_IMAGE_TMP_DIR" 'false' 'true'
   export __VEDV_IMAGE_SERVICE_IMPORTED_DIR
   export __VEDV_IMAGE_SERVICE_CHANGE_PASSWORD_ON_IMPORT
+  export __VEDV_IMAGE_SERVICE_NO_CHANGE_PASSWORD_ON_EXPORT
 }
 
 setup() {
@@ -2963,77 +2964,34 @@ EOF
   local -r image_id=""
   local -r image_file=""
   local -r no_checksum=""
+  local -r no_change_password=""
 
   run vedv::image_service::export_by_id \
-    "$image_id" "$image_file" "$no_checksum"
+    "$image_id" "$image_file" "$no_checksum" "$no_change_password"
 
   assert_failure
-  assert_output "Argument 'image_name_or_id' is required"
+  assert_output "Argument 'image_id' is required"
 }
 
 @test "vedv::image_service::export_by_id() Should fail With empty image_file" {
   local -r image_id="1234567890"
   local -r image_file=""
   local -r no_checksum=""
+  local -r no_change_password=""
 
   run vedv::image_service::export_by_id \
-    "$image_id" "$image_file" "$no_checksum"
+    "$image_id" "$image_file" "$no_checksum" "$no_change_password"
 
   assert_failure
   assert_output "Argument 'image_file' is required"
-}
-
-@test "vedv::image_service::export_by_id() Should fail If get_vm_name fails" {
-  local -r image_id="1234567890"
-  local -r image_file="${TEST_IMAGE_TMP_DIR}/image123.ova"
-  local -r no_checksum=""
-
-  vedv::image_entity::get_vm_name() {
-    assert_equal "$*" "$image_id"
-    return 1
-  }
-
-  run vedv::image_service::export_by_id \
-    "$image_id" "$image_file" "$no_checksum"
-
-  assert_failure
-  assert_output "Failed to get image name by id '1234567890'"
-}
-
-@test "vedv::image_service::export_by_id() Should fail If get_image_name_by_vm_name fails" {
-  local -r image_id="1234567890"
-  local -r image_file="${TEST_IMAGE_TMP_DIR}/image123.ova"
-  local -r no_checksum=""
-
-  vedv::image_entity::get_vm_name() {
-    assert_equal "$*" "$image_id"
-    echo "image:nalyd1|crc:223456789|"
-  }
-  vedv::image_entity::get_image_name_by_vm_name() {
-    assert_equal "$*" "image:nalyd1|crc:223456789|"
-    return 1
-  }
-
-  run vedv::image_service::export_by_id \
-    "$image_id" "$image_file" "$no_checksum"
-
-  assert_failure
-  assert_output "Failed to get image name for vm 'image:nalyd1|crc:223456789|'"
 }
 
 @test "vedv::image_service::export_by_id() Should fail If rm fails" {
   local -r image_id="1234567890"
   local -r image_file="${TEST_IMAGE_TMP_DIR}/image123.ova"
   local -r no_checksum=""
+  local -r no_change_password=""
 
-  vedv::image_entity::get_vm_name() {
-    assert_equal "$*" "$image_id"
-    echo "image:nalyd1|crc:223456789|"
-  }
-  vedv::image_entity::get_image_name_by_vm_name() {
-    assert_equal "$*" "image:nalyd1|crc:223456789|"
-    echo 'nalyd1'
-  }
   : >"$image_file"
   rm() {
     if [[ "$*" == '-f'*'/image123.ova' ]]; then
@@ -3043,16 +3001,326 @@ EOF
   }
 
   run vedv::image_service::export_by_id \
-    "$image_id" "$image_file" "$no_checksum"
+    "$image_id" "$image_file" "$no_checksum" "$no_change_password"
 
   assert_failure
-  assert_output --regexp "Failed to remove existing image file: '.*/image123.ova'"
+  assert_output "Failed to remove existing image file: '/tmp/vedv/images/image123.ova'"
+}
+
+@test "vedv::image_service::export_by_id() Should fail If get_vm_name fails" {
+  local -r image_id="1234567890"
+  local -r image_file="${TEST_IMAGE_TMP_DIR}/image123.ova"
+  local -r no_checksum=""
+  local -r no_change_password=""
+
+  vedv::image_entity::get_vm_name() {
+    assert_equal "$*" "$image_id"
+    return 1
+  }
+
+  run vedv::image_service::export_by_id \
+    "$image_id" "$image_file" "$no_checksum" "$no_change_password"
+
+  assert_failure
+  assert_output "Failed to get image name by id '1234567890'"
+}
+
+@test "vedv::image_service::export_by_id() Should fail If get_image_name_by_vm_name fails" {
+  local -r image_id="1234567890"
+  local -r image_file="${TEST_IMAGE_TMP_DIR}/image123.ova"
+  local -r no_checksum=""
+  local -r no_change_password=""
+
+  vedv::image_entity::get_vm_name() {
+    assert_equal "$*" "$image_id"
+    echo "image:nalyd1|crc:223456789|"
+  }
+  vedv::image_entity::get_image_name_by_vm_name() {
+    assert_equal "$*" "image:nalyd1|crc:223456789|"
+    return 1
+  }
+
+  run vedv::image_service::export_by_id \
+    "$image_id" "$image_file" "$no_checksum" "$no_change_password"
+
+  assert_failure
+  assert_output "Failed to get image name for vm 'image:nalyd1|crc:223456789|'"
+}
+
+@test "vedv::image_service::export_by_id() Should fail If get_last_layer_id fails" {
+  local -r image_id="1234567890"
+  local -r image_file="${TEST_IMAGE_TMP_DIR}/image123.ova"
+  local -r no_checksum=""
+  local -r no_change_password=""
+
+  vedv::image_entity::get_vm_name() {
+    assert_equal "$*" "$image_id"
+    echo "image:nalyd1|crc:223456789|"
+  }
+  vedv::image_entity::get_image_name_by_vm_name() {
+    assert_equal "$*" "image:nalyd1|crc:223456789|"
+    echo 'nalyd1'
+  }
+  vedv::image_entity::get_last_layer_id() {
+    assert_equal "$*" "$image_id"
+    return 1
+  }
+
+  run vedv::image_service::export_by_id \
+    "$image_id" "$image_file" "$no_checksum" "$no_change_password"
+
+  assert_failure
+  assert_output "Failed to get last image layer id for image: 'nalyd1'"
+}
+
+@test "vedv::image_service::export_by_id() Should fail If get_snapshot_name_by_layer_id fails" {
+  local -r image_id="1234567890"
+  local -r image_file="${TEST_IMAGE_TMP_DIR}/image123.ova"
+  local -r no_checksum=""
+  local -r no_change_password=""
+
+  vedv::image_entity::get_vm_name() {
+    assert_equal "$*" "$image_id"
+    echo "image:nalyd1|crc:223456789|"
+  }
+  vedv::image_entity::get_image_name_by_vm_name() {
+    assert_equal "$*" "image:nalyd1|crc:223456789|"
+    echo 'nalyd1'
+  }
+  vedv::image_entity::get_last_layer_id() {
+    assert_equal "$*" "$image_id"
+    echo '2234567890'
+  }
+  vedv::image_entity::get_snapshot_name_by_layer_id() {
+    assert_equal "$*" "${image_id} 2234567890"
+    return 1
+  }
+
+  run vedv::image_service::export_by_id \
+    "$image_id" "$image_file" "$no_checksum" "$no_change_password"
+
+  assert_failure
+  assert_output "Failed to get image layer snapshot name for image: 'nalyd1'"
+}
+
+@test "vedv::image_service::export_by_id() Should fail If gen_vm_name fails" {
+  local -r image_id="1234567890"
+  local -r image_file="${TEST_IMAGE_TMP_DIR}/image123.ova"
+  local -r no_checksum=""
+  local -r no_change_password=""
+
+  vedv::image_entity::get_vm_name() {
+    assert_equal "$*" "$image_id"
+    echo "image:nalyd1|crc:223456789|"
+  }
+  vedv::image_entity::get_image_name_by_vm_name() {
+    assert_equal "$*" "image:nalyd1|crc:223456789|"
+    echo 'nalyd1'
+  }
+  vedv::image_entity::get_last_layer_id() {
+    assert_equal "$*" "$image_id"
+    echo '2234567890'
+  }
+  vedv::image_entity::get_snapshot_name_by_layer_id() {
+    assert_equal "$*" "${image_id} 2234567890"
+    echo 'layer:FROM|id:2234567890|'
+  }
+  vedv::image_entity::gen_vm_name() {
+    assert_equal "$*" "nalyd1-clone-export"
+    return 1
+  }
+
+  run vedv::image_service::export_by_id \
+    "$image_id" "$image_file" "$no_checksum" "$no_change_password"
+
+  assert_failure
+  assert_output "Failed to generate image vm name for image: 'nalyd1-clone-export'"
+}
+
+@test "vedv::image_service::export_by_id() Should fail If get_id_by_vm_name fails" {
+  local -r image_id="1234567890"
+  local -r image_file="${TEST_IMAGE_TMP_DIR}/image123.ova"
+  local -r no_checksum=""
+  local -r no_change_password=""
+
+  vedv::image_entity::get_vm_name() {
+    assert_equal "$*" "$image_id"
+    echo "image:nalyd1|crc:223456789|"
+  }
+  vedv::image_entity::get_image_name_by_vm_name() {
+    assert_equal "$*" "image:nalyd1|crc:223456789|"
+    echo 'nalyd1'
+  }
+  vedv::image_entity::get_last_layer_id() {
+    assert_equal "$*" "$image_id"
+    echo '2234567890'
+  }
+  vedv::image_entity::get_snapshot_name_by_layer_id() {
+    assert_equal "$*" "${image_id} 2234567890"
+    echo 'layer:FROM|id:2234567890|'
+  }
+  vedv::image_entity::gen_vm_name() {
+    assert_equal "$*" "nalyd1-clone-export"
+    echo 'image:nalyd1-clone-export|crc:697829166|'
+  }
+  vedv::image_entity::get_id_by_vm_name() {
+    assert_equal "$*" 'image:nalyd1-clone-export|crc:697829166|'
+    return 1
+  }
+
+  run vedv::image_service::export_by_id \
+    "$image_id" "$image_file" "$no_checksum" "$no_change_password"
+
+  assert_failure
+  assert_output "Failed to get image id for image: 'nalyd1-clone-export'"
+}
+
+@test "vedv::image_service::export_by_id() Should fail If clonevm_link fails" {
+  local -r image_id="1234567890"
+  local -r image_file="${TEST_IMAGE_TMP_DIR}/image123.ova"
+  local -r no_checksum=""
+  local -r no_change_password=""
+
+  vedv::image_entity::get_vm_name() {
+    assert_equal "$*" "$image_id"
+    echo "image:nalyd1|crc:223456789|"
+  }
+  vedv::image_entity::get_image_name_by_vm_name() {
+    assert_equal "$*" "image:nalyd1|crc:223456789|"
+    echo 'nalyd1'
+  }
+  vedv::image_entity::get_last_layer_id() {
+    assert_equal "$*" "$image_id"
+    echo '2234567890'
+  }
+  vedv::image_entity::get_snapshot_name_by_layer_id() {
+    assert_equal "$*" "${image_id} 2234567890"
+    echo 'layer:FROM|id:2234567890|'
+  }
+  vedv::image_entity::gen_vm_name() {
+    assert_equal "$*" "nalyd1-clone-export"
+    echo 'image:nalyd1-clone-export|crc:697829166|'
+  }
+  vedv::image_entity::get_id_by_vm_name() {
+    assert_equal "$*" 'image:nalyd1-clone-export|crc:697829166|'
+    echo '697829166'
+  }
+  vedv::hypervisor::clonevm_link() {
+    assert_equal "$*" "image:nalyd1|crc:223456789| image:nalyd1-clone-export|crc:697829166| layer:FROM|id:2234567890| false"
+    return 1
+  }
+
+  run vedv::image_service::export_by_id \
+    "$image_id" "$image_file" "$no_checksum" "$no_change_password"
+
+  assert_failure
+  assert_output "Failed to clone vm: 'image:nalyd1|crc:223456789|' to: 'image:nalyd1-clone-export|crc:697829166|'"
+}
+
+@test "vedv::image_service::export_by_id() Should fail If set_vm_name fails" {
+  local -r image_id="1234567890"
+  local -r image_file="${TEST_IMAGE_TMP_DIR}/image123.ova"
+  local -r no_checksum=""
+  local -r no_change_password=""
+
+  vedv::image_entity::get_vm_name() {
+    assert_equal "$*" "$image_id"
+    echo "image:nalyd1|crc:223456789|"
+  }
+  vedv::image_entity::get_image_name_by_vm_name() {
+    assert_equal "$*" "image:nalyd1|crc:223456789|"
+    echo 'nalyd1'
+  }
+  vedv::image_entity::get_last_layer_id() {
+    assert_equal "$*" "$image_id"
+    echo '2234567890'
+  }
+  vedv::image_entity::get_snapshot_name_by_layer_id() {
+    assert_equal "$*" "${image_id} 2234567890"
+    echo 'layer:FROM|id:2234567890|'
+  }
+  vedv::image_entity::gen_vm_name() {
+    assert_equal "$*" "nalyd1-clone-export"
+    echo 'image:nalyd1-clone-export|crc:697829166|'
+  }
+  vedv::image_entity::get_id_by_vm_name() {
+    assert_equal "$*" 'image:nalyd1-clone-export|crc:697829166|'
+    echo '697829166'
+  }
+  vedv::hypervisor::clonevm_link() {
+    assert_equal "$*" "image:nalyd1|crc:223456789| image:nalyd1-clone-export|crc:697829166| layer:FROM|id:2234567890| false"
+  }
+  vedv::hypervisor::rm() {
+    :
+  }
+  vedv::image_entity::set_vm_name() {
+    assert_equal "$*" '697829166 image:nalyd1-clone-export|crc:697829166|'
+    return 1
+  }
+
+  run vedv::image_service::export_by_id \
+    "$image_id" "$image_file" "$no_checksum" "$no_change_password"
+
+  assert_failure
+  assert_output "Failed to set vm name for image: 'nalyd1-clone-export'"
+}
+
+@test "vedv::image_service::export_by_id() Should fail If __prepare_image_for_export fails" {
+  local -r image_id="1234567890"
+  local -r image_file="${TEST_IMAGE_TMP_DIR}/image123.ova"
+  local -r no_checksum=""
+  local -r no_change_password=""
+
+  vedv::image_entity::get_vm_name() {
+    assert_equal "$*" "$image_id"
+    echo "image:nalyd1|crc:223456789|"
+  }
+  vedv::image_entity::get_image_name_by_vm_name() {
+    assert_equal "$*" "image:nalyd1|crc:223456789|"
+    echo 'nalyd1'
+  }
+  vedv::image_entity::get_last_layer_id() {
+    assert_equal "$*" "$image_id"
+    echo '2234567890'
+  }
+  vedv::image_entity::get_snapshot_name_by_layer_id() {
+    assert_equal "$*" "${image_id} 2234567890"
+    echo 'layer:FROM|id:2234567890|'
+  }
+  vedv::image_entity::gen_vm_name() {
+    assert_equal "$*" "nalyd1-clone-export"
+    echo 'image:nalyd1-clone-export|crc:697829166|'
+  }
+  vedv::image_entity::get_id_by_vm_name() {
+    assert_equal "$*" 'image:nalyd1-clone-export|crc:697829166|'
+    echo '697829166'
+  }
+  vedv::hypervisor::clonevm_link() {
+    assert_equal "$*" "image:nalyd1|crc:223456789| image:nalyd1-clone-export|crc:697829166| layer:FROM|id:2234567890| false"
+  }
+  vedv::hypervisor::rm() {
+    :
+  }
+  vedv::image_entity::set_vm_name() {
+    assert_equal "$*" '697829166 image:nalyd1-clone-export|crc:697829166|'
+  }
+  vedv::image_service::__prepare_image_for_export() {
+    assert_equal "$*" "697829166 ${no_change_password}"
+    return 1
+  }
+
+  run vedv::image_service::export_by_id \
+    "$image_id" "$image_file" "$no_checksum" "$no_change_password"
+
+  assert_failure
+  assert_output "Failed to prepare image for export: 'nalyd1-clone-export'"
 }
 
 @test "vedv::image_service::export_by_id() Should fail If export fails" {
   local -r image_id="1234567890"
   local -r image_file="${TEST_IMAGE_TMP_DIR}/image123.ova"
   local -r no_checksum=""
+  local -r no_change_password=""
 
   vedv::image_entity::get_vm_name() {
     assert_equal "$*" "$image_id"
@@ -3062,22 +3330,51 @@ EOF
     assert_equal "$*" "image:nalyd1|crc:223456789|"
     echo 'nalyd1'
   }
+  vedv::image_entity::get_last_layer_id() {
+    assert_equal "$*" "$image_id"
+    echo '2234567890'
+  }
+  vedv::image_entity::get_snapshot_name_by_layer_id() {
+    assert_equal "$*" "${image_id} 2234567890"
+    echo 'layer:FROM|id:2234567890|'
+  }
+  vedv::image_entity::gen_vm_name() {
+    assert_equal "$*" "nalyd1-clone-export"
+    echo 'image:nalyd1-clone-export|crc:697829166|'
+  }
+  vedv::image_entity::get_id_by_vm_name() {
+    assert_equal "$*" 'image:nalyd1-clone-export|crc:697829166|'
+    echo '697829166'
+  }
+  vedv::hypervisor::clonevm_link() {
+    assert_equal "$*" "image:nalyd1|crc:223456789| image:nalyd1-clone-export|crc:697829166| layer:FROM|id:2234567890| false"
+  }
+  vedv::hypervisor::rm() {
+    :
+  }
+  vedv::image_entity::set_vm_name() {
+    assert_equal "$*" '697829166 image:nalyd1-clone-export|crc:697829166|'
+  }
+  vedv::image_service::__prepare_image_for_export() {
+    assert_equal "$*" "697829166 ${no_change_password}"
+  }
   vedv::hypervisor::export() {
-    assert_equal "$*" "image:nalyd1|crc:223456789| ${image_file} nalyd1"
+    assert_equal "$*" "image:nalyd1-clone-export|crc:697829166| ${image_file} nalyd1"
     return 1
   }
 
   run vedv::image_service::export_by_id \
-    "$image_id" "$image_file" "$no_checksum"
+    "$image_id" "$image_file" "$no_checksum" "$no_change_password"
 
   assert_failure
-  assert_output --regexp "Failed to export image 'nalyd1' to '.*/image123.ova'"
+  assert_output "Failed to export image 'nalyd1-clone-export' to '/tmp/vedv/images/image123.ova'"
 }
 
-@test "vedv::image_service::export_by_id() Should succeed With no checksum" {
+@test "vedv::image_service::export_by_id() Should succeed With no_checksum=true" {
   local -r image_id="1234567890"
   local -r image_file="${TEST_IMAGE_TMP_DIR}/image123.ova"
-  local -r no_checksum="true"
+  local -r no_checksum=true
+  local -r no_change_password=""
 
   vedv::image_entity::get_vm_name() {
     assert_equal "$*" "$image_id"
@@ -3087,24 +3384,50 @@ EOF
     assert_equal "$*" "image:nalyd1|crc:223456789|"
     echo 'nalyd1'
   }
-  vedv::hypervisor::export() {
-    assert_equal "$*" "image:nalyd1|crc:223456789| ${image_file} nalyd1"
+  vedv::image_entity::get_last_layer_id() {
+    assert_equal "$*" "$image_id"
+    echo '2234567890'
   }
-  sha256sum() {
-    assert_equal "$*" "INVALID_CALL"
+  vedv::image_entity::get_snapshot_name_by_layer_id() {
+    assert_equal "$*" "${image_id} 2234567890"
+    echo 'layer:FROM|id:2234567890|'
+  }
+  vedv::image_entity::gen_vm_name() {
+    assert_equal "$*" "nalyd1-clone-export"
+    echo 'image:nalyd1-clone-export|crc:697829166|'
+  }
+  vedv::image_entity::get_id_by_vm_name() {
+    assert_equal "$*" 'image:nalyd1-clone-export|crc:697829166|'
+    echo '697829166'
+  }
+  vedv::hypervisor::clonevm_link() {
+    assert_equal "$*" "image:nalyd1|crc:223456789| image:nalyd1-clone-export|crc:697829166| layer:FROM|id:2234567890| false"
+  }
+  vedv::hypervisor::rm() {
+    :
+  }
+  vedv::image_entity::set_vm_name() {
+    assert_equal "$*" '697829166 image:nalyd1-clone-export|crc:697829166|'
+  }
+  vedv::image_service::__prepare_image_for_export() {
+    assert_equal "$*" "697829166 ${no_change_password}"
+  }
+  vedv::hypervisor::export() {
+    assert_equal "$*" "image:nalyd1-clone-export|crc:697829166| ${image_file} nalyd1"
   }
 
   run vedv::image_service::export_by_id \
-    "$image_id" "$image_file" "$no_checksum"
+    "$image_id" "$image_file" "$no_checksum" "$no_change_password"
 
   assert_success
   assert_output ""
 }
 
-@test "vedv::image_service::export_by_id() Should fail If sha256sum fails" {
+@test "vedv::image_service::export_by_id() Should if cd fails" {
   local -r image_id="1234567890"
   local -r image_file="${TEST_IMAGE_TMP_DIR}/image123.ova"
-  local -r no_checksum="false"
+  local -r no_checksum=false
+  local -r no_change_password=""
 
   vedv::image_entity::get_vm_name() {
     assert_equal "$*" "$image_id"
@@ -3114,25 +3437,112 @@ EOF
     assert_equal "$*" "image:nalyd1|crc:223456789|"
     echo 'nalyd1'
   }
+  vedv::image_entity::get_last_layer_id() {
+    assert_equal "$*" "$image_id"
+    echo '2234567890'
+  }
+  vedv::image_entity::get_snapshot_name_by_layer_id() {
+    assert_equal "$*" "${image_id} 2234567890"
+    echo 'layer:FROM|id:2234567890|'
+  }
+  vedv::image_entity::gen_vm_name() {
+    assert_equal "$*" "nalyd1-clone-export"
+    echo 'image:nalyd1-clone-export|crc:697829166|'
+  }
+  vedv::image_entity::get_id_by_vm_name() {
+    assert_equal "$*" 'image:nalyd1-clone-export|crc:697829166|'
+    echo '697829166'
+  }
+  vedv::hypervisor::clonevm_link() {
+    assert_equal "$*" "image:nalyd1|crc:223456789| image:nalyd1-clone-export|crc:697829166| layer:FROM|id:2234567890| false"
+  }
+  vedv::hypervisor::rm() {
+    :
+  }
+  vedv::image_entity::set_vm_name() {
+    assert_equal "$*" '697829166 image:nalyd1-clone-export|crc:697829166|'
+  }
+  vedv::image_service::__prepare_image_for_export() {
+    assert_equal "$*" "697829166 ${no_change_password}"
+  }
   vedv::hypervisor::export() {
-    assert_equal "$*" "image:nalyd1|crc:223456789| ${image_file} nalyd1"
+    assert_equal "$*" "image:nalyd1-clone-export|crc:697829166| ${image_file} nalyd1"
+  }
+  cd() {
+    if [[ "$*" == "$image_file_dir" ]]; then
+      return 1
+    fi
+  }
+
+  run vedv::image_service::export_by_id \
+    "$image_id" "$image_file" "$no_checksum" "$no_change_password"
+
+  assert_failure
+  assert_output "Failed to change directory to '/tmp/vedv/images'"
+}
+
+@test "vedv::image_service::export_by_id() Should if sha256sum fails" {
+  local -r image_id="1234567890"
+  local -r image_file="${TEST_IMAGE_TMP_DIR}/image123.ova"
+  local -r no_checksum=false
+  local -r no_change_password=""
+
+  vedv::image_entity::get_vm_name() {
+    assert_equal "$*" "$image_id"
+    echo "image:nalyd1|crc:223456789|"
+  }
+  vedv::image_entity::get_image_name_by_vm_name() {
+    assert_equal "$*" "image:nalyd1|crc:223456789|"
+    echo 'nalyd1'
+  }
+  vedv::image_entity::get_last_layer_id() {
+    assert_equal "$*" "$image_id"
+    echo '2234567890'
+  }
+  vedv::image_entity::get_snapshot_name_by_layer_id() {
+    assert_equal "$*" "${image_id} 2234567890"
+    echo 'layer:FROM|id:2234567890|'
+  }
+  vedv::image_entity::gen_vm_name() {
+    assert_equal "$*" "nalyd1-clone-export"
+    echo 'image:nalyd1-clone-export|crc:697829166|'
+  }
+  vedv::image_entity::get_id_by_vm_name() {
+    assert_equal "$*" 'image:nalyd1-clone-export|crc:697829166|'
+    echo '697829166'
+  }
+  vedv::hypervisor::clonevm_link() {
+    assert_equal "$*" "image:nalyd1|crc:223456789| image:nalyd1-clone-export|crc:697829166| layer:FROM|id:2234567890| false"
+  }
+  vedv::hypervisor::rm() {
+    :
+  }
+  vedv::image_entity::set_vm_name() {
+    assert_equal "$*" '697829166 image:nalyd1-clone-export|crc:697829166|'
+  }
+  vedv::image_service::__prepare_image_for_export() {
+    assert_equal "$*" "697829166 ${no_change_password}"
+  }
+  vedv::hypervisor::export() {
+    assert_equal "$*" "image:nalyd1-clone-export|crc:697829166| ${image_file} nalyd1"
   }
   sha256sum() {
-    assert_equal "$*" "image123.ova"
+    assert_equal "$*" "$image_file_basename"
     return 1
   }
 
   run vedv::image_service::export_by_id \
-    "$image_id" "$image_file" "$no_checksum"
+    "$image_id" "$image_file" "$no_checksum" "$no_change_password"
 
   assert_failure
-  assert_output --regexp "Failed to create checksum file 'image123.ova.sha256sum'"
+  assert_output "Failed to create checksum file 'image123.ova.sha256sum'"
 }
 
 @test "vedv::image_service::export_by_id() Should succeed" {
   local -r image_id="1234567890"
   local -r image_file="${TEST_IMAGE_TMP_DIR}/image123.ova"
-  local -r no_checksum="false"
+  local -r no_checksum=false
+  local -r no_change_password=""
 
   vedv::image_entity::get_vm_name() {
     assert_equal "$*" "$image_id"
@@ -3142,48 +3552,46 @@ EOF
     assert_equal "$*" "image:nalyd1|crc:223456789|"
     echo 'nalyd1'
   }
+  vedv::image_entity::get_last_layer_id() {
+    assert_equal "$*" "$image_id"
+    echo '2234567890'
+  }
+  vedv::image_entity::get_snapshot_name_by_layer_id() {
+    assert_equal "$*" "${image_id} 2234567890"
+    echo 'layer:FROM|id:2234567890|'
+  }
+  vedv::image_entity::gen_vm_name() {
+    assert_equal "$*" "nalyd1-clone-export"
+    echo 'image:nalyd1-clone-export|crc:697829166|'
+  }
+  vedv::image_entity::get_id_by_vm_name() {
+    assert_equal "$*" 'image:nalyd1-clone-export|crc:697829166|'
+    echo '697829166'
+  }
+  vedv::hypervisor::clonevm_link() {
+    assert_equal "$*" "image:nalyd1|crc:223456789| image:nalyd1-clone-export|crc:697829166| layer:FROM|id:2234567890| false"
+  }
+  vedv::hypervisor::rm() {
+    :
+  }
+  vedv::image_entity::set_vm_name() {
+    assert_equal "$*" '697829166 image:nalyd1-clone-export|crc:697829166|'
+  }
+  vedv::image_service::__prepare_image_for_export() {
+    assert_equal "$*" "697829166 ${no_change_password}"
+  }
   vedv::hypervisor::export() {
-    assert_equal "$*" "image:nalyd1|crc:223456789| ${image_file} nalyd1"
+    assert_equal "$*" "image:nalyd1-clone-export|crc:697829166| ${image_file} nalyd1"
   }
   sha256sum() {
-    assert_equal "$*" "image123.ova"
+    assert_equal "$*" "$image_file_basename"
   }
 
   run vedv::image_service::export_by_id \
-    "$image_id" "$image_file" "$no_checksum"
+    "$image_id" "$image_file" "$no_checksum" "$no_change_password"
 
   assert_success
   assert_output ""
-}
-
-# Tests for vedv::image_service::export()
-@test "vedv::image_service::export() should fail if get_id fails" {
-  local -r image_name_or_id="nalyd1"
-  local -r image_file="${TEST_IMAGE_TMP_DIR}/image123.ova"
-  local -r no_checksum=""
-
-  vedv::vmobj_entity::get_id() {
-    assert_equal "$*" "nalyd1"
-    return 1
-  }
-
-  run vedv::image_service::export "$image_name_or_id" "$image_file" "$no_checksum"
-}
-
-@test "vedv::image_service::export() should succeed" {
-  local -r image_name_or_id="nalyd1"
-  local -r image_file="${TEST_IMAGE_TMP_DIR}/image123.ova"
-  local -r no_checksum=""
-
-  vedv::vmobj_entity::get_id() {
-    assert_equal "$*" "nalyd1"
-    echo "1234567890"
-  }
-  vedv::image_service::export_by_id() {
-    assert_equal "$*" "1234567890 ${image_file} ${no_checksum}"
-  }
-
-  run vedv::image_service::export "$image_name_or_id" "$image_file" "$no_checksum"
 }
 
 # Tests for vedv::image_service::fs::get_cpus()
@@ -3416,4 +3824,372 @@ EOF
 
   assert_failure
   assert_output "Invalid image argument format, it must be a image name, url, file or fully qualified name"
+}
+
+# Tests for vedv::image_service::__prepare_image_for_export()
+@test "vedv::image_service::__prepare_image_for_export() Should fail If image_id is empty" {
+  local -r image_id=""
+  local -r no_change_password=""
+
+  run vedv::image_service::__prepare_image_for_export \
+    "$image_id" "$no_change_password"
+
+  assert_failure
+  assert_output "Argument 'image_id' is required"
+}
+
+@test "vedv::image_service::__prepare_image_for_export() Should fail If no_change_password is empty" {
+  local -r image_id=1234567890
+  local -r no_change_password=""
+
+  run vedv::image_service::__prepare_image_for_export \
+    "$image_id" "$no_change_password"
+
+  assert_failure
+  assert_output "Argument 'no_change_password' is required"
+}
+
+@test "vedv::image_service::__prepare_image_for_export() Should fail If get_password fails" {
+  local -r image_id=1234567890
+  local -r no_change_password=true
+
+  vedv::vmobj_entity::get_password() {
+    assert_equal "$*" "image ${image_id}"
+    return 1
+  }
+
+  run vedv::image_service::__prepare_image_for_export \
+    "$image_id" "$no_change_password"
+
+  assert_failure
+  assert_output "Failed to get password for image: '1234567890'"
+}
+
+@test "vedv::image_service::__prepare_image_for_export() Should fail If ____clear_child_container_ids fails" {
+  local -r image_id=1234567890
+  local -r no_change_password=true
+
+  vedv::vmobj_entity::get_password() {
+    assert_equal "$*" "image ${image_id}"
+    echo "gen_password"
+  }
+  vedv::vmobj_entity::get_default_password() {
+    echo "default_password"
+  }
+  vedv::image_entity::____clear_child_container_ids() {
+    assert_equal "$*" "$image_id"
+    return 1
+  }
+
+  run vedv::image_service::__prepare_image_for_export \
+    "$image_id" "$no_change_password"
+
+  assert_failure
+  assert_output "Image has a password different from the default one, it's recommended
+to change it to avoid a password leak.
+Set VEDV_CHANGE_PASSWORD_ON_IMPORT=false to mitigate this risk
+Failed to clear child container ids for image: '1234567890'"
+}
+
+@test "vedv::image_service::__prepare_image_for_export() Should fail If set_image_cache fails" {
+  local -r image_id=1234567890
+  local -r no_change_password=true
+
+  vedv::vmobj_entity::get_password() {
+    assert_equal "$*" "image ${image_id}"
+    echo "gen_password"
+  }
+  vedv::vmobj_entity::get_default_password() {
+    echo "default_password"
+  }
+  vedv::image_entity::____clear_child_container_ids() {
+    assert_equal "$*" "$image_id"
+  }
+  vedv::image_entity::set_image_cache() {
+    assert_equal "$*" "${image_id} "
+    return 1
+  }
+
+  run vedv::image_service::__prepare_image_for_export \
+    "$image_id" "$no_change_password"
+
+  assert_failure
+  assert_output "Image has a password different from the default one, it's recommended
+to change it to avoid a password leak.
+Set VEDV_CHANGE_PASSWORD_ON_IMPORT=false to mitigate this risk
+Error setting image_cache to the image '1234567890'"
+}
+
+@test "vedv::image_service::__prepare_image_for_export() Should fail If set_ova_file_sum fails" {
+  local -r image_id=1234567890
+  local -r no_change_password=true
+
+  vedv::vmobj_entity::get_password() {
+    assert_equal "$*" "image ${image_id}"
+    echo "gen_password"
+  }
+  vedv::vmobj_entity::get_default_password() {
+    echo "default_password"
+  }
+  vedv::image_entity::____clear_child_container_ids() {
+    assert_equal "$*" "$image_id"
+  }
+  vedv::image_entity::set_image_cache() {
+    assert_equal "$*" "${image_id} "
+  }
+  vedv::image_entity::set_ova_file_sum() {
+    assert_equal "$*" "${image_id} "
+    return 1
+  }
+
+  run vedv::image_service::__prepare_image_for_export \
+    "$image_id" "$no_change_password"
+
+  assert_failure
+  assert_output "Image has a password different from the default one, it's recommended
+to change it to avoid a password leak.
+Set VEDV_CHANGE_PASSWORD_ON_IMPORT=false to mitigate this risk
+Error setting ova_file_sum to the image '1234567890'"
+}
+
+@test "vedv::image_service::__prepare_image_for_export() Should fail If set_ssh_port fails" {
+  local -r image_id=1234567890
+  local -r no_change_password=true
+
+  vedv::vmobj_entity::get_password() {
+    assert_equal "$*" "image ${image_id}"
+    echo "gen_password"
+  }
+  vedv::vmobj_entity::get_default_password() {
+    echo "default_password"
+  }
+  vedv::image_entity::____clear_child_container_ids() {
+    assert_equal "$*" "$image_id"
+  }
+  vedv::image_entity::set_image_cache() {
+    assert_equal "$*" "${image_id} "
+  }
+  vedv::image_entity::set_ova_file_sum() {
+    assert_equal "$*" "${image_id} "
+  }
+  vedv::image_entity::set_ssh_port() {
+    assert_equal "$*" "${image_id} "
+    return 1
+  }
+
+  run vedv::image_service::__prepare_image_for_export \
+    "$image_id" "$no_change_password"
+
+  assert_failure
+  assert_output "Image has a password different from the default one, it's recommended
+to change it to avoid a password leak.
+Set VEDV_CHANGE_PASSWORD_ON_IMPORT=false to mitigate this risk
+Error setting ssh_port to the image '1234567890'"
+}
+
+@test "vedv::image_service::__prepare_image_for_export() Should fail If set_vm_name fails" {
+  local -r image_id=1234567890
+  local -r no_change_password=true
+
+  vedv::vmobj_entity::get_password() {
+    assert_equal "$*" "image ${image_id}"
+    echo "gen_password"
+  }
+  vedv::vmobj_entity::get_default_password() {
+    echo "default_password"
+  }
+  vedv::image_entity::____clear_child_container_ids() {
+    assert_equal "$*" "$image_id"
+  }
+  vedv::image_entity::set_image_cache() {
+    assert_equal "$*" "${image_id} "
+  }
+  vedv::image_entity::set_ova_file_sum() {
+    assert_equal "$*" "${image_id} "
+  }
+  vedv::image_entity::set_ssh_port() {
+    assert_equal "$*" "${image_id} "
+  }
+  vedv::image_entity::set_vm_name() {
+    assert_equal "$*" "${image_id} "
+    return 1
+  }
+
+  run vedv::image_service::__prepare_image_for_export \
+    "$image_id" "$no_change_password"
+
+  assert_failure
+  assert_output "Image has a password different from the default one, it's recommended
+to change it to avoid a password leak.
+Set VEDV_CHANGE_PASSWORD_ON_IMPORT=false to mitigate this risk
+Error setting vm_name to the image '1234567890'"
+}
+
+@test "vedv::image_service::__prepare_image_for_export() Should fail If change_users_password fails" {
+  local -r image_id=1234567890
+  local -r no_change_password=false
+
+  vedv::vmobj_entity::get_password() {
+    assert_equal "$*" "image ${image_id}"
+    echo "gen_password"
+  }
+  vedv::vmobj_entity::get_default_password() {
+    echo "default_password"
+  }
+  vedv::image_entity::____clear_child_container_ids() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::image_entity::set_image_cache() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::image_entity::set_ova_file_sum() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::image_entity::set_ssh_port() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::image_entity::set_vm_name() {
+    assert_equal "$*" "INVALID_CALL"
+    return 1
+  }
+  vedv::vmobj_service::change_users_password() {
+    assert_equal "$*" "image ${image_id} default_password"
+    return 1
+  }
+
+  run vedv::image_service::__prepare_image_for_export \
+    "$image_id" "$no_change_password"
+
+  assert_failure
+  assert_output "Image has a password different from the default one,
+changing it to avoid a password leak.
+This adds around 15 to 35 seconds to the process
+Error setting password for image: '1234567890'"
+}
+
+@test "vedv::image_service::__prepare_image_for_export() Should fail If stop fails" {
+  local -r image_id=1234567890
+  local -r no_change_password=false
+
+  vedv::vmobj_entity::get_password() {
+    assert_equal "$*" "image ${image_id}"
+    echo "gen_password"
+  }
+  vedv::vmobj_entity::get_default_password() {
+    echo "default_password"
+  }
+  vedv::image_entity::____clear_child_container_ids() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::image_entity::set_image_cache() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::image_entity::set_ova_file_sum() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::image_entity::set_ssh_port() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::image_entity::set_vm_name() {
+    assert_equal "$*" "INVALID_CALL"
+    return 1
+  }
+  vedv::vmobj_service::change_users_password() {
+    assert_equal "$*" "image ${image_id} default_password"
+  }
+  vedv::image_service::stop() {
+    assert_equal "$*" "$image_id"
+    return 1
+  }
+
+  run vedv::image_service::__prepare_image_for_export \
+    "$image_id" "$no_change_password"
+
+  assert_failure
+  assert_output "Image has a password different from the default one,
+changing it to avoid a password leak.
+This adds around 15 to 35 seconds to the process
+Failed to stop image: '1234567890'"
+}
+
+@test "vedv::image_service::__prepare_image_for_export() Should succeed With no_change_password=false" {
+  local -r image_id=1234567890
+  local -r no_change_password=false
+
+  vedv::vmobj_entity::get_password() {
+    assert_equal "$*" "image ${image_id}"
+    echo "gen_password"
+  }
+  vedv::vmobj_entity::get_default_password() {
+    echo "default_password"
+  }
+  vedv::image_entity::____clear_child_container_ids() {
+    assert_equal "$*" "$image_id"
+  }
+  vedv::image_entity::set_image_cache() {
+    assert_equal "$*" "${image_id} "
+  }
+  vedv::image_entity::set_ova_file_sum() {
+    assert_equal "$*" "${image_id} "
+  }
+  vedv::image_entity::set_ssh_port() {
+    assert_equal "$*" "${image_id} "
+  }
+  vedv::image_entity::set_vm_name() {
+    assert_equal "$*" "${image_id} "
+  }
+  vedv::vmobj_service::change_users_password() {
+    assert_equal "$*" "image ${image_id} default_password"
+  }
+  vedv::image_service::stop() {
+    assert_equal "$*" "$image_id"
+  }
+
+  run vedv::image_service::__prepare_image_for_export \
+    "$image_id" "$no_change_password"
+
+  assert_success
+  assert_output "Image has a password different from the default one,
+changing it to avoid a password leak.
+This adds around 15 to 35 seconds to the process"
+}
+
+@test "vedv::image_service::__prepare_image_for_export() Should succeed equals passwords" {
+  local -r image_id=1234567890
+  local -r no_change_password=true
+
+  vedv::vmobj_entity::get_password() {
+    assert_equal "$*" "image ${image_id}"
+    echo "default_password"
+  }
+  vedv::vmobj_entity::get_default_password() {
+    echo "default_password"
+  }
+  vedv::image_entity::____clear_child_container_ids() {
+    assert_equal "$*" "$image_id"
+  }
+  vedv::image_entity::set_image_cache() {
+    assert_equal "$*" "${image_id} "
+  }
+  vedv::image_entity::set_ova_file_sum() {
+    assert_equal "$*" "${image_id} "
+  }
+  vedv::image_entity::set_ssh_port() {
+    assert_equal "$*" "${image_id} "
+  }
+  vedv::image_entity::set_vm_name() {
+    assert_equal "$*" "${image_id} "
+  }
+  vedv::vmobj_service::change_users_password() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::image_service::stop() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+
+  run vedv::image_service::__prepare_image_for_export \
+    "$image_id" "$no_change_password"
+
+  assert_success
+  assert_output ""
 }

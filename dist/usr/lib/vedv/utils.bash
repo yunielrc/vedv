@@ -52,6 +52,10 @@ err() {
   echo -e "$*" >&2
 }
 
+warn() {
+  echo -e "$*" >&2
+}
+
 dierr() {
   err "$1"
   exit "$2"

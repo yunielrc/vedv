@@ -483,7 +483,7 @@ vedv::image_entity::get_image_cache() {
 # Set image_cache value
 #
 # Arguments:
-#   image_id  string       image id
+#   image_id    string    image id
 #   image_cache string    image cache
 #
 # Returns:
@@ -641,7 +641,7 @@ vedv::image_entity::get_child_containers_ids() {
 # (only for internal use of image_service when an image is imported)
 #
 # Arguments:
-#   image_id            string  image id
+#   image_id    string  image id
 #
 # Returns:
 #   0 on success, non-zero on error.

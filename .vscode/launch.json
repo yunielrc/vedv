@@ -335,6 +335,21 @@
     {
       "type": "bashdb",
       "request": "launch",
+      "name": "Bash-Debug (vedv image export)",
+      "env": {
+        "VEDV_HADOLINT_ENABLED": "false"
+      },
+      "program": "${workspaceFolder}/dist/usr/bin/vedv",
+      "args": [
+        "image",
+        "export",
+        "alpine1",
+        "/home/yuniel/alpine1.ova"
+      ]
+    },
+    {
+      "type": "bashdb",
+      "request": "launch",
       "name": "Bash-Debug (test)",
       "program": "${workspaceFolder}/test"
     },

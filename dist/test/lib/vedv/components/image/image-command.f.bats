@@ -1,4 +1,4 @@
-# shellcheck disable=SC2016,SC2317
+# shellcheck disable=SC2016,SC2317,SC2031,2030
 load test_helper
 
 setup_file() {
@@ -445,6 +445,38 @@ vedv image export IMAGE FILE"
 
   assert_success
   assert_output --partial 'image123.ova: OK'
+}
+
+@test "vedv image export image123 FILE, Should change gen passw on export" {
+
+  # the image is imported with a generated password
+  export VEDV_CHANGE_PASSWORD_ON_IMPORT=true
+  vedv image import --name alpine "$TEST_OVA_FILE"
+  vedv container create -n alpine1 alpine
+  vedv container start -w alpine1
+
+  local -r default_passw="$TEST_SSH_PASSWORD"
+
+  run vedv container exec alpine1 "echo '${default_passw}' | timeout 1 su -c id - ${TEST_SSH_USER}"
+  # the default password should not work
+  assert_failure
+  assert_output --partial "Failed"
+
+  # on the export process the password is changed to the default password
+  export VEDV_NO_CHANGE_PASSWORD_ON_EXPORT=false
+  vedv image export alpine "${TEST_IMAGE_TMP_DIR}/alpinem.ova"
+
+  # the image is imported without changing the password
+  # the image password should be the default one
+  export VEDV_CHANGE_PASSWORD_ON_IMPORT=false
+  vedv image import --name alpinem "${TEST_IMAGE_TMP_DIR}/alpinem.ova"
+  vedv container create -n alpinem1 alpinem
+  vedv container start -w alpinem1
+
+  run vedv container exec alpinem1 "echo '${default_passw}' | timeout 1 su -c id - ${TEST_SSH_USER}"
+  # the default password should work
+  assert_success
+  assert_output --partial '(vedv)'
 }
 
 # Tests for vedv image push()

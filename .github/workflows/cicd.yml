@@ -14,7 +14,7 @@ on:
 jobs:
 
   lint:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     if: ${{ github.event_name != 'pull_request' }}
 
     steps:
@@ -24,12 +24,5 @@ jobs:
       - name: Run ShellCheck
         uses: ludeeus/action-shellcheck@master
 
-  # test:
-  #   runs-on: manjaro-latest
-
-  #   steps:
-  #     - name: Checkout
-  #       uses: actions/checkout@v3
-
-  #     - name: Run Tests
-  #       run: make test
+#     - name: Run Tests
+#       run: make test
