@@ -1,4 +1,4 @@
-# shellcheck disable=SC2016
+# shellcheck disable=SC2016,SC2086
 load test_helper
 
 setup_file() {
@@ -589,4 +589,33 @@ Build finished
   assert_success
   assert_output "375138354
 339074491"
+}
+
+# Tests for vedv::container_command::__restart()
+@test "vedv container restart -h, Should show help With flags '-h|--help'" {
+
+  for flag in '' '-h' '--help'; do
+    run vedv container restart $flag
+
+    assert_success
+    assert_output --partial 'vedv container restart [FLAGS] CONTAINER [CONTAINER...]'
+  done
+}
+
+@test "vedv container restart --wait ct1 ct2 ct3, Should succeed" {
+  local -r container_names_or_ids='ct1 ct2 ct3'
+
+  vedv container create --name 'ct1' "$TEST_OVA_FILE"
+  vedv container create --name 'ct2' "$TEST_OVA_FILE"
+  vedv container create --name 'ct3' "$TEST_OVA_FILE"
+
+  vedv container start --wait 'ct1' 'ct2' 'ct3'
+
+  run vedv container restart \
+    --wait $container_names_or_ids
+
+  assert_success
+  assert_output "2410003725
+2378975364
+2350179331"
 }

@@ -167,12 +167,32 @@ vedv::container_command::__create() {
 }
 
 #
+# Show help for __start command
+#
+# Output:
+#  Writes the help to the stdout
+#
+vedv::container_command::__start_help() {
+  cat <<-HELPMSG
+Usage:
+${__VED_CONTAINER_COMMAND_SCRIPT_NAME} container start [FLAGS] CONTAINER [CONTAINER...]
+
+Start one or more stopped containers
+
+Flags:
+  -h, --help    show help
+  -w, --wait    wait for SSH
+  --show        show container gui on supported desktop platforms
+HELPMSG
+}
+
+#
 # Start one or more stopped containers
 #
 # Flags:
-#   [-h | --help]          show help
-#   [-w | --wait]          wait for SSH
-#   [--show]               show container gui on supported desktop platforms
+#   -h, --help          show help
+#   -w, --wait          wait for SSH
+#   --show              show container gui on supported desktop platforms
 #
 # Arguments:
 #   CONTAINER  [CONTAINER...]     one or more container name or id
@@ -223,26 +243,6 @@ vedv::container_command::__start() {
     "$container_names_or_ids" \
     "$wait_for_ssh" \
     "$show"
-}
-
-#
-# Show help for __start command
-#
-# Output:
-#  Writes the help to the stdout
-#
-vedv::container_command::__start_help() {
-  cat <<-HELPMSG
-Usage:
-${__VED_CONTAINER_COMMAND_SCRIPT_NAME} container start [FLAGS] CONTAINER [CONTAINER...]
-
-Start one or more stopped containers
-
-Flags:
-  -h, --help    show help
-  -w, --wait    wait for SSH
-  --show        show container gui on supported desktop platforms
-HELPMSG
 }
 
 #
@@ -387,6 +387,63 @@ vedv::container_command::__stop() {
   else
     vedv::container_service::stop "$container_names_or_ids"
   fi
+}
+
+#
+# Show help for __restart command
+#
+# Output:
+#  Writes the help to the stdout
+#
+vedv::container_command::__restart_help() {
+  cat <<-HELPMSG
+Usage:
+${__VED_CONTAINER_COMMAND_SCRIPT_NAME} container restart [FLAGS] CONTAINER [CONTAINER...]
+
+Restart one or more started containers
+
+Flags:
+  -h, --help    show help
+  -w, --wait    wait for SSH
+HELPMSG
+}
+
+#
+# Restart one or more started containers
+#
+# Flags:
+#   -h, --help          show help
+#   -w, --wait          wait for SSH
+#
+# Arguments:
+#   CONTAINER  [CONTAINER...]     one or more container name or id
+#
+# Output:
+#   writes container id and name to stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::container_command::__restart() {
+
+  if [[ $# == 0 ]]; then set -- '-h'; fi
+
+  if [[ "$1" == @(-h|--help) ]]; then
+    vedv::container_command::__restart_help
+    return 0
+  fi
+
+  set -o noglob
+  local -r args_str="${*/--wait/}"
+  # shellcheck disable=SC2206
+  local -r args=(--no-save ${args_str/-w/})
+  set +o noglob
+
+  vedv::container_command::__stop "${args[@]}" >/dev/null ||
+    return $?
+
+  vedv::container_command::__start "$@" ||
+    return $?
 }
 
 #
@@ -1035,6 +1092,7 @@ Commands:
   start         start one or more containers
   remove        remove one or more containers
   stop          stop one or more containers
+  restart       restart one or more containers
   kill          kill one or more running containers
   list          list containers
   login         login to a container
@@ -1069,6 +1127,11 @@ vedv::container_command::run_cmd() {
     stop)
       shift
       vedv::container_command::__stop "$@"
+      return $?
+      ;;
+    restart)
+      shift
+      vedv::container_command::__restart "$@"
       return $?
       ;;
     kill)

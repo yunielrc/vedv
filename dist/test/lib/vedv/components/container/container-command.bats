@@ -728,7 +728,7 @@ vedv container list-exposed-ports CONTAINER"
 }
 
 # Tests for vedv::container_command::__kill()
-@test "vedv::container_command::__kill(), Should show hellp With flags '-h|--help'" {
+@test "vedv::container_command::__kill(), Should show help With flags '-h|--help'" {
 
   for flag in '' '-h' '--help'; do
     run vedv::container_command::__kill $flag
@@ -758,4 +758,32 @@ vedv container list-exposed-ports CONTAINER"
 
   assert_success
   assert_output ''
+}
+
+# Tests for vedv::container_command::__restart()
+@test "vedv::container_command::__restart(), Should show help With flags '-h|--help'" {
+
+  for flag in '' '-h' '--help'; do
+    run vedv::container_command::__restart $flag
+
+    assert_success
+    assert_output --partial 'vedv container restart [FLAGS] CONTAINER [CONTAINER...]'
+  done
+}
+
+@test "vedv::container_command::__restart(), Should succeed" {
+  local -r container_names_or_ids='ct1 ct2 ct3'
+
+  vedv::container_command::__stop() {
+    assert_equal "$*" "--no-save ct1 ct2 ct3"
+  }
+  vedv::container_command::__start() {
+    assert_equal "$*" "--wait ct1 ct2 ct3"
+  }
+
+  run vedv::container_command::__restart \
+    --wait "$container_names_or_ids"
+
+  assert_success
+  assert_output ""
 }
