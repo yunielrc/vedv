@@ -227,7 +227,7 @@ vedv::image_service::import() {
   if [[ "$change_password" == true ]]; then
     # warn "Changing password for image '${image_name}'"
     # warn 'This adds around 15 to 35 seconds to the process'
-    # warn 'To avoid this set VEDV_CHANGE_PASSWORD_ON_IMPORT=false'
+    # warn 'To avoid this set CHANGE_PASSWORD_ON_IMPORT=false'
     # warn 'in the config file'
 
     vedv::image_service::__gen_change_password "$image_id" >/dev/null || {
@@ -434,7 +434,7 @@ vedv::image_service::__prepare_image_for_export() {
     if [[ "$no_change_password" == true ]]; then
       warn "Image has a password different from the default one, it's recommended"
       warn "to change it to avoid a password leak."
-      warn "Set VEDV_CHANGE_PASSWORD_ON_IMPORT=false to mitigate this risk"
+      warn "Set CHANGE_PASSWORD_ON_IMPORT=false to mitigate this risk"
     else
       warn "Image has a password different from the default one,"
       warn "changing it to avoid a password leak."
