@@ -19,6 +19,8 @@ The software we are developing needs to be tested on a system as closed as possi
 
 ## Tested OS
 
+Note: This tool doesn't work on nested virtualization.
+
 ### Manjaro
 
 ${MANJARO_UNAME_A}
@@ -60,7 +62,7 @@ sudo make OS=manjaro install
 For any other linux distribution install runtime dependencies first and execute the command below:
 
 ```sh
-make install
+sudo make install
 ```
 
 ## Configure
