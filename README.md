@@ -21,6 +21,8 @@ The software we are developing needs to be tested on a system as closed as possi
 
 ## Tested OS
 
+Note: This tool doesn't work on nested virtualization.
+
 ### Manjaro
 
 Linux yuniel-pc 6.1.44-1-MANJARO #1 SMP PREEMPT_DYNAMIC Wed Aug  9 09:02:26 UTC 2023 x86_64 GNU/Linux
@@ -72,7 +74,7 @@ sudo make OS=manjaro install
 For any other linux distribution install runtime dependencies first and execute the command below:
 
 ```sh
-make install
+sudo make install
 ```
 
 ## Configure
@@ -136,31 +138,28 @@ Run 'vedv COMMAND --help' for more information on a command.
 
 ### Start a container
 
-Download an image and create a container, then start it
+Download an image with custom name, create a container and start it
+
+- To see the download activity, install `bmon`, open it `bmon -b` and select the network interface
+
+```sh
+vedv image pull -n alpine admin@alpine/alpine-3.18.3-x86_64 # 13.708s 90Mbps
+vedv container create -n alpine alpine #  1.566s
+# starting a container can take up to 1 minute the first time or more
+# deppending on your hardware and the image os
+vedv container start -w alpine # 30.215s / ubuntu-server starts in around 13s
+vedv container stop alpine # 0.836s
+vedv container start -w alpine # 13.275s
+
+```
+
+Or download an image and create a container, then start it
 
 ```sh
 vedv container create -n alpine admin@alpine/alpine-3.18.3-x86_64
 # starting a container can take up to 1 minute the first time or more
 # deppending on your hardware and the image os
 vedv container start alpine
-```
-
-Or download an image with custom name, create a container and start it
-
-```sh
-vedv image pull -n alpine admin@alpine/alpine-3.18.3-x86_64
-# 13.708s 90Mbps
-vedv container create -n alpine alpine
-#  1.566s
-# starting a container can take up to 1 minute the first time or more
-# deppending on your hardware and the image os
-vedv container start -w alpine
-# 30.215s / ubuntu-server starts in around 13s
-vedv container stop alpine
-# 0.836s
-vedv container start -w alpine
-# 13.275s
-
 ```
 
 Show running container
@@ -328,12 +327,6 @@ vedv container rm --force todo-101 # 3.285s
 vedv image push <your_user_id>@alpine/todo-101-alpine-1.0.0-x86_64 # 1m 37.62s 12Mbps
 # If you want to push the image with a different name run the command below:
 # vedv image push -n todo-101-alpine-1.0.0-x86_64 <your_user_id>@alpine/<your_image_name>-1.0.0-x86_64
-```
-
-- To see the upload activity, install `bmon`, open it and select the network interface
-
-```sh
-bmon -b
 ```
 
 - On finish open your browser and go to <https://registry.vedv.dev/apps/files/?dir=/00-user-images>

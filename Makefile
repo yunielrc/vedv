@@ -20,8 +20,7 @@ commit:
 test-all:
 	# MANDATORY ENV VARS: OS
 	./tools/bats --recursive dist/test && \
-	./tools/update-pkgs-versions && \
-	./tools/update-readme
+	./tools/update-pkgs-versions
 
 test-unit:
 	./tools/bats $(u)
