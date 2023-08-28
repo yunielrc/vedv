@@ -173,7 +173,9 @@ vedv::hypervisor::import() {
   if ! vedv::hypervisor::validate_vm_name "$vm_name" 'import_vm_name'; then
     return "$ERR_INVAL_ARG"
   fi
+
   VBoxManage import "$ova_file" --vsys 0 --vmname "$vm_name"
+  VBoxManage modifyvm "$vm_name" --usb-ohci=on --usb-ehci=off
 }
 vedv::virtualbox::import() { vedv::hypervisor::import "$@"; }
 
@@ -201,6 +203,20 @@ vedv::hypervisor::export() {
     err "Argument 'ova_file' is required"
     return "$ERR_INVAL_ARG"
   fi
+
+  local is_running
+  is_running="$(vedv::hypervisor::is_running "$vm_name")" || {
+    err "Failed to check if vm is running"
+    return "$ERR_VIRTUALBOX_OPERATION"
+  }
+  readonly is_running
+
+  if [[ "$is_running" == true ]]; then
+    VBoxManage controlvm "$vm_name" acpipowerbutton
+    sleep 2
+  fi
+
+  VBoxManage modifyvm "$vm_name" --usb-ohci=on --usb-ehci=off
 
   VBoxManage export "$vm_name" \
     --output "$ova_file" --vsys 0 --ovf20 --vmname "$exported_vm_name" &>/dev/null

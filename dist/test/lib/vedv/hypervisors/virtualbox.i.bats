@@ -814,6 +814,22 @@ http,tcp,,8080,,80'
   assert_output "Argument 'ova_file' is required"
 }
 
+@test "vedv::hypervisor::export() Should fail If is_running fails" {
+  local -r vm_name="image123"
+  local -r ova_file="${TEST_IMAGE_TMP_DIR}/image123.ova"
+  local -r exported_vm_name=""
+
+  vedv::hypervisor::is_running() {
+    assert_equal "$*" "image123"
+    return 1
+  }
+
+  run vedv::hypervisor::export "$vm_name" "$ova_file" "$exported_vm_name"
+
+  assert_failure
+  assert_output "Failed to check if vm is running"
+}
+
 @test "vedv::hypervisor::export() Should succeed" {
   local -r vm_name="image123"
   local -r ova_file="${TEST_IMAGE_TMP_DIR}/image123.ova"
