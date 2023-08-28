@@ -3887,7 +3887,7 @@ EOF
   assert_failure
   assert_output "Image has a password different from the default one, it's recommended
 to change it to avoid a password leak.
-Set VEDV_CHANGE_PASSWORD_ON_IMPORT=false to mitigate this risk
+Set CHANGE_PASSWORD_ON_IMPORT=false to mitigate this risk
 Failed to clear child container ids for image: '1234567890'"
 }
 
@@ -3916,7 +3916,7 @@ Failed to clear child container ids for image: '1234567890'"
   assert_failure
   assert_output "Image has a password different from the default one, it's recommended
 to change it to avoid a password leak.
-Set VEDV_CHANGE_PASSWORD_ON_IMPORT=false to mitigate this risk
+Set CHANGE_PASSWORD_ON_IMPORT=false to mitigate this risk
 Error setting image_cache to the image '1234567890'"
 }
 
@@ -3948,7 +3948,7 @@ Error setting image_cache to the image '1234567890'"
   assert_failure
   assert_output "Image has a password different from the default one, it's recommended
 to change it to avoid a password leak.
-Set VEDV_CHANGE_PASSWORD_ON_IMPORT=false to mitigate this risk
+Set CHANGE_PASSWORD_ON_IMPORT=false to mitigate this risk
 Error setting ova_file_sum to the image '1234567890'"
 }
 
@@ -3983,7 +3983,7 @@ Error setting ova_file_sum to the image '1234567890'"
   assert_failure
   assert_output "Image has a password different from the default one, it's recommended
 to change it to avoid a password leak.
-Set VEDV_CHANGE_PASSWORD_ON_IMPORT=false to mitigate this risk
+Set CHANGE_PASSWORD_ON_IMPORT=false to mitigate this risk
 Error setting ssh_port to the image '1234567890'"
 }
 
@@ -4021,7 +4021,7 @@ Error setting ssh_port to the image '1234567890'"
   assert_failure
   assert_output "Image has a password different from the default one, it's recommended
 to change it to avoid a password leak.
-Set VEDV_CHANGE_PASSWORD_ON_IMPORT=false to mitigate this risk
+Set CHANGE_PASSWORD_ON_IMPORT=false to mitigate this risk
 Error setting vm_name to the image '1234567890'"
 }
 
