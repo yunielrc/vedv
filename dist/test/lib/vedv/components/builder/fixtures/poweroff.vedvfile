@@ -1,0 +1,5 @@
+# lang: dockerfile
+FROM /tmp/vedv/test/files/alpine-x86_64.ova
+
+ENV NAME='dylan'
+POWEROFF

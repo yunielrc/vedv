@@ -325,3 +325,17 @@ Build finished
   assert_success
   assert_output "740"
 }
+
+@test "vedv builder build -t image123 ./poweroff.vedvfile, Should succeed" {
+  cd "${BATS_TEST_DIRNAME}/fixtures"
+
+  run vedv builder build -t 'image123' ./poweroff.vedvfile
+
+  assert_success
+  assert_output --regexp "created layer '.*' for command 'FROM'
+created layer '.*' for command 'ENV'
+created layer '.*' for command 'POWEROFF'
+
+Build finished
+.* image1"
+}
