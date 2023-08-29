@@ -31,5 +31,5 @@ cd "$(mktemp -d)"
 wget -qO- 'https://api.github.com/repos/vultr/vultr-cli/releases/latest' |
   grep -om1 'https://.*/releases/download/.*linux_amd64.tar.gz' |
   wget -qi -
-tar xzf *linux_amd64.tar.gz
+tar xzf ./*linux_amd64.tar.gz
 sudo install -m 755 vultr-cli /usr/local/bin/
