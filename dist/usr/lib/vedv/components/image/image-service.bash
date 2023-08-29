@@ -14,6 +14,9 @@ if false; then
   . '../registry/registry-service.bash'
 fi
 
+# CONSTANTS
+readonly __VEDV_IMAGE_SERVICE_IMAGE_CLONE_TAG='img09f5780'
+
 # VARIABLES
 
 # FUNCTIONS
@@ -35,6 +38,16 @@ vedv::image_service::constructor() {
   readonly __VEDV_IMAGE_SERVICE_IMPORTED_DIR="$1"
   readonly __VEDV_IMAGE_SERVICE_CHANGE_PASSWORD_ON_IMPORT="$2"
   readonly __VEDV_IMAGE_SERVICE_NO_CHANGE_PASSWORD_ON_EXPORT="$3"
+}
+
+# EVENTS
+
+# vedv::image_service::on_start() {
+#   :
+# }
+
+vedv::image_service::on_exit() {
+  vedv::image_service::__delete_all_image_clones
 }
 
 #
@@ -551,23 +564,23 @@ vedv::image_service::export_by_id() {
   fi
   readonly layer_vm_snapshot_name
 
-  local clone_image_name="${image_name}-clone-export"
+  local -r image_clone_name="${__VEDV_IMAGE_SERVICE_IMAGE_CLONE_TAG}-$(openssl rand -hex 4)"
 
   # DATA GATHERING
   local clone_vm_name=''
-  clone_vm_name="$(vedv::image_entity::gen_vm_name "$clone_image_name")" || {
-    err "Failed to generate image vm name for image: '${clone_image_name}'"
+  clone_vm_name="$(vedv::image_entity::gen_vm_name "$image_clone_name")" || {
+    err "Failed to generate image vm name for image: '${image_clone_name}'"
     return "$ERR_IMAGE_OPERATION"
   }
   readonly clone_vm_name
   # DATA GATHERING
   # Create an image from this one
-  local clone_image_id=''
-  clone_image_id="$(vedv::image_entity::get_id_by_vm_name "$clone_vm_name")" || {
-    err "Failed to get image id for image: '${clone_image_name}'"
+  local image_clone_id=''
+  image_clone_id="$(vedv::image_entity::get_id_by_vm_name "$clone_vm_name")" || {
+    err "Failed to get image id for image: '${image_clone_name}'"
     return "$ERR_IMAGE_OPERATION"
   }
-  readonly clone_image_id
+  readonly image_clone_id
 
   # ACTION L3
   # clone image
@@ -576,22 +589,23 @@ vedv::image_service::export_by_id() {
     return "$ERR_IMAGE_OPERATION"
   }
   # shellcheck disable=SC2064
-  trap "vedv::hypervisor::rm '${clone_vm_name}' &>/dev/null" INT TERM EXIT
+  # this is executed by the on_exit event
+  # trap "vedv::hypervisor::rm '${clone_vm_name}' &>/dev/null || :" INT TERM EXIT
 
   # update clone vm name
-  vedv::image_entity::set_vm_name "$clone_image_id" "$clone_vm_name" || {
-    err "Failed to set vm name for image: '${clone_image_name}'"
+  vedv::image_entity::set_vm_name "$image_clone_id" "$clone_vm_name" || {
+    err "Failed to set vm name for image: '${image_clone_name}'"
     return "$ERR_IMAGE_OPERATION"
   }
 
   # ACTION L2
-  vedv::image_service::__prepare_image_for_export "$clone_image_id" "$no_change_password" || {
-    err "Failed to prepare image for export: '${clone_image_name}'"
+  vedv::image_service::__prepare_image_for_export "$image_clone_id" "$no_change_password" || {
+    err "Failed to prepare image for export: '${image_clone_name}'"
     return "$ERR_IMAGE_OPERATION"
   }
   # ACTION L1
   vedv::hypervisor::export "$clone_vm_name" "$image_file" "$image_name" &>/dev/null || {
-    err "Failed to export image '${clone_image_name}' to '${image_file}'"
+    err "Failed to export image '${image_clone_name}' to '${image_file}'"
     return "$ERR_IMAGE_OPERATION"
   }
 
@@ -614,6 +628,41 @@ vedv::image_service::export_by_id() {
       return "$ERR_IMAGE_OPERATION"
     }
   )
+}
+
+#
+# Remove all image clones not deleted during export
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::image_service::__delete_all_image_clones() {
+
+  local -r tag="$__VEDV_IMAGE_SERVICE_IMAGE_CLONE_TAG"
+  local -r vm_name_partial="image:${tag}-"
+
+  local vm_names_text
+  vm_names_text="$(vedv::hypervisor::list_vms_by_partial_name "$vm_name_partial")" || {
+    err "Failed to list image clones"
+    return "$ERR_IMAGE_OPERATION"
+  }
+  readonly vm_names_text
+
+  if [[ -z "$vm_names_text" ]]; then
+    return 0
+  fi
+
+  local -a vm_names_arr
+  readarray -t vm_names_arr <<<"$vm_names_text"
+  readonly vm_names_arr
+
+  for vm_name in "${vm_names_arr[@]}"; do
+
+    vedv::hypervisor::rm "$vm_name" &>/dev/null || {
+      err "Failed to remove image clone: '${vm_name}'"
+      return "$ERR_IMAGE_OPERATION"
+    }
+  done
 }
 
 #

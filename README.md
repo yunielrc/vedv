@@ -33,8 +33,9 @@ Runtime Dependencies:
 # YAY
 bash 5.1.016-2
 python 3.11.3-2
+python-pip 23.2.1-1
 virtualbox 7.0.10-1
-gnu-netcat 0.7.1-9
+openbsd-netcat 1.225_1-1
 sshpass 1.10-1
 python-pip 23.2.1-1
 libxml2 2.11.4-1

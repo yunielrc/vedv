@@ -210,10 +210,14 @@ Run '${__VEDV_SCRIPT_NAME} COMMAND --help' for more information on a command.
 HELPMSG
 }
 
-vedv::__on_exit() {
-  vedv::builder_service::on_exit
+vedv::__on_start() {
+  :
 }
-trap vedv::__on_exit INT TERM EXIT
+
+vedv::__on_exit() {
+  vedv::builder_service::on_exit &
+  vedv::image_service::on_exit &
+}
 
 vedv::__run_cmd() {
   if [[ $# == 0 ]]; then set -- '-h'; fi
@@ -245,6 +249,9 @@ vedv::__run_cmd() {
   . "${__VEDV_HYPERVISORS_PATH}/${hypervisor}.bash"
   # initialize hypervisor
   vedv::hypervisor::constructor "$VEDV_HYPERVISOR_FRONTEND"
+
+  vedv::__on_start || return $?
+  trap vedv::__on_exit INT TERM EXIT
 
   # parse arguments
   while [[ $# -gt 0 ]]; do

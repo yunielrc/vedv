@@ -28,6 +28,7 @@ setup_file() {
   export __VEDV_IMAGE_SERVICE_IMPORTED_DIR
   export __VEDV_IMAGE_SERVICE_CHANGE_PASSWORD_ON_IMPORT
   export __VEDV_IMAGE_SERVICE_NO_CHANGE_PASSWORD_ON_EXPORT
+  export __VEDV_IMAGE_SERVICE_IMAGE_CLONE_TAG
 }
 
 setup() {
@@ -4189,6 +4190,77 @@ This adds around 15 to 35 seconds to the process"
 
   run vedv::image_service::__prepare_image_for_export \
     "$image_id" "$no_change_password"
+
+  assert_success
+  assert_output ""
+}
+
+# Tests for vedv::image_service::__delete_all_image_clones()
+@test "vedv::image_service::__delete_all_image_clones() Should fail if list_vms_by_partial_name fails" {
+
+  vedv::hypervisor::list_vms_by_partial_name() {
+    assert_equal "$*" "image:${__VEDV_IMAGE_SERVICE_IMAGE_CLONE_TAG}-"
+    return 1
+  }
+
+  run vedv::image_service::__delete_all_image_clones
+
+  assert_failure
+  assert_output "Failed to list image clones"
+}
+
+@test "vedv::image_service::__delete_all_image_clones() Should succeed If there is no image clones" {
+
+  vedv::hypervisor::list_vms_by_partial_name() {
+    assert_equal "$*" "image:${__VEDV_IMAGE_SERVICE_IMAGE_CLONE_TAG}-"
+  }
+
+  run vedv::image_service::__delete_all_image_clones
+
+  assert_success
+  assert_output ""
+}
+
+@test "vedv::image_service::__delete_all_image_clones() Should fail If hypervisor::rm fails" {
+
+  vedv::hypervisor::list_vms_by_partial_name() {
+    assert_equal "$*" "image:${__VEDV_IMAGE_SERVICE_IMAGE_CLONE_TAG}-"
+
+    echo "image:${__VEDV_IMAGE_SERVICE_IMAGE_CLONE_TAG}-abc|crc:1234567890|"
+    echo "image:${__VEDV_IMAGE_SERVICE_IMAGE_CLONE_TAG}-def|crc:1234567891|"
+  }
+
+  vedv:hypervisor::rm() {
+    assert_equal "$*" "image:${__VEDV_IMAGE_SERVICE_IMAGE_CLONE_TAG}-abc|crc:1234567890|"
+    return 1
+  }
+
+  run vedv::image_service::__delete_all_image_clones
+
+  assert_failure
+  assert_output "Failed to remove image clone: 'image:img09f5780-abc|crc:1234567890|'"
+}
+
+@test "vedv::image_service::__delete_all_image_clones() Should succeed" {
+
+  vedv::hypervisor::list_vms_by_partial_name() {
+    assert_equal "$*" "image:${__VEDV_IMAGE_SERVICE_IMAGE_CLONE_TAG}-"
+
+    echo "image:${__VEDV_IMAGE_SERVICE_IMAGE_CLONE_TAG}-abc|crc:1234567890|"
+    echo "image:${__VEDV_IMAGE_SERVICE_IMAGE_CLONE_TAG}-def|crc:1234567891|"
+  }
+
+  vedv::hypervisor::rm() {
+    case "$*" in
+    "image:${__VEDV_IMAGE_SERVICE_IMAGE_CLONE_TAG}-abc|crc:1234567890|") ;;
+    "image:${__VEDV_IMAGE_SERVICE_IMAGE_CLONE_TAG}-def|crc:1234567891|") ;;
+    *)
+      return 1
+      ;;
+    esac
+  }
+
+  run vedv::image_service::__delete_all_image_clones
 
   assert_success
   assert_output ""
