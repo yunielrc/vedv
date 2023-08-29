@@ -526,14 +526,14 @@ RUN echo '$GREETINGS'
 # the image needs to be turned off, the instruction is executed, and the image
 # is turned on again by the next instruction.
 SYSTEM --cpus 2 --memory 512
-# Poweroff the image on a secure way
+# Safely power off the image
 # If you need to create a container from the image you are building, and you need
 # that the container starts from an powered off state, use this instruction at the end
 # of the Vedvfile.
 # Due containers are created from the last layer of the image, and the last
 # layer is in a saved state (excluding SYSTEM and POWEROFF) many services are
 # not started, because in this state the OS is never restarted after the build.
-# This instruction is not required for exporting the image because in this case
+# This instruction is not required for exporting the image, in this case
 # the saved state is discarded.
 POWEROFF
 ```
@@ -542,23 +542,116 @@ POWEROFF
 
 Contributions, issues and feature requests are welcome!
 
-### Development dependencies
+### Manjaro dev dependencies
 
-- make
-- shfmt
-- shellcheck
-- python-pre-commit
-- bash-bats
-- bash-bats-assert-git
-- bash-bats-file
-- bash-bats-support-git
-- vultr-cli
-- nodejs
-- npm
-  - @commitlint/cli
-  - @commitlint/config-conventional
-  - commitizen
-  - cz-conventional-changelog
+```sh
+${MANJARO_PACKAGES_DEV}
+
+```
+
+### Ubuntu dev dependencies
+
+```sh
+${UBUNTU_PACKAGES_DEV}
+
+```
+
+### Configure dev environment
+
+#### Copy config samples
+
+Execute the command below to copy config samples to the product root directory
+
+```sh
+cp .env.sample .env
+cp .vedv.env.sample .vedv.env
+```
+
+#### Install dependencies
+
+For Manjaro:
+
+```sh
+sudo make OS=manjaro configure
+```
+
+For Ubuntu:
+
+```sh
+sudo make OS=ubuntu configure
+```
+
+For any other linux distribution install runtime and development dependencies manually.
+
+#### Setup registry development service
+
+Execute the command below to provision and configure the registry development service
+on local machine
+
+```sh
+make registry-dev-setup
+```
+
+Execute the command below to start the registry
+
+```sh
+make registry-dev-start
+```
+
+### Workflow
+
+### Code
+
+Write your code
+
+### Run Tests
+
+Before testing the **registry development service must be started**.
+Check the status with the command below and start it if necessary.
+
+```sh
+make registry-dev-status
+```
+
+Run Unit Testing for one component
+
+```sh
+make test-suite u="$(fd registry-service.bats)"
+```
+
+Run Unit Testing for one component function
+
+```sh
+make test-name n='::push_link\(\)' u="$(fd registry-service.bats)"
+```
+
+Run Integration Testing for one component
+
+```sh
+make test-suite u="$(fd registry-nextcloud-api-client.i.bats)"
+```
+
+Run Functional Testing for one component
+
+```sh
+make test-suite u="$(fd registry-command.f.bats)"
+```
+
+Run All tests
+
+```sh
+make test-all
+```
+
+### Commit
+
+This project uses [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/).
+
+For commiting use the command below
+
+```sh
+make commit
+```
 
 ## Show your support
 

@@ -635,7 +635,9 @@ vultr-cli
 
 ### Configure dev environment
 
-Copy config samples to the product root directory
+#### Copy config samples
+
+Execute the command below to copy config samples to the product root directory
 
 ```sh
 cp .env.sample .env

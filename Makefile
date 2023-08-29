@@ -1,4 +1,4 @@
-.PHONY: install uninstall configure-manjaro commit test-all test-unit test-tag test-name untested nextcloud-dev-setup nextcloud-dev-stop nextcloud-dev-destroy nextcloud-dev-start nextcloud-dev-status nextcloud-dev-ssh nextcloud-prod-setup
+.PHONY: install uninstall configure commit test-all test-suite test-tag test-name untested registry-dev-setup registry-dev-stop registry-dev-destroy registry-dev-start registry-dev-status registry-dev-ssh registry-prod-setup
 # grep -Po '^\S+(?=:)' Makefile | tr '\n' ' '
 
 install:
@@ -22,7 +22,7 @@ test-all:
 	./tools/bats --recursive dist/test && \
 	./tools/update-pkgs-versions
 
-test-unit:
+test-suite:
 	./tools/bats $(u)
 
 test-tag:
@@ -34,25 +34,26 @@ test-name:
 untested:
 	./tools/untested $(f)
 
-nextcloud-dev-setup:
+registry-dev-setup:
 	./icac/nextcloud/vm.dev/nextcloud.vbox.iac
 
-nextcloud-dev-stop:
+registry-dev-stop:
 	sudo -u root VBoxManage controlvm nextcloud-dev acpipowerbutton
 
-nextcloud-dev-destroy:
+registry-dev-destroy:
 	sudo -u root VBoxManage controlvm nextcloud-dev poweroff; \
 		sudo -u root VBoxManage unregistervm nextcloud-dev --delete
 
-nextcloud-dev-start:
+registry-dev-start:
 	sudo -u root VBoxManage startvm nextcloud-dev --type headless
 
-nextcloud-dev-status:
+registry-dev-status:
 	sudo -u root VBoxManage showvminfo nextcloud-dev | grep State
 
-nextcloud-dev-ssh:
+registry-dev-ssh:
+	# password: user
 	ssh -p 40022 user@127.0.0.1
 
-nextcloud-prod-setup:
+registry-prod-setup:
 	./icac/nextcloud/vultr.prod/nextcloud-aio/nextcloud-aio.vultr.iac
 
