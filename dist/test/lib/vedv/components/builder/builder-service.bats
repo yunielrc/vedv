@@ -2122,7 +2122,7 @@ The previous layer to the failure could not be restored. Try build the image aga
   vedv::image_service::cache_data() {
     assert_equal "$*" "22345"
   }
-  vedv::image_service::stop() {
+  vedv::image_service::save_state() {
     assert_equal "$*" "22345"
     return 1
   }
@@ -2154,7 +2154,7 @@ Failed to stop the image 'image1'.You must stop it."
   vedv::image_service::set_use_cache() {
     assert_equal "$*" "true"
   }
-  vedv::image_service::stop() {
+  vedv::image_service::save_state() {
     assert_equal "$*" "22345"
   }
 
@@ -2935,4 +2935,56 @@ local -r var_9f57a558b3_VAR23=\"var3 var3\""
 
   assert_success
   assert_output "1234567890"
+}
+
+# Tests for vedv::builder_service::__layer_poweroff_calc_id()
+
+@test "vedv::builder_service::__layer_poweroff_calc_id(): Should succeed" {
+  local -r image_id="12345"
+  local -r cmd="1 POWEROFF"
+
+  vedv::builder_service::__simple_layer_command_calc_id() {
+    assert_equal "$*" "${cmd} POWEROFF"
+  }
+
+  run vedv::builder_service::__layer_poweroff_calc_id "$cmd"
+
+  assert_success
+  assert_output ""
+}
+
+# Tests for vedv::builder_service::__layer_poweroff()
+
+@test "vedv::builder_service::__layer_poweroff() Should fail With empty image_id" {
+  local -r image_id=""
+  local -r cmd=""
+
+  run vedv::builder_service::__layer_poweroff "$image_id" "$cmd"
+
+  assert_failure
+  assert_output "Argument 'image_id' is required"
+}
+
+@test "vedv::builder_service::__layer_poweroff() Should fail With empty cmd" {
+  local -r image_id="12345"
+  local -r cmd=""
+
+  run vedv::builder_service::__layer_poweroff "$image_id" "$cmd"
+
+  assert_failure
+  assert_output "Argument 'cmd' is required"
+}
+
+@test "vedv::builder_service::__layer_poweroff() Should succeed" {
+  local -r image_id="12345"
+  local -r cmd="1 POWEROFF"
+
+  vedv::builder_service::__layer_execute_cmd() {
+    assert_equal "$*" "12345 1 POWEROFF POWEROFF vedv::image_service::poweroff '12345'"
+  }
+
+  run vedv::builder_service::__layer_poweroff "$image_id" "$cmd"
+
+  assert_success
+  assert_output ""
 }

@@ -966,7 +966,7 @@ vedv::image_service::is_started() {
 }
 
 #
-# Start an image
+# Start the image
 #
 # Arguments:
 #   image_id string       image id
@@ -984,7 +984,7 @@ vedv::image_service::start() {
 }
 
 #
-# Stop an image
+# Stop the image
 #
 # Arguments:
 #   image_id string       image id
@@ -998,7 +998,41 @@ vedv::image_service::start() {
 vedv::image_service::stop() {
   local -r image_id="$1"
 
-  vedv::vmobj_service::stop 'image' "$image_id"
+  vedv::vmobj_service::stop_one 'image' "$image_id"
+}
+
+#
+# Stop an image
+#
+# Arguments:
+#   image_id string       image id
+#
+# Output:
+#  Writes command output to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::image_service::poweroff() {
+  vedv::image_service::stop "$@"
+}
+
+#
+#  Save the state of the image
+#
+# Arguments:
+#   image_id  string[]     image id
+#
+# Output:
+#  writes stopped containers name or id to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::image_service::save_state() {
+  local -r image_id="$1"
+
+  vedv::vmobj_service::save_state_one 'image' "$image_id"
 }
 
 #

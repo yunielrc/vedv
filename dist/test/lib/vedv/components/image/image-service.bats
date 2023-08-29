@@ -1619,11 +1619,30 @@ EOF
 @test 'vedv::image_service::stop() Should succeed' {
   local -r image_id='1234567890'
 
-  vedv::vmobj_service::stop() {
+  vedv::vmobj_service::stop_one() {
     assert_equal "$*" "image 1234567890"
   }
 
   run vedv::image_service::stop "$image_id"
+
+  assert_success
+  assert_output ""
+}
+
+# Tests for vedv::image_service::poweroff()
+@test 'vedv::image_service::poweroff() DUMMY' {
+  :
+}
+
+# Tests for vedv::image_service::save_state()
+@test 'vedv::image_service::save_state() Should succeed' {
+  local -r image_id='1234567890'
+
+  vedv::vmobj_service::save_state_one() {
+    assert_equal "$*" "image 1234567890"
+  }
+
+  run vedv::image_service::save_state "$image_id"
 
   assert_success
   assert_output ""

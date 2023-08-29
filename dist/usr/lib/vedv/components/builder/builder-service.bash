@@ -1226,6 +1226,54 @@ vedv::builder_service::__layer_system() {
 }
 
 #
+# Calculates the layer id for the POWEROFF command
+#
+# Arguments:
+#   cmd   string    poweroff command (e.g. "1 POWEROFF)
+#
+# Output:
+#  Writes layer_id (string) to the stdout
+#
+# Returns:
+#  0 on success, non-zero on error.
+#
+vedv::builder_service::__layer_poweroff_calc_id() {
+  local -r cmd="$1"
+  vedv::builder_service::__simple_layer_command_calc_id "$cmd" 'POWEROFF'
+}
+
+#
+# Set the poweroff cpus and memory
+#
+# Arguments:
+#   image_id  string    image id
+#   cmd       string    poweroff command (e.g. "10 POWEROFF")
+#
+# Output:
+#  Writes command_output (text) to the stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::builder_service::__layer_poweroff() {
+  local -r image_id="$1"
+  local -r cmd="$2"
+  # validate arguments
+  if [[ -z "$image_id" ]]; then
+    err "Argument 'image_id' is required"
+    return "$ERR_INVAL_ARG"
+  fi
+  if [[ -z "$cmd" ]]; then
+    err "Argument 'cmd' is required"
+    return "$ERR_INVAL_ARG"
+  fi
+
+  local -r exec_func="vedv::image_service::poweroff '${image_id}'"
+
+  vedv::builder_service::__layer_execute_cmd "$image_id" "$cmd" "POWEROFF" "$exec_func"
+}
+
+#
 # Delete invalid layers
 #
 # Arguments:
@@ -1712,7 +1760,7 @@ vedv::builder_service::build() {
       # the os and it must be restarted, so for example: if some services
       # require restart and image is saved, the containers of the image
       # will not work properly
-      vedv::image_service::stop "$image_id" >/dev/null || {
+      vedv::image_service::save_state "$image_id" >/dev/null || {
         err "Failed to stop the image '${image_name}'.You must stop it."
         return "$ERR_BUILDER_SERVICE_OPERATION"
       }
