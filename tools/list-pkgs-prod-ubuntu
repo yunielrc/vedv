@@ -7,6 +7,8 @@ set -eu
 
 . ./packages.env
 
+echo "# SYSTEM: $(uname -a)"
+
 echo '# APT'
 apt -qq list --installed bash python3 python3-pip virtualbox-7.0 "${PKG_PROD_UBUNTU_APT[@]}" 2>/dev/null |
   sed -E 's/\/\S+//' |

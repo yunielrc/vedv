@@ -25,11 +25,10 @@ Note: This tool doesn't work on nested virtualization.
 
 ### Manjaro
 
-Linux user-MS-7D43 6.2.0-26-generic #26~22.04.1-Ubuntu SMP PREEMPT_DYNAMIC Thu Jul 13 16:27:29 UTC 2 x86_64 x86_64 x86_64 GNU/Linux
-
 Runtime Dependencies:
 
 ```sh
+# SYSTEM: Linux yuniel-pc 6.1.44-1-MANJARO #1 SMP PREEMPT_DYNAMIC Wed Aug  9 09:02:26 UTC 2023 x86_64 GNU/Linux
 # YAY
 bash 5.1.016-2
 python 3.11.3-2
@@ -47,11 +46,10 @@ petname 2.6
 
 ### Ubuntu
 
-Linux user-MS-7D43 6.2.0-26-generic #26~22.04.1-Ubuntu SMP PREEMPT_DYNAMIC Thu Jul 13 16:27:29 UTC 2 x86_64 x86_64 x86_64 GNU/Linux
-
 Runtime Dependencies:
 
 ```sh
+# SYSTEM: Linux user-MS-7D43 6.2.0-26-generic #26~22.04.1-Ubuntu SMP PREEMPT_DYNAMIC Thu Jul 13 16:27:29 UTC 2 x86_64 x86_64 x86_64 GNU/Linux
 # APT
 bash 5.1-6ubuntu1
 curl 7.81.0-1ubuntu1.13
@@ -81,6 +79,12 @@ Install on Manjaro:
 
 ```sh
 sudo make OS=manjaro install
+```
+
+Install on Ubuntu:
+
+```sh
+sudo make OS=ubuntu install
 ```
 
 For any other linux distribution install runtime dependencies first and execute the command below:
@@ -243,7 +247,7 @@ USER root
 # Set the working directory and create it if doesn't exist
 WORKDIR /app
 # Run commands on the current working directory
-RUN apk add -U nodejs=18.17.0-r0 npm=9.6.6-r0 yarn=1.22.19-r0
+RUN apk add -U nodejs~18 npm yarn
 # Copy package.json to the current working directory
 COPY package.json .
 # Copy yarn.lock to the current working directory

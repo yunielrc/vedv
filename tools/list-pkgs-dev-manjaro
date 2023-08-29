@@ -7,6 +7,8 @@ set -eu
 
 . ./packages.env
 
+echo "# SYSTEM: $(uname -a)"
+
 echo '# YAY'
 pacman --color never -Q "${PKG_DEV_MANJARO_YAY[@]}"
 

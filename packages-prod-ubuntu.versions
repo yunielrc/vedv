@@ -5,6 +5,7 @@
 ## What are the packages with which the application worked well?
 ##
 
+# SYSTEM: Linux user-MS-7D43 6.2.0-26-generic #26~22.04.1-Ubuntu SMP PREEMPT_DYNAMIC Thu Jul 13 16:27:29 UTC 2 x86_64 x86_64 x86_64 GNU/Linux
 # APT
 bash 5.1-6ubuntu1
 curl 7.81.0-1ubuntu1.13

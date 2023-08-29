@@ -7,6 +7,8 @@ set -eu
 
 . ./packages.env
 
+echo "# SYSTEM: $(uname -a)"
+
 echo '# YAY'
 pacman --color never -Q bash python3 python-pip "${PKG_PROD_MANJARO_YAY[@]}"
 

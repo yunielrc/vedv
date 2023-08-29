@@ -5,6 +5,7 @@
 ## What are the packages with which the application worked well?
 ##
 
+# SYSTEM: Linux yuniel-pc 6.1.44-1-MANJARO #1 SMP PREEMPT_DYNAMIC Wed Aug  9 09:02:26 UTC 2023 x86_64 GNU/Linux
 # YAY
 make 4.4.1-2
 davfs2 1.7.0-1

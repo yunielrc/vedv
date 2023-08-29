@@ -23,8 +23,6 @@ Note: This tool doesn't work on nested virtualization.
 
 ### Manjaro
 
-${MANJARO_UNAME_A}
-
 Runtime Dependencies:
 
 ```sh
@@ -33,8 +31,6 @@ ${MANJARO_PACKAGES_PROD}
 ```
 
 ### Ubuntu
-
-${UBUNTU_UNAME_A}
 
 Runtime Dependencies:
 
@@ -57,6 +53,12 @@ Install on Manjaro:
 
 ```sh
 sudo make OS=manjaro install
+```
+
+Install on Ubuntu:
+
+```sh
+sudo make OS=ubuntu install
 ```
 
 For any other linux distribution install runtime dependencies first and execute the command below:
@@ -205,7 +207,7 @@ USER root
 # Set the working directory and create it if doesn't exist
 WORKDIR /app
 # Run commands on the current working directory
-RUN apk add -U nodejs=18.17.0-r0 npm=9.6.6-r0 yarn=1.22.19-r0
+RUN apk add -U nodejs~18 npm yarn
 # Copy package.json to the current working directory
 COPY package.json .
 # Copy yarn.lock to the current working directory

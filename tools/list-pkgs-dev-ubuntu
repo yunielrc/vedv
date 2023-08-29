@@ -7,6 +7,8 @@ set -eu
 
 . ./packages.env
 
+echo "# SYSTEM: $(uname -a)"
+
 echo '# APT'
 apt -qq list --installed "${PKG_DEV_UBUNTU_APT[@]}" 2>/dev/null |
   sed -E 's/\/\S+//' |
