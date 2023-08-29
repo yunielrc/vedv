@@ -20,3 +20,8 @@ shfmt 3.5.1
 bats@1.10.0
 commitizen@4.3.0
 cz-conventional-changelog@3.3.0
+# GITHUB
+bats-support
+bats-assert
+bats-file
+vultr-cli
