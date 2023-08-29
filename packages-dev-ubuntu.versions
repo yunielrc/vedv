@@ -1,0 +1,21 @@
+##
+## All tests must succeed before updating these files in order to answer
+## the question
+##
+## What are the packages with which the application worked well?
+##
+
+# APT
+davfs2 1.6.1-1
+make 4.3-4.1build1
+pre-commit 2.17.0-1
+# SNAP
+node 18.17.1
+shellcheck v0.9.0
+shfmt 3.5.1
+# NPM
+@commitlint/cli@17.7.1
+@commitlint/config-conventional@17.7.0
+bats@1.10.0
+commitizen@4.3.0
+cz-conventional-changelog@3.3.0

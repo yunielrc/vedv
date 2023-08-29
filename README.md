@@ -25,7 +25,7 @@ Note: This tool doesn't work on nested virtualization.
 
 ### Manjaro
 
-Linux yuniel-pc 6.1.44-1-MANJARO #1 SMP PREEMPT_DYNAMIC Wed Aug  9 09:02:26 UTC 2023 x86_64 GNU/Linux
+Linux user-MS-7D43 6.2.0-26-generic #26~22.04.1-Ubuntu SMP PREEMPT_DYNAMIC Thu Jul 13 16:27:29 UTC 2 x86_64 x86_64 x86_64 GNU/Linux
 
 Runtime Dependencies:
 
@@ -47,12 +47,23 @@ petname 2.6
 
 ### Ubuntu
 
-${UBUNTU_UNAME_A}
+Linux user-MS-7D43 6.2.0-26-generic #26~22.04.1-Ubuntu SMP PREEMPT_DYNAMIC Thu Jul 13 16:27:29 UTC 2 x86_64 x86_64 x86_64 GNU/Linux
 
 Runtime Dependencies:
 
 ```sh
-${UBUNTU_PACKAGES_PROD}
+# APT
+bash 5.1-6ubuntu1
+curl 7.81.0-1ubuntu1.13
+libxml2-utils 2.9.13+dfsg-1ubuntu0.3
+netcat-openbsd 1.218-4ubuntu1
+python3-pip 22.0.2+dfsg-1ubuntu0.3
+python3 3.10.6-1~22.04
+sshpass 1.09-1
+virtualbox-7.0 7.0.10-158379~Ubuntu~jammy
+# PIP
+dockerfile-parse 2.0.1
+petname 2.6
 
 ```
 
