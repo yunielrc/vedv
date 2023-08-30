@@ -160,17 +160,17 @@ Download an image with custom name, create a container and start it
 
 ```sh
 vedv image pull -n alpine admin@alpine/alpine-3.17.3-x86_64
-# 13.708s 90Mbps
+# 10.034s 90Mbps
 vedv container create -n alpine alpine
-#  1.566s
+#  1.476s
 # starting a container can take up to 1 minute the first time or more
 # deppending on your hardware and the image os
 vedv container start -w alpine
-# 30.215s / ubuntu-server starts in around 13s
+# 13.395s --> startup and sshd service time to be ready
 vedv container stop alpine
-# 0.836s
+# 0.697s
 vedv container start -w alpine
-# 13.275s
+# 13.474s --> startup and sshd service time to be ready
 
 ```
 
@@ -278,16 +278,19 @@ Vedvfile syntax is highly inspired by Dockerfile, but with some differences
 - Build it
 
 ```sh
-vedv image build -n todo-101-alpine-1.0.0-x86_64 # 1m 10.58s
+vedv image build -n todo-101-alpine-1.0.0-x86_64
+# 49.676s
 ```
 
 - Create a container from the image
 
 ```sh
-vedv container create -p 3000:3000/tcp -n todo-101 todo-101-alpine-1.0.0-x86_64 # 1.718s
+vedv container create -p 3000:3000/tcp -n todo-101 todo-101-alpine-1.0.0-x86_64
+# 1.766s
 # When the ports are the same like `3000:3000`  the command below is equivalent
 # vedv container create -p 3000/tcp -n todo-101 todo-101-alpine-1.0.0-x86_64
-vedv container start -w todo-101 # 13.646s
+vedv container start -w todo-101
+# 13.631s
 ```
 
 - Open your browser and go to <http://localhost:3000>
@@ -297,7 +300,8 @@ vedv container start -w todo-101 # 13.646s
  <img width=500px  src="media/todo-list-manager.png" alt="todo list manager">
 
 ```sh
-vedv container rm --force todo-101 # 2.816s
+vedv container rm --force todo-101
+# 2.729s
 ```
 
 #### Updating the Source Code
@@ -312,7 +316,8 @@ vedv container rm --force todo-101 # 2.816s
 - Let's build our updated version of the image, using the same command we used before.
 
 ```sh
-vedv image build --force -n todo-101-alpine-1.0.0-x86_64 # 17.945s
+vedv image build --force -n todo-101-alpine-1.0.0-x86_64
+# 17.517s
 ```
 
 Each line like the one below is a deleted layer:
@@ -323,8 +328,10 @@ In this case 3 layers were deleted, starting from `COPY . .` to the end of the f
 - Let's start a new container using the updated code.
 
 ```sh
-vedv container create -p 3000/tcp -n todo-101 todo-101-alpine-1.0.0-x86_64 # 1.654s
-vedv container start -w todo-101 # 13.698s
+vedv container create -p 3000/tcp -n todo-101 todo-101-alpine-1.0.0-x86_64
+# 1.654s
+vedv container start -w todo-101
+# 13.698s
 ```
 
 - Refresh your browser on <http://localhost:3000> and you should see your updated help text!
@@ -332,7 +339,8 @@ vedv container start -w todo-101 # 13.698s
 - Remove the container
 
 ```sh
-vedv container rm --force todo-101 # 3.285s
+vedv container rm --force todo-101
+# 2.767s
 ```
 
 #### Push the image to the registry
@@ -345,7 +353,8 @@ vedv container rm --force todo-101 # 3.285s
 -->
 
 ```sh
-vedv image push <your_user_id>@alpine/todo-101-alpine-1.0.0-x86_64 # 1m 37.62s 12Mbps
+vedv image push <your_user_id>@alpine/todo-101-alpine-1.0.0-x86_64
+# 1m 31.28s 12Mbps
 # If you want to push the image with a different name run the command below:
 # vedv image push -n todo-101-alpine-1.0.0-x86_64 <your_user_id>@alpine/<your_image_name>-1.0.0-x86_64
 ```
@@ -407,7 +416,8 @@ the registry.
 - Export the image to a file with the .ova extension
 
 ```sh
-vedv image export todo-101-alpine-1.0.0-x86_64 todo-101-alpine-1.0.0-x86_64.ova # 6.317s
+vedv image export todo-101-alpine-1.0.0-x86_64 todo-101-alpine-1.0.0-x86_64.ova
+# 8.157s
 ```
 
 - Upload the image and the .sha256sum to OneDrive or Google Drive or any http server
@@ -456,13 +466,15 @@ sum='onedrive=<sum_link>'
 
 ```sh
 vedv image push-link --image-address "$image" --checksum-address "$sum" \
- <your_user_id>@alpine/todo-101-alpine-1.0.0-x86_64 # 2.706s
+ <your_user_id>@alpine/todo-101-alpine-1.0.0-x86_64
+ # 2.706s
 ```
 
 - Remove the image to download it again to test the link
 
 ```sh
-vedv image rm todo-101-alpine-1.0.0-x86_64 # 0.995s
+vedv image rm todo-101-alpine-1.0.0-x86_64
+# 0.995s
 ```
 
 - Pull the image from the link
@@ -471,7 +483,8 @@ Use the flag `--no-cache` to download the image again
 
 ```sh
 vedv image pull --no-cache -n todo-101-alpine-1.0.0-x86_64 \
-  <your_user_id>@alpine/todo-101-alpine-1.0.0-x86_64         # 18.487s 90Mbps
+  <your_user_id>@alpine/todo-101-alpine-1.0.0-x86_64
+# 17.334s 90Mbps
 ```
 
 👍 Congratulations, you have uploaded your image link to the registry and saved space for other users.
