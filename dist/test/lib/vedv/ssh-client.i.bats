@@ -2,7 +2,7 @@
 load test_helper
 
 setup_file() {
-  delete_vms_directory
+  # delete_vms_directory
   VM_NAME_SSH="$(create_vm)"
   readonly VM_NAME_SSH
   export VM_NAME_SSH
@@ -16,6 +16,9 @@ setup() {
 
 teardown_file() {
   delete_vms_by_partial_vm_name "$VM_NAME_SSH"
+  delete_vms_by_partial_vm_name 'container:'
+  delete_vms_by_partial_vm_name 'image:'
+  delete_vms_by_partial_vm_name 'image-cache|'
 }
 
 # Tests for vedv::ssh_client::run_cmd()

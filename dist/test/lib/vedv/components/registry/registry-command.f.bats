@@ -27,7 +27,7 @@ teardown() {
 
 setup_file() {
   teardown
-  delete_vms_directory
+  # delete_vms_directory
 }
 
 # Tests for vedv registry help

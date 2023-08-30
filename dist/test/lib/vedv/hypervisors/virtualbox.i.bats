@@ -2,7 +2,8 @@
 load test_helper
 
 setup_file() {
-  delete_vms_directory
+  # delete_vms_directory
+  :
 }
 
 # teardown_file(){
@@ -14,6 +15,10 @@ teardown() {
   delete_vms_by_id_tag "$VM_TAG"
 
   delete_vms_by_partial_vm_name 'image123'
+  delete_vms_by_partial_vm_name 'container:'
+  delete_vms_by_partial_vm_name 'image:'
+  delete_vms_by_partial_vm_name 'image-cache|'
+
 
   if [[ -d "$TEST_IMAGE_TMP_DIR" &&
     "$TEST_IMAGE_TMP_DIR" == */tmp/* ]]; then

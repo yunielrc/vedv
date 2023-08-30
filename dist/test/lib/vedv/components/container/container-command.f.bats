@@ -2,7 +2,7 @@
 load test_helper
 
 setup_file() {
-  delete_vms_directory
+  # delete_vms_directory
   export VED_HADOLINT_CONFIG="$TEST_HADOLINT_CONFIG"
   VEDV_HADOLINT_ENABLED=false
   export VEDV_HADOLINT_ENABLED

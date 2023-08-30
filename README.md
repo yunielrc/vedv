@@ -363,7 +363,33 @@ todo-101-alpine-1.0.0-x86_64.ova.sha256sum
 **The uploaded image size is around 130MB, to give chance other users to test vedv,
 please delete the image from the registry and push an image link instead. Thanks.**
 
-👍 Congratulations, you have builded and uploaded your first image to the registry.
+👍 **Congratulations**, you have **builded** and **uploaded** your first image to the registry.
+
+### Share your image
+
+By default the images are private, only you can see them.
+
+To share your image with all users, you need to share the it with the group `public`.
+
+- Open your browser and go to <https://registry.vedv.dev/apps/files/?dir=/00-user-images>
+
+- Click the **Share** button on the image you want to share
+
+<img width=500px  src="media/registry-share-button.png" alt="registry share button">
+
+- Or click the **Share folder** menu item on the image you want to share
+
+<img width=500px  src="media/registry-share-menu.png" alt="registry share menu">
+
+- On the **Sharing** panel search for `public` group and select it
+
+<img width=500px  src="media/registry-share-group.png" alt="registry share group">
+
+- If the image is shared the collection must have the **Shared** icon
+
+<img width=500px  src="media/registry-share-done.png" alt="registry share done">
+
+👍 **Congratulations**, your image is **Public** and other users can download and use it
 
 ### Push an image link to the registry
 
@@ -671,10 +697,6 @@ make registry-dev-setup
 
 Execute the command below to start the registry
 
-```sh
-make registry-dev-start
-```
-
 ### Workflow
 
 ### Code
@@ -683,11 +705,24 @@ Write your code
 
 ### Run Tests
 
+⚠️ **Before testing Virtualbox can't have any virtual machines or hard disks otherwise,
+functional and integration tests that works with virtualbox will fail.**
+
+If functional and integration tests that works with virtualbox are failing,
+delete all virtual machines and hard disks from Virtualbox and delete the
+Virtualbox VMs directory usually located at `~/VirtualBox\ VMs` and run the tests again.
+
 Before testing the **registry development service must be started**.
-Check the status with the command below and start it if necessary.
+Check the status with the command below.
 
 ```sh
 make registry-dev-status
+```
+
+Start it if stopped
+
+```sh
+make registry-dev-start
 ```
 
 Run Unit Testing for one component
