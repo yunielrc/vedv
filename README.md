@@ -160,17 +160,17 @@ Download an image with custom name, create a container and start it
 
 ```sh
 vedv image pull -n alpine admin@alpine/alpine-3.17.3-x86_64
-# 10.034s 90Mbps
+# 10.034s 90Mbps --> download + import + creation time
 vedv container create -n alpine alpine
 #  1.476s
 # starting a container can take up to 1 minute the first time or more
 # deppending on your hardware and the image os
 vedv container start -w alpine
-# 13.395s --> startup and sshd service time to be ready
+# 13.395s --> startup + sshd service time to be ready
 vedv container stop alpine
 # 0.697s
 vedv container start -w alpine
-# 13.474s --> startup and sshd service time to be ready
+# 13.474s --> startup + sshd service time to be ready
 
 ```
 
@@ -279,7 +279,7 @@ Vedvfile syntax is highly inspired by Dockerfile, but with some differences
 
 ```sh
 vedv image build -n todo-101-alpine-1.0.0-x86_64
-# 49.676s
+# 49.676s --> [download] + [import] + creation + startup + build + [stop] time
 ```
 
 - Create a container from the image
@@ -317,7 +317,7 @@ vedv container rm --force todo-101
 
 ```sh
 vedv image build --force -n todo-101-alpine-1.0.0-x86_64
-# 17.517s
+# 17.517s --> [download] + [import] + [creation] + startup + build + [stop] time
 ```
 
 Each line like the one below is a deleted layer:
