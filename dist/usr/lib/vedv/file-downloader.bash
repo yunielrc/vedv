@@ -127,14 +127,18 @@ file_downloader::gdrive_big_download() {
   # shellcheck disable=SC2064
   trap "rm -f '${cookies_file}'" INT TERM EXIT
 
+  set -o pipefail
   local confirm=''
+  # tr -d '\0' is to remove null bytes, to avoid the message:
+  # 'warning: command substitution: ignored null byte in input'
   confirm="$(wget --no-check-certificate \
     --header "$__VEDV_FILE_DOWNLOADER_USER_AGENT" \
     --save-cookies "$cookies_file" \
-    --keep-session-cookies "$download_url" -qO-)" || {
+    --keep-session-cookies "$download_url" -qO- | tr -d '\0')" || {
     err "error getting confirmation from ${url}"
     return "$ERR_DOWNLOAD"
   }
+  set +o pipefail
   confirm="$(sed -rn 's/.*confirm=([0-9A-Za-z_]+).*/\1\n/p' <<<"$confirm")"
   readonly confirm
 
