@@ -52,19 +52,19 @@ git clone https://github.com/yunielrc/vedv.git && cd vedv
 Install on Manjaro:
 
 ```sh
-sudo make OS=manjaro install
+make OS=manjaro install
 ```
 
 Install on Ubuntu:
 
 ```sh
-sudo make OS=ubuntu install
+make OS=ubuntu install
 ```
 
 For any other linux distribution install runtime dependencies first and execute the command below:
 
 ```sh
-sudo make install
+make install
 ```
 
 ## Configure
@@ -572,13 +572,13 @@ cp .vedv.env.sample .vedv.env
 For Manjaro:
 
 ```sh
-sudo make OS=manjaro configure
+make OS=manjaro configure
 ```
 
 For Ubuntu:
 
 ```sh
-sudo make OS=ubuntu configure
+make OS=ubuntu configure
 ```
 
 For any other linux distribution install runtime and development dependencies manually.

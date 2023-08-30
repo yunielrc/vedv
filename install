@@ -27,20 +27,20 @@ if [ -n "$OS" ]; then
   "$install_deps"
 fi
 
-cp -vr dist/etc/vedv "${DESTDIR}/etc"
+sudo cp -vr dist/etc/vedv "${DESTDIR}/etc"
 
-install -m644 dist/etc/skel/.vedv.env \
+sudo install -m644 dist/etc/skel/.vedv.env \
   "${DESTDIR}/etc/skel/.vedv.env"
 
-cp -vr dist/usr/lib/vedv "${DESTDIR}/usr/lib"
+sudo cp -vr dist/usr/lib/vedv "${DESTDIR}/usr/lib"
 
-install -v -Dm755 dist/usr/bin/vedv \
+sudo install -v -Dm755 dist/usr/bin/vedv \
   "${DESTDIR}/usr/bin/vedv"
 
-install -v -Dm644 dist/usr/share/licenses/vedv/LICENSE \
+sudo install -v -Dm644 dist/usr/share/licenses/vedv/LICENSE \
   "${DESTDIR}/usr/share/licenses/vedv/LICENSE"
 
-chmod -v 755 "${DESTDIR}/usr/lib/vedv/components/builder/__bin/vedvfile-parser"
+sudo chmod -v 755 "${DESTDIR}/usr/lib/vedv/components/builder/__bin/vedvfile-parser"
 
 echo ''
 echo '>> INSTALLED SUCCESSFULLY'

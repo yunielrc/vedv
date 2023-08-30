@@ -38,17 +38,17 @@ registry-dev-setup:
 	./icac/nextcloud/vm.dev/nextcloud.vbox.iac
 
 registry-dev-stop:
-	sudo -u root VBoxManage controlvm nextcloud-dev acpipowerbutton
+	sudo -H -u root VBoxManage controlvm nextcloud-dev acpipowerbutton
 
 registry-dev-destroy:
-	sudo -u root VBoxManage controlvm nextcloud-dev poweroff; \
-		sudo -u root VBoxManage unregistervm nextcloud-dev --delete
+	sudo -H -u root VBoxManage controlvm nextcloud-dev poweroff; \
+		sudo -H -u root VBoxManage unregistervm nextcloud-dev --delete
 
 registry-dev-start:
-	sudo -u root VBoxManage startvm nextcloud-dev --type headless
+	sudo -H -u root VBoxManage startvm nextcloud-dev --type headless
 
 registry-dev-status:
-	sudo -u root VBoxManage showvminfo nextcloud-dev | grep State
+	sudo -H -u root VBoxManage showvminfo nextcloud-dev | grep State
 
 registry-dev-ssh:
 	# password: user
