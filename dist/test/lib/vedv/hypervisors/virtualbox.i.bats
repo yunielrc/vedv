@@ -19,7 +19,6 @@ teardown() {
   delete_vms_by_partial_vm_name 'image:'
   delete_vms_by_partial_vm_name 'image-cache|'
 
-
   if [[ -d "$TEST_IMAGE_TMP_DIR" &&
     "$TEST_IMAGE_TMP_DIR" == */tmp/* ]]; then
     rm -rf "$TEST_IMAGE_TMP_DIR"
