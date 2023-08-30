@@ -369,7 +369,7 @@ please delete the image from the registry and push an image link instead. Thanks
 
 By default the images are private, only you can see them.
 
-To share your image with all users, you need to share the it with the group `public`.
+To make your image public, you need to share it with the group `public`.
 
 - Open your browser and go to <https://registry.vedv.dev/apps/files/?dir=/00-user-images>
 
@@ -377,7 +377,7 @@ To share your image with all users, you need to share the it with the group `pub
 
 <img width=500px  src="media/registry-share-button.png" alt="registry share button">
 
-- Or click the **Share folder** menu item on the image you want to share
+- Or click the **Share folder** menu item
 
 <img width=500px  src="media/registry-share-menu.png" alt="registry share menu">
 
@@ -699,11 +699,11 @@ Execute the command below to start the registry
 
 ### Workflow
 
-### Code
+#### Code
 
 Write your code
 
-### Run Tests
+#### Run Tests
 
 ⚠️ **Before testing Virtualbox can't have any virtual machines or hard disks otherwise,
 functional and integration tests that works with virtualbox will fail.**
@@ -755,7 +755,7 @@ Run All tests
 make test-all
 ```
 
-### Commit
+#### Commit
 
 This project uses [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/).
 
