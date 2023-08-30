@@ -37,7 +37,7 @@ vedv::image_command::constructor() {
 vedv::image_command::__import_help() {
   cat <<-HELPMSG
 Usage:
-${__VED_IMAGE_COMMAND_SCRIPT_NAME} image import IMAGE_FILE.ova
+${__VED_IMAGE_COMMAND_SCRIPT_NAME} image import [FLAGS] [OPTIONS] IMAGE_FILE.ova
 
 Import an image from a file
 
@@ -148,7 +148,7 @@ vedv::image_command::__import() {
 vedv::image_command::__export_help() {
   cat <<-HELPMSG
 Usage:
-${__VED_IMAGE_COMMAND_SCRIPT_NAME} image export IMAGE FILE.ova
+${__VED_IMAGE_COMMAND_SCRIPT_NAME} image export [FLAGS] [OPTIONS] IMAGE FILE.ova
 
 Export an image to a file
 
@@ -245,7 +245,7 @@ vedv::image_command::__export() {
 vedv::image_command::__import_from_url_help() {
   cat <<-HELPMSG
 Usage:
-${__VED_IMAGE_COMMAND_SCRIPT_NAME} image from-url URL
+${__VED_IMAGE_COMMAND_SCRIPT_NAME} image from-url [FLAGS] [OPTIONS] URL
 
 Import an image from a url
 

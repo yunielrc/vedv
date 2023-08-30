@@ -250,7 +250,7 @@ Build finished
 
     assert_success
     assert_output --partial "Usage:
-vedv image import IMAGE_FILE"
+vedv image import [FLAGS] [OPTIONS] IMAGE_FILE.ova"
   done
 }
 
@@ -329,7 +329,7 @@ vedv image import IMAGE_FILE"
 
     assert_success
     assert_output --partial "Usage:
-vedv image from-url URL"
+vedv image from-url [FLAGS] [OPTIONS] URL"
   done
 }
 
@@ -391,7 +391,7 @@ vedv image from-url URL"
 
     assert_success
     assert_output --partial "Usage:
-vedv image export IMAGE FILE"
+vedv image export [FLAGS] [OPTIONS] IMAGE FILE.ova"
   done
 }
 
