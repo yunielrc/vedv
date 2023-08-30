@@ -588,6 +588,19 @@ vedv::image_service::export_by_id() {
     err "Failed to clone vm: '${vm_name}' to: '${clone_vm_name}'"
     return "$ERR_IMAGE_OPERATION"
   }
+
+  local clone_vm_state=''
+  clone_vm_state="$(vedv::hypervisor::get_state "$clone_vm_name")" || {
+    err "Failed to get vm state for image: ${image_clone_name}"
+    return "$ERR_VMOBJ_OPERATION"
+  }
+  readonly clone_vm_state
+
+  if [[ "$clone_vm_state" == 'saved' ]]; then
+    err "Failed exporting image '${image_name}' because it's last layer is in saved state"
+    return "$ERR_IMAGE_OPERATION"
+  fi
+
   # shellcheck disable=SC2064
   # this is executed by the on_exit event
   # trap "vedv::hypervisor::rm '${clone_vm_name}' &>/dev/null || :" INT TERM EXIT

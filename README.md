@@ -610,16 +610,6 @@ RUN echo '$GREETINGS'
 # the image needs to be turned off, the instruction is executed, and the image
 # is turned on again by the next instruction.
 SYSTEM --cpus 2 --memory 512
-# Safely power off the image
-# If you need to create a container from the image you are building, and you need
-# that the container starts from an powered off state, use this instruction at the end
-# of the Vedvfile.
-# Due containers are created from the last layer of the image, and the last
-# layer is in a saved state (excluding SYSTEM and POWEROFF) many services are
-# not started, because in this state the OS is never restarted after the build.
-# This instruction is not required for exporting the image, in this case
-# the saved state is discarded.
-POWEROFF
 ```
 
 ## Contributing

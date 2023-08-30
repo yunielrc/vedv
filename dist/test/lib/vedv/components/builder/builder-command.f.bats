@@ -56,6 +56,7 @@ vedv builder build [FLAGS] [OPTIONS] VEDVFILE"
   assert_output --regexp "created layer '.*' for command 'FROM'
 created layer '.*' for command 'COPY'
 created layer '.*' for command 'RUN'
+created layer '.*' for command 'POWEROFF'
 
 Build finished
 .* image123"
@@ -69,6 +70,7 @@ Build finished
   assert_success
   assert_output --regexp "created layer '.*' for command 'FROM'
 created layer '.*' for command 'SHELL'
+created layer '.*' for command 'POWEROFF'
 
 Build finished
 .* image123"
@@ -111,6 +113,7 @@ created layer '.*' for command 'USER'
 created layer '.*' for command 'WORKDIR'
 created layer '.*' for command 'COPY'
 created layer '.*' for command 'RUN'
+created layer '.*' for command 'POWEROFF'
 
 Build finished
 .* image123"
@@ -124,6 +127,7 @@ Build finished
   assert_success
   assert_output --regexp "created layer '.*' for command 'FROM'
 created layer '.*' for command 'COPY'
+created layer '.*' for command 'POWEROFF'
 
 Build finished
 .* image123"
@@ -151,8 +155,9 @@ dr-xr-xr-x    2 vedv     vedv .* d1
   assert_line --index 1 --regexp "created layer '.*' for command 'RUN'"
   assert_line --index 2 --regexp "created layer '.*' for command 'COPY'"
   assert_line --index 3 --regexp "created layer '.*' for command 'COPY'"
-  assert_line --index 4 "Build finished"
-  assert_line --index 5 --regexp ".* image123"
+  assert_line --index 4 --regexp "created layer '.*' for command 'POWEROFF'"
+  assert_line --index 5 "Build finished"
+  assert_line --index 6 --regexp ".* image123"
 
   run vedv builder build -t 'image123' ./Vedvfile2
 
@@ -170,8 +175,9 @@ dr-xr-xr-x    2 vedv     vedv .* d1
   assert_line --index 0 --regexp "created layer '.*' for command 'RUN'"
   assert_line --index 1 --regexp "created layer '.*' for command 'COPY'"
   assert_line --index 2 --regexp "created layer '.*' for command 'COPY'"
-  assert_line --index 3 "Build finished"
-  assert_line --index 4 --regexp ".* image123"
+  assert_line --index 3 --regexp "created layer '.*' for command 'POWEROFF'"
+  assert_line --index 4 "Build finished"
+  assert_line --index 5 --regexp ".* image123"
 }
 
 @test "vedv builder build -t image123 Vedvfile2 , Should fail 2nd build without --force because the image has containers" {
@@ -184,6 +190,7 @@ dr-xr-xr-x    2 vedv     vedv .* d1
 created layer '.*' for command 'RUN'
 created layer '.*' for command 'COPY'
 created layer '.*' for command 'COPY'
+created layer '.*' for command 'POWEROFF'
 
 Build finished
 .* image123"
@@ -207,6 +214,7 @@ Build finished
 created layer '.*' for command 'RUN'
 created layer '.*' for command 'COPY'
 created layer '.*' for command 'COPY'
+created layer '.*' for command 'POWEROFF'
 
 Build finished
 .* image123"
@@ -232,6 +240,7 @@ created layer '.*' for command 'EXPOSE'
 created layer '.*' for command 'EXPOSE'
 created layer '.*' for command 'EXPOSE'
 created layer '.*' for command 'EXPOSE'
+created layer '.*' for command 'POWEROFF'
 
 Build finished
 .* image123"
@@ -273,6 +282,7 @@ created layer '.*' for command 'RUN'
 created layer '.*' for command 'COPY'
 created layer '.*' for command 'COPY'
 created layer '.*' for command 'COPY'
+created layer '.*' for command 'POWEROFF'
 
 Build finished
 .* image1"
@@ -287,6 +297,7 @@ Build finished
   assert_output --regexp "created layer '.*' for command 'FROM'
 created layer '.*' for command 'SYSTEM'
 created layer '.*' for command 'SYSTEM'
+created layer '.*' for command 'POWEROFF'
 
 Build finished
 .* image123"

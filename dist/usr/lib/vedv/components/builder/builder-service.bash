@@ -1268,7 +1268,7 @@ vedv::builder_service::__layer_poweroff() {
     return "$ERR_INVAL_ARG"
   fi
 
-  local -r exec_func="vedv::image_service::poweroff '${image_id}'"
+  local -r exec_func="vedv::image_service::poweroff '${image_id}' >/dev/null"
 
   vedv::builder_service::__layer_execute_cmd "$image_id" "$cmd" "POWEROFF" "$exec_func"
 }
@@ -1505,7 +1505,20 @@ vedv::builder_service::__build() {
     err "Failed to get commands from Vedvfile '${vedvfile}'"
     return "$ERR_VEDV_FILE"
   }
+
+  # After build the image last layer can not be in save state, because if the
+  # image is exported the data in the save state is discarded without writing
+  # it to the disk.
+  # The image last layer is always POWEROFF, this guarantees that the last
+  # layer has all data saved to the disk.
+
+  local -r initial_commands_count="$(wc -l <<<"$commands")"
+
+  commands="${commands}
+$((initial_commands_count + 1))  POWEROFF"
   readonly commands
+  echo "$commands" >/tmp/cmds.out
+
   # prepare commands for env and arg variable substitution. e.g.
   # VAR_PREFIX_ can be any random string characters like '01b9622e23'
   # VAR_ENCODED_ can be any random string characters like '8027d5b963'
@@ -1756,11 +1769,9 @@ vedv::builder_service::build() {
   if [[ -n "$image_id" ]]; then
     ___on_build_ends_64695() {
       # the image must be completely stopped after the build, save_state
-      # is more fast than stop, but frequently the image get changes on
-      # the os and it must be restarted, so for example: if some services
-      # require restart and image is saved, the containers of the image
-      # will not work properly
-      vedv::image_service::save_state "$image_id" >/dev/null || {
+      # is more fast than stop, but when the image is exported the saved
+      # state is discarded lossing the data not saved on disk
+      vedv::image_service::stop "$image_id" >/dev/null || {
         err "Failed to stop the image '${image_name}'.You must stop it."
         return "$ERR_BUILDER_SERVICE_OPERATION"
       }

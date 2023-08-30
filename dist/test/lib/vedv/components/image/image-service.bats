@@ -3246,6 +3246,108 @@ EOF
   assert_output "Failed to clone vm: 'image:nalyd1|crc:223456789|' to: 'image:img09f5780-b520dce8|crc:697829166|'"
 }
 
+@test "vedv::image_service::export_by_id() Should fail If hypervisor::get_state fails" {
+  local -r image_id="1234567890"
+  local -r image_file="${TEST_IMAGE_TMP_DIR}/image123.ova"
+  local -r no_checksum=""
+  local -r no_change_password=""
+
+  vedv::image_entity::get_vm_name() {
+    assert_equal "$*" "$image_id"
+    echo "image:nalyd1|crc:223456789|"
+  }
+  vedv::image_entity::get_image_name_by_vm_name() {
+    assert_equal "$*" "image:nalyd1|crc:223456789|"
+    echo 'nalyd1'
+  }
+  vedv::image_entity::get_last_layer_id() {
+    assert_equal "$*" "$image_id"
+    echo '2234567890'
+  }
+  vedv::image_entity::get_snapshot_name_by_layer_id() {
+    assert_equal "$*" "${image_id} 2234567890"
+    echo 'layer:FROM|id:2234567890|'
+  }
+  openssl() {
+    echo 'b520dce8'
+  }
+  vedv::image_entity::gen_vm_name() {
+    assert_equal "$*" "img09f5780-b520dce8"
+    echo 'image:img09f5780-b520dce8|crc:697829166|'
+  }
+  vedv::image_entity::get_id_by_vm_name() {
+    assert_equal "$*" 'image:img09f5780-b520dce8|crc:697829166|'
+    echo '697829166'
+  }
+  vedv::hypervisor::clonevm_link() {
+    assert_equal "$*" "image:nalyd1|crc:223456789| image:img09f5780-b520dce8|crc:697829166| layer:FROM|id:2234567890| false"
+  }
+  vedv::hypervisor::rm() {
+    :
+  }
+  vedv::hypervisor::get_state() {
+    assert_equal "$*" "image:img09f5780-b520dce8|crc:697829166|"
+    return 1
+  }
+
+  run vedv::image_service::export_by_id \
+    "$image_id" "$image_file" "$no_checksum" "$no_change_password"
+
+  assert_failure
+  assert_output "Failed to get vm state for image: img09f5780-b520dce8"
+}
+
+@test "vedv::image_service::export_by_id() Should fail If clone_vm_state == saved fails" {
+  local -r image_id="1234567890"
+  local -r image_file="${TEST_IMAGE_TMP_DIR}/image123.ova"
+  local -r no_checksum=""
+  local -r no_change_password=""
+
+  vedv::image_entity::get_vm_name() {
+    assert_equal "$*" "$image_id"
+    echo "image:nalyd1|crc:223456789|"
+  }
+  vedv::image_entity::get_image_name_by_vm_name() {
+    assert_equal "$*" "image:nalyd1|crc:223456789|"
+    echo 'nalyd1'
+  }
+  vedv::image_entity::get_last_layer_id() {
+    assert_equal "$*" "$image_id"
+    echo '2234567890'
+  }
+  vedv::image_entity::get_snapshot_name_by_layer_id() {
+    assert_equal "$*" "${image_id} 2234567890"
+    echo 'layer:FROM|id:2234567890|'
+  }
+  openssl() {
+    echo 'b520dce8'
+  }
+  vedv::image_entity::gen_vm_name() {
+    assert_equal "$*" "img09f5780-b520dce8"
+    echo 'image:img09f5780-b520dce8|crc:697829166|'
+  }
+  vedv::image_entity::get_id_by_vm_name() {
+    assert_equal "$*" 'image:img09f5780-b520dce8|crc:697829166|'
+    echo '697829166'
+  }
+  vedv::hypervisor::clonevm_link() {
+    assert_equal "$*" "image:nalyd1|crc:223456789| image:img09f5780-b520dce8|crc:697829166| layer:FROM|id:2234567890| false"
+  }
+  vedv::hypervisor::rm() {
+    :
+  }
+  vedv::hypervisor::get_state() {
+    assert_equal "$*" "image:img09f5780-b520dce8|crc:697829166|"
+    echo 'saved'
+  }
+
+  run vedv::image_service::export_by_id \
+    "$image_id" "$image_file" "$no_checksum" "$no_change_password"
+
+  assert_failure
+  assert_output "Failed exporting image 'nalyd1' because it's last layer is in saved state"
+}
+
 @test "vedv::image_service::export_by_id() Should fail If set_vm_name fails" {
   local -r image_id="1234567890"
   local -r image_file="${TEST_IMAGE_TMP_DIR}/image123.ova"
@@ -3284,6 +3386,10 @@ EOF
   }
   vedv::hypervisor::rm() {
     :
+  }
+  vedv::hypervisor::get_state() {
+    assert_equal "$*" "image:img09f5780-b520dce8|crc:697829166|"
+    echo 'poweroff'
   }
   vedv::image_entity::set_vm_name() {
     assert_equal "$*" '697829166 image:img09f5780-b520dce8|crc:697829166|'
@@ -3335,6 +3441,10 @@ EOF
   }
   vedv::hypervisor::rm() {
     :
+  }
+  vedv::hypervisor::get_state() {
+    assert_equal "$*" "image:img09f5780-b520dce8|crc:697829166|"
+    echo 'poweroff'
   }
   vedv::image_entity::set_vm_name() {
     assert_equal "$*" '697829166 image:img09f5780-b520dce8|crc:697829166|'
@@ -3389,6 +3499,10 @@ EOF
   }
   vedv::hypervisor::rm() {
     :
+  }
+  vedv::hypervisor::get_state() {
+    assert_equal "$*" "image:img09f5780-b520dce8|crc:697829166|"
+    echo 'poweroff'
   }
   vedv::image_entity::set_vm_name() {
     assert_equal "$*" '697829166 image:img09f5780-b520dce8|crc:697829166|'
@@ -3447,6 +3561,10 @@ EOF
   vedv::hypervisor::rm() {
     :
   }
+  vedv::hypervisor::get_state() {
+    assert_equal "$*" "image:img09f5780-b520dce8|crc:697829166|"
+    echo 'poweroff'
+  }
   vedv::image_entity::set_vm_name() {
     assert_equal "$*" '697829166 image:img09f5780-b520dce8|crc:697829166|'
   }
@@ -3502,6 +3620,10 @@ EOF
   }
   vedv::hypervisor::rm() {
     :
+  }
+  vedv::hypervisor::get_state() {
+    assert_equal "$*" "image:img09f5780-b520dce8|crc:697829166|"
+    echo 'poweroff'
   }
   vedv::image_entity::set_vm_name() {
     assert_equal "$*" '697829166 image:img09f5780-b520dce8|crc:697829166|'
@@ -3564,6 +3686,10 @@ EOF
   vedv::hypervisor::rm() {
     :
   }
+  vedv::hypervisor::get_state() {
+    assert_equal "$*" "image:img09f5780-b520dce8|crc:697829166|"
+    echo 'poweroff'
+  }
   vedv::image_entity::set_vm_name() {
     assert_equal "$*" '697829166 image:img09f5780-b520dce8|crc:697829166|'
   }
@@ -3623,6 +3749,10 @@ EOF
   }
   vedv::hypervisor::rm() {
     :
+  }
+  vedv::hypervisor::get_state() {
+    assert_equal "$*" "image:img09f5780-b520dce8|crc:697829166|"
+    echo 'poweroff'
   }
   vedv::image_entity::set_vm_name() {
     assert_equal "$*" '697829166 image:img09f5780-b520dce8|crc:697829166|'

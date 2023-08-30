@@ -210,6 +210,7 @@ vedv image build [FLAGS] [OPTIONS] VEDVFILE"
   assert_output --regexp "created layer '.*' for command 'FROM'
 created layer '.*' for command 'COPY'
 created layer '.*' for command 'RUN'
+created layer '2084950859' for command 'POWEROFF'
 
 Build finished
 .* image123"
@@ -228,6 +229,7 @@ Build finished
 created layer '.*' for command 'EXPOSE'
 created layer '.*' for command 'EXPOSE'
 created layer '.*' for command 'EXPOSE'
+created layer '.*' for command 'POWEROFF'
 
 Build finished
 .* image123"
