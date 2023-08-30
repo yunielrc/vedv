@@ -96,7 +96,7 @@ cp /etc/skel/.vedv.env ~
 Edit the config, set the registry credentials, save and exit
 
 ```sh
-vim ~/.vedv.env
+cd && vim .vedv.env
 ```
 
 ## Usage
@@ -119,20 +119,25 @@ Download an image with custom name, create a container and start it
 - To see the download activity, install `bmon`, open it `bmon -b` and select the network interface
 
 ```sh
-vedv image pull -n alpine admin@alpine/alpine-3.18.3-x86_64 # 13.708s 90Mbps
-vedv container create -n alpine alpine #  1.566s
+vedv image pull -n alpine admin@alpine/alpine-3.17.3-x86_64
+# 13.708s 90Mbps
+vedv container create -n alpine alpine
+#  1.566s
 # starting a container can take up to 1 minute the first time or more
 # deppending on your hardware and the image os
-vedv container start -w alpine # 30.215s / ubuntu-server starts in around 13s
-vedv container stop alpine # 0.836s
-vedv container start -w alpine # 13.275s
+vedv container start -w alpine
+# 30.215s / ubuntu-server starts in around 13s
+vedv container stop alpine
+# 0.836s
+vedv container start -w alpine
+# 13.275s
 
 ```
 
 Or download an image and create a container, then start it
 
 ```sh
-vedv container create -n alpine admin@alpine/alpine-3.18.3-x86_64
+vedv container create -n alpine admin@alpine/alpine-3.17.3-x86_64
 # starting a container can take up to 1 minute the first time or more
 # deppending on your hardware and the image os
 vedv container start alpine
@@ -200,7 +205,7 @@ git clone https://github.com/yunielrc/todo-101.git && cd todo-101
 
 ```dockerfile
 # Download the image from the registry and import it
-FROM admin@alpine/alpine-3.18.3-x86_64
+FROM admin@alpine/alpine-3.17.3-x86_64
 # Set the user, create it if doesn't exist and change the owner
 # of WORKDIR recursively
 USER root
@@ -513,7 +518,7 @@ vedv image pull --no-cache -n todo-101-alpine-1.0.0-x86_64 \
 # Host os environment variables aren't available in the Vedvfile
 # -------------
 # Download the image from the registry and import it
-FROM admin@alpine/alpine-3.18.3-x86_64
+FROM admin@alpine/alpine-3.17.3-x86_64
 # Declare an environment variable
 # image os evals `DEST=dest`
 ENV DEST=dest
