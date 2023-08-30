@@ -108,3 +108,11 @@ vm_exec() {
 # shellcheck disable=SC2016
 vm_exec 'sudo groupadd docker; sudo usermod -aG docker "$USER"'
 vm_exec bash ./nextcloud.vm.cac
+
+cat <<EOF
+Check that the registry is running on http://nextcloud.loc
+
+Login with credentails:
+user: ${TEST_NC_USER}
+password: ${TEST_NC_PASSWORD}
+EOF
