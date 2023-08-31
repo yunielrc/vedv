@@ -808,3 +808,5 @@ utils::escape_for_bregex() {
 
   echo "$esc_str"
 }
+
+__rm() { rm "$@"; }

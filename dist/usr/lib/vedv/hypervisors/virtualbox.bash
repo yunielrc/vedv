@@ -3,7 +3,9 @@
 #
 
 # REQUIRE
-# . '../../utils.bash'
+if false; then
+  . '../../utils.bash'
+fi
 
 # CONSTANTS
 readonly VEDV_HYPERVISOR_FRONTEND_HEADLESS='headless'
@@ -89,6 +91,11 @@ vedv::hypervisor::clonevm() {
     return "$ERR_INVAL_ARG"
   fi
 
+  vedv::virtualbox::__remove_vm_existing_directory "$vm_clone_name" || {
+    err "Failed to remove existing directory for vm '${vm_clone_name}' that is going to be created"
+    return "$ERR_VIRTUALBOX_OPERATION"
+  }
+
   if [[ -n "$vm_snapshot" ]]; then
     VBoxManage clonevm "$vm_name" --name "$vm_clone_name" --register \
       --snapshot "$vm_snapshot" || {
@@ -128,6 +135,11 @@ vedv::hypervisor::clonevm_link() {
   vedv::hypervisor::validate_vm_name "$vm_clone_name" 'clone_vm_name' ||
     return $?
 
+  vedv::virtualbox::__remove_vm_existing_directory "$vm_clone_name" || {
+    err "Failed to remove existing directory for vm '${vm_clone_name}' that is going to be created"
+    return "$ERR_VIRTUALBOX_OPERATION"
+  }
+
   if [[ "$create_snapshot" == true ]]; then
     vedv::hypervisor::take_snapshot "$vm_name" "$vm_clone_name" || {
       err "Failed to create snapshot '${vm_clone_name}'"
@@ -149,6 +161,139 @@ vedv::hypervisor::clonevm_link() {
   }
 }
 vedv::virtualbox::clonevm_link() { vedv::hypervisor::clonevm_link "$@"; }
+
+#
+# Get virtualbox vms directory
+#
+# Output:
+#   writes vbox vms directory (string) to stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+# shellcheck disable=SC2120
+vedv::virtualbox::__get_vms_directory() {
+
+  local -r vbox_vms_dir="$(VBoxManage list systemproperties 2>/dev/null | grep -Po 'Default machine folder:\s+\K/.*$')"
+
+  if [[ -z "$vbox_vms_dir" ]]; then
+    err "'vbox_vms_dir' is empty"
+    return "$ERR_INVAL_VALUE"
+  fi
+
+  if [[ ! -d "$vbox_vms_dir" ]]; then
+    err "VirtualBox VMs directory '${vbox_vms_dir}' doesn't exist"
+    return "$ERR_NOFILE"
+  fi
+
+  echo "$vbox_vms_dir"
+}
+
+#
+# Get a vm directory name from vm name
+#
+# Arguments:
+#   vm_name   string    name of the VM
+#
+# Output:
+#   writes vm directory name (string) to stdout
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::virtualbox::__vm_name_to_vm_dirname() {
+  local -r vm_name="$1"
+
+  if [[ -z "$vm_name" ]]; then
+    err "Argument 'vm_name' must not be empty"
+    return "$ERR_INVAL_VALUE"
+  fi
+
+  # transfor this: "image-cache|crc:1980169285|" to this: "image_alpine_crc_764158514_"
+  # and this: "image:alpine|crc:764158514|" to this: "image-cache_crc_1980169285_"
+  local vm_directory_name="${vm_name//:/_}"
+  vm_directory_name="${vm_directory_name//|/_}"
+  readonly vm_directory_name
+
+  echo "$vm_directory_name"
+}
+
+#
+# Remove vm existing directory
+#
+# Before vm creation if doesn't exist a vm with the name of the vm that is going
+# to be created and there is a directory for the vm, delete the directory.
+#
+# Arguments:
+#   vm_name   string    name of the VM
+#
+# Returns:
+#   0 on success, non-zero on error.
+#
+vedv::virtualbox::__remove_vm_existing_directory() {
+  local -r vm_name="$1"
+  # validate arguments
+  if [[ -z "$vm_name" ]]; then
+    err "Argument 'vm_name' must not be empty"
+    return "$ERR_INVAL_ARG"
+  fi
+  #
+
+  # if exists vm show an error
+  local vm_exists
+  vm_exists="$(vedv::virtualbox::exists_vm_with_partial_name "$vm_name")" || {
+    err "Failed to check if vm exists ${vm_name}"
+    return "$ERR_VIRTUALBOX_OPERATION"
+  }
+  readonly vm_exists
+
+  if [[ "$vm_exists" == true ]]; then
+    err "VM '${vm_name}' already exists"
+    return "$ERR_VIRTUALBOX_OPERATION"
+  fi
+
+  local vbox_vms_directory
+  vbox_vms_directory="$(vedv::virtualbox::__get_vms_directory)" || {
+    err "Failed to get vbox vms directory"
+    return "$ERR_VIRTUALBOX_OPERATION"
+  }
+  readonly vbox_vms_directory
+
+  if [[ -z "$vbox_vms_directory" ]]; then
+    err "'vbox_vms_directory' is empty"
+    return "$ERR_INVAL_VALUE"
+  fi
+
+  if [[ ! -d "$vbox_vms_directory" ]]; then
+    err "Virtualbox VMs '${vbox_vms_directory}' doesn't exist"
+    return "$ERR_NOFILE"
+  fi
+
+  local vm_directory_name
+  vm_directory_name="$(vedv::virtualbox::__vm_name_to_vm_dirname "$vm_name")" || {
+    err "Failed to calc vm directory for vm '${vm_name}'"
+    return "$ERR_VIRTUALBOX_OPERATION"
+  }
+  readonly vm_directory_name
+
+  if [[ -z "$vm_directory_name" ]]; then
+    err "'vm_directory_name' is empty"
+    return "$ERR_INVAL_VALUE"
+  fi
+
+  local -r vm_directory="${vbox_vms_directory}/${vm_directory_name}"
+
+  if [[ ! -d "$vm_directory" ]]; then
+    return 0
+  fi
+
+  __rm -rf "$vm_directory" || {
+    err "Failed to remove directory of VM '${vm_name}'"
+    return "$ERR_VIRTUALBOX_OPERATION"
+  }
+
+  echo "removed: ${vm_directory}"
+}
 
 #
 # Import a virtual appliance in OVA format
@@ -173,6 +318,11 @@ vedv::hypervisor::import() {
   if ! vedv::hypervisor::validate_vm_name "$vm_name" 'import_vm_name'; then
     return "$ERR_INVAL_ARG"
   fi
+
+  vedv::virtualbox::__remove_vm_existing_directory "$vm_name" || {
+    err "Failed to remove existing directory for vm '${vm_name}' that is going to be created"
+    return "$ERR_VIRTUALBOX_OPERATION"
+  }
 
   VBoxManage import "$ova_file" --vsys 0 --vmname "$vm_name"
   VBoxManage modifyvm "$vm_name" --usb-ohci=on --usb-ehci=off
@@ -291,7 +441,9 @@ vedv::hypervisor::exists_vm_with_partial_name() {
     echo true
   fi
 }
-
+vedv::virtualbox::exists_vm_with_partial_name() {
+  vedv::hypervisor::exists_vm_with_partial_name "$@"
+}
 #
 # Takes a snapshot of the current state of the VM
 #
