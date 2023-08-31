@@ -119,7 +119,7 @@ Copy the config to your home directory
 cp /etc/skel/.vedv.env ~
 ```
 
-Edit user config, set the registry credentials, save and exit
+Edit the config, set the registry credentials, save and exit
 
 ```sh
 cd && vim .vedv.env
@@ -278,8 +278,8 @@ Vedvfile syntax is highly inspired by Dockerfile, but with some differences
 - Build it
 
 ```sh
-vedv image build --no-wait -n todo-101-alpine-1.0.0-x86_64
-# 50.819s --> [download] + [import] + creation + startup + build + [stop] time
+vedv image build -n todo-101-alpine-1.0.0-x86_64
+# 49.676s --> [download] + [import] + creation + startup + build + [stop] time
 ```
 
 - Create a container from the image
@@ -316,15 +316,14 @@ vedv container rm --force todo-101
 - Let's build our updated version of the image, using the same command we used before.
 
 ```sh
-vedv image build --no-wait -n todo-101-alpine-1.0.0-x86_64
-# 18.682s --> [download] + [import] + [creation] + startup + build + [stop] time
+vedv image build --force -n todo-101-alpine-1.0.0-x86_64
+# 17.517s --> [download] + [import] + [creation] + startup + build + [stop] time
 ```
 
 Each line like the one below is a deleted layer:
 `0%...10%...20%...30%...40%...50%...60%...70%...80%...90%...100%`
 
-In this case 4 layers were deleted, starting from `COPY . .` to the end of the file,
-and the layer POWEROFF added during the build process.
+In this case 3 layers were deleted, starting from `COPY . .` to the end of the file.
 
 - Let's start a new container using the updated code.
 
