@@ -279,7 +279,7 @@ Vedvfile syntax is highly inspired by Dockerfile, but with some differences
 
 ```sh
 vedv image build -n todo-101-alpine-1.0.0-x86_64
-# 49.676s --> [download] + [import] + creation + startup + build + [stop] time
+# 52.955s --> [download] + [import] + creation + startup + build + stop time
 ```
 
 - Create a container from the image
@@ -316,14 +316,15 @@ vedv container rm --force todo-101
 - Let's build our updated version of the image, using the same command we used before.
 
 ```sh
-vedv image build --force -n todo-101-alpine-1.0.0-x86_64
-# 17.517s --> [download] + [import] + [creation] + startup + build + [stop] time
+vedv image build -n todo-101-alpine-1.0.0-x86_64
+# 21.368s --> [download] + [import] + [creation] + startup + build + stop time
 ```
 
 Each line like the one below is a deleted layer:
 `0%...10%...20%...30%...40%...50%...60%...70%...80%...90%...100%`
 
-In this case 3 layers were deleted, starting from `COPY . .` to the end of the file.
+In this case 4 layers were deleted, starting from `COPY . .` to the end of the file,
+and the layer POWEROFF added during the build process.
 
 - Let's start a new container using the updated code.
 
