@@ -1212,6 +1212,10 @@ vedv::builder_service::__layer_system() {
       fi
       shift 2
       ;;
+    *)
+      err "Invalid argument: ${1}\n"
+      return "$ERR_INVAL_ARG"
+      ;;
     esac
   done
   # validate command arguments
@@ -1268,7 +1272,38 @@ vedv::builder_service::__layer_poweroff() {
     return "$ERR_INVAL_ARG"
   fi
 
-  local -r exec_func="vedv::image_service::poweroff '${image_id}' >/dev/null"
+  set -o noglob
+  eval set -- "$cmd"
+  set +o noglob
+
+  if [[ $# -lt 2 ]]; then
+    err "Invalid number of arguments, expected at least 2, got $#"
+    return "$ERR_INVAL_ARG"
+  fi
+  shift 2 # skip command id and name
+
+  local no_wait=false
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+    # flags
+    --no-wait)
+      readonly no_wait=true
+      shift
+      ;;
+    # invalid arguments
+    *)
+      err "Invalid argument: ${1}\n"
+      return "$ERR_INVAL_ARG"
+      ;;
+    esac
+  done
+
+  local exec_func="vedv::image_service::poweroff '${image_id}' >/dev/null"
+
+  if [[ "$no_wait" == true ]]; then
+    exec_func+=' &'
+  fi
 
   vedv::builder_service::__layer_execute_cmd "$image_id" "$cmd" "POWEROFF" "$exec_func"
 }
@@ -1472,9 +1507,10 @@ vedv::builder_service::__create_image_by_from_cmd() {
 # Build image from Vedvfile
 #
 # Arguments:
-#   vedvfile    string     path to Vedvfile
-#   image_name  string     name of the image
-#   no_cache    bool       delete all layers except the FROM layer
+#   vedvfile            string     path to Vedvfile
+#   image_name          string     name of the image
+#   no_cache            bool       delete all layers except the FROM layer
+#   no_wait_after_build bool       do not wait for the image to be ready
 #
 # Output:
 #   Writes image_id (string) image_name (string) and build proccess #  output to the stdout
@@ -1486,6 +1522,7 @@ vedv::builder_service::__build() {
   local -r vedvfile="$1"
   local image_name="${2:-}"
   local -r no_cache="${3:-false}"
+  local -r no_wait_after_build="${4:-false}"
   # validate arguments
   if [[ -z "$vedvfile" ]]; then
     err "Argument 'vedvfile' is required"
@@ -1506,7 +1543,7 @@ vedv::builder_service::__build() {
     return "$ERR_VEDV_FILE"
   }
 
-  # After build the image last layer can not be in save state, because if the
+  # After build, the image last layer can not be in save state, because if the
   # image is exported the data in the save state is discarded without writing
   # it to the disk.
   # The image last layer is always POWEROFF, this guarantees that the last
@@ -1514,10 +1551,16 @@ vedv::builder_service::__build() {
 
   local -r initial_commands_count="$(wc -l <<<"$commands")"
 
+  local no_wait_str=''
+
+  if [[ "$no_wait_after_build" == true ]]; then
+    no_wait_str='--no-wait'
+  fi
+  readonly no_wait_str
+
   commands="${commands}
-$((initial_commands_count + 1))  POWEROFF"
+$((initial_commands_count + 1))  POWEROFF ${no_wait_str}"
   readonly commands
-  echo "$commands" >/tmp/cmds.out
 
   # prepare commands for env and arg variable substitution. e.g.
   # VAR_PREFIX_ can be any random string characters like '01b9622e23'
@@ -1758,7 +1801,7 @@ vedv::builder_service::build() {
 
   vedv::image_service::set_use_cache 'true'
 
-  vedv::builder_service::__build "$vedvfile" "$image_name" "$no_cache" || {
+  vedv::builder_service::__build "$vedvfile" "$image_name" "$no_cache" "$no_wait_after_build" || {
     err "The build proccess has failed."
   }
 

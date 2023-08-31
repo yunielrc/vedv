@@ -1094,7 +1094,7 @@ Previous layer restored"
   }
   utils::str_encode_vars() {
     assert_equal "$*" "1 RUN echo hello
-2  POWEROFF"
+2  POWEROFF "
     return 1
   }
   # Act
@@ -1120,7 +1120,7 @@ Previous layer restored"
   }
   utils::str_encode_vars() {
     assert_equal "$*" "${from_cmd}
-2  POWEROFF"
+2  POWEROFF "
     echo "$from_cmd"
   }
   vedv::image_entity::get_id_by_image_name() {
@@ -1150,7 +1150,7 @@ Previous layer restored"
   }
   utils::str_encode_vars() {
     assert_equal "$*" "${from_cmd}
-2  POWEROFF"
+2  POWEROFF "
     echo "$from_cmd"
   }
   vedv::image_entity::get_id_by_image_name() {
@@ -1184,7 +1184,7 @@ Previous layer restored"
   }
   utils::str_encode_vars() {
     assert_equal "$*" "${from_cmd}
-2  POWEROFF"
+2  POWEROFF "
     echo "$from_cmd"
   }
   vedv::image_entity::get_id_by_image_name() {
@@ -1225,7 +1225,7 @@ Previous layer restored"
   }
   utils::str_encode_vars() {
     assert_equal "$*" "${from_cmd}
-2  POWEROFF"
+2  POWEROFF "
     echo "$from_cmd"
   }
   vedv::image_entity::get_id_by_image_name() {
@@ -1270,7 +1270,7 @@ Previous layer restored"
   }
   utils::str_encode_vars() {
     assert_equal "$*" "${from_cmd}
-2  POWEROFF"
+2  POWEROFF "
     echo "$from_cmd"
   }
   vedv::image_entity::get_id_by_image_name() {
@@ -1315,7 +1315,7 @@ Previous layer restored"
   }
   utils::str_encode_vars() {
     assert_equal "$*" "${from_cmd}
-2  POWEROFF"
+2  POWEROFF "
     echo "$from_cmd"
   }
   vedv::image_entity::get_id_by_image_name() {
@@ -1371,7 +1371,7 @@ Previous layer restored"
   }
   utils::str_encode_vars() {
     assert_equal "$*" "${from_cmd}
-2  POWEROFF"
+2  POWEROFF "
     echo "$from_cmd"
   }
   vedv::image_entity::get_id_by_image_name() {
@@ -1430,7 +1430,7 @@ Previous layer restored"
   }
   utils::str_encode_vars() {
     assert_equal "$*" "${from_cmd}
-2  POWEROFF"
+2  POWEROFF "
     echo "$from_cmd"
   }
   vedv::image_entity::get_id_by_image_name() {
@@ -1486,8 +1486,8 @@ Previous layer restored"
     echo "$vedvfile_content"
   }
   utils::str_encode_vars() {
-    assert_equal "$*" "$vedvfile_content2"
-    echo "$vedvfile_content2"
+    assert_equal "$*" "$vedvfile_content2 "
+    echo "$vedvfile_content2 "
   }
   vedv::image_entity::get_id_by_image_name() {
     assert_equal "$*" "$image_name"
@@ -1554,8 +1554,8 @@ Previous layer restored"
     echo "$vedvfile_content"
   }
   utils::str_encode_vars() {
-    assert_equal "$*" "$vedvfile_content2"
-    echo "$vedvfile_content2"
+    assert_equal "$*" "$vedvfile_content2 "
+    echo "$vedvfile_content2 "
   }
   vedv::image_entity::get_id_by_image_name() {
     assert_equal "$*" "$image_name"
@@ -1626,8 +1626,8 @@ Previous layer restored"
     echo "$vedvfile_content"
   }
   utils::str_encode_vars() {
-    assert_equal "$*" "$vedvfile_content2"
-    echo "$vedvfile_content2"
+    assert_equal "$*" "$vedvfile_content2 "
+    echo "$vedvfile_content2 "
   }
   vedv::image_entity::get_id_by_image_name() {
     assert_equal "$*" "$image_name"
@@ -1699,8 +1699,8 @@ Build finished
     echo "$vedvfile_content"
   }
   utils::str_encode_vars() {
-    assert_equal "$*" "$vedvfile_content2"
-    echo "$vedvfile_content2"
+    assert_equal "$*" "$vedvfile_content2 "
+    echo "$vedvfile_content2 "
   }
   vedv::image_entity::get_id_by_image_name() {
     assert_equal "$*" "$image_name"
@@ -1774,8 +1774,8 @@ Build finished
     echo "$vedvfile_content"
   }
   utils::str_encode_vars() {
-    assert_equal "$*" "$vedvfile_content2"
-    echo "$vedvfile_content2"
+    assert_equal "$*" "$vedvfile_content2 "
+    echo "$vedvfile_content2 "
   }
   vedv::image_entity::get_id_by_image_name() {
     assert_equal "$*" "$image_name"
@@ -1852,8 +1852,8 @@ Build finished
     echo "$vedvfile_content"
   }
   utils::str_encode_vars() {
-    assert_equal "$*" "$vedvfile_content2"
-    echo "$vedvfile_content2"
+    assert_equal "$*" "$vedvfile_content2 "
+    echo "$vedvfile_content2 "
   }
   vedv::image_entity::get_id_by_image_name() {
     assert_equal "$*" "$image_name"
@@ -1930,8 +1930,8 @@ Build finished
     echo "$vedvfile_content"
   }
   utils::str_encode_vars() {
-    assert_equal "$*" "$vedvfile_content2"
-    echo "$vedvfile_content2"
+    assert_equal "$*" "$vedvfile_content2 "
+    echo "$vedvfile_content2 "
   }
   vedv::image_entity::get_id_by_image_name() {
     assert_equal "$*" "$image_name"
@@ -2014,8 +2014,8 @@ Build finished
     echo "$vedvfile_content"
   }
   utils::str_encode_vars() {
-    assert_equal "$*" "$vedvfile_content2"
-    echo "$vedvfile_content2"
+    assert_equal "$*" "$vedvfile_content2 "
+    echo "$vedvfile_content2 "
   }
   vedv::image_entity::get_id_by_image_name() {
     assert_equal "$*" "$image_name"
@@ -2072,6 +2072,190 @@ Build finished
   assert_failure
   assert_output "Failed to create layer for command '4 RUN ls -l'
 The previous layer to the failure could not be restored. Try build the image again with --no-cache."
+}
+
+@test "vedv::builder_service::__build() Should succeed" {
+  # Arrange
+  local -r vedvfile="dist/test/lib/vedv/components/builder/fixtures/Vedvfile"
+  local -r image_name="image1"
+
+  local -r vedvfile_content="1 FROM /tmp/vedv/test/files/alpine-x86_64.ova
+2 COPY homefs/ .
+3 COPY home.config /home/vedv/
+4 RUN ls -l"
+
+  local -r vedvfile_content2="1 FROM /tmp/vedv/test/files/alpine-x86_64.ova
+2 COPY homefs/ .
+3 COPY home.config /home/vedv/
+4 RUN ls -l
+5  POWEROFF"
+
+  # Stub
+  petname() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::builder_vedvfile_service::get_commands() {
+    assert_equal "$*" "$vedvfile"
+    echo "$vedvfile_content"
+  }
+  utils::str_encode_vars() {
+    assert_equal "$*" "$vedvfile_content2 "
+    echo "$vedvfile_content2 "
+  }
+  vedv::image_entity::get_id_by_image_name() {
+    assert_equal "$*" "$image_name"
+    echo "1234567890"
+  }
+  vedv::builder_service::__create_image_by_from_cmd() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+
+  local -r get_layer_count_calls_file="$(mktemp)"
+  echo 0 >"$get_layer_count_calls_file"
+  vedv::image_service::stop() {
+    assert_equal "$*" "1234567890"
+  }
+  vedv::image_entity::get_layer_count() {
+    assert_equal "$*" "$image_id"
+
+    local -i get_layer_count_calls="$(<"$get_layer_count_calls_file")"
+    echo "$((++get_layer_count_calls))" >"$get_layer_count_calls_file"
+
+    if [[ "$get_layer_count_calls" == 2 ]]; then
+      echo 2
+      return 0
+    fi
+    echo 2
+  }
+  vedv::builder_service::__delete_invalid_layers() {
+    assert_equal "$*" "1234567890 ${commands_encvars}"
+    echo 3
+  }
+  vedv::image_service::remove() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::image_service::cache_data() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::builder_service::__load_env_vars() {
+    assert_equal "$*" "$image_id"
+  }
+  vedv::builder_service::__layer_run() {
+    assert_equal "$*" "${image_id} 4 RUN ls -l"
+    echo 12346
+  }
+  vedv::builder_service::__layer_poweroff() {
+    assert_equal "$*" "${image_id} 5  POWEROFF "
+    echo 12345
+  }
+  vedv::builder_service::__layer_copy() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::builder_service::__expand_cmd_parameters() {
+    echo "$*"
+  }
+
+  # Act
+  run vedv::builder_service::__build "$vedvfile" "$image_name"
+
+  assert_success
+  assert_output "created layer '12346' for command 'RUN'
+created layer '12345' for command 'POWEROFF'
+
+Build finished
+1234567890 image1"
+}
+
+@test "vedv::builder_service::__build() Should succeed with no_wait" {
+  # Arrange
+  local -r vedvfile="dist/test/lib/vedv/components/builder/fixtures/Vedvfile"
+  local -r image_name="image1"
+
+  local -r vedvfile_content="1 FROM /tmp/vedv/test/files/alpine-x86_64.ova
+2 COPY homefs/ .
+3 COPY home.config /home/vedv/
+4 RUN ls -l"
+
+  local -r vedvfile_content2="1 FROM /tmp/vedv/test/files/alpine-x86_64.ova
+2 COPY homefs/ .
+3 COPY home.config /home/vedv/
+4 RUN ls -l
+5  POWEROFF --no-wait"
+
+  # Stub
+  petname() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::builder_vedvfile_service::get_commands() {
+    assert_equal "$*" "$vedvfile"
+    echo "$vedvfile_content"
+  }
+  utils::str_encode_vars() {
+    assert_equal "$*" "$vedvfile_content2"
+    echo "$vedvfile_content2 "
+  }
+  vedv::image_entity::get_id_by_image_name() {
+    assert_equal "$*" "$image_name"
+    echo "1234567890"
+  }
+  vedv::builder_service::__create_image_by_from_cmd() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+
+  local -r get_layer_count_calls_file="$(mktemp)"
+  echo 0 >"$get_layer_count_calls_file"
+  vedv::image_service::stop() {
+    assert_equal "$*" "1234567890"
+  }
+  vedv::image_entity::get_layer_count() {
+    assert_equal "$*" "$image_id"
+
+    local -i get_layer_count_calls="$(<"$get_layer_count_calls_file")"
+    echo "$((++get_layer_count_calls))" >"$get_layer_count_calls_file"
+
+    if [[ "$get_layer_count_calls" == 2 ]]; then
+      echo 2
+      return 0
+    fi
+    echo 2
+  }
+  vedv::builder_service::__delete_invalid_layers() {
+    assert_equal "$*" "1234567890 ${commands_encvars}"
+    echo 3
+  }
+  vedv::image_service::remove() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::image_service::cache_data() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::builder_service::__load_env_vars() {
+    assert_equal "$*" "$image_id"
+  }
+  vedv::builder_service::__layer_run() {
+    assert_equal "$*" "${image_id} 4 RUN ls -l"
+    echo 12346
+  }
+  vedv::builder_service::__layer_poweroff() {
+    assert_equal "$*" "${image_id} 5  POWEROFF --no-wait "
+    echo 12345
+  }
+  vedv::builder_service::__layer_copy() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::builder_service::__expand_cmd_parameters() {
+    echo "$*"
+  }
+
+  # Act
+  run vedv::builder_service::__build "$vedvfile" "$image_name" 'false' 'true'
+
+  assert_success
+  assert_output "created layer '12346' for command 'RUN'
+created layer '12345' for command 'POWEROFF'
+
+Build finished
+1234567890 image1"
 }
 
 # Tests for vedv::builder_service::build()
@@ -2170,7 +2354,7 @@ The previous layer to the failure could not be restored. Try build the image aga
     echo false
   }
   vedv::builder_service::__build() {
-    assert_equal "$*" "${vedvfile} ${image_name} false"
+    assert_equal "$*" "${vedvfile} ${image_name} false false"
     return 1
   }
   vedv::image_service::set_use_cache() {
@@ -2206,7 +2390,7 @@ Failed to stop the image 'image1'.You must stop it."
     echo false
   }
   vedv::builder_service::__build() {
-    assert_equal "$*" "${vedvfile} ${image_name} false"
+    assert_equal "$*" "${vedvfile} ${image_name} false false"
   }
   vedv::image_service::set_use_cache() {
     assert_equal "$*" "true"
@@ -2833,6 +3017,16 @@ local -r var_9f57a558b3_VAR23=\"var3 var3\""
   assert_output "Argument 'memory' no specified"
 }
 
+@test "vedv::builder_service::__layer_system() Should fail With invalid argument" {
+  local -r image_id="12345"
+  local -r cmd="1 SYSTEM --cpas 2"
+
+  run vedv::builder_service::__layer_system "$image_id" "$cmd"
+
+  assert_failure
+  assert_output "Invalid argument: --cpas"
+}
+
 @test "vedv::builder_service::__layer_system() Should fail If __layer_execute_cmd fails" {
   local -r image_id="12345"
   local -r cmd="1 SYSTEM --cpus 2 --memory 512"
@@ -3032,12 +3226,46 @@ local -r var_9f57a558b3_VAR23=\"var3 var3\""
   assert_output "Argument 'cmd' is required"
 }
 
+@test "vedv::builder_service::__layer_poweroff() Should fail With less than 2 arguments" {
+  local -r image_id="12345"
+  local -r cmd="5"
+
+  run vedv::builder_service::__layer_poweroff "$image_id" "$cmd"
+
+  assert_failure
+  assert_output "Invalid number of arguments, expected at least 2, got 1"
+}
+
+@test "vedv::builder_service::__layer_poweroff() Should fail With invalid argument" {
+  local -r image_id="12345"
+  local -r cmd="5 POWEROFF --aa"
+
+  run vedv::builder_service::__layer_poweroff "$image_id" "$cmd"
+
+  assert_failure
+  assert_output "Invalid argument: --aa"
+}
+
 @test "vedv::builder_service::__layer_poweroff() Should succeed" {
   local -r image_id="12345"
   local -r cmd="1 POWEROFF"
 
   vedv::builder_service::__layer_execute_cmd() {
     assert_equal "$*" "12345 1 POWEROFF POWEROFF vedv::image_service::poweroff '12345' >/dev/null"
+  }
+
+  run vedv::builder_service::__layer_poweroff "$image_id" "$cmd"
+
+  assert_success
+  assert_output ""
+}
+
+@test "vedv::builder_service::__layer_poweroff() Should succeed with no_wait" {
+  local -r image_id="12345"
+  local -r cmd="1 POWEROFF --no-wait"
+
+  vedv::builder_service::__layer_execute_cmd() {
+    assert_equal "$*" "12345 1 POWEROFF --no-wait POWEROFF vedv::image_service::poweroff '12345' >/dev/null &"
   }
 
   run vedv::builder_service::__layer_poweroff "$image_id" "$cmd"
