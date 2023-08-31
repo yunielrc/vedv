@@ -2074,6 +2074,92 @@ Build finished
 The previous layer to the failure could not be restored. Try build the image again with --no-cache."
 }
 
+@test "vedv::builder_service::__build() Should succeed" {
+  # Arrange
+  local -r vedvfile="dist/test/lib/vedv/components/builder/fixtures/Vedvfile"
+  local -r image_name="image1"
+
+  local -r vedvfile_content="1 FROM /tmp/vedv/test/files/alpine-x86_64.ova
+2 COPY homefs/ .
+3 COPY home.config /home/vedv/
+4 RUN ls -l"
+
+  # Stub
+  petname() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::builder_vedvfile_service::get_commands() {
+    assert_equal "$*" "$vedvfile"
+    echo "$vedvfile_content"
+  }
+  utils::str_encode_vars() {
+    assert_equal "$*" "${vedvfile_content}
+5  POWEROFF"
+    echo "$vedvfile_content"
+  }
+  vedv::image_entity::get_id_by_image_name() {
+    assert_equal "$*" "$image_name"
+    echo "1234567890"
+  }
+  vedv::builder_service::__create_image_by_from_cmd() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+
+  local -r get_layer_count_calls_file="$(mktemp)"
+  echo 0 >"$get_layer_count_calls_file"
+  vedv::image_service::stop() {
+    assert_equal "$*" "1234567890"
+  }
+  vedv::image_entity::get_layer_count() {
+    assert_equal "$*" "$image_id"
+
+    local -i get_layer_count_calls="$(<"$get_layer_count_calls_file")"
+    echo "$((++get_layer_count_calls))" >"$get_layer_count_calls_file"
+
+    if [[ "$get_layer_count_calls" == 2 ]]; then
+      echo 2
+      return 0
+    fi
+    echo 2
+  }
+  vedv::builder_service::__delete_invalid_layers() {
+    assert_equal "$*" "1234567890 ${commands_encvars}"
+    echo 3
+  }
+  vedv::image_service::remove() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::image_service::cache_data() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::builder_service::__load_env_vars() {
+    assert_equal "$*" "$image_id"
+  }
+  vedv::builder_service::__layer_run() {
+    assert_equal "$*" "${image_id} 4 RUN ls -l"
+    echo 12346
+  }
+  vedv::builder_service::__layer_poweroff() {
+    assert_equal "$*" "${image_id} 5  POWEROFF "
+    echo 12345
+  }
+  vedv::builder_service::__layer_copy() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::builder_service::__expand_cmd_parameters() {
+    echo "$*"
+  }
+
+  # Act
+  run vedv::builder_service::__build "$vedvfile" "$image_name"
+
+  assert_success
+  assert_output "created layer '12346' for command 'RUN'
+
+Build finished
+1234567890 image1"
+}
+
 # Tests for vedv::builder_service::build()
 
 @test 'vedv::builder_service::build() with an empty vedvfile should return an error' {
@@ -2831,6 +2917,16 @@ local -r var_9f57a558b3_VAR23=\"var3 var3\""
 
   assert_failure
   assert_output "Argument 'memory' no specified"
+}
+
+@test "vedv::builder_service::__layer_system() Should fail With invalid argument" {
+  local -r image_id="12345"
+  local -r cmd="1 SYSTEM --cpas 2"
+
+  run vedv::builder_service::__layer_system "$image_id" "$cmd"
+
+  assert_failure
+  assert_output "Invalid argument: --cpas"
 }
 
 @test "vedv::builder_service::__layer_system() Should fail If __layer_execute_cmd fails" {

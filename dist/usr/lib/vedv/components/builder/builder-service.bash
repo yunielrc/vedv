@@ -1212,6 +1212,10 @@ vedv::builder_service::__layer_system() {
       fi
       shift 2
       ;;
+    *)
+      err "Invalid argument: ${1}\n"
+      return "$ERR_INVAL_ARG"
+      ;;
     esac
   done
   # validate command arguments
@@ -1517,7 +1521,6 @@ vedv::builder_service::__build() {
   commands="${commands}
 $((initial_commands_count + 1))  POWEROFF"
   readonly commands
-  echo "$commands" >/tmp/cmds.out
 
   # prepare commands for env and arg variable substitution. e.g.
   # VAR_PREFIX_ can be any random string characters like '01b9622e23'
