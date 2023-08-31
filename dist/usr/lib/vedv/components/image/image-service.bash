@@ -15,7 +15,7 @@ if false; then
 fi
 
 # CONSTANTS
-readonly __VEDV_IMAGE_SERVICE_IMAGE_CLONE_TAG='img09f5780'
+readonly __VEDV_IMAGE_SERVICE_IMAGE_CLONE_TAG='img09f5'
 
 # VARIABLES
 
@@ -564,7 +564,7 @@ vedv::image_service::export_by_id() {
   fi
   readonly layer_vm_snapshot_name
 
-  local -r image_clone_name="${__VEDV_IMAGE_SERVICE_IMAGE_CLONE_TAG}-$(openssl rand -hex 4)"
+  local -r image_clone_name="${__VEDV_IMAGE_SERVICE_IMAGE_CLONE_TAG}-$(openssl rand -hex 2)-${BASHPID}"
 
   # DATA GATHERING
   local clone_vm_name=''
@@ -622,6 +622,11 @@ vedv::image_service::export_by_id() {
     return "$ERR_IMAGE_OPERATION"
   }
 
+  vedv::hypervisor::rm "$clone_vm_name" &>/dev/null || {
+    err "Failed to remove image clone: '${clone_vm_name}'"
+    return "$ERR_IMAGE_OPERATION"
+  }
+
   if [[ "$no_checksum" == true ]]; then
     return 0
   fi
@@ -670,6 +675,20 @@ vedv::image_service::__delete_all_image_clones() {
   readonly vm_names_arr
 
   for vm_name in "${vm_names_arr[@]}"; do
+
+    local image_name=''
+    image_name="$(vedv::image_entity::get_image_name_by_vm_name "$vm_name")" || {
+      err "Failed to get image name for vm '${vm_name}'"
+      return "$ERR_IMAGE_OPERATION"
+    }
+
+    local _pid="${image_name##*-}"
+
+    # if there is a process with the pid that means that the image clone
+    # may be being exported
+    if ps -p "$_pid" >/dev/null; then
+      continue
+    fi
 
     vedv::hypervisor::rm "$vm_name" &>/dev/null || {
       err "Failed to remove image clone: '${vm_name}'"
