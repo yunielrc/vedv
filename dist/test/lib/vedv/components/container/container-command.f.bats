@@ -472,6 +472,7 @@ SSHEOF
 created layer '.*' for command 'EXPOSE'
 created layer '.*' for command 'EXPOSE'
 created layer '.*' for command 'EXPOSE'
+created layer '.*' for command 'POWEROFF'
 
 Build finished
 .* image123"
@@ -507,6 +508,7 @@ Build finished
 created layer '.*' for command 'EXPOSE'
 created layer '.*' for command 'EXPOSE'
 created layer '.*' for command 'EXPOSE'
+created layer '.*' for command 'POWEROFF'
 
 Build finished
 .* image123"
@@ -547,6 +549,7 @@ Build finished
 created layer '.*' for command 'EXPOSE'
 created layer '.*' for command 'EXPOSE'
 created layer '.*' for command 'EXPOSE'
+created layer '.*' for command 'POWEROFF'
 
 Build finished
 .* image123"
