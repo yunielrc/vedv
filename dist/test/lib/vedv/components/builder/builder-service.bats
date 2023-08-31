@@ -1529,6 +1529,78 @@ Previous layer restored"
   assert_output "Failed to get layer count for image 'image1'"
 }
 
+@test "vedv::builder_service::__build() Should fail If restore_last_layer fails" {
+  # Arrange
+  local -r vedvfile="dist/test/lib/vedv/components/builder/fixtures/Vedvfile"
+  local -r image_name="image1"
+
+  local -r vedvfile_content="1 FROM /tmp/vedv/test/files/alpine-x86_64.ova
+2 COPY homefs/ .
+3 COPY home.config /home/vedv/
+4 RUN ls -l"
+
+  local -r vedvfile_content2="1 FROM /tmp/vedv/test/files/alpine-x86_64.ova
+2 COPY homefs/ .
+3 COPY home.config /home/vedv/
+4 RUN ls -l
+5  POWEROFF"
+
+  # Stub
+  petname() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::builder_vedvfile_service::get_commands() {
+    assert_equal "$*" "$vedvfile"
+    echo "$vedvfile_content"
+  }
+  utils::str_encode_vars() {
+    assert_equal "$*" "$vedvfile_content2"
+    echo "$vedvfile_content2"
+  }
+  vedv::image_entity::get_id_by_image_name() {
+    assert_equal "$*" "$image_name"
+    echo "1234567890"
+  }
+  vedv::builder_service::__create_image_by_from_cmd() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+
+  local -r get_layer_count_calls_file="$(mktemp)"
+  echo 0 >"$get_layer_count_calls_file"
+  vedv::image_service::stop() {
+    assert_equal "$*" "1234567890"
+  }
+  vedv::image_entity::get_layer_count() {
+    assert_equal "$*" "$image_id"
+
+    local -i get_layer_count_calls="$(<"$get_layer_count_calls_file")"
+    echo "$((++get_layer_count_calls))" >"$get_layer_count_calls_file"
+
+    if [[ "$get_layer_count_calls" == 2 ]]; then
+      echo 4
+      return 0
+    fi
+    echo 2
+  }
+  vedv::builder_service::__delete_invalid_layers() {
+    assert_equal "$*" "1234567890 ${commands_encvars}"
+    echo 1
+  }
+  vedv::image_service::remove() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::image_service::restore_last_layer() {
+    assert_equal "$*" "1234567890"
+    return 1
+  }
+
+  # Act
+  run vedv::builder_service::__build "$vedvfile" "$image_name"
+  # Assert
+  assert_failure
+  assert_output "Failed to restore layer last layer for image '1234567890'. Try build the image again with --no-cache."
+}
+
 @test "vedv::builder_service::__build() Should fail If cache_data" {
   # Arrange
   local -r vedvfile="dist/test/lib/vedv/components/builder/fixtures/Vedvfile"
@@ -1588,6 +1660,9 @@ Previous layer restored"
   }
   vedv::image_service::remove() {
     assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::image_service::restore_last_layer() {
+    assert_equal "$*" "1234567890"
   }
   vedv::image_service::cache_data() {
     assert_equal "$*" "1234567890"
@@ -1661,6 +1736,9 @@ Previous layer restored"
   vedv::image_service::remove() {
     assert_equal "$*" "INVALID_CALL"
   }
+  vedv::image_service::restore_last_layer() {
+    assert_equal "$*" "1234567890"
+  }
   vedv::image_service::cache_data() {
     assert_equal "$*" "INVALID_CALL"
   }
@@ -1733,6 +1811,9 @@ Build finished
   }
   vedv::image_service::remove() {
     assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::image_service::restore_last_layer() {
+    assert_equal "$*" "1234567890"
   }
   vedv::image_service::cache_data() {
     assert_equal "$*" "INVALID_CALL"
@@ -1808,6 +1889,9 @@ Build finished
   }
   vedv::image_service::remove() {
     assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::image_service::restore_last_layer() {
+    assert_equal "$*" "1234567890"
   }
   vedv::image_service::cache_data() {
     assert_equal "$*" "INVALID_CALL"
@@ -1887,6 +1971,9 @@ Build finished
   vedv::image_service::remove() {
     assert_equal "$*" "INVALID_CALL"
   }
+  vedv::image_service::restore_last_layer() {
+    assert_equal "$*" "1234567890"
+  }
   vedv::image_service::cache_data() {
     assert_equal "$*" "INVALID_CALL"
   }
@@ -1964,6 +2051,9 @@ Build finished
   }
   vedv::image_service::remove() {
     assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::image_service::restore_last_layer() {
+    assert_equal "$*" "1234567890"
   }
   vedv::image_service::cache_data() {
     assert_equal "$*" "INVALID_CALL"
@@ -2049,6 +2139,9 @@ Build finished
   vedv::image_service::remove() {
     assert_equal "$*" "INVALID_CALL"
   }
+  vedv::image_service::restore_last_layer() {
+    assert_equal "$*" "1234567890"
+  }
   vedv::image_service::cache_data() {
     assert_equal "$*" "INVALID_CALL"
   }
@@ -2128,6 +2221,9 @@ The previous layer to the failure could not be restored. Try build the image aga
   }
   vedv::image_service::remove() {
     assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::image_service::restore_last_layer() {
+    assert_equal "$*" "1234567890"
   }
   vedv::image_service::cache_data() {
     assert_equal "$*" "INVALID_CALL"

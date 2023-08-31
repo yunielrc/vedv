@@ -1620,6 +1620,13 @@ $((initial_commands_count + 1))  POWEROFF"
     }
     readonly current_layer_count
 
+    # Restore the last layer before building for discard any data written
+    # after the last layer by a previous error on layer creation
+    vedv::image_service::restore_last_layer "$image_id" || {
+      err "Failed to restore layer last layer for image '${image_id}'. Try build the image again with --no-cache."
+      return "$ERR_BUILDER_SERVICE_OPERATION"
+    }
+
     # If any layer was deleted the cached data is obsolete and must be updated
     if [[ "$initial_layer_count" != "$current_layer_count" ]]; then
       # start=$(date +%s%N)
