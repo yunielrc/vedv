@@ -444,7 +444,7 @@ wget --no-check-certificate \
  -O "alpine-3.18.3-x86_64-fat-inv.ova.sha256sum" "https://docs.google.com/uc?export=download&id=1X5v6DYZeEo3zLLd2ZYIEbRO4hI1IQ9gY"
 ```
 
-If google drive respond with `ERROR 500` or `ERROR 403`, 
+If google drive respond with `ERROR 500` or `ERROR 403`,
 and you make a right copy of the url, the error is due drive it's having problems
 or It can be doing some nasty things to make it hard to download.
 
@@ -657,7 +657,7 @@ Write your code
 ⚠️ **Before testing, Virtualbox can't have any virtual machines or hard disks otherwise,
 functional and integration tests that works with virtualbox will fail.**
 
-⚠️ **Some functional and integration tests use OneDrive and Google Drive services, if any 
+⚠️ **Some functional and integration tests use OneDrive and Google Drive services, if any
 of these services fail, the test will fail too.**
 
 
