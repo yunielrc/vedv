@@ -2,13 +2,9 @@ load test_helper
 
 setup_file() {
   vedv::builder_vedvfile_service::constructor \
-    "$TEST_HADOLINT_CONFIG" \
-    true \
     "$TEST_BASE_VEDVFILEIGNORE" \
     "$TEST_VEDVFILEIGNORE"
 
-  export __VEDV_BUILDER_VEDVFILE_HADOLINT_CONFIG
-  export __VEDV_BUILDER_VEDVFILE_HADOLINT_ENABLED
   export __VEDV_BUILDER_VEDVFILE_BASE_VEDVFILEIGNORE_PATH
   export __VEDV_BUILDER_VEDVFILE_VEDVFILEIGNORE_PATH
 }
@@ -61,16 +57,6 @@ setup_file() {
   assert_output <<-'EOF'
 Command 'CMD [ "/bin/ls", "-l" ]' isn't supported, valid commands are: FROM|RUN|ENV|COPY|USER|WORKDIR
 EOF
-}
-
-@test "vedv::builder_vedvfile_service::__validate_file() Should fail with file that does not meet hadolint validation" {
-  vedv::builder_vedvfile_service::__are_supported_commands() { :; }
-  local -r vedvfile_invalid='dist/test/lib/vedv/components/image/fixtures/Vedvfile-invalid'
-
-  run vedv::builder_vedvfile_service::__validate_file "$vedvfile_invalid"
-
-  assert_failure 1
-  assert_output "Hadolint validation fail"
 }
 
 @test "vedv::builder_vedvfile_service::__validate_file() Should succeed" {

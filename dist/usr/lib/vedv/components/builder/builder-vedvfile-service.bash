@@ -14,18 +14,14 @@ readonly VEDVFILE_SUPPORTED_COMMANDS='FROM|RUN|COPY|USER|WORKDIR|ENV|SHELL|EXPOS
 # Constructor
 #
 # Arguments:
-#   config                    string    config file
-#   enabled                   bool      Hadolint enabled
 #   base_vedvfileignore_path  string    path to the base vedvfileignore
 #   vedvfileignore_path       string    path to the .vedvfileignore
 # Returns:
 #   0 on success, non-zero on error.
 #
 vedv::builder_vedvfile_service::constructor() {
-  readonly __VEDV_BUILDER_VEDVFILE_HADOLINT_CONFIG="$1"
-  readonly __VEDV_BUILDER_VEDVFILE_HADOLINT_ENABLED="$2"
-  readonly __VEDV_BUILDER_VEDVFILE_BASE_VEDVFILEIGNORE_PATH="$3"
-  readonly __VEDV_BUILDER_VEDVFILE_VEDVFILEIGNORE_PATH="$4"
+  readonly __VEDV_BUILDER_VEDVFILE_BASE_VEDVFILEIGNORE_PATH="$1"
+  readonly __VEDV_BUILDER_VEDVFILE_VEDVFILEIGNORE_PATH="$2"
 }
 
 __vedvfile-parser() {
@@ -103,11 +99,6 @@ vedv::builder_vedvfile_service::__validate_file() {
 
   vedv::builder_vedvfile_service::__are_supported_commands "$commands" ||
     return 1
-
-  if [[ "$__VEDV_BUILDER_VEDVFILE_HADOLINT_ENABLED" == true ]] && ! hadolint --config "$__VEDV_BUILDER_VEDVFILE_HADOLINT_CONFIG" "$vedvfile" >/dev/null; then
-    err "Hadolint validation fail"
-    return 1
-  fi
 
   return 0
 }
