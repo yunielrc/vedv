@@ -744,6 +744,13 @@ vedv::virtualbox::is_running() { vedv::hypervisor::is_running "$@"; }
 vedv::hypervisor::rm() {
   local -r vm_name="$1"
 
+  # validate arguments
+  if [[ -z "$vm_name" ]]; then
+    err "Argument 'vm_name' is required"
+    return "$ERR_INVAL_ARG"
+  fi
+  #
+
   local is_running
   is_running="$(vedv::hypervisor::is_running "$vm_name")" || {
     err "Failed to check if vm is running"
@@ -752,7 +759,10 @@ vedv::hypervisor::rm() {
   readonly is_running
 
   if [[ "$is_running" == true ]]; then
-    VBoxManage controlvm "$vm_name" poweroff
+    VBoxManage controlvm "$vm_name" poweroff || {
+      err "Failed to poweroff VM ${vm_name}"
+      return "$ERR_VIRTUALBOX_OPERATION"
+    }
     sleep 2
   fi
 
@@ -766,17 +776,15 @@ vedv::hypervisor::rm() {
   local -r vm_cfg="$(echo "$vm_info" | grep -o '^CfgFile=.*' | grep -o '".*"' | tr -d '"')"
   local -r vm_dir="${vm_cfg%/*}"
 
-  local vbox_sysprops
-  vbox_sysprops="$(VBoxManage list systemproperties)" || {
-    err "Failed to get system properties for '${vm_name}'"
+  local all_vms_dir
+  all_vms_dir="$(vedv::virtualbox::__get_vms_directory)" || {
+    err "Failed to get vbox vms directory"
     return "$ERR_VIRTUALBOX_OPERATION"
   }
-  readonly vbox_sysprops
-
-  local -r all_vms_dir="$(echo "$vbox_sysprops" | grep -i 'Default machine folder:' | grep -o '/.*$')"
+  readonly all_vms_dir
 
   if [[ "$vm_dir" != "$all_vms_dir"* ]]; then
-    err "Vm dir '${vm_dir}' is not inside '${all_vms_dir}'"
+    err "VM dir '${vm_dir}' is not inside '${all_vms_dir}'"
     return "$ERR_VIRTUALBOX_OPERATION"
   fi
 
@@ -786,7 +794,7 @@ vedv::hypervisor::rm() {
   }
 
   if [[ -d "$vm_dir" ]]; then
-    rm -rf "$vm_dir" || {
+    __rm -rf "$vm_dir" || {
       err "Failed to remove vm dir '${vm_dir}'"
       return "$ERR_VIRTUALBOX_OPERATION"
     }

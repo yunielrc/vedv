@@ -1,4 +1,4 @@
-# shellcheck disable=SC2016,SC2317,SC2031,SC2030,SC2119,SC2120
+# shellcheck disable=SC2016,SC2317,SC2031,SC2030,SC2119,SC2120,SC2154
 load test_helper
 
 setup_file() {
@@ -576,23 +576,170 @@ Failed to clone VM 'vm_name1' to 'clone_name1'"
 }
 
 # Tests for vedv::hypervisor::rm()
-@test "vedv::hypervisor::rm(), with 'vm_name' undefined should throw an error" {
-  run vedv::hypervisor::rm
+@test "vedv::hypervisor::rm() Should fail With empty vm_name" {
+  local -r __vm_name=""
 
-  assert_failure 1
-  assert_output --partial '$1: unbound variable'
+  run vedv::hypervisor::rm "$__vm_name"
+
+  assert_failure
+  assert_output "Argument 'vm_name' is required"
 }
 
-@test "vedv::hypervisor::rm(), Should remove the vm" {
-  local -r __vm_name="$(create_vm)"
+@test "vedv::hypervisor::rm() Should fail If is_running fails" {
+  local -r __vm_name="image123"
 
-  vedv::hypervisor::remove_inaccessible_hdds() {
-    return 0
+  vedv::hypervisor::is_running() {
+    assert_equal "$*" "$__vm_name"
+    return 1
   }
 
   run vedv::hypervisor::rm "$__vm_name"
 
+  assert_failure
+  assert_output "Failed to check if vm is running"
+}
+
+@test "vedv::hypervisor::rm() Should fail If poweroff fails" {
+  local -r __vm_name="image123"
+
+  vedv::hypervisor::is_running() {
+    assert_equal "$*" "$__vm_name"
+    echo true
+  }
+  VBoxManage() {
+    if [[ "$1" == controlvm ]]; then
+      assert_equal "$*" "controlvm image123 poweroff"
+      return 1
+    fi
+    command VBoxManage "$@"
+  }
+
+  run vedv::hypervisor::rm "$__vm_name"
+
+  assert_failure
+  assert_output "Failed to poweroff VM image123"
+}
+
+@test "vedv::hypervisor::rm() Should fail If showvminfo fails" {
+  local -r __vm_name="image123"
+
+  vedv::hypervisor::is_running() {
+    assert_equal "$*" "$__vm_name"
+    echo false
+  }
+  VBoxManage() {
+    if [[ "$1" == controlvm ]]; then
+      assert_equal "$*" "controlvm image123 poweroff"
+      return 0
+    fi
+    if [[ "$1" == showvminfo ]]; then
+      assert_equal "$*" "showvminfo image123 --machinereadable"
+      return 1
+    fi
+    command VBoxManage "$@"
+  }
+  sleep() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+
+  run vedv::hypervisor::rm "$__vm_name"
+
+  assert_failure
+  assert_output "Failed to get vm info for 'image123'"
+}
+
+@test "vedv::hypervisor::rm() Should fail If __get_vms_directory fails" {
+  local -r __vm_name="image123"
+
+  vedv::hypervisor::is_running() {
+    assert_equal "$*" "$__vm_name"
+    echo false
+  }
+  VBoxManage() {
+    if [[ "$1" == controlvm ]]; then
+      assert_equal "$*" "INVALID_CALL"
+      return 0
+    fi
+    if [[ "$1" == showvminfo ]]; then
+      assert_equal "$*" "showvminfo image123 --machinereadable"
+      return 0
+    fi
+  }
+  sleep() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+  vedv::virtualbox::__get_vms_directory() {
+    assert_equal "$*" ""
+    return 1
+  }
+
+  run vedv::hypervisor::rm "$__vm_name"
+
+  assert_failure
+  assert_output "Failed to get vbox vms directory"
+}
+
+@test "vedv::hypervisor::rm() Should fail If vm_dir is not inside vbox vms directory" {
+  local -r __vm_name="$(create_vm)"
+
+  vedv::virtualbox::__get_vms_directory() {
+    assert_equal "$*" ""
+    echo 'dir'
+  }
+
+  run vedv::hypervisor::rm "$__vm_name"
+
+  assert_failure
+  assert_output --regexp "VM dir '.*' is not inside 'dir'"
+}
+
+@test "vedv::hypervisor::rm() Should fail If unregistervm fails" {
+  local -r __vm_name="$(create_vm)"
+
+  VBoxManage() {
+    if [[ "$1" == unregistervm ]]; then
+      assert_equal "$*" "unregistervm ${vm_name} --delete"
+      return 1
+    fi
+    command VBoxManage "$@"
+  }
+
+  run vedv::hypervisor::rm "$__vm_name"
+
+  assert_failure
+  assert_output --regexp "Failed to unregister vm '.*'"
+}
+
+@test "vedv::hypervisor::rm() Should fail If __rm fails" {
+  local -r __vm_name="$(create_vm)"
+
+  VBoxManage() {
+    if [[ "$1" == unregistervm ]]; then
+      assert_equal "$*" "unregistervm ${vm_name} --delete"
+      command VBoxManage unregistervm "$vm_name"
+      return 0
+    fi
+    command VBoxManage "$@"
+  }
+
+  __rm() {
+    assert_regex "$*" "-rf .*${__vm_name}.*"
+    return 1
+  }
+
+  run vedv::hypervisor::rm "$__vm_name"
+
+  assert_failure
+  assert_output --regexp "Failed to remove vm dir '.*'"
+}
+
+@test "vedv::hypervisor::rm() Should Succeed" {
+  local -r __vm_name="$(create_vm)"
+
+  run vedv::hypervisor::rm "$__vm_name"
+
   assert_success
+  assert_output --partial "100%"
 }
 
 # Tests for vedv::hypervisor::list()
