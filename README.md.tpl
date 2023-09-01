@@ -129,11 +129,6 @@ vedv container create -n alpine alpine
 # deppending on your hardware and the image os
 vedv container start -w alpine
 # 13.395s --> startup + sshd service time to be ready
-vedv container stop alpine
-# 0.697s
-vedv container start -w alpine
-# 13.474s --> startup + sshd service time to be ready
-
 ```
 
 Or download an image and create a container, then start it
@@ -241,7 +236,7 @@ Vedvfile syntax is highly inspired by Dockerfile, but with some differences
 
 ```sh
 vedv image build -n todo-101-alpine-1.0.0-x86_64
-# 52.955s --> [download] + [import] + creation + startup + build + stop time
+# 55.360s --> [download] + [import] + creation + startup + build + stop time
 ```
 
 - Create a container from the image
@@ -263,7 +258,7 @@ vedv container start -w todo-101
 
 ```sh
 vedv container rm --force todo-101
-# 2.729s
+# 2.829s
 ```
 
 #### Updating the Source Code
@@ -279,7 +274,7 @@ vedv container rm --force todo-101
 
 ```sh
 vedv image build -n todo-101-alpine-1.0.0-x86_64
-# 21.368s --> [download] + [import] + [creation] + startup + build + stop time
+# 30.420s --> [download] + [import] + [creation] + startup + build + stop time
 ```
 
 Each line like the one below is a deleted layer:
@@ -292,7 +287,7 @@ and the layer POWEROFF added during the build process.
 
 ```sh
 vedv container create -p 3000/tcp -n todo-101 todo-101-alpine-1.0.0-x86_64
-# 1.654s
+# 1.811s
 vedv container start -w todo-101
 # 13.698s
 ```
@@ -303,7 +298,7 @@ vedv container start -w todo-101
 
 ```sh
 vedv container rm --force todo-101
-# 2.767s
+# 3.207s
 ```
 
 #### Push the image to the registry
@@ -383,7 +378,9 @@ vedv image export todo-101-alpine-1.0.0-x86_64 todo-101-alpine-1.0.0-x86_64.ova
 # 8.157s
 ```
 
-- Upload the image and the .sha256sum to OneDrive or Google Drive or any http server
+- Upload the image and the .sha256sum to OneDrive or Google Drive or any http server,
+
+⚠️  **OneDrive and Google Drive services are always trying to make it difficult to downloadfrom programs that are not recognized clients.**
 
 #### Share on OneDrive
 
@@ -432,6 +429,24 @@ vedv image push-link --image-address "$image" --checksum-address "$sum" \
  <your_user_id>@alpine/todo-101-alpine-1.0.0-x86_64
  # 2.706s
 ```
+
+If you see the error below:
+`
+error downloading file from https://drive.google.com/file/d/......
+`
+
+Execute the command below at least 5 times:
+
+```sh
+wget --no-check-certificate \
+ --connect-timeout 10 \
+ --header "User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36" \
+ -O "alpine-3.18.3-x86_64-fat-inv.ova.sha256sum" "https://docs.google.com/uc?export=download&id=1X5v6DYZeEo3zLLd2ZYIEbRO4hI1IQ9gY"
+```
+
+If google drive respond with `ERROR 500` or `ERROR 403`, 
+and you make a right copy of the url, the error is due drive it's having problems
+or It can be doing some nasty things to make it hard to download.
 
 - Remove the image to download it again to test the link
 
@@ -639,14 +654,18 @@ Write your code
 
 #### Run Tests
 
-⚠️ **Before testing Virtualbox can't have any virtual machines or hard disks otherwise,
+⚠️ **Before testing, Virtualbox can't have any virtual machines or hard disks otherwise,
 functional and integration tests that works with virtualbox will fail.**
+
+⚠️ **Some functional and integration tests use OneDrive and Google Drive services, if any 
+of these services fail, the test will fail too.**
+
 
 If functional and integration tests that works with virtualbox are failing,
 delete all virtual machines and hard disks from Virtualbox and delete the
 Virtualbox VMs directory usually located at `~/VirtualBox\ VMs` and run the tests again.
 
-Before testing the **registry development service must be started**.
+Before testing, the **registry development service must be started**.
 Check the status with the command below.
 
 ```sh
@@ -663,30 +682,35 @@ Run Unit Testing for one component
 
 ```sh
 make test-suite u="$(fd registry-service.bats)"
+4.899s
 ```
 
 Run Unit Testing for one component function
 
 ```sh
 make test-name n='::push_link\(\)' u="$(fd registry-service.bats)"
+0.676s
 ```
 
 Run Integration Testing for one component
 
 ```sh
 make test-suite u="$(fd registry-nextcloud-api-client.i.bats)"
+9.998s
 ```
 
 Run Functional Testing for one component
 
 ```sh
 make test-suite u="$(fd registry-command.f.bats)"
+4m 7.78s
 ```
 
 Run All tests
 
 ```sh
 make test-all
+
 ```
 
 #### Commit
