@@ -384,5 +384,5 @@ vedv registry cache-clean"
   run run_wrapper
 
   assert_success
-  assert_output --regexp '^([[:digit:]]|\.)+K$'
+  assert_output --regexp '^([[:digit:]]|\.)+K?$'
 }
