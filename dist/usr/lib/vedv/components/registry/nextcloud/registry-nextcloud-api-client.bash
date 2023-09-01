@@ -22,7 +22,7 @@ fi
 vedv::registry_nextcloud_api_client::constructor() {
   readonly __VEDV_REGISTRY_NEXTCLOUD_API_CREDENTIALS_DICT_STR="$1"
   readonly __VEDV_REGISTRY_NEXTCLOUD_API_CREDENTIALS_MAIN_URL="$2"
-  readonly __VEDV_REGISTRY_NEXTCLOUD_API_CONNECT_TIMEOUT="${3:-5}"
+  readonly __VEDV_REGISTRY_NEXTCLOUD_API_CONNECT_TIMEOUT="${3:-10}"
 }
 vedv::registry_api_client::constructor() {
   vedv::registry_nextcloud_api_client::constructor "$@"

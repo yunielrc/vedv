@@ -13,13 +13,15 @@ fi
 # Constructor
 #
 # Arguments:
-#   user_agent  string    user agent to use in the http requests
+#   user_agent       string    user agent to use in the http requests
+#   connect_timeout  int       connect timeout in seconds
 #
 # Returns:
 #   0 on success, non-zero on error.
 #
 file_downloader::constructor() {
   readonly __VEDV_FILE_DOWNLOADER_USER_AGENT="$1"
+  readonly __VEDV_FILE_DOWNLOADER_CONNECT_TIMEOUT="${2:-10}"
 }
 
 file_downloader::__validate_args() {
@@ -59,7 +61,9 @@ file_downloader::http_download() {
   file_downloader::__validate_args "$url" "$file" ||
     return "$?"
 
-  wget --header "$__VEDV_FILE_DOWNLOADER_USER_AGENT" -qO "$file" "$url" || {
+  wget --connect-timeout "$__VEDV_FILE_DOWNLOADER_CONNECT_TIMEOUT" \
+    --header "$__VEDV_FILE_DOWNLOADER_USER_AGENT" \
+    -qO "$file" "$url" || {
     err "error downloading file from ${url}"
     return "$ERR_DOWNLOAD"
   }
@@ -84,7 +88,9 @@ file_downloader::onedrive_embed_download() {
   # https://onedrive.live.com/download?resid=DBA0B75F07574EAA%21272&authkey=!AP8U5cI4V7DusSg
   local -r download_url="${url/\/embed?//\download?}"
 
-  wget --header "$__VEDV_FILE_DOWNLOADER_USER_AGENT" -qO "$file" "$download_url" || {
+  wget --connect-timeout "$__VEDV_FILE_DOWNLOADER_CONNECT_TIMEOUT" \
+    --header "$__VEDV_FILE_DOWNLOADER_USER_AGENT" \
+    -qO "$file" "$download_url" || {
     err "error downloading file from ${url}"
     return "$ERR_DOWNLOAD"
   }
@@ -129,12 +135,13 @@ file_downloader::gdrive_big_download() {
 
   set -o pipefail
   local confirm=''
-  # tr -d '\0' is to remove null bytes, to avoid the message:
+  # tr '\0' '\n' is to remove null bytes, to avoid the message:
   # 'warning: command substitution: ignored null byte in input'
   confirm="$(wget --no-check-certificate \
+    --connect-timeout "$__VEDV_FILE_DOWNLOADER_CONNECT_TIMEOUT" \
     --header "$__VEDV_FILE_DOWNLOADER_USER_AGENT" \
     --save-cookies "$cookies_file" \
-    --keep-session-cookies "$download_url" -qO- | tr -d '\0')" || {
+    --keep-session-cookies "$download_url" -qO- | tr '\0' '\n')" || {
     err "error getting confirmation from ${url}"
     return "$ERR_DOWNLOAD"
   }
@@ -145,6 +152,7 @@ file_downloader::gdrive_big_download() {
   local -r download_url2="https://docs.google.com/uc?export=download&confirm=${confirm}&id=${file_id}"
 
   wget --no-check-certificate \
+    --connect-timeout "$__VEDV_FILE_DOWNLOADER_CONNECT_TIMEOUT" \
     --header "$__VEDV_FILE_DOWNLOADER_USER_AGENT" \
     --load-cookies "$cookies_file" \
     -qO "$file" "$download_url2" || {
@@ -181,6 +189,7 @@ file_downloader::gdrive_small_download() {
   local -r download_url="https://docs.google.com/uc?export=download&id=${file_id}"
 
   wget --no-check-certificate \
+    --connect-timeout "$__VEDV_FILE_DOWNLOADER_CONNECT_TIMEOUT" \
     --header "$__VEDV_FILE_DOWNLOADER_USER_AGENT" \
     -qO "$file" "$download_url" || {
     err "error downloading file from ${url}"
