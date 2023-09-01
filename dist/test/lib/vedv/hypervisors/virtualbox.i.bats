@@ -1209,36 +1209,12 @@ http,tcp,,8080,,80'
 }
 
 # Tests for vedv::virtualbox::__get_vms_directory()
-@test "vedv::virtualbox::__get_vms_directory(): Should fail If 'vbox_vms_dir' is empty" {
-  VBoxManage() {
-    if [[ "$1" == list && "$2" == systemproperties ]]; then
-      return 1
-    fi
-  }
-
-  run vedv::virtualbox::__get_vms_directory
-
-  assert_failure
-  assert_output "'vbox_vms_dir' is empty"
-}
-
-@test "vedv::virtualbox::__get_vms_directory(): Should fail If 'vbox_vms_dir' doesn't exist" {
-  VBoxManage() {
-    echo 'Default machine folder: /tmp/8572b40c643a7c56412a'
-  }
-
-  run vedv::virtualbox::__get_vms_directory
-
-  assert_failure
-  assert_output "VirtualBox VMs directory '/tmp/8572b40c643a7c56412a' doesn't exist"
-}
 
 @test "vedv::virtualbox::__get_vms_directory(): Should succeed" {
 
   run vedv::virtualbox::__get_vms_directory
 
   assert_success
-  assert [ -d "$output" ]
 }
 
 # Tests for vedv::virtualbox::vedv::virtualbox::__vm_name_to_vm_dirname()()
@@ -1316,7 +1292,7 @@ http,tcp,,8080,,80'
   assert_output "Failed to get vbox vms directory"
 }
 
-@test "vedv::virtualbox::__remove_vm_existing_directory() Should fail If 'vbox_vms_directory' is empty" {
+@test "vedv::virtualbox::__remove_vm_existing_directory() Should succeed If 'vbox_vms_directory' is empty" {
   local -r __vm_name="image:image123|crc:1980169285|"
 
   vedv::virtualbox::exists_vm_with_partial_name() {
@@ -1329,11 +1305,11 @@ http,tcp,,8080,,80'
 
   run vedv::virtualbox::__remove_vm_existing_directory "$__vm_name"
 
-  assert_failure
-  assert_output "'vbox_vms_directory' is empty"
+  assert_success
+  assert_output ""
 }
 
-@test "vedv::virtualbox::__remove_vm_existing_directory() Should fail If 'vbox_vms_directory' doesn't exist" {
+@test "vedv::virtualbox::__remove_vm_existing_directory() Should succeed If 'vbox_vms_directory' doesn't exist" {
   local -r __vm_name="image:image123|crc:1980169285|"
 
   vedv::virtualbox::exists_vm_with_partial_name() {
@@ -1347,8 +1323,8 @@ http,tcp,,8080,,80'
 
   run vedv::virtualbox::__remove_vm_existing_directory "$__vm_name"
 
-  assert_failure
-  assert_output "Virtualbox VMs '/tmp/8572b40c643a7c56412a' doesn't exist"
+  assert_success
+  assert_output ""
 }
 
 @test "vedv::virtualbox::__remove_vm_existing_directory() Should fail If __vm_name_to_vm_dirname fails" {

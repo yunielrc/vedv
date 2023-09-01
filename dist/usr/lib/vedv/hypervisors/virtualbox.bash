@@ -175,20 +175,8 @@ vedv::hypervisor::clonevm_link() { vedv::virtualbox::clonevm_link "$@"; }
 #
 # shellcheck disable=SC2120
 vedv::virtualbox::__get_vms_directory() {
-
-  local -r vbox_vms_dir="$(VBoxManage list systemproperties 2>/dev/null | grep -Po 'Default machine folder:\s+\K/.*$')"
-
-  if [[ -z "$vbox_vms_dir" ]]; then
-    err "'vbox_vms_dir' is empty"
-    return "$ERR_INVAL_VALUE"
-  fi
-
-  if [[ ! -d "$vbox_vms_dir" ]]; then
-    err "VirtualBox VMs directory '${vbox_vms_dir}' doesn't exist"
-    return "$ERR_NOFILE"
-  fi
-
-  echo "$vbox_vms_dir"
+  VBoxManage list systemproperties 2>/dev/null |
+    grep -Po 'Default machine folder:\s+\K/.*$' || :
 }
 
 #
@@ -261,14 +249,9 @@ vedv::virtualbox::__remove_vm_existing_directory() {
   }
   readonly vbox_vms_directory
 
-  if [[ -z "$vbox_vms_directory" ]]; then
-    err "'vbox_vms_directory' is empty"
-    return "$ERR_INVAL_VALUE"
-  fi
-
   if [[ ! -d "$vbox_vms_directory" ]]; then
-    err "Virtualbox VMs '${vbox_vms_directory}' doesn't exist"
-    return "$ERR_NOFILE"
+    # there is nothing to remove
+    return 0
   fi
 
   local vm_directory_name

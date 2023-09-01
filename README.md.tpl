@@ -42,6 +42,8 @@ ${UBUNTU_PACKAGES_PROD}
 ## Install
 
 For installation from source code is required to have installed `git` and `make`.
+It's recommended to install `bmon` to see the download/upload activity and `vim`
+as text editor.
 
 Clone the repository and switch to vedv directory
 
