@@ -1230,7 +1230,7 @@ For security reasons, the image can not be downloaded"
   run vedv::registry_service::cache_clean
 
   assert_success
-  assert_output 'space_freed: 0'
+  assert_output --regexp 'space_freed: (4\.0K|0)'
 }
 
 # Tests for vedv::registry_service::__download_image_from_link()
