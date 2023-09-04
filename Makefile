@@ -16,6 +16,11 @@ configure:
 	"./tools/install-pkgs-prod-${OS}" && \
 	"./tools/install-pkgs-dev-${OS}"
 
+configure-ci:
+	# MANDATORY ENV VAR: OS
+	"./tools/install-pkgs-prod-${OS}" && \
+	"./tools/install-pkgs-ci-${OS}"
+
 commit:
 	git cz
 
@@ -32,7 +37,8 @@ test-all: test-unit test-integration test-functional
 	# MANDATORY ENV VARS: OS
 	./tools/update-pkgs-versions
 
-test-all-ci: test-unit test-integration test-functional
+# ci server does not support VT-x so we can't run integration or functional tests
+test-all-ci: test-unit
 
 test-suite:
 	./tools/bats $(u)

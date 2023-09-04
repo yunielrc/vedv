@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Install manjaro dev packages
+# Install ubuntu dev packages
 #
 
 set -eu

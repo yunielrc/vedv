@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+#
+# Install ubuntu ci packages
+#
+
+set -eu
+
+. ./packages.env
+
+sudo apt-get update -y
+sudo DEBIAN_FRONTEND=noninteractive apt-get install -y "${PKG_CI_UBUNTU_APT[@]}"
+
+if command -v fdfind >/dev/null; then
+  sudo ln -s "$(command -v fdfind)" "$(dirname "$(command -v fdfind)")/fd"
+fi
+
+sudo -H npm install -g "${PKG_CI_UBUNTU_NPM[@]}"
+
+# Install bash bats libs
+for bats_lib in bats-support bats-assert bats-file; do
+  repo="https://github.com/bats-core/${bats_lib}.git"
+  tag="$(git ls-remote --tags --exit-code --sort='v:refname' --refs "$repo" | tail -n 1 | cut -d/ -f3)"
+
+  sudo -H git clone "$repo" --depth 1 --branch "$tag" "/usr/lib/bash-${bats_lib}-git" >/dev/null
+done
