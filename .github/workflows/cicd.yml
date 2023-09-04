@@ -21,16 +21,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Run ShellCheck
-        uses: ludeeus/action-shellcheck@master
-
       - name: Configure CI
         run: |
           cp .env.sample .env
           cp .vedv.env.sample .vedv.env
-          make OS=ubuntu configure
+          make OS=ubuntu configure-ci
 
+      - name: Run Lint
+        uses: ludeeus/action-shellcheck@master
 
       - name: Run Tests
         run: |
+          echo "CI server does not support VT-x so we can't run integration or functional tests"
           make test-all-ci
