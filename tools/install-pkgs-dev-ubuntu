@@ -10,6 +10,10 @@ set -eu
 sudo apt-get update -y
 sudo DEBIAN_FRONTEND=noninteractive apt-get install -y "${PKG_DEV_UBUNTU_APT[@]}"
 
+if command -v fdfind >/dev/null; then
+  sudo ln -s "$(command -v fdfind)" "$(dirname "$(command -v fdfind)")/fd"
+fi
+
 # shellcheck disable=SC2086
 for s in "${PKG_DEV_UBUNTU_SNAP[@]}"; do sudo snap install $s; done
 

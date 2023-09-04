@@ -1,3 +1,5 @@
+SHELL=/bin/bash
+
 .PHONY: install uninstall configure commit test-all test-suite test-tag test-name untested registry-dev-setup registry-dev-stop registry-dev-destroy registry-dev-start registry-dev-status registry-dev-ssh registry-prod-setup
 # grep -Po '^\S+(?=:)' Makefile | tr '\n' ' '
 
@@ -17,10 +19,20 @@ configure:
 commit:
 	git cz
 
-test-all:
+test-unit:
+	./tools/bats-unit
+
+test-integration:
+	./tools/bats-integration
+
+test-functional:
+	./tools/bats-functional
+
+test-all: test-unit test-integration test-functional
 	# MANDATORY ENV VARS: OS
-	./tools/bats --recursive dist/test && \
 	./tools/update-pkgs-versions
+
+test-all-ci: test-unit test-integration test-functional
 
 test-suite:
 	./tools/bats $(u)
