@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+#
+# Generate man pages
+#
+
+set -eu
+
+cd "$(dirname "${BASH_SOURCE[0]}")/.."
+
+# ENVIRONMENT VARIABLES
+readonly DIR
+
+if [[ ! -d "$DIR" ]]; then
+  echo "Directory '${DIR}' does not exist" >&2
+  exit 1
+fi
+
+save_man_page() {
+  local -r _cmd="$1"
+  local -r file_name="$(sed -E 's/\s+/-/g' <<<"$_cmd").1"
+
+  CMD="$_cmd" tools/help2md |
+    pandoc -s -f markdown -t man - -o "${DIR}/${file_name}"
+}
+
+readonly -a commands=(
+  vedv
+  'vedv container'
+  'vedv container create'
+  'vedv container start'
+  'vedv container remove'
+  'vedv container stop'
+  'vedv container restart'
+  'vedv container kill'
+  'vedv container list'
+  'vedv container login'
+  'vedv container exec'
+  'vedv container copy'
+  'vedv container ports'
+  'vedv container eports'
+  'vedv image'
+  'vedv image import'
+  'vedv image export'
+  'vedv image from-url'
+  'vedv image build'
+  'vedv image pull'
+  'vedv image push'
+  'vedv image push-link'
+  'vedv image list'
+  'vedv image remove'
+  'vedv image remove-cache'
+  'vedv image eports'
+  'vedv builder'
+  'vedv builder build'
+  'vedv registry'
+  'vedv registry pull'
+  'vedv registry push'
+  'vedv registry push-link'
+  'vedv registry cache-clean'
+)
+
+for cmd in "${commands[@]}"; do
+  save_man_page "$cmd"
+done
+
+echo '>> DONE'

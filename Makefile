@@ -1,5 +1,5 @@
 # grep -Po '^\S+(?=:)' Makefile | tr '\n' ' '
-.PHONY: install uninstall configure configure-ci commit test-unit test-integration test-functional test-all test-all-ci test-suite test-tag test-name untested registry-dev-setup registry-dev-stop registry-dev-destroy registry-dev-start registry-dev-status registry-dev-ssh registry-prod-setup
+.PHONY: install uninstall configure configure-ci commit test-unit test-integration test-functional test-all test-all-ci test-suite test-tag test-name gen-manpages untested registry-dev-setup registry-dev-stop registry-dev-destroy registry-dev-start registry-dev-status registry-dev-ssh registry-prod-setup
 
 install:
 	# OPTIONAL ENV VARS: OS, DESTDIR
@@ -46,6 +46,10 @@ test-tag:
 
 test-name:
 	./tools/bats --filter '$(n)' $(u)
+
+gen-manpages:
+	# MANDATORY ENV VAR: DIR
+	./tools/gen-manpages
 
 untested:
 	./tools/untested $(f)

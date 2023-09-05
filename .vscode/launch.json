@@ -347,5 +347,14 @@
         "google-100585862120740564579@alpine/alpine-3.18.3-x86_64"
       ]
     },
+    {
+      "type": "bashdb",
+      "request": "launch",
+      "name": "Bash-Debug (CMD='vedv' tools/help2md)",
+      "env": {
+        "CMD": "vedv"
+      },
+      "program": "${workspaceFolder}/tools/help2md"
+    },
   ]
 }

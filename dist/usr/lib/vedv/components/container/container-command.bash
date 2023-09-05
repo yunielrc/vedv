@@ -41,16 +41,16 @@ ${__VED_CONTAINER_COMMAND_SCRIPT_NAME} container create [FLAGS] [OPTIONS] IMAGE_
 Create a new container
 
 Flags:
-  -h, --help                                show help
-  -s, --standalone                          create a standalone container
-  -P, --publish-all                         publish all exposed ports to random ports
+  -h, --help                                 show help
+  -s, --standalone                           create a standalone container
+  -P, --publish-all                          publish all exposed ports to random ports
 
 Options:
-  -n, --name <name>                         assign a name to the container
-  -p, --publish <host-port>:<port>[/proto]  publish a container's port(s) to the host.
-                                            proto is tcp or udp (default tcp)
-  -c, --cpus <cpus>                         number of CPUs
-  -m, --memory <memory>                     memory capacity
+  -n, --name <name>                          assign a name to the container
+  -p, --publish <host-port>:<port>[/proto]   publish a container's port(s) to the host.
+                                             proto is tcp or udp (default tcp)
+  -c, --cpus <cpus>                          number of CPUs
+  -m, --memory <memory>                      memory capacity
 HELPMSG
 }
 
