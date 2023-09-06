@@ -17,10 +17,11 @@ fi
 
 save_man_page() {
   local -r _cmd="$1"
-  local -r file_name="$(sed -E 's/\s+/-/g' <<<"$_cmd").1"
+  local -r file_name="$(sed -E 's/\s+/-/g' <<<"$_cmd").1.gz"
 
   CMD="$_cmd" tools/help2md |
-    pandoc -s -f markdown -t man - -o "${DIR}/${file_name}"
+    pandoc -s -f markdown -t man - | gzip >"${DIR}/${file_name}"
+
 }
 
 readonly -a commands=(
