@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/yunielrc/vedv/compare/v0.2.0...v0.2.1) (2023-09-06)
+
+
+### Miscellaneous Chores
+
+* release 0.2.1 ([ebcea02](https://github.com/yunielrc/vedv/commit/ebcea02b0ee37731659aa62a4702e61a0514ed5f))
+
 ## 0.2.0 (2023-09-06)
 
 
