@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.2](https://github.com/yunielrc/vedv/compare/v0.2.1...v0.2.2) (2023-09-06)
+
+
+### Bug Fixes
+
+* **install:** take in account DESTDIR on man pages install ([d590005](https://github.com/yunielrc/vedv/commit/d5900055da415de7986ba8a9e831225e24dd66bc))
+
 ## [0.2.1](https://github.com/yunielrc/vedv/compare/v0.2.0...v0.2.1) (2023-09-06)
 
 
