@@ -28,10 +28,16 @@ chmod -v 755 "${DESTDIR}/usr/lib/vedv/components/builder/__bin/vedvfile-parser"
 
 # MANDATORY ENV VAR: DIR
 export DIR="$(mktemp -d)"
-./tools/gen-manpages
 
 mkdir -p "${DESTDIR}/usr/share/man/man1"
-cp -v "${DIR}/"*.gz "${DESTDIR}/usr/share/man/man1"
+
+(
+  cd doc/usr/share/man/man1
+
+  for f in vedv*.1; do
+    gzip -v -c "$f" >"${DESTDIR}/usr/share/man/man1/${f}.gz"
+  done
+)
 
 echo ''
 echo '>> INSTALLED SUCCESSFULLY'

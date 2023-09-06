@@ -9,6 +9,7 @@ cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
 # ENVIRONMENT VARIABLES
 readonly DIR
+readonly GZIP="${GZIP:-false}"
 
 if [[ ! -d "$DIR" ]]; then
   echo "Directory '${DIR}' does not exist" >&2
@@ -17,10 +18,16 @@ fi
 
 save_man_page() {
   local -r _cmd="$1"
-  local -r file_name="$(sed -E 's/\s+/-/g' <<<"$_cmd").1.gz"
+  local -r file_name="$(sed -E 's/\s+/-/g' <<<"$_cmd").1"
 
-  CMD="$_cmd" tools/help2md |
-    pandoc -s -f markdown -t man - | gzip >"${DIR}/${file_name}"
+  if [[ "$GZIP" == true ]]; then
+    CMD="$_cmd" tools/help2md |
+      pandoc -s -f markdown -t man - |
+      gzip >"${DIR}/${file_name}.gz"
+  else
+    CMD="$_cmd" tools/help2md |
+      pandoc -s -f markdown -t man - -o "${DIR}/${file_name}"
+  fi
 
 }
 
