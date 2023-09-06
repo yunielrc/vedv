@@ -97,6 +97,8 @@ make install
 
 ## Configure
 
+👉 If you don't see the registration **mail** in your inbox, check the **spam** folder.
+
 Register at <https://registry.vedv.dev>
 
 ### Create app password
@@ -126,31 +128,6 @@ Edit the config, set the registry credentials, save and exit
 ```sh
 cd && vim .vedv.env
 ```
-
-## Official Images
-
-Transparency and security are very important to us, so all official images
-are created from the scratch, here are the steps:
-
-1. The OS iso is downloaded from the official source and verified
-2. A vm is created from the iso on Virtualbox and started
-3. The vm is configured for vedv. e.g.: For alpine linux 3.17.3-x86_64
-   image configuration:
-    - 3.1. The specific CaC script `icac/images/alpine-linux.vm.prod.cac` is
-         copied and executed in the vm.
-    - 3.2. The common linux CaC script `icac/images/common-linux.vm.prod.cac`
-         is copied and executed in de the vm.
-4. The vm is securely powered off and exported to an `alpine.ova` file
-   from Virtualbox
-5. The `alpine.ova` file is imported with the command:
-  `vedv image import -n alpine-3.17.3-x86_64 ./alpine.ova`
-6. The image is uploaded to the registry with the command:
-  `vedv image push admin@alpine/alpine-3.17.3-x86_64`
-7. The image is tagged as `Official` on registry web interface
-8. The image is shared with the group `public` on registry web interface
-
-We encourage you to read the CaC scripts to see what they do
-inside the vm.
 
 ## Usage
 
@@ -661,6 +638,31 @@ RUN echo '$GREETINGS'
 # is turned on again by the next instruction.
 SYSTEM --cpus 2 --memory 512
 ```
+
+## Official Images
+
+Transparency and security are very important to us, so all official images
+are created from the scratch, here are the steps:
+
+1. The OS iso is downloaded from the official source and verified
+2. A vm is created from the iso on Virtualbox and started
+3. The vm is configured for vedv. e.g.: For alpine linux 3.17.3-x86_64
+   image configuration:
+    - 3.1. The specific CaC script `icac/images/alpine-linux.vm.prod.cac` is
+         copied and executed in the vm.
+    - 3.2. The common linux CaC script `icac/images/common-linux.vm.prod.cac`
+         is copied and executed in de the vm.
+4. The vm is securely powered off and exported to an `alpine.ova` file
+   from Virtualbox
+5. The `alpine.ova` file is imported with the command:
+  `vedv image import -n alpine-3.17.3-x86_64 ./alpine.ova`
+6. The image is uploaded to the registry with the command:
+  `vedv image push admin@alpine/alpine-3.17.3-x86_64`
+7. The image is tagged as `Official` on registry web interface
+8. The image is shared with the group `public` on registry web interface
+
+We encourage you to read the CaC scripts to see what they do
+inside the vm.
 
 ## Contributing
 
