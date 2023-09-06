@@ -15,5 +15,7 @@ rm -vrf "${FROMDIR}/etc/skel/.vedv.env"
 rm -vrf "${FROMDIR}/usr/lib/vedv"
 rm -vrf "${FROMDIR}/usr/bin/vedv"
 rm -vrf "${FROMDIR}/usr/share/licenses/vedv"
+rm -vrf "${FROMDIR}/usr/share/licenses/vedv"
+rm -vrf "${FROMDIR}/usr/share/man/man1"/vedv*.1.gz
 
 echo '>> UNINSTALLED SUCCESSFULLY'
