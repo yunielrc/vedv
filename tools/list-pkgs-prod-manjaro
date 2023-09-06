@@ -10,7 +10,7 @@ set -eu
 echo "# SYSTEM: $(uname -a)"
 
 echo '# YAY'
-pacman --color never -Q bash python3 python-pip "${PKG_PROD_MANJARO_YAY[@]}"
+pacman --color never -Q bash python3 "${PKG_PROD_MANJARO_YAY[@]}"
 
 echo '# PIP'
 pip list |
