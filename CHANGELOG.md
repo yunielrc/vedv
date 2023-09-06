@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.3](https://github.com/yunielrc/vedv/compare/v0.2.2...v0.2.3) (2023-09-06)
+
+
+### Bug Fixes
+
+* **install:** create man pages directory ([96ba2cd](https://github.com/yunielrc/vedv/commit/96ba2cd2366734414fa2b8277aa45d0b47d1d1fa))
+* **install:** install man pages from docs directory ([9c9fbf0](https://github.com/yunielrc/vedv/commit/9c9fbf06d640ab413845df42652222b5f1ac9f37))
+
 ## [0.2.2](https://github.com/yunielrc/vedv/compare/v0.2.1...v0.2.2) (2023-09-06)
 
 
