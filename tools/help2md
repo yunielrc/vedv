@@ -22,6 +22,7 @@ SYNOPSIS=''
 DESCRIPTION=''
 ALIASES=''
 FLAGS=''
+MANDATORY_OPTIONS=''
 OPTIONS=''
 COMMANDS=''
 MANAGEMENT_COMMANDS=''
@@ -51,6 +52,10 @@ while read -r line; do
     ;;
   Flags:*)
     CONTEXT='FLAGS'
+    continue
+    ;;
+  Mandatory\ Options:*)
+    CONTEXT='MANDATORY_OPTIONS'
     continue
     ;;
   Options:*)
@@ -92,6 +97,18 @@ ${line}
 "
       else
         FLAGS+="$(option_to_md "$line")
+
+"
+      fi
+      ;;
+    MANDATORY_OPTIONS)
+      if is_option_continuation "$line"; then
+        MANDATORY_OPTIONS="$(head -n -1 <<<"$MANDATORY_OPTIONS")
+${line}
+
+"
+      else
+        MANDATORY_OPTIONS+="$(option_to_md "$line")
 
 "
       fi
@@ -167,6 +184,16 @@ FLAGS
 =====
 
 ${FLAGS}
+EOF
+fi
+
+if [[ -n "$MANDATORY_OPTIONS" ]]; then
+  cat <<EOF
+
+MANDATORY OPTIONS
+=================
+
+${MANDATORY_OPTIONS}
 EOF
 fi
 
