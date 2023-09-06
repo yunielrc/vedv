@@ -77,23 +77,25 @@ Clone the repository and switch to vedv directory
 git clone https://github.com/yunielrc/vedv.git && cd vedv
 ```
 
-Install on Manjaro:
+Install Manjaro dependencies:
 
 ```sh
-make OS=manjaro install
+make install-deps-manjaro
 ```
 
-Install on Ubuntu:
+Install Ubuntu dependencies:
 
 ```sh
-make OS=ubuntu install
+make install-deps-ubuntu
 ```
 
-For any other linux distribution install runtime dependencies first and execute the command below:
+Install
 
 ```sh
-make install
+sudo make install
 ```
+
+For any other linux distribution install runtime dependencies manually.
 
 ## Configure
 
