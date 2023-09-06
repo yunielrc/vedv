@@ -127,14 +127,6 @@ ${__VED_REGISTRY_COMMAND_SCRIPT_NAME} registry push-link [FLAGS] OPTIONS [DOMAIN
 
 Upload an image link to a registry
 
-Address format:
-  Replace '<image_url|sum_url>' with image or sha256sum url
-
-  gdrive (file >100mb): gdrive-big=<image_url|sum_url>
-  gdrive (file <=100mb): gdrive-small=<image_url|sum_url>
-  onedrive: onedrive=<image_url|sum_url>
-  http: http=<image_url|sum_url>
-
 Aliases:
   ${__VED_REGISTRY_COMMAND_SCRIPT_NAME} image push-link
 
@@ -142,7 +134,15 @@ Flags:
   -h, --help                      show help
 
 Mandatory Options:
-  --image-address <address>       image address
+  --image-address <address>       image address.
+
+        The address format depends on the storage service,
+        see below for more information:
+        gdrive (file >100mb): gdrive-big=<image_url|sum_url>,
+        gdrive (file <=100mb): gdrive-small=<image_url|sum_url>,
+        onedrive: onedrive=<image_url|sum_url>,
+        http: http=<image_url|sum_url>
+
   --checksum-address  <address>   checksum address
 
 HELPMSG
