@@ -42,6 +42,12 @@ sudo install -v -Dm644 dist/usr/share/licenses/vedv/LICENSE \
 
 sudo chmod -v 755 "${DESTDIR}/usr/lib/vedv/components/builder/__bin/vedvfile-parser"
 
+# MANDATORY ENV VAR: DIR
+export DIR="$(mktemp -d)"
+./tools/gen-manpages
+
+sudo cp -v "${DIR}/"*.gz /usr/share/man/man1
+
 echo ''
 echo '>> INSTALLED SUCCESSFULLY'
 
