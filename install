@@ -6,47 +6,31 @@
 
 set -eu
 
-# ERRORS
-readonly ERR_INVAL_ARG=69
-
 # ENV VARS
-readonly OS="${OS:-}"
 readonly DESTDIR="${DESTDIR:-}"
 
-# INSTALLS VEDV
-if [ -n "$OS" ]; then
+mkdir -p "${DESTDIR}/etc"
+cp -vr dist/etc/vedv "${DESTDIR}/etc"
 
-  readonly install_deps="tools/install-pkgs-prod-${OS}"
-
-  if [ ! -f "$install_deps" ]; then
-    echo "invalid os: ${OS}" >&2
-    echo "file '${install_deps}' not found" >&2
-    return "$ERR_INVAL_ARG"
-  fi
-
-  "$install_deps"
-fi
-
-sudo cp -vr dist/etc/vedv "${DESTDIR}/etc"
-
-sudo install -m644 dist/etc/skel/.vedv.env \
+install -Dm644 dist/etc/skel/.vedv.env \
   "${DESTDIR}/etc/skel/.vedv.env"
 
-sudo cp -vr dist/usr/lib/vedv "${DESTDIR}/usr/lib"
+mkdir -p "${DESTDIR}/usr/lib"
+cp -vr dist/usr/lib/vedv "${DESTDIR}/usr/lib"
 
-sudo install -v -Dm755 dist/usr/bin/vedv \
+install -v -Dm755 dist/usr/bin/vedv \
   "${DESTDIR}/usr/bin/vedv"
 
-sudo install -v -Dm644 dist/usr/share/licenses/vedv/LICENSE \
+install -v -Dm644 dist/usr/share/licenses/vedv/LICENSE \
   "${DESTDIR}/usr/share/licenses/vedv/LICENSE"
 
-sudo chmod -v 755 "${DESTDIR}/usr/lib/vedv/components/builder/__bin/vedvfile-parser"
+chmod -v 755 "${DESTDIR}/usr/lib/vedv/components/builder/__bin/vedvfile-parser"
 
 # MANDATORY ENV VAR: DIR
 export DIR="$(mktemp -d)"
 ./tools/gen-manpages
 
-sudo cp -v "${DIR}/"*.gz /usr/share/man/man1
+cp -v "${DIR}/"*.gz /usr/share/man/man1
 
 echo ''
 echo '>> INSTALLED SUCCESSFULLY'

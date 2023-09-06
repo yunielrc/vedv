@@ -2,8 +2,14 @@
 .PHONY: install uninstall configure configure-ci commit test-unit test-integration test-functional test-all test-all-ci test-suite test-tag test-name gen-manpages untested registry-dev-setup registry-dev-stop registry-dev-destroy registry-dev-start registry-dev-status registry-dev-ssh registry-prod-setup
 
 install:
-	# OPTIONAL ENV VARS: OS, DESTDIR
+	# OPTIONAL ENV VARS: DESTDIR
 	./install
+
+install-deps-manjaro:
+	./tools/install-pkgs-prod-manjaro
+
+install-deps-ubuntu:
+	./tools/install-pkgs-prod-ubuntu
 
 uninstall:
 	# OPTIONAL ENV VARS: FROMDIR
