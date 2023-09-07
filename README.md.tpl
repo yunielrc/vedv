@@ -59,13 +59,13 @@ as text editor.
 
 Clone the repository and switch to vedv directory
 
-#### Clone from gitlab
+- from gitlab
 
 ```sh
 git clone https://gitlab.com/yunielrc/vedv.git && cd vedv
 ```
 
-#### Clone from github
+- from github
 
 ```sh
 git clone https://github.com/yunielrc/vedv.git && cd vedv
@@ -207,7 +207,15 @@ We will be working with a simple todo list manager that is running in Node.js.
 
 #### Getting our App
 
-Download the app and switch to its directory
+Clone the app repository and switch to its directory
+
+- from gitlab:
+
+```sh
+git clone https://gitlab.com/yunielrc/todo-101.git && cd todo-101
+```
+
+- from github:
 
 ```sh
 git clone https://github.com/yunielrc/todo-101.git && cd todo-101
