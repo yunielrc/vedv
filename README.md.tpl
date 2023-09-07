@@ -27,7 +27,6 @@ Runtime Dependencies:
 
 ```sh
 ${MANJARO_PACKAGES_PROD}
-
 ```
 
 ### Ubuntu
@@ -41,6 +40,16 @@ ${UBUNTU_PACKAGES_PROD}
 
 ## Install
 
+### From package manager
+
+#### Manjaro
+
+```sh
+pamac install yay && yay -Sy vedv-git
+```
+
+### From git repository
+
 For installation from source code is required to have installed `git` and `make`.
 It's recommended to install `bmon` to see the download/upload activity and `vim`
 as text editor.
@@ -51,22 +60,16 @@ Clone the repository and switch to vedv directory
 git clone https://github.com/yunielrc/vedv.git && cd vedv
 ```
 
-Install Manjaro dependencies:
+#### Manjaro
 
 ```sh
-make install-deps-manjaro
+make install-deps-manjaro && sudo make install
 ```
 
-Install Ubuntu dependencies:
+#### Ubuntu
 
 ```sh
-make install-deps-ubuntu
-```
-
-Install
-
-```sh
-sudo make install
+make install-deps-ubuntu && sudo make install
 ```
 
 For any other linux distribution install runtime dependencies manually.
