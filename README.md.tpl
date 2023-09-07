@@ -56,6 +56,14 @@ as text editor.
 
 Clone the repository and switch to vedv directory
 
+From gitlab
+
+```sh
+git clone https://gitlab.com/yunielrc/vedv.git && cd vedv
+```
+
+From github
+
 ```sh
 git clone https://github.com/yunielrc/vedv.git && cd vedv
 ```
