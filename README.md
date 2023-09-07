@@ -68,10 +68,13 @@ petname 2.6
 
 ### From package manager
 
-#### Manjaro
+#### Install on Manjaro
 
 ```sh
-sudo pacman -Syu --noconfirm --needed yay && yay -Sy --noconfirm --needed vedv-git
+sudo pacman -Syu --noconfirm --needed yay &&
+  yay -Sy --noconfirm --needed vedv-git &&
+  sudo pacman -Syu --noconfirm --needed "$(mhwd-kernel -li | grep -Po '\(\Klinux\d+\S*(?=\))')-virtualbox-host-modules" &&
+  sudo vboxreload
 ```
 
 ### From git repository
@@ -82,25 +85,25 @@ as text editor.
 
 Clone the repository and switch to vedv directory
 
-#### From gitlab
+#### Clone from gitlab
 
 ```sh
 git clone https://gitlab.com/yunielrc/vedv.git && cd vedv
 ```
 
-#### From github
+#### Clone from github
 
 ```sh
 git clone https://github.com/yunielrc/vedv.git && cd vedv
 ```
 
-#### Manjaro
+#### Install on Manjaro
 
 ```sh
 make install-deps-manjaro && sudo make install
 ```
 
-#### Ubuntu
+#### Install on Ubuntu
 
 ```sh
 make install-deps-ubuntu && sudo make install
