@@ -66,13 +66,13 @@ petname 2.6
 
 ## Install
 
-<!-- ### From package manager
+### From package manager
 
 #### Manjaro
 
 ```sh
 sudo pacman -Syu --noconfirm --needed yay && yay -Sy --noconfirm --needed vedv-git
-``` -->
+```
 
 ### From git repository
 

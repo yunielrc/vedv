@@ -40,13 +40,13 @@ ${UBUNTU_PACKAGES_PROD}
 
 ## Install
 
-<!-- ### From package manager
+### From package manager
 
 #### Manjaro
 
 ```sh
 sudo pacman -Syu --noconfirm --needed yay && yay -Sy --noconfirm --needed vedv-git
-``` -->
+```
 
 ### From git repository
 
