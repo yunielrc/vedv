@@ -56,21 +56,13 @@ as text editor.
 
 Clone the repository and switch to vedv directory
 
-<<<<<<< Updated upstream
-From gitlab
-=======
 #### From gitlab
->>>>>>> Stashed changes
 
 ```sh
 git clone https://gitlab.com/yunielrc/vedv.git && cd vedv
 ```
 
-<<<<<<< Updated upstream
-From github
-=======
 #### From github
->>>>>>> Stashed changes
 
 ```sh
 git clone https://github.com/yunielrc/vedv.git && cd vedv
