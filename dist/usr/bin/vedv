@@ -45,7 +45,7 @@ readonly __UA='User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (K
 
 # LOAD CONFIG
 if [[ -f "$__VEDV_CONFIG" ]]; then source "$__VEDV_CONFIG"; fi
-if [[ -f ~/.vedv.env ]]; then source ~/.vedv.env; fi
+if [[ "${VEDV_LOAD_HOME_CONFIG:-true}" == true && -f ~/.vedv.env ]]; then source ~/.vedv.env; fi
 if [[ "$PWD" != "$HOME" && -f .vedv.env ]]; then source .vedv.env; fi
 
 # ENVIRONMENT
