@@ -9,7 +9,7 @@
 
 ## About
 
-A tool for developing applications in a secure and reproducible environment with virtual machines using a Docker-like workflow.
+A tool for developing applications in a secure and reproducible environment with virtual machines, using a Docker-like workflow.
 
 ### 👉 THIS IS A WORK IN PROGRESS
 
