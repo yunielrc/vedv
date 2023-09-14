@@ -7,6 +7,8 @@
 <i>A tool for developing in a secure and reproducible environment</i>
 </p>
 
+⚠️ Attention: Only github repository is updated, go to <https://github.com/yunielrc/vedv>
+
 ## About
 
 A tool for developing applications in a secure and reproducible environment with virtual machines, using a Docker-like workflow.
@@ -58,12 +60,6 @@ It's recommended to install `bmon` to see the download/upload activity and `vim`
 as text editor.
 
 Clone the repository and switch to vedv directory
-
-- from gitlab
-
-```sh
-git clone https://gitlab.com/yunielrc/vedv.git && cd vedv
-```
 
 - from github
 
@@ -208,12 +204,6 @@ We will be working with a simple todo list manager that is running in Node.js.
 #### Getting our App
 
 Clone the app repository and switch to its directory
-
-- from gitlab:
-
-```sh
-git clone https://gitlab.com/yunielrc/todo-101.git && cd todo-101
-```
 
 - from github:
 
