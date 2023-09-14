@@ -9,7 +9,7 @@
 <i>A tool for developing in a secure and reproducible environment</i>
 </p>
 
-⚠️ Attention: Only github repository is updated, go to <https://github.com/yunielrc/vedv>
+⚠️ **Attention**: Only github repository is updated, go to <https://github.com/yunielrc/vedv>
 
 ## About
 
@@ -67,6 +67,8 @@ petname 2.6
 ```
 
 ## Install
+
+⚠️ **Attention**: Only github repository is updated, go to <https://github.com/yunielrc/vedv>
 
 ### From package manager
 
