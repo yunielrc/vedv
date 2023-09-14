@@ -1690,7 +1690,7 @@ EOF
   assert_output "Failed to copy to container: 12345"
 }
 
-@test "vedv::vmobj_service::copy_by_id(), Should Succeed" {
+@test "vedv::vmobj_service::copy_by_id(), Should fail if ssh_copy fails" {
   local -r type="container"
   local -r vmobj_id=12345
   local -r src="$(mktemp)"
@@ -1715,6 +1715,60 @@ EOF
 
   assert_failure
   assert_output "Failed to copy to container: 12345"
+}
+
+@test "vedv::vmobj_service::copy_by_id(), Should Succeed" {
+  local -r type="container"
+  local -r vmobj_id=12345
+  local -r src="$(mktemp)"
+  local -r dest="dest"
+  local -r user="user"
+  local -r workdir="/home/vedv"
+  local -r chown="nalyd"
+  local -r chmod="644"
+
+  vedv::vmobj_service::fs::get_workdir() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+  vedv:builder_vedvfile_service::get_joined_vedvfileignore() {
+    echo "/tmp/vedvfileignore"
+  }
+  vedv::vmobj_service::__exec_ssh_func() {
+    assert_equal "$*" "container 12345 vedv::ssh_client::copy \"\$user\" \"\$ip\"  \"\$password\" \"\$port\" '${src}' 'dest' '/tmp/vedvfileignore' '/home/vedv' 'nalyd' '644' user"
+  }
+
+  run vedv::vmobj_service::copy_by_id "$type" "$vmobj_id" "$src" "$dest" "$user" "$workdir" "$chown" "$chmod"
+
+  assert_success
+  assert_output ""
+}
+
+@test "vedv::vmobj_service::copy_by_id(), Should Succeed ignoring vedvfileignore files" {
+  local -r type="container"
+  local -r vmobj_id=12345
+  local -r src="$(mktemp)"
+  local -r dest="dest"
+  local -r user="user"
+  local -r workdir="/home/vedv"
+  local -r chown="nalyd"
+  local -r chmod="644"
+  local -r _no_vedvfileignore='true'
+
+  vedv::vmobj_service::fs::get_workdir() {
+    assert_equal "$*" "INVALID_CALL"
+  }
+  vedv:builder_vedvfile_service::get_joined_vedvfileignore() {
+    assert_equal "$*" 'INVALID_CALL'
+  }
+  vedv::vmobj_service::__exec_ssh_func() {
+    assert_equal "$*" "container 12345 vedv::ssh_client::copy \"\$user\" \"\$ip\"  \"\$password\" \"\$port\" '${src}' 'dest' '/dev/null' '/home/vedv' 'nalyd' '644' user"
+  }
+
+  run vedv::vmobj_service::copy_by_id \
+    "$type" "$vmobj_id" "$src" "$dest" "$user" "$workdir" "$chown" "$chmod" "$_no_vedvfileignore"
+
+  assert_success
+  assert_output ""
 }
 
 # Tests for vedv::vmobj_service::copy()
@@ -1747,7 +1801,7 @@ EOF
     echo 12345
   }
   vedv::vmobj_service::copy_by_id() {
-    assert_equal "$*" "container 12345 src dest    "
+    assert_equal "$*" "container 12345 src dest     false"
   }
 
   run vedv::vmobj_service::copy "$type" "$vmobj_id" "$src" "$dest"
@@ -1771,7 +1825,7 @@ EOF
     echo 12345
   }
   vedv::vmobj_service::copy_by_id() {
-    assert_equal "$*" "container 12345 src dest vedv /home/vedv nalyd 644"
+    assert_equal "$*" "container 12345 src dest vedv /home/vedv nalyd 644 false"
   }
 
   run vedv::vmobj_service::copy "$type" "$vmobj_id" "$src" "$dest" "$user" "$workdir" "$chown" "$chmod"

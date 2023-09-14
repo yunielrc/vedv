@@ -1077,14 +1077,16 @@ vedv::vmobj_service::connect() {
 # Copy files from local filesystem to a container
 #
 # Arguments:
-#   type          string     type (e.g. 'container|image')
-#   vmobj_id      string     vmobj id
-#   src           string     local source path
-#   dest          string     vmobj destination path
-#   [user]        string     user name
-#   [workdir]     string     vmobj workdir
-#   [chown]       string     chown files to user
-#   [chmod]       string     chmod files to mode
+#   type                 string     type (e.g. 'container|image')
+#   vmobj_id             string     vmobj id
+#   src                  string     local source path
+#   dest                 string     vmobj destination path
+#   [user]               string     user name
+#   [workdir]            string     vmobj workdir
+#   [chown]              string     chown files to user
+#   [chmod]              string     chmod files to mode
+#   [no_vedvfileignore]  bool       ignore vedvfileignore files (default: false)
+#
 #
 # Output:
 #  writes command output to the stdout
@@ -1101,6 +1103,8 @@ vedv::vmobj_service::copy_by_id() {
   local -r workdir="${6:-}"
   local -r chown="${7:-}"
   local -r chmod="${8:-}"
+  local -r no_vedvfileignore="${9:-false}"
+
   # validate arguments
   vedv::vmobj_entity::validate_type "$type" ||
     return "$?"
@@ -1131,11 +1135,17 @@ vedv::vmobj_service::copy_by_id() {
   fi
   readonly _workdir
 
-  local vedvfileignore
-  vedvfileignore="$(vedv:builder_vedvfile_service::get_joined_vedvfileignore)" || {
-    err "Failed to get joined vedvfileignore"
-    return "$ERR_VMOBJ_OPERATION"
-  }
+  local vedvfileignore=''
+
+  if [[ "$no_vedvfileignore" == true ]]; then
+    vedvfileignore=/dev/null
+  else
+    vedvfileignore="$(vedv:builder_vedvfile_service::get_joined_vedvfileignore)" || {
+      err "Failed to get joined vedvfileignore"
+      return "$ERR_VMOBJ_OPERATION"
+    }
+  fi
+
   readonly vedvfileignore
 
   local -r exec_func="vedv::ssh_client::copy \"\$user\" \"\$ip\"  \"\$password\" \"\$port\" '${src}' '${dest}' '${vedvfileignore}' '${_workdir}' '${chown}' '${chmod}'"
@@ -1150,14 +1160,15 @@ vedv::vmobj_service::copy_by_id() {
 # Copy files from local filesystem to a container
 #
 # Arguments:
-#   type              string     type (e.g. 'container|image')
-#   vmobj_id_or_name  string     vmobj id or name
-#   src               string     local source path
-#   dest              string     vmobj destination path
-#   [user]            string     user name
-#   [workdir]         string     vmobj workdir
-#   [chown]           string     chown files to user
-#   [chmod]           string     chmod files to mode
+#   type                  string     type (e.g. 'container|image')
+#   vmobj_id_or_name      string     vmobj id or name
+#   src                   string     local source path
+#   dest                  string     vmobj destination path
+#   [user]                string     user name
+#   [workdir]             string     vmobj workdir
+#   [chown]               string     chown files to user
+#   [chmod]               string     chmod files to mode
+#   [no_vedvfileignore]   bool       ignore vedvfileignore files (default: false)
 #
 # Output:
 #  writes command output to the stdout
@@ -1174,6 +1185,7 @@ vedv::vmobj_service::copy() {
   local -r workdir="${6:-}"
   local -r chown="${7:-}"
   local -r chmod="${8:-}"
+  local -r no_vedvfileignore="${9:-false}"
 
   local vmobj_id
   vmobj_id="$(vedv::vmobj_entity::get_id "$vmobj_id_or_name")" || {
@@ -1189,7 +1201,8 @@ vedv::vmobj_service::copy() {
     "$user" \
     "$workdir" \
     "$chown" \
-    "$chmod"
+    "$chmod" \
+    "$no_vedvfileignore"
 }
 
 #

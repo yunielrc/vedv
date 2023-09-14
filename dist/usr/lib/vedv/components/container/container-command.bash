@@ -807,14 +807,45 @@ HELPMSG
 }
 
 #
+# Show help for __copy command
+#
+# Output:
+#  Writes the help to the stdout
+#
+vedv::container_command::__copy_help() {
+  cat <<-HELPMSG
+Usage:
+${__VED_CONTAINER_COMMAND_SCRIPT_NAME} container copy [FLAGS] [OPTIONS] CONTAINER LOCAL_SRC CONTAINER_DEST
+
+Copy files from local filesystem to a container
+
+Aliases:
+  cp, copy
+
+Flags:
+  -h, --help              show help
+  -r, --root              copy as root user
+  --no-vedvfileignore     ignore vedvfileignore files
+
+Options:
+  -u, --user <user>       copy as specific user
+  --chown <user:group>    change owner of copied files
+  --chmod <mode>          change mode of copied files
+HELPMSG
+}
+
+#
 # Copy files from local filesystem to a container
 #
 # Flags:
 #   -h | --help               show help
 #   --root                    use root user for copy
+#   --no-vedvfileignore       ignore vedvfileignore files
 #
 # Options:
-#   -u, --user <user> string    user to use for copy
+#   -u, --user <user>       copy as specific user
+#   --chown <user:group>    change owner of copied files
+#   --chmod <mode>          change mode of copied files
 #
 # Arguments:
 #   CONTAINER         string    container name or id
@@ -834,6 +865,7 @@ vedv::container_command::__copy() {
   local container_name_or_id=''
   local src=''
   local dest=''
+  local no_vedvfileignore=false
 
   if [[ $# == 0 ]]; then set -- '-h'; fi
 
@@ -847,6 +879,10 @@ vedv::container_command::__copy() {
     -r | --root)
       shift
       set -- '-u' 'root' "$@"
+      ;;
+    --no-vedvfileignore)
+      readonly no_vedvfileignore=true
+      shift
       ;;
     # options
     -u | --user)
@@ -911,34 +947,8 @@ vedv::container_command::__copy() {
     "$dest" \
     "$user" \
     "$chown" \
-    "$chmod"
-}
-
-#
-# Show help for __copy command
-#
-# Output:
-#  Writes the help to the stdout
-#
-vedv::container_command::__copy_help() {
-  cat <<-HELPMSG
-Usage:
-${__VED_CONTAINER_COMMAND_SCRIPT_NAME} container copy [FLAGS] [OPTIONS] CONTAINER LOCAL_SRC CONTAINER_DEST
-
-Copy files from local filesystem to a container
-
-Aliases:
-  cp, copy
-
-Flags:
-  -h, --help              show help
-  -r, --root              copy as root user
-
-Options:
-  -u, --user <user>       copy as specific user
-  --chown <user:group>    change owner of copied files
-  --chmod <mode>          change mode of copied files
-HELPMSG
+    "$chmod" \
+    "$no_vedvfileignore"
 }
 
 #

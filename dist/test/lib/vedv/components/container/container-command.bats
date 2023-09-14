@@ -632,7 +632,7 @@ Copy files from local filesystem to a container"
   assert_output --partial "No chmod value specified"
 }
 
-@test "vedv::container_command::__copy() Should show suceed" {
+@test "vedv::container_command::__copy() Should succeed" {
   # Arrange
   local container_name_or_id='container1'
   local user='vedv'
@@ -642,7 +642,7 @@ Copy files from local filesystem to a container"
   local dest='dest1'
 
   vedv::container_service::copy() {
-    assert_equal "$*" 'container1 src1 dest1 vedv nalyd 644'
+    assert_equal "$*" 'container1 src1 dest1 vedv nalyd 644 false'
   }
   # Act
   run vedv::container_command::__copy --user "$user" --chown "$chown" --chmod "$chmod" "$container_name_or_id" "$src" "$dest"

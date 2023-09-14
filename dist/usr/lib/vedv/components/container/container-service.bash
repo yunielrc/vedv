@@ -796,6 +796,7 @@ vedv::container_service::connect() {
 #   [user]                string     container user
 #   [chown]               string     chown files to user
 #   [chmod]               string     chmod files to mode
+#   [no_vedvfileignore]   bool       ignore vedvfileignore files (default: false)
 #
 # Output:
 #  writes command output to the stdout
@@ -810,6 +811,7 @@ vedv::container_service::copy() {
   local -r user="${4:-}"
   local -r chown="${5:-}"
   local -r chmod="${6:-}"
+  local -r no_vedvfileignore="${7:-false}"
 
   vedv::vmobj_service::copy \
     'container' \
@@ -819,7 +821,8 @@ vedv::container_service::copy() {
     "$user" \
     '' \
     "$chown" \
-    "$chmod"
+    "$chmod" \
+    "$no_vedvfileignore"
 }
 
 #

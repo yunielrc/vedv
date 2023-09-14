@@ -8,6 +8,10 @@ set -eu
 # ENVIRONMENT VARIABLES
 readonly CMD
 
+vedv() {
+  "dist/usr/bin/vedv" "$@"
+}
+
 is_option_continuation() {
   ! grep -qP '^((-[\w\d](,\s+--\S+)?)|(--\S+))' <<<"$1"
 }

@@ -432,7 +432,6 @@ SSHEOF
   assert_success "file123"
 }
 
-# Tests for vedv container copy
 @test "vedv container copy container123a src dest " {
 
   vedv container create --name 'container123a' "$TEST_OVA_FILE"
@@ -454,6 +453,41 @@ SSHEOF
 
   assert_success
   assert_output --partial "-r--r-----    1 vedv     vedv"
+}
+
+@test "vedv container copy container123a src dest with vedvfileignore" {
+
+  vedv container create --name 'container123a' "$TEST_OVA_FILE"
+  vedv container start --wait 'container123a'
+
+  local -r dir="$(mktemp -d)"
+
+  cd "$dir"
+  touch "${dir}/file1" "${dir}/file2"
+  echo file1 >.vedvfileignore
+
+  vedv container exec container123a mkdir /home/vedv/dir
+
+  vedv container copy container123a "${dir}/" /home/vedv/dir
+
+  run vedv container exec container123a ls -1a /home/vedv/dir
+
+  assert_success
+  assert_output ".
+..
+.vedvfileignore
+file2"
+
+  vedv container copy --no-vedvfileignore container123a "${dir}/" /home/vedv/dir
+
+  run vedv container exec container123a ls -1a /home/vedv/dir
+
+  assert_success
+  assert_output ".
+..
+.vedvfileignore
+file1
+file2"
 }
 
 # Tests for vedv container create --publish-all ...

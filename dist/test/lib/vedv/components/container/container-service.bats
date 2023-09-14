@@ -1731,7 +1731,7 @@ setup_file() {
   local -r chmod="644"
 
   vedv::vmobj_service::copy() {
-    assert_equal "$*" "container container1 src1 dest1 vedv  nalyd 644"
+    assert_equal "$*" "container container1 src1 dest1 vedv  nalyd 644 false"
   }
 
   run vedv::container_service::copy "$container_id_or_name" "$src" "$dest" "$user" "$chown" "$chmod"
