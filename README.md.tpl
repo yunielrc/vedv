@@ -7,13 +7,9 @@
 <i>A tool for developing in a secure and reproducible environment</i>
 </p>
 
-⚠️ **Attention**: Only github repository is updated, go to <https://github.com/yunielrc/vedv>
-
 ## About
 
-A tool for developing applications in a secure and reproducible environment with virtual machines, using a Docker-like workflow.
-
-### 👉 THIS IS A WORK IN PROGRESS
+A tool for developing applications in a secure and reproducible environment with virtual machines using a Docker-like workflow.
 
 ## Motivation
 
@@ -21,7 +17,8 @@ The software we are developing needs to be tested on a system as closed as possi
 
 ## Tested OS
 
-Note: This tool doesn't work on nested virtualization.
+👉 This tool does not work with nested virtualization, it must be installed and
+executed on a real machine. It's tested on the following OS:
 
 ### Manjaro
 
@@ -41,8 +38,6 @@ ${UBUNTU_PACKAGES_PROD}
 ```
 
 ## Install
-
-⚠️ **Attention**: Only github repository is updated, go to <https://github.com/yunielrc/vedv>
 
 ### From package manager
 
@@ -198,7 +193,7 @@ vedv image rm <your-image-name>
 
 ### Our Application
 
-This is a modified version of the sample app from <https://www.docker.com/101-tutorial/>.
+This is the sample app from <https://www.docker.com/101-tutorial/>.
 Thanks to Docker.
 
 We will be working with a simple todo list manager that is running in Node.js.
@@ -693,8 +688,6 @@ on local machine
 ```sh
 make registry-dev-setup
 ```
-
-Execute the command below to start the registry
 
 ### Workflow
 
