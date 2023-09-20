@@ -4,16 +4,22 @@
 </h1>
 
 <p align="center">
-<i>A tool for developing in a secure and reproducible environment</i>
+<i>A tool for developing in a secure, issolated and reproducible environment</i>
 </p>
+
+## Table of Contents
+
+Click on the menu right before `README.md` as shown in the image below.
+
+<img width=300px  src="media/toc.png" alt="toc">
 
 ## About
 
-A tool for developing applications in a secure and reproducible environment with virtual machines using a Docker-like workflow.
+A tool for developing applications in a secure, issolated and reproducible environment with virtual machines using a Docker-like workflow.
 
 ## Motivation
 
-The software we are developing needs to be tested on a system as closed as possible to the one where it is going to be executed. Sometimes it is very difficult to satisfy this requirement with docker and we have to use virtual machines missing the docker workflow. This is why I started the development of vedv. I hope you find it useful. Thank you.
+The software we are developing needs to be tested on a system as close as possible to the one where it is going to be executed. Sometimes it is very difficult to satisfy this requirement with docker and we have to use virtual machines missing the docker workflow. This is why I started the development of vedv. I hope you find it useful. Thank you.
 
 ## Tested OS
 
@@ -76,7 +82,30 @@ make install-deps-manjaro && sudo make install
 make install-deps-ubuntu && sudo make install
 ```
 
-For any other linux distribution install runtime dependencies manually.
+#### Install on any other linux distribution
+
+Install runtime dependencies manually and run the command below:
+
+```sh
+sudo make install
+```
+
+It's highly recommended for any other linux distro than manjaro and ubuntu to import and run an image from virtualbox gui before running vedv to guarantee that virtualbox is working properly.
+
+Download an alpine image
+
+```sh
+wget --header='User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36' 'https://onedrive.live.com/download?resid=DBA0B75F07574EAA%21272&authkey=!AP8U5cI4V7DusSg' -qO alpine-inv.ova
+```
+
+Import the image from virtualbox gui:
+
+- Open Virtualbox
+- Click on File menu > Import Appliance
+- Import the image `alpine-inv.ova`
+- Start the `alpine-x86_64` virtual machine
+
+If you have any problem running vedv on your linux distro, it can be a missing dependency, please open a Bug issue.
 
 ## Configure
 
@@ -267,7 +296,7 @@ vedv container start -w todo-101
 
   You should see the todo list manager app
 
- <img width=500px  src="media/todo-list-manager.png" alt="todo list manager">
+ <img width=300px  src="media/todo-list-manager.png" alt="todo list manager">
 
 ```sh
 vedv container rm --force todo-101
@@ -635,6 +664,55 @@ are created from the scratch, here are the steps:
 We encourage you to read the CaC scripts to see what they do
 inside the vm.
 
+## Registry
+
+The registry is a Nextcloud instance, you can host your own registry, Nextcloud
+is free and open source software.
+
+The scripts for provision and configuration are located at
+`icac/nextcloud/vultr.prod/nextcloud-aio`.
+
+If you want to host your own registry on Vultr you must have a vultr account
+(I am not associated with vultr), then follow the steps below:
+
+- Copy and edit the .env file, inside the .env look for the section `icac/nextcloud/vultr`
+
+```sh
+cp .env.sample .env
+vim .env
+```
+
+- Provision and Configure the registry
+
+```sh
+make registry-prod-setup
+```
+
+If you want to host your own registry on any other cloud provider, you can reuse
+the CaC script and write your IaC script for provisioning.
+
+## Use Cases
+
+### ydf
+
+ydf is a dotfiles manager+ that uses vedv for developing.
+
+ydf is the kind of tool that make changes to your system, install apps and write config files,
+so it needs to be tested in a secure, issolated and reproducible environment, to avoid damaging
+your system and to guarantee that the changes made by ydf are always reproducible on a clean
+system during testing. Many apps that are installed by ydf are made for a desktop environments,
+others apps rely on systemd, and others technologies that doesn't work in docker containers.
+
+ydf is developed initially for Manjaro so the vedv image used is `admin@manjaro/manjaro-gnome-22.1.3-x86_64`
+
+You should open and see the 4 files below available on ydf project to understand how to use vedv
+during development:
+`Makefile`, `tools/ct-clean-exec`, `Vedvfile`,`.vedvfileignore`
+
+Start with the Makefile at: <https://github.com/yunielrc/ydf/blob/master/Makefile>
+
+Good luck.
+
 ## Contributing
 
 Contributions, issues and feature requests are welcome!
@@ -677,8 +755,6 @@ For Ubuntu:
 ```sh
 make OS=ubuntu configure
 ```
-
-For any other linux distribution install runtime and development dependencies manually.
 
 #### Setup registry development service
 
