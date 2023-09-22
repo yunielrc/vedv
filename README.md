@@ -14,7 +14,10 @@ Click on the menu right before `README.md` as shown in the image below.
 
 This is a tool for developing applications in a secure, issolated and reproducible environment with virtual machines using a Docker-like workflow.
 
-The software we are developing needs to be tested on a system as close as possible to the one where it is going to be executed. Sometimes it is very difficult to satisfy this requirement with docker and we have to use virtual machines missing the docker workflow. This is why I started the development of vedv. I hope you find it useful. Thank you.
+Many apps are made for desktop environments, others apps rely on systemd, and others technologies that doesn't work with
+an OCI-compliant container. The software we are developing needs to be tested on a system as close as possible to the one
+where it is going to be executed, sometimes it is very difficult to satisfy this requirements with docker and we have to
+use virtual machines missing the docker workflow. This is why I started the development of vedv. I hope you find it useful.
 
 ## Tested OS
 
