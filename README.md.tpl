@@ -1,6 +1,13 @@
+<div align="center">
+  <a href="" rel="noopener">
+    <img src="media/vedv.png" width="64px" alt="ydf" />
+
 # vedv
 
-A tool for developing in a secure, issolated and reproducible environment.
+  </a>
+
+**_A tool for developing in a secure, issolated and reproducible environment_**
+</div>
 
 ## Table of Contents
 
