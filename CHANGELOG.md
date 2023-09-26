@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.3.0](https://github.com/yunielrc/vedv/compare/v0.2.3...v0.3.0) (2023-09-23)
+
+
+### Features
+
+* **container-command:** allow copy file to a container ignoring .vedvfileignore ([a9b5601](https://github.com/yunielrc/vedv/commit/a9b56010d37298a5c4da0b226a14c54f8c0d0952))
+
+
+### Performance Improvements
+
+* **vedv:** add a validation to do not load home config twice ([3e0a99c](https://github.com/yunielrc/vedv/commit/3e0a99c6b763013febcc337f79ad61764fece579))
+
 ## [0.2.3](https://github.com/yunielrc/vedv/compare/v0.2.2...v0.2.3) (2023-09-06)
 
 
