@@ -75,6 +75,12 @@ Clone the repository and switch to vedv directory
 git clone https://github.com/yunielrc/vedv.git && cd vedv
 ```
 
+Select the last stable version
+
+```sh
+git checkout "$(git tag --sort='version:refname' | grep -Po '^v\d+\.\d+\.\d+$' | tail -n 1)"
+```
+
 #### Install on Manjaro
 
 ```sh
