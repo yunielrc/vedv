@@ -1,0 +1,20 @@
+#!/usr/bin/env sh
+
+# Configure the archlinux image vm for vedv
+
+set -eu
+
+# INSTALL PACKAGES
+
+# INSTALL OPENSSH
+pacman -Sy --noconfirm --needed \
+  openssl openssh sudo
+# configure sshd
+systemctl enable --now sshd.service || :
+
+# INSTALL RSYNC
+pacman -Sy --noconfirm --needed rsync
+# configure rsyncd
+systemctl enable --now rsyncd.service || :
+
+echo '>> DONE!'
