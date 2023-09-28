@@ -20,7 +20,8 @@ chmod 0444 "${__VEDV_CONFIG_DIR}/distro"
 touch "${__VEDV_CONFIG_DIR}/layer/env"
 chmod 0644 "${__VEDV_CONFIG_DIR}/layer/env"
 # link /etc/profile.d/vedv-env.sh to vedv environment file
-ln -sf "${__VEDV_CONFIG_DIR}/layer/env" /etc/profile.d/vedv-env.sh
+echo "set -a; . ${__VEDV_CONFIG_DIR}/layer/env; set +a" \
+  >/etc/profile.d/vedv-env.sh
 # create expose file
 touch "${__VEDV_CONFIG_DIR}/layer/expose"
 chmod 0644 "${__VEDV_CONFIG_DIR}/layer/expose"
