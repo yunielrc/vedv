@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/yunielrc/vedv/compare/v0.3.0...v0.3.1) (2023-09-28)
+
+
+### Bug Fixes
+
+* **icac/images:** env variables are available on a container after build ([204c669](https://github.com/yunielrc/vedv/commit/204c669b35a5db92e9fb7d0f48e99ad963f3bf67))
+
 ## [0.3.0](https://github.com/yunielrc/vedv/compare/v0.2.3...v0.3.0) (2023-09-23)
 
 
