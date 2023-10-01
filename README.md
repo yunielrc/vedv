@@ -8,10 +8,12 @@
 
   </a>
 
-**_A tool for developing in a secure, issolated and reproducible environment_**
+**_A tool for developing in a secure, isolated and reproducible environment_**
+
+**_This is a democratic project not a dictatorship, so you have the freedom to join to it and build the new features you need for the benefit of everyone_**
 </div>
 
-<a href="https://www.producthunt.com/posts/vedv?utm_source=badge-featured&utm_medium=badge&utm_souce=badge-vedv" target="_blank"><img src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=416019&theme=light" alt="vedv - Develop&#0032;in&#0032;a&#0032;secure&#0044;&#0032;issolated&#0032;and&#0032;reproducible&#0032;environment | Product Hunt" style="width: 250px; height: 54px;" width="250" height="54" /></a>
+<a href="https://www.producthunt.com/posts/vedv?utm_source=badge-featured&utm_medium=badge&utm_souce=badge-vedv" target="_blank"><img src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=416019&theme=light" alt="vedv - Develop&#0032;in&#0032;a&#0032;secure&#0044;&#0032;isolated&#0032;and&#0032;reproducible&#0032;environment | Product Hunt" style="width: 250px; height: 54px;" width="250" height="54" /></a>
 
 ## Table of Contents
 
@@ -21,11 +23,11 @@ Click on the menu right before `README.md` as shown in the image below.
 
 ## About
 
-This is a tool for developing applications in a secure, issolated and reproducible environment with virtual machines using a Docker-like workflow.
+This is a tool for developing applications in a secure, isolated and reproducible environment with virtual machines using a Docker-like workflow.
 
-Many apps are made for desktop environments, others apps rely on systemd, and others technologies that doesn't work with
-an OCI-compliant container. The software we are developing needs to be tested on a system as close as possible to the one
-where it is going to be executed, sometimes it is very difficult to satisfy this requirements with docker and we have to
+Many apps are made for desktop environments, others apps rely on systemd, and others technologies that doesn't work well
+in an OCI-compliant container. The software we are developing needs to be tested on a system as close as possible to the one
+where it is going to be executed, Sometimes it is very difficult to satisfy the requirements with Docker and we have to
 use virtual machines missing the docker workflow. This is why I started the development of vedv. I hope you find it useful.
 
 ## Tested OS
@@ -749,7 +751,7 @@ the CaC script and write your IaC script for provisioning.
 ydf is a dotfiles manager+ that uses vedv for developing.
 
 ydf is the kind of tool that make changes to your system, install apps and write config files,
-so it needs to be tested in a secure, issolated and reproducible environment, to avoid damaging
+so it needs to be tested in a secure, isolated and reproducible environment, to avoid damaging
 your system and to guarantee that the changes made by ydf are always reproducible on a clean
 system during testing. Many apps that are installed by ydf are made for a desktop environments,
 others apps rely on systemd, and others technologies that doesn't work in docker containers.
